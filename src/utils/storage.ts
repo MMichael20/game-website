@@ -1,26 +1,43 @@
-export interface AvatarConfig {
-  hair: number;
-  hairColor: string;
-  skin: number;
-  outfit: number;
-  accessory: string | null;
+export interface OutfitSelection {
+  herOutfit: number;
+  hisOutfit: number;
 }
 
 export interface GameState {
-  avatar1: AvatarConfig | null;
-  avatar2: AvatarConfig | null;
+  outfits: OutfitSelection;
   visitedCheckpoints: string[];
   miniGameScores: Record<string, number>;
 }
 
 const STORAGE_KEY = 'couples-map-game';
 
+function getDefaultOutfits(): OutfitSelection {
+  return { herOutfit: 0, hisOutfit: 0 };
+}
+
 function getDefaultState(): GameState {
   return {
-    avatar1: null,
-    avatar2: null,
+    outfits: getDefaultOutfits(),
     visitedCheckpoints: [],
     miniGameScores: {},
+  };
+}
+
+/**
+ * Migrate old save format (with avatar1/avatar2 fields) to the new format.
+ * Discards avatar data, keeps checkpoints and scores, defaults outfits.
+ */
+function migrateIfNeeded(parsed: Record<string, unknown>): GameState {
+  if ('avatar1' in parsed) {
+    return {
+      outfits: getDefaultOutfits(),
+      visitedCheckpoints: (parsed.visitedCheckpoints as string[]) ?? [],
+      miniGameScores: (parsed.miniGameScores as Record<string, number>) ?? {},
+    };
+  }
+  return {
+    ...getDefaultState(),
+    ...(parsed as Partial<GameState>),
   };
 }
 
@@ -28,7 +45,8 @@ export function loadGameState(): GameState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return getDefaultState();
-    return { ...getDefaultState(), ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return migrateIfNeeded(parsed);
   } catch {
     return getDefaultState();
   }
@@ -38,11 +56,14 @@ export function saveGameState(state: GameState): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-export function saveAvatars(avatar1: AvatarConfig, avatar2: AvatarConfig): void {
+export function saveOutfitSelection(outfits: OutfitSelection): void {
   const state = loadGameState();
-  state.avatar1 = avatar1;
-  state.avatar2 = avatar2;
+  state.outfits = outfits;
   saveGameState(state);
+}
+
+export function loadOutfitSelection(): OutfitSelection {
+  return loadGameState().outfits;
 }
 
 export function markCheckpointVisited(checkpointId: string): void {
@@ -65,7 +86,7 @@ export function saveMiniGameScore(checkpointId: string, score: number, lowerIsBe
 
 export function hasSavedGame(): boolean {
   const state = loadGameState();
-  return state.avatar1 !== null;
+  return state.outfits !== null || state.visitedCheckpoints.length > 0;
 }
 
 export function clearGameState(): void {
