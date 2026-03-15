@@ -291,10 +291,10 @@ export class WorldScene extends Phaser.Scene {
       pizzeria: { x: 14 * 32, y: 10 * 32 },
     };
 
-    this.add.particles(positions.park.x, positions.park.y, 'particle-leaf', PARTICLE_CONFIGS.leaves);
-    this.add.particles(positions.cafe.x, positions.cafe.y - 20, 'particle-steam', PARTICLE_CONFIGS.steam);
-    this.add.particles(positions.home.x, positions.home.y, 'particle-sparkle', PARTICLE_CONFIGS.sparkles);
-    this.add.particles(positions.pizzeria.x + 20, positions.pizzeria.y - 30, 'particle-smoke', PARTICLE_CONFIGS.smoke);
+    this.add.particles(positions.park.x, positions.park.y, 'particle-leaf', PARTICLE_CONFIGS.leaves as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig);
+    this.add.particles(positions.cafe.x, positions.cafe.y - 20, 'particle-steam', PARTICLE_CONFIGS.steam as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig);
+    this.add.particles(positions.home.x, positions.home.y, 'particle-sparkle', PARTICLE_CONFIGS.sparkles as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig);
+    this.add.particles(positions.pizzeria.x + 20, positions.pizzeria.y - 30, 'particle-smoke', PARTICLE_CONFIGS.smoke as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig);
   }
 
   private createLighting(): void {
