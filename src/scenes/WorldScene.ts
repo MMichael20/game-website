@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { loadGameState, markCheckpointVisited } from '../utils/storage';
 import checkpointData from '../data/checkpoints.json';
+import { generateCharacterSpritesheet } from '../rendering/CharacterRenderer';
 
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
@@ -63,29 +64,23 @@ export class WorldScene extends Phaser.Scene {
 
   private createPlayer(): void {
     const state = loadGameState();
-    this.player = this.physics.add.sprite(20 * 32, 15 * 32, 'character');
+    const config = state.avatar1 ?? { hair: 0, hairColor: '#2c1810', skin: 0, outfit: 0, accessory: null };
+    generateCharacterSpritesheet(this, config, 'character-1');
+
+    this.player = this.physics.add.sprite(20 * 32, 15 * 32, 'character-1', 0);
     this.player.setDepth(15 * 32);
     (this.player.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     (this.player.body as Phaser.Physics.Arcade.Body).setSize(24, 24);
     (this.player.body as Phaser.Physics.Arcade.Body).setOffset(12, 24);
-
-    if (state.avatar1) {
-      const outfitColors = [0x4488cc, 0xcc4444, 0x44cc44, 0xcccc44, 0xcc44cc];
-      this.player.setTint(outfitColors[state.avatar1.outfit] || 0xffffff);
-    }
   }
 
   private createPartner(): void {
     const state = loadGameState();
-    this.partner = this.add.sprite(20 * 32 + 40, 15 * 32, 'character');
-    this.partner.setDepth(15 * 32);
+    const config = state.avatar2 ?? { hair: 0, hairColor: '#C41E3A', skin: 0, outfit: 1, accessory: null };
+    generateCharacterSpritesheet(this, config, 'character-2');
 
-    if (state.avatar2) {
-      const outfitColors = [0x4488cc, 0xcc4444, 0x44cc44, 0xcccc44, 0xcc44cc];
-      this.partner.setTint(outfitColors[state.avatar2.outfit] || 0xffaacc);
-    } else {
-      this.partner.setTint(0xffaacc);
-    }
+    this.partner = this.add.sprite(20 * 32 + 40, 15 * 32, 'character-2', 0);
+    this.partner.setDepth(15 * 32);
   }
 
   private createCheckpointZones(): void {
@@ -271,11 +266,21 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    if (body.velocity.x !== 0 || body.velocity.y !== 0) {
+    const isMoving = body.velocity.x !== 0 || body.velocity.y !== 0;
+
+    if (isMoving) {
       this.playerPositionHistory.push(new Phaser.Math.Vector2(this.player.x, this.player.y));
       if (this.playerPositionHistory.length > 30) {
         this.playerPositionHistory.shift();
       }
+      // Play walk animation and flip based on direction
+      this.player.play('character-1-walk', true);
+      if (body.velocity.x < 0) this.player.setFlipX(true);
+      else if (body.velocity.x > 0) this.player.setFlipX(false);
+    } else {
+      // Idle — show neutral frame
+      this.player.stop();
+      this.player.setFrame(0);
     }
   }
 
@@ -292,8 +297,18 @@ export class WorldScene extends Phaser.Scene {
         target.x, target.y
       );
       const partnerSpeed = this.speed * 0.9;
-      this.partner.x += Math.cos(angle) * partnerSpeed * (delta / 1000);
+      const dx = Math.cos(angle) * partnerSpeed * (delta / 1000);
+      this.partner.x += dx;
       this.partner.y += Math.sin(angle) * partnerSpeed * (delta / 1000);
+
+      // Walk animation and direction
+      this.partner.play('character-2-walk', true);
+      if (dx < 0) this.partner.setFlipX(true);
+      else if (dx > 0) this.partner.setFlipX(false);
+    } else {
+      // Idle
+      this.partner.stop();
+      this.partner.setFrame(0);
     }
   }
 
@@ -396,13 +411,15 @@ export class WorldScene extends Phaser.Scene {
   }
 
   applyAvatarTints(): void {
+    // Regenerate character textures with updated configs
     const state = loadGameState();
-    const outfitColors = [0x4488cc, 0xcc4444, 0x44cc44, 0xcccc44, 0xcc44cc];
     if (state.avatar1) {
-      this.player.setTint(outfitColors[state.avatar1.outfit] || 0xffffff);
+      generateCharacterSpritesheet(this, state.avatar1, 'character-1');
+      this.player.setTexture('character-1', 0);
     }
     if (state.avatar2) {
-      this.partner.setTint(outfitColors[state.avatar2.outfit] || 0xffaacc);
+      generateCharacterSpritesheet(this, state.avatar2, 'character-2');
+      this.partner.setTexture('character-2', 0);
     }
   }
 }

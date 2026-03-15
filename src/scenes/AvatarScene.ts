@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { AvatarConfig, saveAvatars, loadGameState } from '../utils/storage';
+import { drawCharacterPreview } from '../rendering/CharacterRenderer';
 
 const HAIR_STYLES = ['Short', 'Long', 'Curly', 'Ponytail', 'Buzz'];
 const HAIR_COLORS = ['#2c1810', '#8B4513', '#DAA520', '#FFD700', '#C41E3A', '#1a1a2e', '#ff69b4', '#ffffff'];
@@ -231,68 +232,8 @@ export class AvatarScene extends Phaser.Scene {
     const { width } = this.cameras.main;
     const cx = width / 2;
 
-    // Draw both avatars side by side
-    this.drawCharacter(cx - 50, 420, this.avatars[0], this.currentAvatar === 1);
-    this.drawCharacter(cx + 50, 420, this.avatars[1], this.currentAvatar === 2);
-  }
-
-  private drawCharacter(x: number, y: number, config: AvatarConfig, selected: boolean): void {
-    const g = this.previewGraphics;
-
-    if (selected) {
-      g.lineStyle(2, 0x7c3aed);
-      g.strokeRect(x - 30, y - 40, 60, 100);
-    }
-
-    // Head (skin)
-    const skinColor = Phaser.Display.Color.HexStringToColor(SKIN_TONES[config.skin]).color;
-    g.fillStyle(skinColor);
-    g.fillCircle(x, y - 10, 14);
-
-    // Hair (varies by style)
-    const hairColor = Phaser.Display.Color.HexStringToColor(config.hairColor).color;
-    g.fillStyle(hairColor);
-    switch (config.hair) {
-      case 0: // Short
-        g.fillEllipse(x, y - 18, 28, 12);
-        break;
-      case 1: // Long
-        g.fillEllipse(x, y - 18, 30, 14);
-        g.fillRect(x - 14, y - 18, 28, 20); // hair hanging down
-        break;
-      case 2: // Curly
-        g.fillCircle(x - 8, y - 18, 8);
-        g.fillCircle(x + 8, y - 18, 8);
-        g.fillCircle(x, y - 22, 8);
-        break;
-      case 3: // Ponytail
-        g.fillEllipse(x, y - 18, 26, 12);
-        g.fillEllipse(x + 16, y - 10, 8, 16); // ponytail
-        break;
-      case 4: // Buzz
-        g.fillEllipse(x, y - 16, 26, 8);
-        break;
-    }
-
-    // Body (outfit)
-    g.fillStyle(OUTFIT_COLORS[config.outfit]);
-    g.fillRect(x - 12, y + 4, 24, 24);
-
-    // Legs
-    g.fillStyle(0x333366);
-    g.fillRect(x - 10, y + 28, 8, 8);
-    g.fillRect(x + 2, y + 28, 8, 8);
-
-    // Accessories
-    if (config.accessory === 'hat') {
-      g.fillStyle(0x8B4513);
-      g.fillRect(x - 14, y - 28, 28, 6); // brim
-      g.fillRect(x - 8, y - 38, 16, 12); // crown
-    } else if (config.accessory === 'glasses') {
-      g.lineStyle(2, 0x333333);
-      g.strokeCircle(x - 6, y - 10, 5);
-      g.strokeCircle(x + 6, y - 10, 5);
-      g.lineBetween(x - 1, y - 10, x + 1, y - 10); // bridge
-    }
+    // Draw both avatars side by side using the new renderer
+    drawCharacterPreview(this.previewGraphics, cx - 60, 430, this.avatars[0], this.currentAvatar === 1);
+    drawCharacterPreview(this.previewGraphics, cx + 60, 430, this.avatars[1], this.currentAvatar === 2);
   }
 }
