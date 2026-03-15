@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
-import { AvatarScene } from './scenes/AvatarScene';
+import { DressingRoomScene } from './scenes/DressingRoomScene';
 import { WorldScene } from './scenes/WorldScene';
 import { MemoryCard } from './scenes/checkpoints/MemoryCard';
 import { QuizGame } from './scenes/checkpoints/QuizGame';
@@ -16,7 +16,6 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 600,
   parent: document.body,
   backgroundColor: '#1a1a2e',
-  pixelArt: true,
   physics: {
     default: 'arcade',
     arcade: {
@@ -34,7 +33,7 @@ const config: Phaser.Types.Core.GameConfig = {
       capture: true,
     },
   },
-  scene: [BootScene, MenuScene, AvatarScene, WorldScene, MemoryCard, QuizGame, CatchGame, MatchGame, PuzzleGame, CookingGame],
+  scene: [BootScene, MenuScene, DressingRoomScene, WorldScene, MemoryCard, QuizGame, CatchGame, MatchGame, PuzzleGame, CookingGame],
 };
 
 new Phaser.Game(config);
