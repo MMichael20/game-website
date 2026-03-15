@@ -77,6 +77,7 @@ export class MemoryCard extends Phaser.Scene {
       const playBtn = this.add.text(cardX, cardY + 160, '[ Play Mini-Game! ]', {
         fontSize: '18px',
         color: '#7c3aed',
+        padding: { x: 16, y: 10 },
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       playBtn.on('pointerover', () => playBtn.setColor('#a78bfa'));
@@ -91,18 +92,22 @@ export class MemoryCard extends Phaser.Scene {
       });
     }
 
-    // Close button
-    const closeBtn = this.add.text(cardX + cardW / 2 - 20, cardY - cardH / 2 + 10, 'X', {
+    // Close button (44px+ touch target)
+    const closeBtn = this.add.text(cardX + cardW / 2 - 24, cardY - cardH / 2 + 24, 'X', {
       fontSize: '20px',
       color: '#ef4444',
+      backgroundColor: '#1e1b2e',
+      padding: { x: 10, y: 6 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     closeBtn.on('pointerdown', () => this.closeCard());
 
-    // Escape key to close
-    this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC).on('down', () => {
-      this.closeCard();
-    });
+    // Escape key to close (guard for keyboard-less devices)
+    if (this.input.keyboard) {
+      this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC).on('down', () => {
+        this.closeCard();
+      });
+    }
   }
 
   private getMiniGameSceneKey(type: string): string {

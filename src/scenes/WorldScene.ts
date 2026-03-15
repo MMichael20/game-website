@@ -5,8 +5,8 @@ import checkpointData from '../data/checkpoints.json';
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
   private partner!: Phaser.GameObjects.Sprite;
-  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
+  private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
+  private wasd: Record<string, Phaser.Input.Keyboard.Key> | null = null;
   private speed = 160;
   private checkpointZones: Phaser.GameObjects.Zone[] = [];
   private activeCheckpointId: string | null = null;
@@ -155,10 +155,10 @@ export class WorldScene extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(90000);
 
     const settingsBtn = this.add.text(this.cameras.main.width - 10, 10, '[ Settings ]', {
-      fontSize: '12px',
+      fontSize: '14px',
       color: '#94a3b8',
       backgroundColor: '#00000088',
-      padding: { x: 8, y: 6 },
+      padding: { x: 12, y: 10 },
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(90000).setInteractive({ useHandCursor: true });
 
     settingsBtn.on('pointerdown', () => {
@@ -168,11 +168,11 @@ export class WorldScene extends Phaser.Scene {
 
     // Fullscreen toggle (only if browser supports it)
     if (this.scale.fullscreen.available) {
-      const fsBtn = this.add.text(this.cameras.main.width - 10, 36, '[ Fullscreen ]', {
-        fontSize: '12px',
+      const fsBtn = this.add.text(this.cameras.main.width - 10, 44, '[ Fullscreen ]', {
+        fontSize: '14px',
         color: '#94a3b8',
         backgroundColor: '#00000088',
-        padding: { x: 8, y: 6 },
+        padding: { x: 12, y: 10 },
       }).setOrigin(1, 0).setScrollFactor(0).setDepth(90000).setInteractive({ useHandCursor: true });
 
       fsBtn.on('pointerdown', () => this.scale.toggleFullscreen());
@@ -189,18 +189,21 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private setupInput(): void {
-    this.cursors = this.input.keyboard!.createCursorKeys();
-    this.wasd = {
-      up: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      down: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-      left: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-      right: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-    };
-    this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E).on('down', () => {
-      if (this.activeCheckpointId) {
-        this.openMemoryCard(this.activeCheckpointId);
-      }
-    });
+    // Guard for keyboard-less devices
+    if (this.input.keyboard) {
+      this.cursors = this.input.keyboard.createCursorKeys();
+      this.wasd = {
+        up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+        down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+        left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+        right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+      };
+      this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E).on('down', () => {
+        if (this.activeCheckpointId) {
+          this.openMemoryCard(this.activeCheckpointId);
+        }
+      });
+    }
 
     // Tap-to-move
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -226,10 +229,10 @@ export class WorldScene extends Phaser.Scene {
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(0);
 
-    const up = this.cursors.up.isDown || this.wasd.up.isDown;
-    const down = this.cursors.down.isDown || this.wasd.down.isDown;
-    const left = this.cursors.left.isDown || this.wasd.left.isDown;
-    const right = this.cursors.right.isDown || this.wasd.right.isDown;
+    const up = (this.cursors?.up.isDown ?? false) || (this.wasd?.up.isDown ?? false);
+    const down = (this.cursors?.down.isDown ?? false) || (this.wasd?.down.isDown ?? false);
+    const left = (this.cursors?.left.isDown ?? false) || (this.wasd?.left.isDown ?? false);
+    const right = (this.cursors?.right.isDown ?? false) || (this.wasd?.right.isDown ?? false);
     const keyboardActive = up || down || left || right;
 
     if (keyboardActive) {

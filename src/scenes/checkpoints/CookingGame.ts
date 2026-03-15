@@ -48,6 +48,22 @@ export class CookingGame extends Phaser.Scene {
       fontSize: '22px', color: '#ffffff',
     }).setOrigin(0.5);
 
+    // Quit button
+    const quitBtn = this.add.text(width - 16, 10, 'X', {
+      fontSize: '18px',
+      color: '#ef4444',
+      backgroundColor: '#1e1b2e',
+      padding: { x: 12, y: 8 },
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).setDepth(999);
+
+    quitBtn.on('pointerdown', () => {
+      if (!this.gameOver) this.timerEvent.destroy();
+      const worldScene = this.scene.get('WorldScene') as any;
+      if (worldScene?.refreshUI) worldScene.refreshUI();
+      this.scene.stop();
+      this.scene.resume('WorldScene');
+    });
+
     // Timer
     this.timerText = this.add.text(width - 20, 20, `Time: ${this.timeLeft}s`, {
       fontSize: '16px', color: '#ef4444',
@@ -80,10 +96,10 @@ export class CookingGame extends Phaser.Scene {
         shelfY,
         item.replace(/-/g, ' '),
         {
-          fontSize: '13px',
+          fontSize: '14px',
           color: '#ffffff',
           backgroundColor: '#2a2a4a',
-          padding: { x: 8, y: 12 },
+          padding: { x: 14, y: 14 },
         }
       ).setOrigin(0.5).setInteractive({ useHandCursor: true });
 

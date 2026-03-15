@@ -61,6 +61,21 @@ export class MatchGame extends Phaser.Scene {
       fontSize: '14px', color: '#94a3b8',
     }).setOrigin(0.5);
 
+    // Quit button
+    const quitBtn = this.add.text(width - 16, 10, 'X', {
+      fontSize: '18px',
+      color: '#ef4444',
+      backgroundColor: '#1e1b2e',
+      padding: { x: 12, y: 8 },
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).setDepth(999);
+
+    quitBtn.on('pointerdown', () => {
+      const worldScene = this.scene.get('WorldScene') as any;
+      if (worldScene?.refreshUI) worldScene.refreshUI();
+      this.scene.stop();
+      this.scene.resume('WorldScene');
+    });
+
     // Grid layout
     const cols = 4;
     const rows = Math.ceil(items.length / cols);

@@ -42,11 +42,13 @@ export class AvatarScene extends Phaser.Scene {
     const tab1 = this.add.text(width / 2 - 80, 70, '[ Player 1 ]', {
       fontSize: '16px',
       color: '#7c3aed',
+      padding: { x: 10, y: 8 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     const tab2 = this.add.text(width / 2 + 80, 70, '[ Player 2 ]', {
       fontSize: '16px',
       color: '#666666',
+      padding: { x: 10, y: 8 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     tab1.on('pointerdown', () => {
@@ -118,11 +120,11 @@ export class AvatarScene extends Phaser.Scene {
     }));
 
     HAIR_STYLES.forEach((style, i) => {
-      const btn = addOption(this.add.text(60 + i * 70, startY + 25, style, {
-        fontSize: '12px',
+      const btn = addOption(this.add.text(60 + i * 80, startY + 25, style, {
+        fontSize: '14px',
         color: this.currentConfig.hair === i ? '#ffffff' : '#666666',
         backgroundColor: this.currentConfig.hair === i ? '#7c3aed' : '#2a2a4a',
-        padding: { x: 6, y: 4 },
+        padding: { x: 10, y: 8 },
       }).setInteractive({ useHandCursor: true }));
 
       btn.on('pointerdown', () => {
@@ -139,12 +141,12 @@ export class AvatarScene extends Phaser.Scene {
 
     HAIR_COLORS.forEach((color, i) => {
       const swatch = addOption(this.add.rectangle(
-        60 + i * 30, startY + 80, 22, 22,
+        60 + i * 44, startY + 80, 36, 36,
         Phaser.Display.Color.HexStringToColor(color).color
       ).setInteractive({ useHandCursor: true }));
 
       if (this.currentConfig.hairColor === color) {
-        addOption(this.add.rectangle(60 + i * 30, startY + 80, 26, 26)
+        addOption(this.add.rectangle(60 + i * 44, startY + 80, 40, 40)
           .setStrokeStyle(2, 0xffffff));
       }
 
@@ -162,12 +164,12 @@ export class AvatarScene extends Phaser.Scene {
 
     SKIN_TONES.forEach((color, i) => {
       const swatch = addOption(this.add.rectangle(
-        60 + i * 30, startY + 130, 22, 22,
+        60 + i * 44, startY + 130, 36, 36,
         Phaser.Display.Color.HexStringToColor(color).color
       ).setInteractive({ useHandCursor: true }));
 
       if (this.currentConfig.skin === i) {
-        addOption(this.add.rectangle(60 + i * 30, startY + 130, 26, 26)
+        addOption(this.add.rectangle(60 + i * 44, startY + 130, 40, 40)
           .setStrokeStyle(2, 0xffffff));
       }
 
@@ -185,11 +187,11 @@ export class AvatarScene extends Phaser.Scene {
 
     OUTFIT_COLORS.forEach((color, i) => {
       const swatch = addOption(this.add.rectangle(
-        60 + i * 30, startY + 185, 22, 22, color
+        60 + i * 44, startY + 185, 36, 36, color
       ).setInteractive({ useHandCursor: true }));
 
       if (this.currentConfig.outfit === i) {
-        addOption(this.add.rectangle(60 + i * 30, startY + 185, 26, 26)
+        addOption(this.add.rectangle(60 + i * 44, startY + 185, 40, 40)
           .setStrokeStyle(2, 0xffffff));
       }
 
@@ -207,11 +209,11 @@ export class AvatarScene extends Phaser.Scene {
 
     ACCESSORIES.forEach((acc, i) => {
       const label = acc ? acc.charAt(0).toUpperCase() + acc.slice(1) : 'None';
-      const btn = addOption(this.add.text(60 + i * 80, startY + 240, label, {
-        fontSize: '12px',
+      const btn = addOption(this.add.text(60 + i * 90, startY + 240, label, {
+        fontSize: '14px',
         color: this.currentConfig.accessory === acc ? '#ffffff' : '#666666',
         backgroundColor: this.currentConfig.accessory === acc ? '#7c3aed' : '#2a2a4a',
-        padding: { x: 6, y: 4 },
+        padding: { x: 10, y: 8 },
       }).setInteractive({ useHandCursor: true }));
 
       btn.on('pointerdown', () => {

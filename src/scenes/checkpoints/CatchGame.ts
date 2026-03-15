@@ -21,8 +21,9 @@ export class CatchGame extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private missText!: Phaser.GameObjects.Text;
   private spawnTimer!: Phaser.Time.TimerEvent;
-  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
   private gameOver = false;
+  private pointerX: number | null = null;
 
   constructor() {
     super({ key: 'CatchGame' });
@@ -34,6 +35,7 @@ export class CatchGame extends Phaser.Scene {
     this.score = 0;
     this.misses = 0;
     this.gameOver = false;
+    this.pointerX = null;
   }
 
   create(): void {
@@ -56,8 +58,36 @@ export class CatchGame extends Phaser.Scene {
       fontSize: '16px', color: '#ef4444',
     }).setScrollFactor(0);
 
-    // Input
-    this.cursors = this.input.keyboard!.createCursorKeys();
+    // Quit button
+    const quitBtn = this.add.text(width - 16, 10, 'X', {
+      fontSize: '18px',
+      color: '#ef4444',
+      backgroundColor: '#1e1b2e',
+      padding: { x: 12, y: 8 },
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).setDepth(999);
+
+    quitBtn.on('pointerdown', () => this.quitGame());
+
+    // Keyboard input (guard for keyboard-less devices)
+    if (this.input.keyboard) {
+      this.cursors = this.input.keyboard.createCursorKeys();
+    }
+
+    // Touch input — basket follows pointer X
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.isDown) {
+        this.pointerX = pointer.x;
+      }
+    });
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // Don't track pointer if hitting the quit button
+      const hitObjects = this.input.hitTestPointer(pointer);
+      if (hitObjects.length > 0) return;
+      this.pointerX = pointer.x;
+    });
+    this.input.on('pointerup', () => {
+      this.pointerX = null;
+    });
 
     // Spawn items
     this.spawnTimer = this.time.addEvent({
@@ -83,8 +113,19 @@ export class CatchGame extends Phaser.Scene {
     const body = this.basket.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
 
-    if (this.cursors.left.isDown) body.setVelocityX(-300);
-    else if (this.cursors.right.isDown) body.setVelocityX(300);
+    // Keyboard input
+    const keyLeft = this.cursors?.left.isDown ?? false;
+    const keyRight = this.cursors?.right.isDown ?? false;
+
+    if (keyLeft) body.setVelocityX(-300);
+    else if (keyRight) body.setVelocityX(300);
+    else if (this.pointerX !== null) {
+      // Touch input — move basket toward pointer X
+      const diff = this.pointerX - this.basket.x;
+      if (Math.abs(diff) > 4) {
+        body.setVelocityX(Math.sign(diff) * 300);
+      }
+    }
 
     // Check catches and misses
     const { height } = this.cameras.main;
@@ -107,6 +148,16 @@ export class CatchGame extends Phaser.Scene {
     });
   }
 
+  private quitGame(): void {
+    if (!this.gameOver) {
+      this.spawnTimer.destroy();
+    }
+    const worldScene = this.scene.get('WorldScene') as any;
+    if (worldScene?.refreshUI) worldScene.refreshUI();
+    this.scene.stop();
+    this.scene.resume('WorldScene');
+  }
+
   private endGame(): void {
     this.gameOver = true;
     this.spawnTimer.destroy();
@@ -122,6 +173,7 @@ export class CatchGame extends Phaser.Scene {
 
     const backBtn = this.add.text(width / 2, height / 2 + 30, '[ Back to Map ]', {
       fontSize: '18px', color: '#22c55e',
+      padding: { x: 16, y: 10 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     backBtn.on('pointerdown', () => {
