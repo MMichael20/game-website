@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { saveMiniGameScore } from '../../utils/storage';
+import { createPanel, createStyledButton, createStyledText, createCloseButton, createPillContainer, addFadeTransition, UI_COLORS } from '../../rendering/UIRenderer';
 
 interface CookingConfig {
   orders: Array<{ name: string; items: string[] }>;
@@ -18,8 +19,9 @@ export class CookingGame extends Phaser.Scene {
   private selectedItems: string[] = [];
   private score = 0;
   private timeLeft = 30;
-  private timerText!: Phaser.GameObjects.Text;
-  private scoreText!: Phaser.GameObjects.Text;
+  private timerPill!: { bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text };
+  private scorePill!: { bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text };
+  private orderPanel!: Phaser.GameObjects.Graphics;
   private orderText!: Phaser.GameObjects.Text;
   private selectedText!: Phaser.GameObjects.Text;
   private gameOver = false;
@@ -42,45 +44,60 @@ export class CookingGame extends Phaser.Scene {
   create(): void {
     const { width, height } = this.cameras.main;
 
-    this.add.rectangle(width / 2, height / 2, width, height, 0x1a1a2e);
+    // Background gradient
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x2e2a1a, 0x2e2a1a, 1);
+    bg.fillRect(0, 0, width, height);
 
-    this.add.text(width / 2, 20, 'Fill the Orders!', {
-      fontSize: '22px', color: '#ffffff',
+    // Styled title
+    createStyledText(this, width / 2, 20, 'Fill the Orders!', {
+      fontSize: '22px',
+      color: UI_COLORS.goldHex,
+      fontStyle: 'bold',
     }).setOrigin(0.5);
 
     // Quit button
-    const quitBtn = this.add.text(width - 16, 10, 'X', {
-      fontSize: '18px',
-      color: '#ef4444',
-      backgroundColor: '#1e1b2e',
-      padding: { x: 12, y: 8 },
-    }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).setDepth(999);
-
-    quitBtn.on('pointerdown', () => {
+    createCloseButton(this, width - 24, 24, () => {
       if (!this.gameOver) this.timerEvent.destroy();
       const worldScene = this.scene.get('WorldScene') as any;
       if (worldScene?.refreshUI) worldScene.refreshUI();
       this.scene.stop();
       this.scene.resume('WorldScene');
+    }).setDepth(999);
+
+    // Timer pill (starts green)
+    this.timerPill = createPillContainer(this, width - 80, 56, `Time: ${this.timeLeft}s`, {
+      color: UI_COLORS.success,
+      textColor: UI_COLORS.textHex,
+      fontSize: '14px',
     });
 
-    // Timer
-    this.timerText = this.add.text(width - 20, 20, `Time: ${this.timeLeft}s`, {
-      fontSize: '16px', color: '#ef4444',
-    }).setOrigin(1, 0);
-
-    this.scoreText = this.add.text(20, 20, `Orders: ${this.score}`, {
-      fontSize: '16px', color: '#22c55e',
+    // Score pill
+    this.scorePill = createPillContainer(this, 70, 56, `Orders: ${this.score}`, {
+      color: UI_COLORS.success,
+      textColor: UI_COLORS.textHex,
+      fontSize: '14px',
     });
 
-    // Current order display
-    this.orderText = this.add.text(width / 2, 70, '', {
-      fontSize: '16px', color: '#ffd700', align: 'center',
-    }).setOrigin(0.5);
+    // Order display panel
+    this.orderPanel = createPanel(this, width / 2 - 160, 75, 320, 60, {
+      color: UI_COLORS.darkPanel,
+      radius: 10,
+      shadow: false,
+      strokeColor: UI_COLORS.gold,
+      strokeWidth: 1,
+    });
+
+    this.orderText = createStyledText(this, width / 2, 95, '', {
+      fontSize: '14px',
+      color: UI_COLORS.goldHex,
+      align: 'center',
+    }).setOrigin(0.5, 0);
 
     // Selected items display
-    this.selectedText = this.add.text(width / 2, height - 120, 'Your tray: (empty)', {
-      fontSize: '14px', color: '#94a3b8',
+    this.selectedText = createStyledText(this, width / 2, height - 130, 'Your tray: (empty)', {
+      fontSize: '14px',
+      color: UI_COLORS.mutedHex,
     }).setOrigin(0.5);
 
     // Gather all unique items from all orders
@@ -88,38 +105,43 @@ export class CookingGame extends Phaser.Scene {
     this.config.orders.forEach((o) => o.items.forEach((item) => allItems.add(item)));
     const itemList = Array.from(allItems);
 
-    // Item shelf
+    // Item buttons using createStyledButton
     const shelfY = height / 2 + 40;
     itemList.forEach((item, i) => {
-      const btn = this.add.text(
-        width / 2 - ((itemList.length - 1) * 70) / 2 + i * 70,
+      const { container: itemBtn } = createStyledButton(
+        this,
+        width / 2 - ((itemList.length - 1) * 80) / 2 + i * 80,
         shelfY,
         item.replace(/-/g, ' '),
         {
-          fontSize: '14px',
-          color: '#ffffff',
-          backgroundColor: '#2a2a4a',
-          padding: { x: 14, y: 14 },
-        }
-      ).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-      btn.on('pointerover', () => btn.setBackgroundColor('#3a3a5a'));
-      btn.on('pointerout', () => btn.setBackgroundColor('#2a2a4a'));
-      btn.on('pointerdown', () => this.selectItem(item));
+          color: UI_COLORS.purple,
+          textColor: UI_COLORS.textHex,
+          fontSize: '13px',
+          paddingX: 12,
+          paddingY: 12,
+        },
+      );
+      itemBtn.on('pointerdown', () => this.selectItem(item));
     });
 
-    // Submit button
-    const submitBtn = this.add.text(width / 2, height - 60, '[ Submit Order ]', {
-      fontSize: '18px', color: '#7c3aed',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
+    // Submit button (styled)
+    const { container: submitBtn } = createStyledButton(this, width / 2 - 70, height - 70, 'Submit Order', {
+      color: UI_COLORS.purple,
+      textColor: UI_COLORS.textHex,
+      fontSize: '16px',
+      paddingX: 16,
+      paddingY: 10,
+    });
     submitBtn.on('pointerdown', () => this.submitOrder());
 
-    // Clear button
-    const clearBtn = this.add.text(width / 2, height - 30, '[ Clear ]', {
-      fontSize: '14px', color: '#ef4444',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
+    // Clear button (styled)
+    const { container: clearBtn } = createStyledButton(this, width / 2 + 70, height - 70, 'Clear', {
+      color: UI_COLORS.danger,
+      textColor: UI_COLORS.textHex,
+      fontSize: '14px',
+      paddingX: 16,
+      paddingY: 10,
+    });
     clearBtn.on('pointerdown', () => {
       this.selectedItems = [];
       this.selectedText.setText('Your tray: (empty)');
@@ -132,10 +154,34 @@ export class CookingGame extends Phaser.Scene {
       delay: 1000,
       callback: () => {
         this.timeLeft--;
-        this.timerText.setText(`Time: ${this.timeLeft}s`);
+        this.updateTimerPill();
         if (this.timeLeft <= 0) this.endGame();
       },
       loop: true,
+    });
+
+    addFadeTransition(this);
+  }
+
+  private updateTimerPill(): void {
+    const { width } = this.cameras.main;
+    const timerColor = this.timeLeft > 20 ? UI_COLORS.success : this.timeLeft > 10 ? 0xeab308 : UI_COLORS.danger;
+    this.timerPill.bg.destroy();
+    this.timerPill.label.destroy();
+    this.timerPill = createPillContainer(this, width - 80, 56, `Time: ${this.timeLeft}s`, {
+      color: timerColor,
+      textColor: UI_COLORS.textHex,
+      fontSize: '14px',
+    });
+  }
+
+  private updateScorePill(): void {
+    this.scorePill.bg.destroy();
+    this.scorePill.label.destroy();
+    this.scorePill = createPillContainer(this, 70, 56, `Orders: ${this.score}`, {
+      color: UI_COLORS.success,
+      textColor: UI_COLORS.textHex,
+      fontSize: '14px',
     });
   }
 
@@ -164,7 +210,7 @@ export class CookingGame extends Phaser.Scene {
 
     if (correct) {
       this.score++;
-      this.scoreText.setText(`Orders: ${this.score}`);
+      this.updateScorePill();
       this.currentOrderIndex++;
       this.showCurrentOrder();
     }
@@ -180,17 +226,28 @@ export class CookingGame extends Phaser.Scene {
 
     const { width, height } = this.cameras.main;
 
-    this.add.rectangle(width / 2, height / 2, 300, 200, 0x1e1b2e, 0.95)
-      .setStrokeStyle(2, 0x7c3aed).setDepth(200);
+    // Results panel
+    const panelW = 320;
+    const panelH = 220;
+    createPanel(this, width / 2 - panelW / 2, height / 2 - panelH / 2, panelW, panelH, {
+      color: UI_COLORS.darkPanel,
+      radius: 16,
+      shadow: true,
+      strokeColor: UI_COLORS.gold,
+      strokeWidth: 2,
+    }).setDepth(200);
 
-    this.add.text(width / 2, height / 2 - 40, `${this.score} orders filled!`, {
-      fontSize: '24px', color: '#ffd700',
+    createStyledText(this, width / 2, height / 2 - 40, `${this.score} orders filled!`, {
+      fontSize: '24px',
+      color: UI_COLORS.goldHex,
     }).setOrigin(0.5).setDepth(201);
 
-    const backBtn = this.add.text(width / 2, height / 2 + 30, '[ Back to Map ]', {
-      fontSize: '18px', color: '#22c55e',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(201);
-
+    const { container: backBtn } = createStyledButton(this, width / 2, height / 2 + 30, 'Back to Map', {
+      color: UI_COLORS.success,
+      textColor: UI_COLORS.textHex,
+      fontSize: '18px',
+    });
+    backBtn.setDepth(201);
     backBtn.on('pointerdown', () => {
       const worldScene = this.scene.get('WorldScene') as any;
       if (worldScene?.refreshUI) worldScene.refreshUI();

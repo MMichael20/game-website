@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { saveMiniGameScore } from '../../utils/storage';
+import { createPanel, createStyledButton, createStyledText, createCloseButton, createPillContainer, addFadeTransition, UI_COLORS } from '../../rendering/UIRenderer';
 
 interface MatchConfig {
   pairs: Array<{ a: string; b: string }>;
@@ -12,10 +13,10 @@ interface MatchData {
 
 export class MatchGame extends Phaser.Scene {
   private checkpointId!: string;
-  private cards: Array<{ text: string; pairIndex: number; revealed: boolean; matched: boolean; obj: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text }> = [];
+  private cards: Array<{ text: string; pairIndex: number; revealed: boolean; matched: boolean; bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text; hitArea: Phaser.GameObjects.Rectangle }> = [];
   private flipped: number[] = [];
   private moves = 0;
-  private movesText!: Phaser.GameObjects.Text;
+  private movesPill!: { bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text };
   private canFlip = true;
 
   constructor() {
@@ -51,34 +52,34 @@ export class MatchGame extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     const items = (this as any).__items as Array<{ text: string; pairIndex: number }>;
 
-    this.add.rectangle(width / 2, height / 2, width, height, 0x1a1a2e);
+    // Background gradient
+    const bgGfx = this.add.graphics();
+    bgGfx.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x2e1a2e, 0x2e1a2e, 1);
+    bgGfx.fillRect(0, 0, width, height);
 
-    this.add.text(width / 2, 20, 'Match the Pairs!', {
-      fontSize: '22px', color: '#ffffff',
+    createStyledText(this, width / 2, 20, 'Match the Pairs!', {
+      fontSize: '22px',
+      color: UI_COLORS.goldHex,
+      fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    this.movesText = this.add.text(width / 2, 50, 'Moves: 0', {
-      fontSize: '14px', color: '#94a3b8',
-    }).setOrigin(0.5);
+    // Moves pill
+    this.movesPill = createPillContainer(this, width / 2, 50, 'Moves: 0', {
+      color: UI_COLORS.purple,
+      textColor: UI_COLORS.textHex,
+      fontSize: '14px',
+    });
 
     // Quit button
-    const quitBtn = this.add.text(width - 16, 10, 'X', {
-      fontSize: '18px',
-      color: '#ef4444',
-      backgroundColor: '#1e1b2e',
-      padding: { x: 12, y: 8 },
-    }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).setDepth(999);
-
-    quitBtn.on('pointerdown', () => {
+    createCloseButton(this, width - 24, 24, () => {
       const worldScene = this.scene.get('WorldScene') as any;
       if (worldScene?.refreshUI) worldScene.refreshUI();
       this.scene.stop();
       this.scene.resume('WorldScene');
-    });
+    }).setDepth(999);
 
     // Grid layout
     const cols = 4;
-    const rows = Math.ceil(items.length / cols);
     const cardW = 140;
     const cardH = 60;
     const gap = 10;
@@ -91,12 +92,20 @@ export class MatchGame extends Phaser.Scene {
       const x = startX + col * (cardW + gap);
       const y = startY + row * (cardH + gap);
 
-      const card = this.add.rectangle(x, y, cardW, cardH, 0x2a2a4a)
-        .setStrokeStyle(1, 0x444466)
+      // Rounded rectangle card via Graphics
+      const cardBg = this.add.graphics();
+      cardBg.fillStyle(0x2a2a4a, 1);
+      cardBg.fillRoundedRect(x - cardW / 2, y - cardH / 2, cardW, cardH, 8);
+      cardBg.lineStyle(1, 0x444466, 1);
+      cardBg.strokeRoundedRect(x - cardW / 2, y - cardH / 2, cardW, cardH, 8);
+
+      // Invisible hit area for interaction
+      const hitArea = this.add.rectangle(x, y, cardW, cardH).setAlpha(0.001)
         .setInteractive({ useHandCursor: true });
 
       const label = this.add.text(x, y, '?', {
         fontSize: '14px', color: '#666',
+        fontFamily: 'Georgia, serif',
       }).setOrigin(0.5);
 
       const cardData = {
@@ -104,13 +113,16 @@ export class MatchGame extends Phaser.Scene {
         pairIndex: item.pairIndex,
         revealed: false,
         matched: false,
-        obj: card,
+        bg: cardBg,
         label,
+        hitArea,
       };
       this.cards.push(cardData);
 
-      card.on('pointerdown', () => this.flipCard(i));
+      hitArea.on('pointerdown', () => this.flipCard(i));
     });
+
+    addFadeTransition(this);
   }
 
   private flipCard(index: number): void {
@@ -118,61 +130,147 @@ export class MatchGame extends Phaser.Scene {
     const card = this.cards[index];
     if (card.revealed || card.matched) return;
 
+    const { width: cardW, height: cardH } = { width: 140, height: 60 };
+    const x = card.hitArea.x;
+    const y = card.hitArea.y;
+
+    // Flip animation: scale X 1 -> 0, swap content, 0 -> 1
     card.revealed = true;
-    card.obj.setFillStyle(0x3a3a5a);
-    card.label.setText(card.text).setColor('#ffffff');
     this.flipped.push(index);
 
-    if (this.flipped.length === 2) {
-      this.moves++;
-      this.movesText.setText(`Moves: ${this.moves}`);
-      this.canFlip = false;
+    this.tweens.add({
+      targets: [card.bg, card.label, card.hitArea],
+      scaleX: 0,
+      duration: 120,
+      ease: 'Sine.easeIn',
+      onComplete: () => {
+        // Redraw card face-up
+        card.bg.clear();
+        card.bg.fillStyle(0x3a3a5a, 1);
+        card.bg.fillRoundedRect(x - cardW / 2, y - cardH / 2, cardW, cardH, 8);
+        card.bg.lineStyle(1, 0x666688, 1);
+        card.bg.strokeRoundedRect(x - cardW / 2, y - cardH / 2, cardW, cardH, 8);
+        card.label.setText(card.text).setColor('#ffffff');
 
-      const [i1, i2] = this.flipped;
-      if (this.cards[i1].pairIndex === this.cards[i2].pairIndex) {
-        // Match!
-        this.cards[i1].matched = true;
-        this.cards[i2].matched = true;
-        this.cards[i1].obj.setFillStyle(0x22c55e);
-        this.cards[i2].obj.setFillStyle(0x22c55e);
+        this.tweens.add({
+          targets: [card.bg, card.label, card.hitArea],
+          scaleX: 1,
+          duration: 120,
+          ease: 'Sine.easeOut',
+          onComplete: () => {
+            if (this.flipped.length === 2) {
+              this.checkMatch();
+            }
+          },
+        });
+      },
+    });
+  }
+
+  private checkMatch(): void {
+    this.moves++;
+    this.updateMovesPill();
+    this.canFlip = false;
+
+    const [i1, i2] = this.flipped;
+    const cardW = 140;
+    const cardH = 60;
+
+    if (this.cards[i1].pairIndex === this.cards[i2].pairIndex) {
+      // Match! Green tint with glow
+      [i1, i2].forEach((idx) => {
+        const c = this.cards[idx];
+        const x = c.hitArea.x;
+        const y = c.hitArea.y;
+        c.matched = true;
+        c.bg.clear();
+        // Glow
+        c.bg.fillStyle(UI_COLORS.success, 0.2);
+        c.bg.fillRoundedRect(x - cardW / 2 - 3, y - cardH / 2 - 3, cardW + 6, cardH + 6, 10);
+        // Card
+        c.bg.fillStyle(UI_COLORS.success, 1);
+        c.bg.fillRoundedRect(x - cardW / 2, y - cardH / 2, cardW, cardH, 8);
+      });
+      this.flipped = [];
+      this.canFlip = true;
+
+      // Check win
+      if (this.cards.every((c) => c.matched)) {
+        this.time.delayedCall(500, () => this.showResults());
+      }
+    } else {
+      // No match — flip back
+      this.time.delayedCall(800, () => {
+        [i1, i2].forEach((idx) => {
+          const c = this.cards[idx];
+          const x = c.hitArea.x;
+          const y = c.hitArea.y;
+          c.revealed = false;
+
+          this.tweens.add({
+            targets: [c.bg, c.label, c.hitArea],
+            scaleX: 0,
+            duration: 120,
+            ease: 'Sine.easeIn',
+            onComplete: () => {
+              c.bg.clear();
+              c.bg.fillStyle(0x2a2a4a, 1);
+              c.bg.fillRoundedRect(x - cardW / 2, y - cardH / 2, cardW, cardH, 8);
+              c.bg.lineStyle(1, 0x444466, 1);
+              c.bg.strokeRoundedRect(x - cardW / 2, y - cardH / 2, cardW, cardH, 8);
+              c.label.setText('?').setColor('#666');
+
+              this.tweens.add({
+                targets: [c.bg, c.label, c.hitArea],
+                scaleX: 1,
+                duration: 120,
+                ease: 'Sine.easeOut',
+              });
+            },
+          });
+        });
         this.flipped = [];
         this.canFlip = true;
-
-        // Check win
-        if (this.cards.every((c) => c.matched)) {
-          this.time.delayedCall(500, () => this.showResults());
-        }
-      } else {
-        // No match — flip back
-        this.time.delayedCall(800, () => {
-          this.cards[i1].revealed = false;
-          this.cards[i2].revealed = false;
-          this.cards[i1].obj.setFillStyle(0x2a2a4a);
-          this.cards[i2].obj.setFillStyle(0x2a2a4a);
-          this.cards[i1].label.setText('?').setColor('#666');
-          this.cards[i2].label.setText('?').setColor('#666');
-          this.flipped = [];
-          this.canFlip = true;
-        });
-      }
+      });
     }
+  }
+
+  private updateMovesPill(): void {
+    this.movesPill.bg.destroy();
+    this.movesPill.label.destroy();
+    this.movesPill = createPillContainer(this, this.cameras.main.width / 2, 50, `Moves: ${this.moves}`, {
+      color: UI_COLORS.purple,
+      textColor: UI_COLORS.textHex,
+      fontSize: '14px',
+    });
   }
 
   private showResults(): void {
     const { width, height } = this.cameras.main;
     saveMiniGameScore(this.checkpointId, this.moves, true); // lower moves = better
 
-    this.add.rectangle(width / 2, height / 2, 300, 200, 0x1e1b2e, 0.95)
-      .setStrokeStyle(2, 0x7c3aed);
+    // Results panel
+    const panelW = 320;
+    const panelH = 220;
+    createPanel(this, width / 2 - panelW / 2, height / 2 - panelH / 2, panelW, panelH, {
+      color: UI_COLORS.darkPanel,
+      radius: 16,
+      shadow: true,
+      strokeColor: UI_COLORS.gold,
+      strokeWidth: 2,
+    }).setDepth(200);
 
-    this.add.text(width / 2, height / 2 - 40, `Done in ${this.moves} moves!`, {
-      fontSize: '24px', color: '#ffd700',
-    }).setOrigin(0.5);
+    createStyledText(this, width / 2, height / 2 - 40, `Done in ${this.moves} moves!`, {
+      fontSize: '24px',
+      color: UI_COLORS.goldHex,
+    }).setOrigin(0.5).setDepth(201);
 
-    const backBtn = this.add.text(width / 2, height / 2 + 30, '[ Back to Map ]', {
-      fontSize: '18px', color: '#22c55e',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
+    const { container: backBtn } = createStyledButton(this, width / 2, height / 2 + 30, 'Back to Map', {
+      color: UI_COLORS.success,
+      textColor: UI_COLORS.textHex,
+      fontSize: '18px',
+    });
+    backBtn.setDepth(201);
     backBtn.on('pointerdown', () => {
       const worldScene = this.scene.get('WorldScene') as any;
       if (worldScene?.refreshUI) worldScene.refreshUI();

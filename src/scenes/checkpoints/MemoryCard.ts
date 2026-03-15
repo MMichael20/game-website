@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { markCheckpointVisited, loadGameState } from '../../utils/storage';
 import checkpointData from '../../data/checkpoints.json';
+import { createPanel, createStyledButton, createStyledText, createCloseButton, addFadeTransition, UI_COLORS } from '../../rendering/UIRenderer';
 
 interface MemoryCardData {
   checkpointId: string;
@@ -29,60 +30,93 @@ export class MemoryCard extends Phaser.Scene {
     markCheckpointVisited(this.checkpointId);
 
     // Dim overlay
-    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
+    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6);
     overlay.setInteractive(); // Block clicks through
 
-    // Card background
+    // Card dimensions
     const cardW = 420;
     const cardH = 480;
     const cardX = width / 2;
     const cardY = height / 2;
 
-    this.add.rectangle(cardX, cardY, cardW, cardH, 0x1e1b2e)
-      .setStrokeStyle(2, 0x7c3aed);
+    // Container for entry animation (all card elements positioned relative to 0,0)
+    const cardContainer = this.add.container(cardX, cardY);
+
+    // Use createPanel for the card background
+    const panel = createPanel(this, -cardW / 2, -cardH / 2, cardW, cardH, {
+      color: UI_COLORS.cream,
+      radius: 16,
+      shadow: true,
+      strokeColor: UI_COLORS.gold,
+      strokeWidth: 2,
+    });
+    cardContainer.add(panel);
+
+    // Ornate corner decorations
+    const corners = this.add.graphics();
+    corners.lineStyle(2, UI_COLORS.gold, 0.6);
+    const cx = -cardW / 2, cy = -cardH / 2;
+    const cLen = 20;
+    // Top-left
+    corners.moveTo(cx + 8, cy + 8); corners.lineTo(cx + 8, cy + 8 + cLen);
+    corners.moveTo(cx + 8, cy + 8); corners.lineTo(cx + 8 + cLen, cy + 8);
+    // Top-right
+    corners.moveTo(cardW / 2 - 8, cy + 8); corners.lineTo(cardW / 2 - 8, cy + 8 + cLen);
+    corners.moveTo(cardW / 2 - 8, cy + 8); corners.lineTo(cardW / 2 - 8 - cLen, cy + 8);
+    // Bottom-left
+    corners.moveTo(cx + 8, cardH / 2 - 8); corners.lineTo(cx + 8, cardH / 2 - 8 - cLen);
+    corners.moveTo(cx + 8, cardH / 2 - 8); corners.lineTo(cx + 8 + cLen, cardH / 2 - 8);
+    // Bottom-right
+    corners.moveTo(cardW / 2 - 8, cardH / 2 - 8); corners.lineTo(cardW / 2 - 8, cardH / 2 - 8 - cLen);
+    corners.moveTo(cardW / 2 - 8, cardH / 2 - 8); corners.lineTo(cardW / 2 - 8 - cLen, cardH / 2 - 8);
+    corners.strokePath();
+    cardContainer.add(corners);
 
     // Photo (placeholder for now)
     const photoKey = this.textures.exists(cp.memory.photo)
       ? cp.memory.photo
       : 'placeholder-photo';
-    const photo = this.add.image(cardX, cardY - 100, photoKey);
+    const photo = this.add.image(0, -100, photoKey);
     photo.setDisplaySize(380, 180);
+    cardContainer.add(photo);
 
-    // Location name
-    this.add.text(cardX, cardY + 10, cp.name, {
+    // Location name in gold
+    const locationText = createStyledText(this, 0, 10, cp.name, {
       fontSize: '22px',
-      color: '#ffffff',
-      fontFamily: 'Georgia, serif',
+      color: UI_COLORS.goldHex,
+      fontStyle: 'bold',
     }).setOrigin(0.5);
+    cardContainer.add(locationText);
 
-    // Message
-    this.add.text(cardX, cardY + 50, `"${cp.memory.message}"`, {
+    // Message in muted italic
+    const messageText = createStyledText(this, 0, 50, `"${cp.memory.message}"`, {
       fontSize: '14px',
-      color: '#94a3b8',
+      color: UI_COLORS.mutedHex,
       fontStyle: 'italic',
       wordWrap: { width: 360 },
       align: 'center',
     }).setOrigin(0.5, 0);
+    cardContainer.add(messageText);
 
     // Date
     if (cp.memory.date) {
-      this.add.text(cardX, cardY + 110, cp.memory.date, {
+      const dateText = createStyledText(this, 0, 110, cp.memory.date, {
         fontSize: '12px',
         color: '#64748b',
       }).setOrigin(0.5);
+      cardContainer.add(dateText);
     }
 
     // Mini-game button (if available)
     if (cp.miniGame) {
-      const playBtn = this.add.text(cardX, cardY + 160, '[ Play Mini-Game! ]', {
+      const { container: playBtnContainer } = createStyledButton(this, 0, 160, 'Play Mini-Game!', {
+        color: UI_COLORS.purple,
+        textColor: UI_COLORS.textHex,
         fontSize: '18px',
-        color: '#7c3aed',
-        padding: { x: 16, y: 10 },
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-      playBtn.on('pointerover', () => playBtn.setColor('#a78bfa'));
-      playBtn.on('pointerout', () => playBtn.setColor('#7c3aed'));
-      playBtn.on('pointerdown', () => {
+        paddingX: 24,
+        paddingY: 12,
+      });
+      playBtnContainer.on('pointerdown', () => {
         const sceneKey = this.getMiniGameSceneKey(cp.miniGame!.type);
         this.scene.stop(); // Stop MemoryCard overlay
         this.scene.launch(sceneKey, { // Launch mini-game (WorldScene stays paused underneath)
@@ -90,17 +124,21 @@ export class MemoryCard extends Phaser.Scene {
           config: cp.miniGame!.config,
         });
       });
+      cardContainer.add(playBtnContainer);
     }
 
-    // Close button (44px+ touch target)
-    const closeBtn = this.add.text(cardX + cardW / 2 - 24, cardY - cardH / 2 + 24, 'X', {
-      fontSize: '20px',
-      color: '#ef4444',
-      backgroundColor: '#1e1b2e',
-      padding: { x: 10, y: 6 },
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    // Close button using createCloseButton
+    const closeBtn = createCloseButton(this, cardW / 2 - 24, -cardH / 2 + 24, () => this.closeCard());
+    cardContainer.add(closeBtn);
 
-    closeBtn.on('pointerdown', () => this.closeCard());
+    // Entry animation — scale in with bounce
+    cardContainer.setScale(0);
+    this.tweens.add({
+      targets: cardContainer,
+      scale: 1,
+      duration: 400,
+      ease: 'Back.easeOut',
+    });
 
     // Escape key to close (guard for keyboard-less devices)
     if (this.input.keyboard) {
