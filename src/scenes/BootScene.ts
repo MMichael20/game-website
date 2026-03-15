@@ -36,7 +36,7 @@ export class BootScene extends Phaser.Scene {
 
   private generatePlaceholderTextures(): void {
     // Grass tile
-    const grass = this.make.graphics({ add: false });
+    const grass = this.make.graphics({}, false);
     grass.fillStyle(0x4a7c3f).fillRect(0, 0, 32, 32);
     grass.fillStyle(0x3d6b35).fillRect(4, 4, 4, 4);
     grass.fillStyle(0x3d6b35).fillRect(20, 14, 4, 4);
@@ -45,13 +45,13 @@ export class BootScene extends Phaser.Scene {
     grass.destroy();
 
     // Dirt tile
-    const dirt = this.make.graphics({ add: false });
+    const dirt = this.make.graphics({}, false);
     dirt.fillStyle(0x8b7355).fillRect(0, 0, 32, 32);
     dirt.generateTexture('dirt-tile', 32, 32);
     dirt.destroy();
 
     // Building placeholder
-    const building = this.make.graphics({ add: false });
+    const building = this.make.graphics({}, false);
     building.fillStyle(0x888888).fillRect(0, 0, 64, 64);
     building.fillStyle(0x666666).fillRect(0, 0, 64, 8);
     building.fillStyle(0xaaaa55).fillRect(24, 40, 16, 24);
@@ -59,14 +59,14 @@ export class BootScene extends Phaser.Scene {
     building.destroy();
 
     // Tree placeholder
-    const tree = this.make.graphics({ add: false });
+    const tree = this.make.graphics({}, false);
     tree.fillStyle(0x8b6914).fillRect(12, 24, 8, 16);
     tree.fillStyle(0x2d5a1b).fillCircle(16, 16, 14);
     tree.generateTexture('tree', 32, 40);
     tree.destroy();
 
     // Character placeholder (48x48, simple body)
-    const charGfx = this.make.graphics({ add: false });
+    const charGfx = this.make.graphics({}, false);
     charGfx.fillStyle(0xffcc99).fillCircle(24, 12, 10); // head
     charGfx.fillStyle(0x4488cc).fillRect(14, 22, 20, 20); // body
     charGfx.fillStyle(0x333366).fillRect(14, 42, 8, 6); // left leg
@@ -75,14 +75,14 @@ export class BootScene extends Phaser.Scene {
     charGfx.destroy();
 
     // Checkpoint glow
-    const glow = this.make.graphics({ add: false });
+    const glow = this.make.graphics({}, false);
     glow.fillStyle(0xffd700, 0.3).fillCircle(32, 32, 32);
     glow.fillStyle(0xffd700, 0.6).fillCircle(32, 32, 16);
     glow.generateTexture('checkpoint-glow', 64, 64);
     glow.destroy();
 
     // Checkmark badge
-    const check = this.make.graphics({ add: false });
+    const check = this.make.graphics({}, false);
     check.fillStyle(0x22c55e).fillCircle(8, 8, 8);
     check.lineStyle(2, 0xffffff);
     check.beginPath();
@@ -94,7 +94,7 @@ export class BootScene extends Phaser.Scene {
     check.destroy();
 
     // Photo placeholder
-    const photo = this.make.graphics({ add: false });
+    const photo = this.make.graphics({}, false);
     const gradient = photo;
     gradient.fillGradientStyle(0x667eea, 0x764ba2, 0x667eea, 0x764ba2);
     gradient.fillRect(0, 0, 600, 400);

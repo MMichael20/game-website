@@ -236,13 +236,15 @@ export class WorldScene extends Phaser.Scene {
     let foundCheckpoint: string | null = null;
 
     this.checkpointZones.forEach((zone) => {
-      const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
-      const zoneBody = zone.body as Phaser.Physics.Arcade.StaticBody;
+      const playerBounds = this.player.getBounds();
+      const zoneBounds = new Phaser.Geom.Rectangle(
+        zone.x - zone.width / 2,
+        zone.y - zone.height / 2,
+        zone.width,
+        zone.height
+      );
 
-      if (Phaser.Geom.Intersects.RectangleToRectangle(
-        playerBody.getBounds(new Phaser.Geom.Rectangle()),
-        zoneBody.getBounds(new Phaser.Geom.Rectangle())
-      )) {
+      if (Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, zoneBounds)) {
         foundCheckpoint = (zone as any).checkpointId;
       }
     });

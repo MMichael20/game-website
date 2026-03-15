@@ -90,12 +90,9 @@ export class CatchGame extends Phaser.Scene {
     const { height } = this.cameras.main;
     this.children.list.forEach((child) => {
       if (child instanceof Phaser.GameObjects.Arc && child.body) {
-        const itemBody = child.body as Phaser.Physics.Arcade.Body;
-        const basketBody = this.basket.body as Phaser.Physics.Arcade.Body;
-
         if (Phaser.Geom.Intersects.RectangleToRectangle(
-          itemBody.getBounds(new Phaser.Geom.Rectangle()),
-          basketBody.getBounds(new Phaser.Geom.Rectangle())
+          child.getBounds(),
+          this.basket.getBounds()
         )) {
           this.score++;
           this.scoreText.setText(`Caught: ${this.score}`);
