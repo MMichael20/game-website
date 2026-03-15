@@ -15,6 +15,7 @@ export class WorldScene extends Phaser.Scene {
   private progressText!: Phaser.GameObjects.Text;
   private checkmarkSprites: Map<string, Phaser.GameObjects.Image> = new Map();
   private completionShown = false;
+  private moveTarget: Phaser.Math.Vector2 | null = null;
 
   constructor() {
     super({ key: 'WorldScene' });
@@ -129,12 +130,19 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private createUI(): void {
-    this.promptText = this.add.text(0, 0, 'Press E to enter', {
-      fontSize: '12px',
+    this.promptText = this.add.text(0, 0, 'Tap here to enter', {
+      fontSize: '14px',
       color: '#ffd700',
-      backgroundColor: '#000000aa',
-      padding: { x: 6, y: 3 },
+      backgroundColor: '#000000cc',
+      padding: { x: 10, y: 6 },
     }).setOrigin(0.5).setVisible(false).setDepth(99999);
+
+    // Mobile checkpoint interaction — tap the prompt to enter
+    this.promptText.on('pointerdown', () => {
+      if (this.activeCheckpointId) {
+        this.openMemoryCard(this.activeCheckpointId);
+      }
+    });
 
     const state = loadGameState();
     const total = checkpointData.checkpoints.length;
@@ -150,13 +158,28 @@ export class WorldScene extends Phaser.Scene {
       fontSize: '12px',
       color: '#94a3b8',
       backgroundColor: '#00000088',
-      padding: { x: 6, y: 3 },
+      padding: { x: 8, y: 6 },
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(90000).setInteractive({ useHandCursor: true });
 
     settingsBtn.on('pointerdown', () => {
       this.scene.pause();
       this.scene.launch('AvatarScene', { fromWorld: true });
     });
+
+    // Fullscreen toggle (only if browser supports it)
+    if (this.scale.fullscreen.available) {
+      const fsBtn = this.add.text(this.cameras.main.width - 10, 36, '[ Fullscreen ]', {
+        fontSize: '12px',
+        color: '#94a3b8',
+        backgroundColor: '#00000088',
+        padding: { x: 8, y: 6 },
+      }).setOrigin(1, 0).setScrollFactor(0).setDepth(90000).setInteractive({ useHandCursor: true });
+
+      fsBtn.on('pointerdown', () => this.scale.toggleFullscreen());
+
+      this.scale.on('enterfullscreen', () => fsBtn.setText('[ Exit FS ]'));
+      this.scale.on('leavefullscreen', () => fsBtn.setText('[ Fullscreen ]'));
+    }
   }
 
   private setupCamera(): void {
@@ -178,6 +201,18 @@ export class WorldScene extends Phaser.Scene {
         this.openMemoryCard(this.activeCheckpointId);
       }
     });
+
+    // Tap-to-move
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // Skip if the tap hit an interactive UI element
+      const hitObjects = this.input.hitTestPointer(pointer);
+      if (hitObjects.length > 0) return;
+
+      const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      const clampedX = Phaser.Math.Clamp(worldPoint.x, 0, 40 * 32);
+      const clampedY = Phaser.Math.Clamp(worldPoint.y, 0, 30 * 32);
+      this.moveTarget = new Phaser.Math.Vector2(clampedX, clampedY);
+    });
   }
 
   update(_time: number, delta: number): void {
@@ -195,15 +230,42 @@ export class WorldScene extends Phaser.Scene {
     const down = this.cursors.down.isDown || this.wasd.down.isDown;
     const left = this.cursors.left.isDown || this.wasd.left.isDown;
     const right = this.cursors.right.isDown || this.wasd.right.isDown;
+    const keyboardActive = up || down || left || right;
 
-    if (left) body.setVelocityX(-this.speed);
-    else if (right) body.setVelocityX(this.speed);
+    if (keyboardActive) {
+      // Keyboard takes priority — cancel any tap target
+      this.moveTarget = null;
 
-    if (up) body.setVelocityY(-this.speed);
-    else if (down) body.setVelocityY(this.speed);
+      if (left) body.setVelocityX(-this.speed);
+      else if (right) body.setVelocityX(this.speed);
 
-    if (body.velocity.x !== 0 && body.velocity.y !== 0) {
-      body.velocity.normalize().scale(this.speed);
+      if (up) body.setVelocityY(-this.speed);
+      else if (down) body.setVelocityY(this.speed);
+
+      if (body.velocity.x !== 0 && body.velocity.y !== 0) {
+        body.velocity.normalize().scale(this.speed);
+      }
+    } else if (this.moveTarget) {
+      // Tap-to-move
+      const dist = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y,
+        this.moveTarget.x, this.moveTarget.y
+      );
+
+      if (dist <= 4) {
+        // Arrived — snap and stop
+        this.player.setPosition(this.moveTarget.x, this.moveTarget.y);
+        this.moveTarget = null;
+      } else {
+        const angle = Phaser.Math.Angle.Between(
+          this.player.x, this.player.y,
+          this.moveTarget.x, this.moveTarget.y
+        );
+        body.setVelocity(
+          Math.cos(angle) * this.speed,
+          Math.sin(angle) * this.speed
+        );
+      }
     }
 
     if (body.velocity.x !== 0 || body.velocity.y !== 0) {
@@ -253,9 +315,11 @@ export class WorldScene extends Phaser.Scene {
 
     if (foundCheckpoint) {
       this.promptText.setVisible(true);
+      this.promptText.setInteractive({ useHandCursor: true });
       this.promptText.setPosition(this.player.x, this.player.y - 40);
     } else {
       this.promptText.setVisible(false);
+      this.promptText.disableInteractive();
     }
   }
 

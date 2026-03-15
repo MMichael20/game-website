@@ -27,6 +27,12 @@ const config: Phaser.Types.Core.GameConfig = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    fullscreenTarget: document.body,
+  },
+  input: {
+    touch: {
+      capture: true,
+    },
   },
   scene: [BootScene, MenuScene, AvatarScene, WorldScene, MemoryCard, QuizGame, CatchGame, MatchGame, PuzzleGame, CookingGame],
 };
