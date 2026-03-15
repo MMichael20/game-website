@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
+import { AvatarScene } from './scenes/AvatarScene';
 import { WorldScene } from './scenes/WorldScene';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -21,7 +22,7 @@ const config: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, MenuScene, WorldScene],
+  scene: [BootScene, MenuScene, AvatarScene, WorldScene],
 };
 
 new Phaser.Game(config);
