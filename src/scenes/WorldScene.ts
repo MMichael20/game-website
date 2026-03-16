@@ -318,7 +318,11 @@ export class WorldScene extends Phaser.Scene {
       if (this.fsBtnContainer) {
         this.fsBtnContainer.setPosition(gameSize.width - 70, 54);
       }
-      const zoom = Phaser.Math.Clamp(Math.min(gameSize.width / 533, gameSize.height / 400), 0.7, 3);
+      const mapW = MAP_WIDTH * TILE_SIZE;
+      const mapH = MAP_HEIGHT * TILE_SIZE;
+      const minZoomForMap = Math.max(gameSize.width / mapW, gameSize.height / mapH);
+      const targetZoom = Math.min(gameSize.width / 533, gameSize.height / 400);
+      const zoom = Phaser.Math.Clamp(Math.max(targetZoom, minZoomForMap), 0.7, 3);
       this.cameras.main.setZoom(zoom);
     });
   }
@@ -326,9 +330,13 @@ export class WorldScene extends Phaser.Scene {
   private setupCamera(): void {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
-    // Target: ~533×400 game units visible (matches original 800×600 FIT at 1.5x zoom)
+    // Target: ~533×400 game units visible, but never zoom out beyond the map
     const { width, height } = this.cameras.main;
-    const zoom = Phaser.Math.Clamp(Math.min(width / 533, height / 400), 0.7, 3);
+    const mapW = MAP_WIDTH * TILE_SIZE;
+    const mapH = MAP_HEIGHT * TILE_SIZE;
+    const minZoomForMap = Math.max(width / mapW, height / mapH);
+    const targetZoom = Math.min(width / 533, height / 400);
+    const zoom = Phaser.Math.Clamp(Math.max(targetZoom, minZoomForMap), 0.7, 3);
     this.cameras.main.setZoom(zoom);
   }
 
