@@ -121,3 +121,29 @@
   color: #ff7043;
   background: rgba(255, 112, 67, 0.15);
 }
+
+/* ========== Phone overrides ========== */
+@media (max-width: 480px) {
+  .quiz-overlay {
+    bottom: max(8%, calc(5% + env(safe-area-inset-bottom)));
+    padding: 14px;
+  }
+
+  .minigame-overlay {
+    padding: max(12px, env(safe-area-inset-top, 12px)) 12px 12px;
+  }
+}
+
+/* ========== Landscape phone ========== */
+@media (max-height: 440px) and (orientation: landscape) {
+  .quiz-overlay {
+    max-width: 70vw;
+    padding: 12px;
+    bottom: 5%;
+  }
+
+  .btn--quiz {
+    padding: 6px 10px;
+    min-height: 40px;
+  }
+}

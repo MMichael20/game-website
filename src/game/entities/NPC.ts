@@ -1,11 +1,13 @@
 // src/game/entities/NPC.ts
 import Phaser from 'phaser';
 import { NPCDef, tileToWorld } from '../data/mapLayout';
+import {
+  TILE_SIZE, FACING_OFFSETS, TRIGGER_INDICATOR_COLOR, TRIGGER_INDICATOR_ALPHA,
+} from '../../utils/constants';
 
 type NPCState = 'idle' | 'walking' | 'sitting';
 
 const DEFAULT_NPC_SPEED = 40;
-const DEFAULT_INTERACTION_RADIUS = 48;
 
 export class NPC {
   public sprite: Phaser.GameObjects.Sprite;
@@ -18,24 +20,17 @@ export class NPC {
     sceneData?: any;
   };
 
+  // Trigger zone (only for interactable non-walking NPCs)
+  public readonly facingDirection: 'up' | 'down' | 'left' | 'right';
+  public readonly triggerTile: { tileX: number; tileY: number } | null = null;
+  public triggerIndicator: Phaser.GameObjects.Rectangle | null = null;
+
   private state: NPCState;
   private walkPath: Array<{ x: number; y: number }>;
   private currentPathIndex = 0;
   private targetPos: { x: number; y: number } | null = null;
   private speed: number;
-  private interactionRadius: number;
-  private _inRange = false;
-  private _currentDistance = Infinity;
-  private promptText: Phaser.GameObjects.Text | null = null;
   private scene: Phaser.Scene;
-
-  get inRange(): boolean {
-    return this._inRange;
-  }
-
-  get currentDistance(): number {
-    return this._currentDistance;
-  }
 
   constructor(scene: Phaser.Scene, def: NPCDef) {
     this.scene = scene;
@@ -43,7 +38,7 @@ export class NPC {
     this.interactable = def.interactable ?? false;
     this.onInteract = def.onInteract;
     this.interactionData = def.interactionData;
-    this.interactionRadius = def.interactionRadius ?? DEFAULT_INTERACTION_RADIUS;
+    this.facingDirection = def.facingDirection ?? 'down';
 
     const worldPos = tileToWorld(def.tileX, def.tileY);
     this.sprite = scene.add.sprite(worldPos.x, worldPos.y, def.texture ?? 'npc-default');
@@ -52,6 +47,24 @@ export class NPC {
     this.walkPath = def.walkPath ?? [];
     this.speed = def.speed ?? DEFAULT_NPC_SPEED;
     this.state = def.behavior === 'walk' ? 'walking' : def.behavior === 'sit' ? 'sitting' : 'idle';
+
+    // Compute trigger tile for interactable non-walking NPCs
+    if (this.interactable && this.state !== 'walking') {
+      const offset = FACING_OFFSETS[this.facingDirection];
+      this.triggerTile = {
+        tileX: def.tileX + offset.dx,
+        tileY: def.tileY + offset.dy,
+      };
+
+      // Create subtle ground indicator on trigger tile
+      const triggerWorldPos = tileToWorld(this.triggerTile.tileX, this.triggerTile.tileY);
+      this.triggerIndicator = scene.add.rectangle(
+        triggerWorldPos.x, triggerWorldPos.y,
+        TILE_SIZE - 4, TILE_SIZE - 4,
+        TRIGGER_INDICATOR_COLOR, TRIGGER_INDICATOR_ALPHA,
+      );
+      this.triggerIndicator.setDepth(0);
+    }
 
     if (this.state === 'walking' && this.walkPath.length > 1) {
       this.currentPathIndex = 0;
@@ -65,47 +78,7 @@ export class NPC {
     this.targetPos = tileToWorld(tile.x, tile.y);
   }
 
-  checkProximity(playerX: number, playerY: number): boolean {
-    if (!this.interactable) {
-      this._inRange = false;
-      this._currentDistance = Infinity;
-      return false;
-    }
-
-    const dx = this.sprite.x - playerX;
-    const dy = this.sprite.y - playerY;
-    this._currentDistance = Math.sqrt(dx * dx + dy * dy);
-    this._inRange = this._currentDistance <= this.interactionRadius;
-
-    if (this._inRange) {
-      if (!this.promptText) {
-        this.promptText = this.scene.add.text(
-          this.sprite.x,
-          this.sprite.y - 20,
-          'Tap',
-          {
-            fontSize: '10px',
-            color: '#ffffff',
-            backgroundColor: '#00000088',
-            padding: { x: 3, y: 2 },
-          },
-        );
-        this.promptText.setOrigin(0.5, 1);
-        this.promptText.setDepth(100);
-      }
-    } else if (this.promptText) {
-      this.promptText.destroy();
-      this.promptText = null;
-    }
-
-    return this._inRange;
-  }
-
   update(delta: number): void {
-    if (this.promptText) {
-      this.promptText.setPosition(this.sprite.x, this.sprite.y - 20);
-    }
-
     if (this.state !== 'walking' || !this.targetPos) return;
 
     const dx = this.targetPos.x - this.sprite.x;
@@ -115,7 +88,6 @@ export class NPC {
     if (dist < 4) {
       this.sprite.x = this.targetPos.x;
       this.sprite.y = this.targetPos.y;
-      // Brief pause then next target
       this.sprite.scene.time.delayedCall(1000, () => {
         this.setNextTarget();
       });
@@ -129,9 +101,9 @@ export class NPC {
   }
 
   destroy(): void {
-    if (this.promptText) {
-      this.promptText.destroy();
-      this.promptText = null;
+    if (this.triggerIndicator) {
+      this.triggerIndicator.destroy();
+      this.triggerIndicator = null;
     }
     this.sprite.destroy();
   }

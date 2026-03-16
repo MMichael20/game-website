@@ -11,9 +11,11 @@ export const GAME_HEIGHT = 600;
 // Camera zoom per device class — tunable starting values
 export function getDeviceZoom(): number {
   const w = window.innerWidth;
-  if (w < 768) return 1.5;   // phone
-  if (w < 1024) return 1.75; // tablet
-  return 2;                   // desktop
+  const h = window.innerHeight;
+  const isLandscape = w > h;
+  if (w < 768) return isLandscape ? 2 : 2.5;   // phone
+  if (w < 1024) return isLandscape ? 1.75 : 2;  // tablet
+  return 2;                                       // desktop
 }
 
 export const DEFAULT_SPAWN = { x: 20, y: 16 }; // center of map, in tile coords
@@ -28,9 +30,6 @@ export const OUTFIT_NAMES = [
 
 export const OUTFIT_COUNT = OUTFIT_NAMES.length;
 
-// Interior map constants
-export const INTERIOR_ZOOM = 2.5;
-
 export const enum InteriorTileType {
   Wood = 0,
   Carpet = 1,
@@ -39,3 +38,17 @@ export const enum InteriorTileType {
   DoorFrame = 4,
   CarpetBeige = 5,
 }
+
+// NPC trigger zone constants
+export const DWELL_TIME_MS = 1000;
+export const DWELL_COOLDOWN_MS = 2000;
+export const TRIGGER_INDICATOR_ALPHA = 0.25;
+export const TRIGGER_INDICATOR_ACTIVE_ALPHA = 0.6;
+export const TRIGGER_INDICATOR_COLOR = 0xffff00;
+
+export const FACING_OFFSETS: Record<string, { dx: number; dy: number }> = {
+  up:    { dx: 0, dy: -1 },
+  down:  { dx: 0, dy:  1 },
+  left:  { dx: -1, dy: 0 },
+  right: { dx:  1, dy: 0 },
+};

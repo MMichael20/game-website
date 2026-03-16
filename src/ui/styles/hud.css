@@ -125,3 +125,71 @@
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* ========== Skip Cutscene Button ========== */
+.skip-cutscene {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(26, 26, 46, 0.85);
+  border: 1px solid #d4a574;
+  border-radius: 4px;
+  padding: 8px 16px;
+  color: #fdf6e3;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  z-index: 200;
+  pointer-events: auto;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.skip-cutscene:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.4);
+}
+.skip-cutscene:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* ========== Phone overrides ========== */
+@media (max-width: 480px) {
+  .hud__settings-btn {
+    top: max(8px, env(safe-area-inset-top, 8px));
+    right: max(8px, env(safe-area-inset-right, 8px));
+  }
+
+  .interaction-prompt {
+    bottom: max(70px, calc(60px + env(safe-area-inset-bottom)));
+    font-size: 12px;
+    padding: 10px 18px;
+  }
+
+  .sign-tooltip {
+    font-size: 11px;
+    padding: 8px 14px;
+  }
+}
+
+/* ========== Landscape phone ========== */
+@media (max-height: 440px) and (orientation: landscape) {
+  .hud__checkpoint {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  .hud__progress {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .interaction-prompt {
+    bottom: max(40px, calc(32px + env(safe-area-inset-bottom)));
+    font-size: 11px;
+    padding: 6px 14px;
+  }
+
+  .sign-tooltip {
+    font-size: 10px;
+  }
+}

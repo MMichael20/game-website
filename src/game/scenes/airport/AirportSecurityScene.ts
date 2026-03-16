@@ -39,23 +39,24 @@ export class AirportSecurityScene extends InteriorScene {
     this.npcSystem = new NPCSystem();
     this.npcSystem.create(this, SECURITY_NPCS);
     this.signTooltip = new SignTooltip(this, SECURITY_SIGNS);
-  }
 
-  protected onInteractPressed(): boolean {
-    const npc = this.npcSystem.getInteractableInRange();
-    if (npc && npc.interactionData?.lines) {
-      uiManager.showNPCDialog(npc.interactionData.lines, () => {
-        uiManager.hideNPCDialog();
-      });
-      return true;
-    }
-    return false;
+    // Wire dwell trigger for NPC interaction
+    this.npcSystem.onDwellTrigger = (npc) => {
+      if (npc.interactionData?.lines) {
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(npc.interactionData.lines, () => {
+          uiManager.hideNPCDialog();
+          this.inputSystem.unfreeze();
+          this.npcSystem.onDialogueEnd(npc.id);
+        });
+      }
+    };
   }
 
   update(time: number, delta: number): void {
     super.update(time, delta);
     const pos = this.player.getPosition();
-    this.npcSystem.update(delta, pos.x, pos.y);
+    this.npcSystem.update(delta, pos.x, pos.y, this.inputSystem.isFrozen);
     const playerTile = worldToTile(pos.x, pos.y);
     this.signTooltip.update(playerTile.x, playerTile.y);
   }

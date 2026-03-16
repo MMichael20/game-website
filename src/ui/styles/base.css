@@ -58,3 +58,10 @@ body {
 #dialog-container > *, #menu-container > * {
   pointer-events: auto;
 }
+
+/* Landscape phone: strip vertical safe-area, keep horizontal for notch */
+@media (max-height: 440px) and (orientation: landscape) {
+  body {
+    padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+  }
+}

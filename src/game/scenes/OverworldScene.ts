@@ -4,7 +4,6 @@ import { TILE_SIZE, getDeviceZoom } from '../../utils/constants';
 import { CheckpointZone, NPCDef } from '../data/mapLayout';
 import { Player } from '../entities/Player';
 import { Partner } from '../entities/Partner';
-import { NPC } from '../entities/NPC';
 import { InputSystem } from '../systems/InputSystem';
 import { NPCSystem } from '../systems/NPCSystem';
 import { loadGameState, clearGameState } from '../systems/SaveSystem';
@@ -32,7 +31,6 @@ export abstract class OverworldScene extends Phaser.Scene {
   protected interactCooldown = 0;
   protected backCooldown = 0;
   protected cachedConfig!: OverworldConfig;
-  private pendingNPCInteract: NPC | null = null;
 
   private returnFromInteriorData: { returnX: number; returnY: number } | null = null;
   private shouldFadeIn = false;
@@ -86,23 +84,14 @@ export abstract class OverworldScene extends Phaser.Scene {
     this.npcSystem = new NPCSystem();
     this.npcSystem.create(this, config.npcs);
 
+    // Wire dwell trigger callback
+    this.npcSystem.onDwellTrigger = (npc) => {
+      this.handleNPCInteract(npc);
+    };
+
     // 5. Input system
     this.inputSystem = new InputSystem(this);
     this.inputSystem.enableClickToMove(config.walkCheck, config.mapWidth, config.mapHeight, () => this.player.getPosition());
-
-    // NPC tap-to-interact: check if tap is on an interactable NPC
-    this.inputSystem.onWorldTap = (worldX: number, worldY: number) => {
-      const npc = this.npcSystem.getNPCAtPosition(worldX, worldY);
-      if (!npc) return false;
-      if (npc.inRange) {
-        this.interactCooldown = 500;
-        this.handleNPCInteract(npc);
-        return true;
-      }
-      // NPC tapped but out of range — set pending interact, walk will happen via click-to-move
-      this.pendingNPCInteract = npc;
-      return false;
-    };
 
     // 6. Camera
     const cam = this.cameras.main;
@@ -120,9 +109,13 @@ export abstract class OverworldScene extends Phaser.Scene {
     // 9. Register shutdown handler for proper cleanup
     this.events.on('shutdown', this.shutdown, this);
 
-    // 10. Resize handler
+    // 10. Resize handler (debounced for mobile orientation changes)
+    let resizeTimeout: number | undefined;
     this.scale.on('resize', () => {
-      this.cameras.main.setZoom(getDeviceZoom());
+      clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(() => {
+        this.cameras.main.setZoom(getDeviceZoom());
+      }, 100);
     });
 
     // 10. Fade-in from interior transition
@@ -156,9 +149,9 @@ export abstract class OverworldScene extends Phaser.Scene {
     // 3. Partner follows player
     this.partner.update(this.player.getPosition());
 
-    // 4. NPCs
+    // 4. NPCs (dwell logic runs inside NPCSystem.update)
     const playerPos = this.player.getPosition();
-    this.npcSystem.update(delta, playerPos.x, playerPos.y);
+    this.npcSystem.update(delta, playerPos.x, playerPos.y, this.inputSystem.isFrozen);
 
     // 5. Checkpoint proximity (radius-based)
     let inZone: CheckpointZone | null = null;
@@ -183,21 +176,10 @@ export abstract class OverworldScene extends Phaser.Scene {
       uiManager.hideInteractionPrompt();
     }
 
-    // Check pending NPC interact (tapped NPC, walked into range)
-    if (this.pendingNPCInteract && this.pendingNPCInteract.inRange) {
-      const npc = this.pendingNPCInteract;
-      this.pendingNPCInteract = null;
-      this.interactCooldown = 500;
-      this.handleNPCInteract(npc);
-    }
-
-    // 6. Interact press
+    // 6. Interact press (keyboard E/Space) — checkpoint zones only
     if (this.inputSystem.isInteractPressed() && this.interactCooldown <= 0) {
       this.interactCooldown = 500;
-      const npc = this.npcSystem.getInteractableInRange();
-      if (npc) {
-        this.handleNPCInteract(npc);
-      } else if (this.activeZone) {
+      if (this.activeZone) {
         this.onEnterCheckpoint(this.activeZone);
       }
     }
@@ -209,17 +191,20 @@ export abstract class OverworldScene extends Phaser.Scene {
     }
   }
 
-  private handleNPCInteract(npc: NPC): void {
+  private handleNPCInteract(npc: { id: string; onInteract?: string; interactionData?: { lines?: string[]; sceneKey?: string; sceneData?: any } }): void {
     if (npc.onInteract === 'dialog' && npc.interactionData?.lines) {
       this.inputSystem.freeze();
       uiManager.showNPCDialog(npc.interactionData.lines, () => {
+        uiManager.hideNPCDialog();
         this.inputSystem.unfreeze();
+        this.npcSystem.onDialogueEnd(npc.id);
       });
     } else if (npc.onInteract === 'cutscene-trigger' && npc.interactionData?.sceneKey) {
       this.inputSystem.freeze();
       const sceneKey = npc.interactionData.sceneKey;
       const sceneData = npc.interactionData.sceneData ?? {};
       const triggerCutscene = () => {
+        this.npcSystem.onDialogueEnd(npc.id);
         uiManager.hideInteractionPrompt();
         const cam = this.cameras.main;
         this.tweens.add({

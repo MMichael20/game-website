@@ -1,6 +1,6 @@
 // src/game/scenes/InteriorScene.ts
 import Phaser from 'phaser';
-import { TILE_SIZE, INTERIOR_ZOOM, InteriorTileType } from '../../utils/constants';
+import { TILE_SIZE, getDeviceZoom, InteriorTileType } from '../../utils/constants';
 import { InteriorLayout, createInteriorWalkCheck } from '../data/interiorLayouts';
 import { worldToTile, tileToWorld } from '../data/mapLayout';
 import { Player } from '../entities/Player';
@@ -60,7 +60,7 @@ export abstract class InteriorScene extends Phaser.Scene {
 
     // 5. Camera
     const cam = this.cameras.main;
-    cam.setZoom(layout.cameraZoom ?? INTERIOR_ZOOM);
+    cam.setZoom(getDeviceZoom());
     cam.startFollow(this.player.sprite, true, 0.1, 0.1);
     cam.setBounds(0, 0, mapPxW, mapPxH);
 

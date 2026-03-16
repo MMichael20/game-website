@@ -754,68 +754,131 @@ function generateAirplaneTextures(scene: Phaser.Scene): void {
     c.refresh();
   }
 
-  // airplane-cabin-bg — 800×600: interior cabin view
+  // airplane-cabin-bg — 800×600: left-looking aisle perspective
   {
     const c = scene.textures.createCanvas('airplane-cabin-bg', 800, 600);
     if (!c) return;
     const ctx = c.context;
 
-    // Background
+    // Background fill
     rect(ctx, 0, 0, 800, 600, '#2A2A3E');
 
-    // Overhead bin strip
-    rect(ctx, 0, 0, 800, 60, '#3A3A4A');
-    rect(ctx, 0, 55, 800, 5, '#222233');
-    // Bin panel lines
-    for (let x = 0; x < 800; x += 100) {
-      rect(ctx, x, 5, 1, 50, '#4A4A5A');
+    // ── Ceiling / overhead bins (top 80px) ──
+    rect(ctx, 0, 0, 800, 80, '#3A3A4A');
+    // Bin seam lines
+    for (let x = 0; x < 800; x += 120) {
+      rect(ctx, x, 4, 1, 70, '#4A4A5A');
     }
+    // Light strip along bottom of bins
+    rect(ctx, 0, 76, 800, 4, '#555577');
 
-    // Ceiling light strips
-    rect(ctx, 0, 60, 800, 2, '#555577');
-
-    // Left windows
-    for (let y = 120; y < 400; y += 100) {
-      rect(ctx, 20, y, 40, 60, '#444466');
-      rect(ctx, 24, y + 4, 32, 52, '#87CEEB');
+    // ── Left wall with windows (left ~120px) ──
+    rect(ctx, 0, 80, 120, 440, '#3A3A50');
+    // 3 oval-ish windows
+    const windowYs = [140, 260, 370];
+    for (const wy of windowYs) {
       // Window frame
-      rect(ctx, 24, y + 28, 32, 2, '#444466');
+      rect(ctx, 30, wy, 60, 50, '#444466');
+      // Window glass (sky blue, where clouds will scroll)
+      rect(ctx, 34, wy + 4, 52, 42, '#87CEEB');
+      // Horizontal frame divider
+      rect(ctx, 34, wy + 24, 52, 2, '#444466');
+      // Rounded corners (darken corners to fake oval)
+      px(ctx, 34, wy + 4, '#444466'); px(ctx, 35, wy + 4, '#444466');
+      px(ctx, 85, wy + 4, '#444466'); px(ctx, 84, wy + 4, '#444466');
+      px(ctx, 34, wy + 45, '#444466'); px(ctx, 35, wy + 45, '#444466');
+      px(ctx, 85, wy + 45, '#444466'); px(ctx, 84, wy + 45, '#444466');
     }
 
-    // Right windows
-    for (let y = 120; y < 400; y += 100) {
-      rect(ctx, 740, y, 40, 60, '#444466');
-      rect(ctx, 744, y + 4, 32, 52, '#87CEEB');
-      rect(ctx, 744, y + 28, 32, 2, '#444466');
-    }
-
-    // Floor
+    // ── Floor (bottom 120px) ──
     rect(ctx, 0, 480, 800, 120, '#333348');
     rect(ctx, 0, 480, 800, 2, '#444458');
 
-    // Left row of seats
-    for (let x = 100; x <= 280; x += 90) {
-      // Seat back
-      rect(ctx, x, 340, 60, 80, '#8B7355');
-      rect(ctx, x, 340, 60, 4, '#9B8365');
-      // Headrest
-      rect(ctx, x + 10, 330, 40, 14, '#9B8365');
-      // Seat cushion
-      rect(ctx, x, 420, 60, 40, '#7A6345');
-      rect(ctx, x, 460, 60, 4, '#6A5335');
+    // ── Aisle (center strip narrowing toward top — perspective) ──
+    // Aisle goes from ~100px wide at bottom to ~60px wide at top
+    ctx.fillStyle = '#3D3D52';
+    ctx.beginPath();
+    ctx.moveTo(330, 480); // bottom-left of aisle
+    ctx.lineTo(350, 80);  // top-left (narrower)
+    ctx.lineTo(410, 80);  // top-right
+    ctx.lineTo(470, 480); // bottom-right
+    ctx.closePath();
+    ctx.fill();
+    // Aisle carpet stripe
+    ctx.fillStyle = '#4A4A60';
+    ctx.beginPath();
+    ctx.moveTo(385, 480);
+    ctx.lineTo(375, 80);
+    ctx.lineTo(385, 80);
+    ctx.lineTo(415, 480);
+    ctx.closePath();
+    ctx.fill();
+
+    // ── Seat rows (receding perspective — 3 rows on each side of aisle) ──
+    const seatColor = '#8B7355';
+    const headrestColor = '#9B8365';
+    const cushionColor = '#7A6345';
+
+    // Row definitions: { y, seatW, seatH, headH, gap }
+    const rows = [
+      { y: 380, seatW: 80, seatH: 60, headH: 14, gap: 20 },  // near
+      { y: 260, seatW: 60, seatH: 45, headH: 10, gap: 15 },  // mid
+      { y: 160, seatW: 40, seatH: 30, headH: 8, gap: 10 },   // far
+    ];
+
+    for (const row of rows) {
+      // Lerp aisle edges at this y
+      const t = (row.y - 80) / 400; // 0 at top, 1 at bottom
+      const aisleL = 350 + (330 - 350) * t; // left edge
+      const aisleR = 410 + (470 - 410) * t; // right edge
+
+      // Window-side seats (left of aisle)
+      const lx = aisleL - row.gap - row.seatW * 2 - 4;
+      for (let s = 0; s < 2; s++) {
+        const sx = lx + s * (row.seatW + 4);
+        // Seat back
+        rect(ctx, sx, row.y, row.seatW, row.seatH, seatColor);
+        rect(ctx, sx, row.y, row.seatW, 3, headrestColor);
+        // Headrest
+        rect(ctx, sx + row.seatW * 0.15, row.y - row.headH, row.seatW * 0.7, row.headH, headrestColor);
+        // Cushion
+        rect(ctx, sx, row.y + row.seatH, row.seatW, row.seatH * 0.5, cushionColor);
+      }
+
+      // Aisle-side seats (right of aisle)
+      const rx = aisleR + row.gap;
+      for (let s = 0; s < 2; s++) {
+        const sx = rx + s * (row.seatW + 4);
+        rect(ctx, sx, row.y, row.seatW, row.seatH, seatColor);
+        rect(ctx, sx, row.y, row.seatW, 3, headrestColor);
+        rect(ctx, sx + row.seatW * 0.15, row.y - row.headH, row.seatW * 0.7, row.headH, headrestColor);
+        rect(ctx, sx, row.y + row.seatH, row.seatW, row.seatH * 0.5, cushionColor);
+      }
     }
 
-    // Right row of seats
-    for (let x = 520; x <= 700; x += 90) {
-      rect(ctx, x, 340, 60, 80, '#8B7355');
-      rect(ctx, x, 340, 60, 4, '#9B8365');
-      rect(ctx, x + 10, 330, 40, 14, '#9B8365');
-      rect(ctx, x, 420, 60, 40, '#7A6345');
-      rect(ctx, x, 460, 60, 4, '#6A5335');
+    // ── Baked-in seated passengers (head/shoulder blobs above headrests) ──
+    const passengers = [
+      // [x, y, skinColor, hairColor]
+      { x: 196, y: 362, skin: '#D2A679', hair: '#3B2314' },  // near row, left window
+      { x: 280, y: 362, skin: '#F5D0B0', hair: '#FFD700' },  // near row, left aisle
+      { x: 510, y: 362, skin: '#8D6E4C', hair: '#1A1A1A' },  // near row, right
+      { x: 268, y: 246, skin: '#F0C8A0', hair: '#8B4513' },  // mid row, left
+      { x: 455, y: 246, skin: '#C8956C', hair: '#2C1608' },  // mid row, right
+    ];
+    for (const p of passengers) {
+      // Shoulders
+      rect(ctx, p.x - 10, p.y, 20, 8, p.skin);
+      // Head
+      ctx.fillStyle = p.skin;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - 4, 7, 0, Math.PI * 2);
+      ctx.fill();
+      // Hair (top half of head)
+      ctx.fillStyle = p.hair;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - 6, 7, Math.PI, Math.PI * 2);
+      ctx.fill();
     }
-
-    // Aisle
-    rect(ctx, 370, 340, 60, 140, '#333348');
 
     c.refresh();
   }
@@ -884,12 +947,259 @@ function generateAirplaneTextures(scene: Phaser.Scene): void {
     c.refresh();
   }
 
+  // cabin-flight-attendant — 48×64: side-view attendant with drink cart
+  {
+    const c = scene.textures.createCanvas('cabin-flight-attendant', 48, 64);
+    if (!c) return;
+    const ctx = c.context;
+
+    // ── Figure (top half, side-view) ──
+    // Head
+    ctx.fillStyle = '#F0C8A0';
+    ctx.beginPath();
+    ctx.arc(20, 8, 6, 0, Math.PI * 2);
+    ctx.fill();
+    // Hair bun
+    ctx.fillStyle = '#3B2314';
+    ctx.beginPath();
+    ctx.arc(20, 6, 6, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(14, 6, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body (navy uniform)
+    rect(ctx, 15, 14, 12, 20, '#1A1A5E');
+    // Skirt
+    rect(ctx, 14, 34, 14, 8, '#1A1A5E');
+    // Legs
+    rect(ctx, 16, 42, 4, 10, '#F0C8A0');
+    rect(ctx, 24, 42, 4, 10, '#F0C8A0');
+    // Shoes
+    rect(ctx, 15, 52, 6, 2, '#1A1A1A');
+    rect(ctx, 23, 52, 6, 2, '#1A1A1A');
+    // Arm extended forward (holding cart)
+    rect(ctx, 27, 18, 10, 3, '#1A1A5E');
+    rect(ctx, 35, 18, 4, 3, '#F0C8A0');
+
+    // ── Drink cart (right side, below arm level) ──
+    // Cart body
+    rect(ctx, 30, 22, 16, 28, '#999999');
+    rect(ctx, 30, 22, 16, 2, '#AAAAAA'); // top rim
+    // Wheels
+    rect(ctx, 32, 50, 4, 4, '#555555');
+    rect(ctx, 42, 50, 4, 4, '#555555');
+    // Tray on top with glasses
+    rect(ctx, 31, 20, 14, 2, '#BBBBBB');
+    // Wine glass (red)
+    rect(ctx, 33, 16, 3, 4, '#8B1A1A');
+    rect(ctx, 34, 14, 1, 2, '#CCCCCC');
+    // Wine glass (white)
+    rect(ctx, 39, 16, 3, 4, '#EEEECC');
+    rect(ctx, 40, 14, 1, 2, '#CCCCCC');
+
+    c.refresh();
+  }
+
   // ground-strip — 800×200
   {
     const c = scene.textures.createCanvas('ground-strip', 800, 200);
     if (!c) return;
     const ctx = c.context;
     rect(ctx, 0, 0, 800, 200, '#4a7c4f');
+    c.refresh();
+  }
+}
+
+// ── Cutscene seated sprites (64×48, upper-body only) ─────────────────────
+
+import { OUTFIT_STYLES } from './PixelArtGenerator';
+
+export function generateCutsceneSeatedSprites(
+  scene: Phaser.Scene,
+  playerOutfitIdx: number,
+  partnerOutfitIdx: number,
+): void {
+  const playerOutfit = OUTFIT_STYLES[playerOutfitIdx] ?? OUTFIT_STYLES[0];
+  const partnerOutfit = OUTFIT_STYLES[partnerOutfitIdx] ?? OUTFIT_STYLES[0];
+
+  // Helper: simplified front-facing hair (top of head + bangs)
+  function drawSimpleHair(
+    ctx: Ctx, hx: number, hy: number,
+    color: string, style: string, isLong: boolean,
+  ): void {
+    const dark = darken(color, 0.2);
+    const light = lighten(color, 0.15);
+    // Top coverage
+    rect(ctx, hx - 1, hy - 3, 18, 5, color);
+    rect(ctx, hx + 2, hy - 4, 12, 3, color);
+    rect(ctx, hx + 3, hy - 3, 10, 3, light);
+    // Bangs
+    rect(ctx, hx, hy + 1, 4, 2, color);
+    rect(ctx, hx + 12, hy + 1, 4, 2, color);
+    if (isLong) {
+      // Long side curtains
+      rect(ctx, hx - 2, hy + 1, 3, 14, color);
+      rect(ctx, hx + 15, hy + 1, 3, 14, color);
+      rect(ctx, hx - 3, hy + 8, 3, 10, color);
+      rect(ctx, hx + 16, hy + 8, 3, 10, color);
+      rect(ctx, hx - 3, hy + 16, 2, 3, dark);
+      rect(ctx, hx + 17, hy + 16, 2, 3, dark);
+    } else if (style === 'spiky') {
+      // Spiky tips
+      rect(ctx, hx + 1, hy - 6, 2, 2, color);
+      rect(ctx, hx + 4, hy - 7, 3, 3, color);
+      rect(ctx, hx + 8, hy - 6, 3, 2, color);
+      rect(ctx, hx + 12, hy - 5, 2, 2, color);
+    } else {
+      // Short sides
+      rect(ctx, hx - 1, hy + 1, 2, 3, color);
+      rect(ctx, hx + 15, hy + 1, 2, 3, color);
+    }
+  }
+
+  // ── cutscene-player-seated: female, front-facing, eyes open ──
+  {
+    const c = scene.textures.createCanvas('cutscene-player-seated', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const o = playerOutfit;
+    const skin = o.skin;
+    const shirtColor = o.shirt;
+    const hairColor = o.hair;
+    const hairStyle = o.hairStyle;
+
+    // Head (16×14 rounded, centered at x=24)
+    const hx = 24; const hy = 4;
+    rect(ctx, hx + 1, hy, 14, 14, skin);
+    rect(ctx, hx, hy + 1, 16, 12, skin);
+    // Forehead highlight
+    rect(ctx, hx + 4, hy + 1, 8, 2, lighten(skin, 0.1));
+    // Eyes (open)
+    rect(ctx, hx + 2, hy + 6, 4, 3, '#fff');
+    rect(ctx, hx + 10, hy + 6, 4, 3, '#fff');
+    px(ctx, hx + 3, hy + 7, '#334');
+    px(ctx, hx + 4, hy + 7, '#334');
+    px(ctx, hx + 11, hy + 7, '#334');
+    px(ctx, hx + 12, hy + 7, '#334');
+    // Blush
+    rect(ctx, hx + 1, hy + 9, 3, 2, 'rgba(255,130,130,0.25)');
+    rect(ctx, hx + 12, hy + 9, 3, 2, 'rgba(255,130,130,0.25)');
+    // Mouth
+    rect(ctx, hx + 6, hy + 11, 4, 1, '#c88');
+
+    // Neck
+    rect(ctx, 29, 18, 6, 3, skin);
+    // Torso (female — narrower)
+    rect(ctx, 20, 21, 24, 16, shirtColor);
+    // Collar
+    rect(ctx, 27, 20, 10, 2, darken(shirtColor, 0.15));
+    // Arms resting on lap
+    rect(ctx, 16, 28, 5, 10, shirtColor);
+    rect(ctx, 43, 28, 5, 10, shirtColor);
+    // Hands on lap
+    rect(ctx, 24, 38, 6, 4, skin);
+    rect(ctx, 34, 38, 6, 4, skin);
+
+    // Hair (drawn last, on top)
+    drawSimpleHair(ctx, hx, hy, hairColor, hairStyle, hairStyle === 'long' || hairStyle === 'ponytail');
+
+    c.refresh();
+  }
+
+  // ── cutscene-partner-seated: male, front-facing ──
+  {
+    const c = scene.textures.createCanvas('cutscene-partner-seated', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const o = partnerOutfit;
+    const skin = o.skin;
+    const shirtColor = o.shirt;
+    const hairColor = o.maleHair ?? o.hair;
+    const hairStyle = o.maleHairStyle ?? o.hairStyle;
+
+    // Head (wider jaw for male)
+    const hx = 24; const hy = 3;
+    rect(ctx, hx + 1, hy, 14, 14, skin);
+    rect(ctx, hx, hy + 1, 16, 13, skin);
+    // Stronger jaw
+    rect(ctx, hx - 1, hy + 10, 18, 4, skin);
+    // Eyes
+    rect(ctx, hx + 2, hy + 5, 4, 3, '#fff');
+    rect(ctx, hx + 10, hy + 5, 4, 3, '#fff');
+    px(ctx, hx + 3, hy + 6, '#334');
+    px(ctx, hx + 4, hy + 6, '#334');
+    px(ctx, hx + 11, hy + 6, '#334');
+    px(ctx, hx + 12, hy + 6, '#334');
+    // Mouth
+    rect(ctx, hx + 6, hy + 11, 4, 1, '#c88');
+
+    // Neck (wider)
+    rect(ctx, 28, 17, 8, 3, skin);
+    // Torso (male — broader)
+    rect(ctx, 18, 20, 28, 18, shirtColor);
+    // Collar
+    rect(ctx, 26, 19, 12, 2, darken(shirtColor, 0.15));
+    // Arms at sides / one on armrest
+    rect(ctx, 14, 24, 5, 12, shirtColor);
+    rect(ctx, 45, 24, 5, 12, shirtColor);
+    // Hands
+    rect(ctx, 14, 36, 4, 3, skin);
+    rect(ctx, 46, 36, 4, 3, skin);
+
+    // Hair
+    drawSimpleHair(ctx, hx, hy, hairColor, hairStyle, false);
+
+    c.refresh();
+  }
+
+  // ── cutscene-player-resting: female, eyes closed (sleeping) ──
+  {
+    const c = scene.textures.createCanvas('cutscene-player-resting', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const o = playerOutfit;
+    const skin = o.skin;
+    const shirtColor = o.shirt;
+    const hairColor = o.hair;
+    const hairStyle = o.hairStyle;
+
+    // Head
+    const hx = 24; const hy = 4;
+    rect(ctx, hx + 1, hy, 14, 14, skin);
+    rect(ctx, hx, hy + 1, 16, 12, skin);
+    rect(ctx, hx + 4, hy + 1, 8, 2, lighten(skin, 0.1));
+    // Eyes CLOSED — horizontal lines
+    rect(ctx, hx + 2, hy + 7, 4, 1, '#556');
+    rect(ctx, hx + 10, hy + 7, 4, 1, '#556');
+    // Eyelashes (closed)
+    px(ctx, hx + 1, hy + 7, '#445');
+    px(ctx, hx + 6, hy + 7, '#445');
+    px(ctx, hx + 9, hy + 7, '#445');
+    px(ctx, hx + 14, hy + 7, '#445');
+    // Blush (stronger when sleeping)
+    rect(ctx, hx + 1, hy + 9, 3, 2, 'rgba(255,130,130,0.35)');
+    rect(ctx, hx + 12, hy + 9, 3, 2, 'rgba(255,130,130,0.35)');
+    // Slight smile
+    rect(ctx, hx + 6, hy + 11, 4, 1, '#c88');
+    px(ctx, hx + 5, hy + 10, '#c88');
+    px(ctx, hx + 10, hy + 10, '#c88');
+
+    // Neck
+    rect(ctx, 29, 18, 6, 3, skin);
+    // Torso
+    rect(ctx, 20, 21, 24, 16, shirtColor);
+    rect(ctx, 27, 20, 10, 2, darken(shirtColor, 0.15));
+    // Arms
+    rect(ctx, 16, 28, 5, 10, shirtColor);
+    rect(ctx, 43, 28, 5, 10, shirtColor);
+    // Hands on lap
+    rect(ctx, 24, 38, 6, 4, skin);
+    rect(ctx, 34, 38, 6, 4, skin);
+
+    // Hair
+    drawSimpleHair(ctx, hx, hy, hairColor, hairStyle, hairStyle === 'long' || hairStyle === 'ponytail');
+
     c.refresh();
   }
 }

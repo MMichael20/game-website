@@ -92,7 +92,7 @@ export class InputSystem {
       // Show click marker at destination
       this.clearClickMarker();
       const dest = this.pathWaypoints[this.pathWaypoints.length - 1];
-      this.clickMarker = this.scene.add.circle(dest.x, dest.y, 4, 0xffffff, 0.6)
+      this.clickMarker = this.scene.add.circle(dest.x, dest.y, 6, 0xffffff, 0.6)
         .setDepth(1000);
       this.scene.tweens.add({
         targets: this.clickMarker,
@@ -121,6 +121,10 @@ export class InputSystem {
 
   unfreeze(): void {
     this.frozen = false;
+  }
+
+  get isFrozen(): boolean {
+    return this.frozen;
   }
 
   getDirection(): { x: number; y: number } {

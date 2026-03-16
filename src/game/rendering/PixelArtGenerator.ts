@@ -419,7 +419,7 @@ export function generateInteriorFurniture(scene: Phaser.Scene): void {
 
 type HairStyle = 'short' | 'medium' | 'long' | 'spiky' | 'curly' | 'ponytail' | 'bun' | 'slick';
 
-interface OutfitStyle {
+export interface OutfitStyle {
   shirt: string;
   pants: string;
   shoes: string;
@@ -850,7 +850,7 @@ function drawHair64(
   }
 }
 
-const OUTFIT_STYLES: OutfitStyle[] = [
+export const OUTFIT_STYLES: OutfitStyle[] = [
   // Purple jacket, long black hair, red bandana
   {
     shirt: '#6644aa', pants: '#444466', shoes: '#443322', hair: '#0a0a0a', maleHair: '#d4a832', skin: '#f5d0a9',

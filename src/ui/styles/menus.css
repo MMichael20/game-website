@@ -299,3 +299,60 @@
   font-size: 8px;
   opacity: 0.7;
 }
+
+/* ========== Phone overrides ========== */
+@media (max-width: 480px) {
+  .npc-dialog {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    width: auto;
+    bottom: max(16px, calc(12px + env(safe-area-inset-bottom)));
+  }
+
+  .npc-dialog__box {
+    min-width: unset;
+    padding: 14px 16px;
+  }
+
+  .npc-dialog__text {
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .npc-dialog__advance {
+    font-size: 9px;
+  }
+
+  .btn {
+    font-size: 12px;
+  }
+
+  .dressing-room-ui {
+    height: 45%;
+  }
+}
+
+/* ========== Landscape phone ========== */
+@media (max-height: 440px) and (orientation: landscape) {
+  .npc-dialog {
+    max-width: min(70vw, 500px);
+  }
+
+  .npc-dialog__box {
+    padding: 10px 14px;
+  }
+
+  .dressing-room-ui {
+    height: 50%;
+    gap: 6px;
+  }
+
+  .main-menu {
+    gap: 12px;
+  }
+
+  .main-menu__title {
+    font-size: clamp(16px, 4vw, 32px);
+  }
+}

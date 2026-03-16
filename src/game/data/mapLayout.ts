@@ -181,9 +181,9 @@ export interface NPCDef {
   walkPath?: Array<{ x: number; y: number }>; // tile coords
   texture?: string;
   speed?: number;
+  facingDirection?: 'up' | 'down' | 'left' | 'right'; // default 'down'
   // Interaction fields (all optional, existing NPCs unaffected)
   interactable?: boolean;
-  interactionRadius?: number;   // pixels, default 48
   onInteract?: 'dialog' | 'cutscene-trigger';
   interactionData?: {
     lines?: string[];       // for dialog type
