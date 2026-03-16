@@ -337,6 +337,7 @@ export interface NPCScheduleEntry {
 export interface NPCDef {
   id: string;
   name: string;
+  gender: 'her' | 'him';
   palette: NPCPalette;
   schedule: NPCScheduleEntry[];
   speed: number; // pixels per second
@@ -346,7 +347,8 @@ export const NPCS: NPCDef[] = [
   {
     id: 'baker',
     name: 'Baker',
-    palette: { skin: '#f5c6a0', hair: '#8b4513', shirt: '#ffffff', pants: '#4a4a4a' },
+    gender: 'him',
+    palette: { skin: '#ffe0c0', hair: '#8b4513', shirt: '#ffffff', pants: '#4a4a4a' },
     speed: 50,
     schedule: [
       { startMinute: 360, endMinute: 720,  behavior: 'walk-route', route: ['bakery-front', 'main-w', 'main-center', 'main-w', 'bakery-front'] },
@@ -357,7 +359,8 @@ export const NPCS: NPCDef[] = [
   {
     id: 'florist',
     name: 'Florist',
-    palette: { skin: '#e8b88a', hair: '#d4a574', shirt: '#90ee90', pants: '#2e8b57' },
+    gender: 'her',
+    palette: { skin: '#d4a070', hair: '#d4a574', shirt: '#90ee90', pants: '#2e8b57' },
     speed: 45,
     schedule: [
       { startMinute: 420, endMinute: 900,  behavior: 'walk-route', route: ['main-e', 'main-center', 'south-junc', 'park-entrance', 'south-junc', 'main-center', 'main-e'] },
@@ -367,7 +370,8 @@ export const NPCS: NPCDef[] = [
   {
     id: 'reader',
     name: 'Book Lover',
-    palette: { skin: '#c68c53', hair: '#2c1810', shirt: '#6b4c8a', pants: '#3c3c5a' },
+    gender: 'her',
+    palette: { skin: '#7a4820', hair: '#2c1810', shirt: '#6b4c8a', pants: '#3c3c5a' },
     speed: 35,
     schedule: [
       { startMinute: 480, endMinute: 720,  behavior: 'sit-bench', idleAt: 'cinema-front' },
@@ -378,7 +382,8 @@ export const NPCS: NPCDef[] = [
   {
     id: 'dog-walker',
     name: 'Dog Walker',
-    palette: { skin: '#f5deb3', hair: '#a0522d', shirt: '#ff6347', pants: '#4682b4' },
+    gender: 'him',
+    palette: { skin: '#f0c8a0', hair: '#a0522d', shirt: '#ff6347', pants: '#4682b4' },
     speed: 60,
     schedule: [
       { startMinute: 360, endMinute: 600,  behavior: 'walk-route', route: ['lake-w', 'lake-e', 'lake-w', 'main-center', 'south-junc', 'south-bottom', 'south-junc', 'main-center', 'lake-w'] },
@@ -389,7 +394,8 @@ export const NPCS: NPCDef[] = [
   {
     id: 'musician',
     name: 'Musician',
-    palette: { skin: '#8d5524', hair: '#1a1a1a', shirt: '#ffd700', pants: '#1a1a1a' },
+    gender: 'him',
+    palette: { skin: '#b07840', hair: '#1a1a1a', shirt: '#ffd700', pants: '#1a1a1a' },
     speed: 30,
     schedule: [
       { startMinute: 600, endMinute: 1080, behavior: 'idle-at', idleAt: 'main-center' },
@@ -399,6 +405,7 @@ export const NPCS: NPCDef[] = [
   {
     id: 'cat',
     name: 'Town Cat',
+    gender: 'him',
     palette: { skin: '#ff8c00', hair: '#ff8c00', shirt: '#ff8c00', pants: '#ff8c00' },
     speed: 40,
     schedule: [
