@@ -1,7 +1,7 @@
 // src/utils/constants.ts
 export const TILE_SIZE = 32;
-export const MAP_WIDTH = 30;   // tiles
-export const MAP_HEIGHT = 24;  // tiles
+export const MAP_WIDTH = 40;   // tiles
+export const MAP_HEIGHT = 32;  // tiles
 export const MAP_PX_WIDTH = MAP_WIDTH * TILE_SIZE;   // 960
 export const MAP_PX_HEIGHT = MAP_HEIGHT * TILE_SIZE;  // 768
 
@@ -20,11 +20,26 @@ export function isTouchDevice(): boolean {
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
-export const DEFAULT_SPAWN = { x: 15, y: 12 }; // center of map, in tile coords
+export const DEFAULT_SPAWN = { x: 20, y: 16 }; // center of map, in tile coords
 
 export const OUTFIT_NAMES = [
-  'Casual', 'Formal', 'Beach', 'Winter',
-  'Gothic', 'Sporty', 'Festival', 'Elegant',
+  'Purple Jacket',
+  'Summer Breeze',
+  'Cozy Autumn',
+  'Sporty',
+  'Night Out',
 ] as const;
 
 export const OUTFIT_COUNT = OUTFIT_NAMES.length;
+
+// Interior map constants
+export const INTERIOR_ZOOM = 2.5;
+
+export const enum InteriorTileType {
+  Wood = 0,
+  Carpet = 1,
+  TileFloor = 2,
+  Wall = 3,
+  DoorFrame = 4,
+  CarpetBeige = 5,
+}
