@@ -8,40 +8,44 @@ export const enum TileType {
   DarkGrass = 3,
 }
 
-// 30x24 tile grid — 0=grass, 1=dirt, 2=stone, 3=dark grass
+// 40x32 tile grid — 0=grass, 1=dirt, 2=stone, 3=dark grass
 // Row-major: tileGrid[y][x]
 export const tileGrid: number[][] = Array.from({ length: MAP_HEIGHT }, (_, y) => {
   return Array.from({ length: MAP_WIDTH }, (_, x) => {
     // Main east-west path
-    if (y >= 11 && y <= 12 && x >= 3 && x <= 27) return TileType.Dirt;
+    if (y >= 14 && y <= 15 && x >= 3 && x <= 37) return TileType.Dirt;
     // North-south path
-    if (x >= 14 && x <= 15 && y >= 3 && y <= 20) return TileType.Dirt;
-    // Stone plaza around restaurant (top-left area)
-    if (x >= 5 && x <= 9 && y >= 5 && y <= 9) return TileType.Stone;
-    // Stone plaza around cinema (top-right area)
-    if (x >= 21 && x <= 25 && y >= 5 && y <= 9) return TileType.Stone;
-    // Park area (bottom-center) — dark grass
-    if (x >= 10 && x <= 20 && y >= 15 && y <= 21) return TileType.DarkGrass;
+    if (x >= 19 && x <= 20 && y >= 3 && y <= 28) return TileType.Dirt;
+    // Secondary east-west path (south, through park)
+    if (y >= 23 && y <= 24 && x >= 13 && x <= 27) return TileType.Dirt;
+    // Restaurant plaza (top-left)
+    if (x >= 5 && x <= 11 && y >= 5 && y <= 11) return TileType.Stone;
+    // Cinema plaza (top-right)
+    if (x >= 28 && x <= 34 && y >= 5 && y <= 11) return TileType.Stone;
+    // Market/garden area (left side)
+    if (x >= 4 && x <= 10 && y >= 17 && y <= 22) return TileType.Stone;
+    // Cafe area (right side)
+    if (x >= 30 && x <= 36 && y >= 17 && y <= 22) return TileType.Stone;
+    // Park area (center-bottom)
+    if (x >= 13 && x <= 27 && y >= 18 && y <= 28) return TileType.DarkGrass;
     // Default grass
     return TileType.Grass;
   });
 });
 
 // Walkability grid — true = passable
-// Buildings, water, dense decorations marked as impassable
+// Only buildings are impassable (user requested no blocking on the map)
 export const walkGrid: boolean[][] = Array.from({ length: MAP_HEIGHT }, (_, y) => {
   return Array.from({ length: MAP_WIDTH }, (_, x) => {
     // Map borders
     if (x <= 0 || x >= MAP_WIDTH - 1 || y <= 0 || y >= MAP_HEIGHT - 1) return false;
-    // Building footprints (3x3 tile buildings)
-    // Restaurant building (inside)
-    if (x >= 6 && x <= 8 && y >= 6 && y <= 8) return false;
-    // Cinema building (inside)
-    if (x >= 22 && x <= 24 && y >= 6 && y <= 8) return false;
-    // Pond in park
-    if (x >= 13 && x <= 16 && y >= 17 && y <= 19) return false;
-    // Fences/walls along edges
-    if (y === 2 && (x < 5 || x > 25)) return false;
+    // Restaurant building footprint
+    if (x >= 7 && x <= 9 && y >= 7 && y <= 9) return false;
+    // Cinema building footprint
+    if (x >= 30 && x <= 32 && y >= 7 && y <= 9) return false;
+    // Michael's House footprint
+    if (x >= 14 && x <= 16 && y >= 3 && y <= 5) return false;
+    // Everything else is walkable
     return true;
   });
 });
@@ -56,9 +60,10 @@ export interface CheckpointZone {
 }
 
 export const CHECKPOINT_ZONES: CheckpointZone[] = [
-  { id: 'restaurant', tileX: 5, tileY: 5, width: 2, height: 1, promptText: 'Press E to enter restaurant' },
-  { id: 'park', tileX: 14, tileY: 15, width: 2, height: 1, promptText: 'Press E to play in the park' },
-  { id: 'cinema', tileX: 21, tileY: 5, width: 2, height: 1, promptText: 'Press E to enter cinema' },
+  { id: 'restaurant', tileX: 6, tileY: 6, width: 2, height: 1, promptText: 'Press E to enter restaurant' },
+  { id: 'park', tileX: 19, tileY: 19, width: 2, height: 1, promptText: 'Press E to play in the park' },
+  { id: 'cinema', tileX: 29, tileY: 6, width: 2, height: 1, promptText: 'Press E to enter cinema' },
+  { id: 'michaels_house', tileX: 14, tileY: 6, width: 3, height: 1, promptText: "Press E to enter Michael's House" },
 ];
 
 export interface DecorationDef {
@@ -68,36 +73,101 @@ export interface DecorationDef {
 }
 
 export const DECORATIONS: DecorationDef[] = [
-  // Trees
+  // ── Trees (scattered throughout) ──
   { type: 'tree', tileX: 2, tileY: 3 },
-  { type: 'tree', tileX: 3, tileY: 8 },
-  { type: 'tree', tileX: 27, tileY: 3 },
-  { type: 'tree', tileX: 28, tileY: 10 },
-  { type: 'tree', tileX: 10, tileY: 16 },
-  { type: 'tree', tileX: 20, tileY: 16 },
-  { type: 'tree', tileX: 11, tileY: 20 },
-  { type: 'tree', tileX: 19, tileY: 20 },
-  // Benches
-  { type: 'bench', tileX: 12, tileY: 12 },
-  { type: 'bench', tileX: 18, tileY: 12 },
-  { type: 'bench', tileX: 15, tileY: 21 },
-  // Lamps
-  { type: 'lamp', tileX: 5, tileY: 11 },
-  { type: 'lamp', tileX: 25, tileY: 11 },
-  { type: 'lamp', tileX: 14, tileY: 5 },
-  { type: 'lamp', tileX: 14, tileY: 20 },
-  // Flowers
-  { type: 'flower', tileX: 11, tileY: 17 },
-  { type: 'flower', tileX: 19, tileY: 17 },
-  { type: 'flower', tileX: 12, tileY: 19 },
-  { type: 'flower', tileX: 18, tileY: 19 },
-  // Fountain (park center)
-  { type: 'fountain', tileX: 15, tileY: 18 },
-  // Fences
+  { type: 'tree', tileX: 3, tileY: 9 },
+  { type: 'tree', tileX: 37, tileY: 3 },
+  { type: 'tree', tileX: 38, tileY: 10 },
+  { type: 'tree', tileX: 13, tileY: 20 },
+  { type: 'tree', tileX: 27, tileY: 20 },
+  { type: 'tree', tileX: 14, tileY: 27 },
+  { type: 'tree', tileX: 26, tileY: 27 },
+  { type: 'tree', tileX: 2, tileY: 20 },
+  { type: 'tree', tileX: 38, tileY: 20 },
+  { type: 'tree', tileX: 15, tileY: 4 },
+  { type: 'tree', tileX: 25, tileY: 4 },
+  { type: 'tree', tileX: 2, tileY: 28 },
+  { type: 'tree', tileX: 38, tileY: 28 },
+  { type: 'tree', tileX: 12, tileY: 12 },
+  { type: 'tree', tileX: 28, tileY: 12 },
+
+  // ── Benches (along paths) ──
+  { type: 'bench', tileX: 16, tileY: 15 },
+  { type: 'bench', tileX: 24, tileY: 15 },
+  { type: 'bench', tileX: 20, tileY: 28 },
+  { type: 'bench', tileX: 8, tileY: 14 },
+  { type: 'bench', tileX: 33, tileY: 14 },
+  { type: 'bench', tileX: 8, tileY: 24 },
+
+  // ── Lamps (along main paths) ──
+  { type: 'lamp', tileX: 6, tileY: 14 },
+  { type: 'lamp', tileX: 12, tileY: 14 },
+  { type: 'lamp', tileX: 28, tileY: 14 },
+  { type: 'lamp', tileX: 35, tileY: 14 },
+  { type: 'lamp', tileX: 19, tileY: 6 },
+  { type: 'lamp', tileX: 19, tileY: 27 },
+  { type: 'lamp', tileX: 6, tileY: 22 },
+  { type: 'lamp', tileX: 35, tileY: 22 },
+
+  // ── Flowers (in and around park) ──
+  { type: 'flower', tileX: 15, tileY: 21 },
+  { type: 'flower', tileX: 25, tileY: 21 },
+  { type: 'flower', tileX: 16, tileY: 25 },
+  { type: 'flower', tileX: 24, tileY: 25 },
+  { type: 'flower', tileX: 20, tileY: 22 },
+  { type: 'flower', tileX: 18, tileY: 26 },
+  { type: 'flower', tileX: 22, tileY: 26 },
+
+  // ── Fountain (park center) ──
+  { type: 'fountain', tileX: 20, tileY: 24 },
+
+  // ── Fences (along north edge) ──
   { type: 'fence', tileX: 4, tileY: 4 },
-  { type: 'fence', tileX: 10, tileY: 4 },
-  { type: 'fence', tileX: 20, tileY: 4 },
-  { type: 'fence', tileX: 26, tileY: 4 },
+  { type: 'fence', tileX: 12, tileY: 4 },
+  { type: 'fence', tileX: 27, tileY: 4 },
+  { type: 'fence', tileX: 35, tileY: 4 },
+
+  // ── Bushes (edges, near buildings, borders) ──
+  { type: 'bush', tileX: 1, tileY: 6 },
+  { type: 'bush', tileX: 1, tileY: 12 },
+  { type: 'bush', tileX: 38, tileY: 6 },
+  { type: 'bush', tileX: 38, tileY: 14 },
+  { type: 'bush', tileX: 12, tileY: 18 },
+  { type: 'bush', tileX: 28, tileY: 18 },
+  { type: 'bush', tileX: 4, tileY: 28 },
+  { type: 'bush', tileX: 36, tileY: 28 },
+  { type: 'bush', tileX: 1, tileY: 18 },
+  { type: 'bush', tileX: 38, tileY: 24 },
+  { type: 'bush', tileX: 13, tileY: 5 },
+  { type: 'bush', tileX: 26, tileY: 5 },
+
+  // ── Rocks (scattered in nature areas) ──
+  { type: 'rock', tileX: 3, tileY: 16 },
+  { type: 'rock', tileX: 37, tileY: 16 },
+  { type: 'rock', tileX: 17, tileY: 26 },
+  { type: 'rock', tileX: 23, tileY: 26 },
+  { type: 'rock', tileX: 1, tileY: 29 },
+  { type: 'rock', tileX: 38, tileY: 29 },
+  { type: 'rock', tileX: 36, tileY: 4 },
+  { type: 'rock', tileX: 2, tileY: 14 },
+
+  // ── Cafe tables (outdoor seating area) ──
+  { type: 'cafeTable', tileX: 31, tileY: 18 },
+  { type: 'cafeTable', tileX: 33, tileY: 18 },
+  { type: 'cafeTable', tileX: 35, tileY: 18 },
+  { type: 'cafeTable', tileX: 31, tileY: 21 },
+  { type: 'cafeTable', tileX: 34, tileY: 21 },
+
+  // ── Street signs (at intersections) ──
+  { type: 'streetSign', tileX: 18, tileY: 13 },
+  { type: 'streetSign', tileX: 21, tileY: 13 },
+
+  // ── Garden beds (market/garden area) ──
+  { type: 'gardenBed', tileX: 5, tileY: 18 },
+  { type: 'gardenBed', tileX: 5, tileY: 20 },
+  { type: 'gardenBed', tileX: 9, tileY: 18 },
+  { type: 'gardenBed', tileX: 9, tileY: 20 },
+  { type: 'gardenBed', tileX: 7, tileY: 22 },
 ];
 
 export interface NPCDef {
@@ -106,13 +176,31 @@ export interface NPCDef {
   tileY: number;
   behavior: 'idle' | 'walk' | 'sit';
   walkPath?: Array<{ x: number; y: number }>; // tile coords
+  texture?: string;
+  speed?: number;
 }
 
 export const NPC_DEFS: NPCDef[] = [
-  { id: 'npc-1', tileX: 7, tileY: 10, behavior: 'walk', walkPath: [{ x: 7, y: 10 }, { x: 12, y: 10 }, { x: 12, y: 12 }, { x: 7, y: 12 }] },
-  { id: 'npc-2', tileX: 12, tileY: 12, behavior: 'sit' },
-  { id: 'npc-3', tileX: 23, tileY: 10, behavior: 'walk', walkPath: [{ x: 23, y: 10 }, { x: 23, y: 12 }, { x: 26, y: 12 }, { x: 26, y: 10 }] },
-  { id: 'npc-4', tileX: 15, tileY: 21, behavior: 'sit' },
+  // Wizard strolling near restaurant
+  { id: 'npc-1', tileX: 8, tileY: 13, behavior: 'walk', texture: 'npc-default',
+    walkPath: [{ x: 8, y: 13 }, { x: 16, y: 13 }, { x: 16, y: 15 }, { x: 8, y: 15 }] },
+  // Reader sitting on bench
+  { id: 'npc-2', tileX: 16, tileY: 15, behavior: 'sit', texture: 'npc-reader' },
+  // Villager walking near cinema
+  { id: 'npc-3', tileX: 31, tileY: 13, behavior: 'walk', texture: 'npc-villager',
+    walkPath: [{ x: 31, y: 13 }, { x: 31, y: 15 }, { x: 35, y: 15 }, { x: 35, y: 13 }] },
+  // Reader at park bench
+  { id: 'npc-4', tileX: 20, tileY: 28, behavior: 'sit', texture: 'npc-reader' },
+  // Jogger running laps in park
+  { id: 'npc-5', tileX: 15, tileY: 20, behavior: 'walk', texture: 'npc-jogger', speed: 70,
+    walkPath: [{ x: 15, y: 20 }, { x: 25, y: 20 }, { x: 25, y: 27 }, { x: 15, y: 27 }] },
+  // Shopkeeper at market
+  { id: 'npc-6', tileX: 7, tileY: 19, behavior: 'idle', texture: 'npc-shopkeeper' },
+  // Villager at cafe
+  { id: 'npc-7', tileX: 33, tileY: 19, behavior: 'idle', texture: 'npc-villager' },
+  // Stroller along main path
+  { id: 'npc-8', tileX: 24, tileY: 14, behavior: 'walk', texture: 'npc-villager',
+    walkPath: [{ x: 24, y: 14 }, { x: 32, y: 14 }, { x: 32, y: 15 }, { x: 24, y: 15 }] },
 ];
 
 /** Check if a tile is walkable */
