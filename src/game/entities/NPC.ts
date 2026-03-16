@@ -12,7 +12,11 @@ export class NPC {
   public readonly id: string;
   public readonly interactable: boolean;
   public readonly onInteract?: string;
-  public readonly interactionData?: object;
+  public readonly interactionData?: {
+    lines?: string[];
+    sceneKey?: string;
+    sceneData?: any;
+  };
 
   private state: NPCState;
   private walkPath: Array<{ x: number; y: number }>;

@@ -1,29 +1,16 @@
 // src/game/scenes/WorldScene.ts
-import Phaser from 'phaser';
 import { uiManager, CheckpointStatus } from '../../ui/UIManager';
-import {
-  TILE_SIZE,
-  MAP_WIDTH,
-  MAP_HEIGHT,
-  MAP_PX_WIDTH,
-  MAP_PX_HEIGHT,
-  getDeviceZoom,
-} from '../../utils/constants';
+import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from '../../utils/constants';
 import {
   tileGrid,
   DECORATIONS,
   CHECKPOINT_ZONES,
-  CheckpointZone,
   NPC_DEFS,
   tileToWorld,
-  worldToTile,
   isWalkable,
+  CheckpointZone,
 } from '../data/mapLayout';
 import { CHECKPOINTS } from '../data/checkpoints';
-import { Player } from '../entities/Player';
-import { Partner } from '../entities/Partner';
-import { InputSystem } from '../systems/InputSystem';
-import { NPCSystem } from '../systems/NPCSystem';
 import { SkyRenderer } from '../rendering/SkyRenderer';
 import {
   loadGameState,
@@ -32,6 +19,7 @@ import {
   clearGameState,
   getPlayerSpawn,
 } from '../systems/SaveSystem';
+import { OverworldScene, OverworldConfig } from './OverworldScene';
 
 // Building definitions: name, tile position, tile size
 const BUILDINGS = [
@@ -41,44 +29,34 @@ const BUILDINGS = [
   { name: 'michaels-house', tileX: 14, tileY: 3, tileW: 3, tileH: 3 },
 ];
 
-export class WorldScene extends Phaser.Scene {
-  private player!: Player;
-  private partner!: Partner;
-  private inputSystem!: InputSystem;
-  private npcSystem!: NPCSystem;
+export class WorldScene extends OverworldScene {
   private skyRenderer!: SkyRenderer;
-
-  private activeZone: CheckpointZone | null = null;
-  private interactCooldown = 0;
-  private backCooldown = 0;
-  private returnFromInteriorData: { returnX: number; returnY: number } | null = null;
-  private shouldFadeIn = false;
 
   constructor() {
     super({ key: 'WorldScene' });
   }
 
-  init(data?: { returnFromInterior?: boolean; returnX?: number; returnY?: number }): void {
-    if (data?.returnFromInterior && data.returnX != null && data.returnY != null) {
-      this.returnFromInteriorData = { returnX: data.returnX, returnY: data.returnY };
-      this.shouldFadeIn = true;
-    } else {
-      this.returnFromInteriorData = null;
-      this.shouldFadeIn = false;
-    }
+  getConfig(): OverworldConfig {
+    const spawn = getPlayerSpawn();
+    return {
+      mapWidth: MAP_WIDTH,
+      mapHeight: MAP_HEIGHT,
+      tileGrid,
+      walkCheck: isWalkable,
+      npcs: NPC_DEFS,
+      checkpointZones: CHECKPOINT_ZONES,
+      spawnX: spawn.x,
+      spawnY: spawn.y,
+      terrainTextureKey: 'terrain',
+    };
   }
 
-  create(): void {
-    const state = loadGameState();
-
+  onCreateExtras(): void {
     // 1. Sky
     this.skyRenderer = new SkyRenderer();
     this.skyRenderer.create(this);
 
-    // 2. Build tile map (using terrain textures)
-    this.buildTileMap();
-
-    // 3. Decorations (track lamps for glow effect)
+    // 2. Decorations (track lamps for glow effect)
     const lampPositions: Array<{ x: number; y: number }> = [];
     DECORATIONS.forEach(deco => {
       const pos = tileToWorld(deco.tileX, deco.tileY);
@@ -89,7 +67,7 @@ export class WorldScene extends Phaser.Scene {
       }
     });
 
-    // 4. Buildings
+    // 3. Buildings
     BUILDINGS.forEach(b => {
       const cx = b.tileX * TILE_SIZE + (b.tileW * TILE_SIZE) / 2;
       const cy = b.tileY * TILE_SIZE + (b.tileH * TILE_SIZE) / 2;
@@ -97,130 +75,58 @@ export class WorldScene extends Phaser.Scene {
         .setDepth(-5);
     });
 
-    // 5. Player & Partner
-    const spawn = getPlayerSpawn();
-    this.player = new Player(this, spawn.x, spawn.y, state.outfits.player, isWalkable);
-    this.partner = new Partner(this, spawn.x, spawn.y, state.outfits.partner);
-
-    if (this.returnFromInteriorData) {
-      this.player.sprite.setPosition(this.returnFromInteriorData.returnX, this.returnFromInteriorData.returnY);
-      this.partner.sprite.setPosition(this.returnFromInteriorData.returnX + 32, this.returnFromInteriorData.returnY);
-      this.returnFromInteriorData = null;
-    }
-
-    // 6. NPC system
-    this.npcSystem = new NPCSystem();
-    this.npcSystem.create(this, NPC_DEFS);
-
-    // 7. Input system
-    this.inputSystem = new InputSystem(this);
-    this.inputSystem.enableClickToMove(isWalkable, MAP_WIDTH, MAP_HEIGHT, () => this.player.getPosition());
-
-    // 8. Camera
-    const cam = this.cameras.main;
-    cam.setZoom(getDeviceZoom());
-    cam.startFollow(this.player.sprite, true, 0.1, 0.1);
-    cam.setBounds(0, 0, MAP_PX_WIDTH, MAP_PX_HEIGHT);
-
-    // 9. Physics world bounds
-    this.physics.world.setBounds(0, 0, MAP_PX_WIDTH, MAP_PX_HEIGHT);
-    this.player.sprite.setCollideWorldBounds(true);
-
-    // 10. HUD
-    this.updateHUD();
-
-    // Settings button handler
+    // 4. Settings button handler
     const settingsBtn = document.querySelector('.hud__settings-btn');
     settingsBtn?.addEventListener('click', () => this.openSettings());
 
-    // 11. Resize handler
-    this.scale.on('resize', () => {
-      cam.setZoom(getDeviceZoom());
-    });
-
-    // 12. Ambient animations
+    // 5. Ambient animations
     this.addLampGlow(lampPositions);
     this.addButterflies();
+  }
 
-    if (this.shouldFadeIn) {
-      const cam = this.cameras.main;
-      cam.setAlpha(0);
-      this.tweens.add({
-        targets: cam,
-        alpha: 1,
-        duration: 300,
-        ease: 'Linear',
+  protected onShowHUD(): void {
+    this.updateHUD();
+  }
+
+  protected onBack(): void {
+    this.openSettings();
+  }
+
+  onEnterCheckpoint(zone: CheckpointZone): void {
+    const pos = this.player.getPosition();
+    savePlayerPosition(pos.x, pos.y);
+
+    // Interior buildings
+    const interiorSceneMap: Record<string, string> = {
+      michaels_house: 'MichaelsHouseScene',
+      airport: 'AirportEntranceScene',
+    };
+
+    if (interiorSceneMap[zone.id]) {
+      this.fadeToScene(interiorSceneMap[zone.id], {
+        returnX: pos.x,
+        returnY: pos.y,
       });
-      this.shouldFadeIn = false;
-    }
-  }
-
-  update(time: number, delta: number): void {
-    // Cooldown timers
-    if (this.interactCooldown > 0) this.interactCooldown -= delta;
-    if (this.backCooldown > 0) this.backCooldown -= delta;
-
-    // 1. Input
-    this.inputSystem.update();
-    const dir = this.inputSystem.getDirection();
-
-    // 2. Player
-    this.player.update(dir);
-
-    // 3. Partner follows player
-    this.partner.update(this.player.getPosition());
-
-    // 4. NPCs — pass player position for interaction proximity
-    const playerPos = this.player.getPosition();
-    this.npcSystem.update(delta, playerPos.x, playerPos.y);
-
-    // 5. Checkpoint proximity
-    const playerTile = worldToTile(playerPos.x, playerPos.y);
-    let inZone: CheckpointZone | null = null;
-
-    for (const zone of CHECKPOINT_ZONES) {
-      if (
-        playerTile.x >= zone.tileX &&
-        playerTile.x < zone.tileX + zone.width &&
-        playerTile.y >= zone.tileY &&
-        playerTile.y < zone.tileY + zone.height
-      ) {
-        inZone = zone;
-        break;
-      }
+      return;
     }
 
-    if (inZone && inZone !== this.activeZone) {
-      this.activeZone = inZone;
-      uiManager.showInteractionPrompt(inZone.promptText);
-    } else if (!inZone && this.activeZone) {
-      this.activeZone = null;
-      uiManager.hideInteractionPrompt();
-    }
-
-    // 6. Interact press
-    if (this.inputSystem.isInteractPressed() && this.activeZone && this.interactCooldown <= 0) {
-      this.interactCooldown = 500;
-      this.enterCheckpoint(this.activeZone);
-    }
-
-    // 7. Back/ESC press
-    if (this.inputSystem.isBackPressed() && this.backCooldown <= 0) {
-      this.backCooldown = 500;
-      this.openSettings();
-    }
-  }
-
-  private buildTileMap(): void {
-    const rt = this.add.renderTexture(0, 0, MAP_PX_WIDTH, MAP_PX_HEIGHT);
-    rt.setOrigin(0, 0);
-    rt.setDepth(-50);
-
-    for (let y = 0; y < MAP_HEIGHT; y++) {
-      for (let x = 0; x < MAP_WIDTH; x++) {
-        const tileType = tileGrid[y][x];
-        rt.drawFrame('terrain', tileType, x * TILE_SIZE, y * TILE_SIZE);
-      }
+    // Existing mini-game logic
+    markCheckpointVisited(zone.id);
+    const checkpoint = CHECKPOINTS.find(cp => cp.id === zone.id);
+    if (!checkpoint) return;
+    uiManager.hideHUD();
+    uiManager.hideInteractionPrompt();
+    const sceneMap: Record<string, string> = {
+      quiz: 'QuizScene',
+      catch: 'CatchScene',
+      match: 'MatchScene',
+    };
+    const sceneKey = sceneMap[checkpoint.miniGame.type];
+    if (sceneKey) {
+      this.scene.start(sceneKey, {
+        checkpointId: checkpoint.id,
+        config: checkpoint.miniGame.config,
+      });
     }
   }
 
@@ -275,54 +181,6 @@ export class WorldScene extends Phaser.Scene {
         yoyo: true,
       });
     });
-  }
-
-  private enterCheckpoint(zone: CheckpointZone): void {
-    const pos = this.player.getPosition();
-    savePlayerPosition(pos.x, pos.y);
-
-    // Interior buildings
-    const interiorSceneMap: Record<string, string> = {
-      michaels_house: 'MichaelsHouseScene',
-    };
-
-    if (interiorSceneMap[zone.id]) {
-      uiManager.hideHUD();
-      uiManager.hideInteractionPrompt();
-      const cam = this.cameras.main;
-      this.tweens.add({
-        targets: cam,
-        alpha: 0,
-        duration: 300,
-        ease: 'Linear',
-        onComplete: () => {
-          this.scene.start(interiorSceneMap[zone.id], {
-            returnX: pos.x,
-            returnY: pos.y,
-          });
-        },
-      });
-      return;
-    }
-
-    // Existing mini-game logic
-    markCheckpointVisited(zone.id);
-    const checkpoint = CHECKPOINTS.find(cp => cp.id === zone.id);
-    if (!checkpoint) return;
-    uiManager.hideHUD();
-    uiManager.hideInteractionPrompt();
-    const sceneMap: Record<string, string> = {
-      quiz: 'QuizScene',
-      catch: 'CatchScene',
-      match: 'MatchScene',
-    };
-    const sceneKey = sceneMap[checkpoint.miniGame.type];
-    if (sceneKey) {
-      this.scene.start(sceneKey, {
-        checkpointId: checkpoint.id,
-        config: checkpoint.miniGame.config,
-      });
-    }
   }
 
   private openSettings(): void {
@@ -389,10 +247,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   shutdown(): void {
-    this.inputSystem?.destroy();
-    this.npcSystem?.destroy();
+    super.shutdown();
     this.skyRenderer?.destroy();
-    uiManager.hideHUD();
-    uiManager.hideInteractionPrompt();
   }
 }

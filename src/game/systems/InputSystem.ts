@@ -19,6 +19,9 @@ export class InputSystem {
   private touchEnabled = false;
   private actionPressed = false;
 
+  // Freeze state — when frozen, all input returns neutral/false
+  private frozen = false;
+
   // Action button
   private actionButton?: Phaser.GameObjects.Arc;
   private actionButtonLabel?: Phaser.GameObjects.Text;
@@ -234,7 +237,17 @@ export class InputSystem {
     this.clickMarker = undefined;
   }
 
+  freeze(): void {
+    this.frozen = true;
+  }
+
+  unfreeze(): void {
+    this.frozen = false;
+  }
+
   getDirection(): { x: number; y: number } {
+    if (this.frozen) return { x: 0, y: 0 };
+
     let x = 0;
     let y = 0;
 
@@ -285,9 +298,10 @@ export class InputSystem {
   }
 
   isInteractPressed(): boolean {
-    const keyboard = this.interactKey?.isDown || this.spaceKey?.isDown || false;
     const touch = this.actionPressed;
-    this.actionPressed = false; // consume
+    this.actionPressed = false; // always consume to prevent queuing
+    if (this.frozen) return false;
+    const keyboard = this.interactKey?.isDown || this.spaceKey?.isDown || false;
     return keyboard || touch;
   }
 
