@@ -301,7 +301,7 @@ class UIManager {
     el.id = 'npc-dialog';
     el.innerHTML = `
       <div class="npc-dialog__box">
-        <p class="npc-dialog__text" id="npc-dialog-text">${lines[0]}</p>
+        <p class="npc-dialog__text" id="npc-dialog-text" dir="auto">${lines[0]}</p>
         <span class="npc-dialog__advance">${lines.length > 1 ? 'Tap ▶' : 'Tap ✕'}</span>
       </div>
     `;

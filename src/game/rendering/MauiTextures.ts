@@ -984,6 +984,30 @@ function generateMauiDecorations(scene: Phaser.Scene): void {
     rect(ctx, 25, 20, 3, 5, '#333333');
     c.refresh();
   }
+
+  // deco-maui-taxi — 32×32 (1x1 tile, top-down yellow taxi)
+  {
+    const c = scene.textures.createCanvas('deco-maui-taxi', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Car body — yellow
+    rect(ctx, 6, 4, 20, 24, '#FFD700');
+    // Roof strip — dark for "TAXI" look
+    rect(ctx, 8, 8, 16, 12, '#B8960F');
+    // Windshield (front)
+    rect(ctx, 9, 5, 14, 4, '#AADDFF');
+    // Rear window
+    rect(ctx, 9, 23, 14, 3, '#AADDFF');
+    // Wheels
+    rect(ctx, 4, 7, 3, 5, '#333333');
+    rect(ctx, 25, 7, 3, 5, '#333333');
+    rect(ctx, 4, 20, 3, 5, '#333333');
+    rect(ctx, 25, 20, 3, 5, '#333333');
+    // "TAXI" roof light
+    rect(ctx, 13, 10, 6, 3, '#FFFFFF');
+    rect(ctx, 14, 11, 4, 1, '#FF4444');
+    c.refresh();
+  }
 }
 
 // ── Buildings ───────────────────────────────────────────────────────────
@@ -1687,6 +1711,175 @@ function generateHouseNPCTextures(scene: Phaser.Scene): void {
     px(ctx, 33, 18, '#333');
     c.refresh();
   }
+
+  // npc-computer — desktop computer with monitor, keyboard
+  {
+    const c = scene.textures.createCanvas('npc-computer', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    // Desk surface
+    rect(ctx, 8, 28, 32, 4, '#8B6914');
+    rect(ctx, 6, 31, 36, 3, '#7B5904');
+    // Desk legs
+    rect(ctx, 8, 34, 3, 10, '#7B5904');
+    rect(ctx, 37, 34, 3, 10, '#7B5904');
+    // Monitor frame (dark gray)
+    rect(ctx, 12, 8, 24, 18, '#333333');
+    // Screen (blue glow)
+    rect(ctx, 14, 10, 20, 14, '#2244AA');
+    // Screen highlight
+    rect(ctx, 14, 10, 20, 2, '#3355CC');
+    rect(ctx, 14, 10, 3, 14, '#2B4DBB');
+    // Text lines on screen
+    rect(ctx, 16, 13, 12, 1, '#88CCFF');
+    rect(ctx, 16, 16, 10, 1, '#88CCFF');
+    rect(ctx, 16, 19, 14, 1, '#88CCFF');
+    // Monitor stand
+    rect(ctx, 21, 26, 6, 3, '#444444');
+    rect(ctx, 19, 28, 10, 2, '#444444');
+    // Keyboard
+    rect(ctx, 14, 30, 16, 2, '#555555');
+    rect(ctx, 15, 30, 14, 1, '#666666');
+    // Key dots
+    for (let kx = 16; kx < 29; kx += 2) {
+      px(ctx, kx, 30, '#888888');
+    }
+    // Power LED
+    px(ctx, 33, 24, '#00FF00');
+    c.refresh();
+  }
+}
+
+// ── Hadar's House NPC textures ──────────────────────────────────────────
+
+function generateHadarHouseNPCTextures(scene: Phaser.Scene): void {
+  // npc-hadar-mom — brown skin, black hair, orange/red top, earrings
+  {
+    const c = scene.textures.createCanvas('npc-hadar-mom', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#C4956A', hair: '#111111', top: '#CC4411', pants: '#333333',
+      detail: (ctx) => {
+        // Earrings
+        px(ctx, 17, 12, '#FFD700');
+        px(ctx, 30, 12, '#FFD700');
+        // Necklace
+        rect(ctx, 21, 18, 6, 1, '#FFD700');
+        px(ctx, 23, 19, '#FFD700');
+        px(ctx, 24, 19, '#FFD700');
+        // Hair bun detail
+        rect(ctx, 21, 3, 6, 3, '#111111');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-hadar-dad — fair skin, black hair, blue shirt, glasses
+  {
+    const c = scene.textures.createCanvas('npc-hadar-dad', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#F5D6B8', hair: '#111111', top: '#3366AA', pants: '#C4A265',
+      detail: (ctx) => {
+        // Glasses
+        rect(ctx, 18, 11, 5, 4, '#444444');
+        rect(ctx, 19, 12, 3, 2, '#88BBDD');
+        rect(ctx, 25, 11, 5, 4, '#444444');
+        rect(ctx, 26, 12, 3, 2, '#88BBDD');
+        rect(ctx, 23, 12, 2, 1, '#444444'); // bridge
+        // Watch on wrist
+        rect(ctx, 10, 32, 3, 2, '#888888');
+        px(ctx, 11, 33, '#44AA44');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-hadar-sister — olive/mixed skin, dark hair, military uniform, beret
+  {
+    const c = scene.textures.createCanvas('npc-hadar-sister', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#D2A679', hair: '#222222', top: '#556B2F', pants: '#556B2F',
+      shoes: '#3a2a1a',
+      detail: (ctx) => {
+        // Beret
+        rect(ctx, 17, 3, 14, 3, '#556B2F');
+        rect(ctx, 18, 2, 12, 2, '#556B2F');
+        rect(ctx, 30, 4, 3, 2, '#556B2F'); // beret flap
+        // Belt
+        rect(ctx, 14, 33, 20, 2, '#8B7355');
+        px(ctx, 23, 33, '#CCAA44'); // buckle
+        px(ctx, 24, 33, '#CCAA44');
+        // Camo patches
+        px(ctx, 16, 22, '#4a5a2f');
+        px(ctx, 20, 26, '#6b7b3f');
+        px(ctx, 30, 24, '#4a5a2f');
+        px(ctx, 26, 28, '#6b7b3f');
+        // Boot tops
+        rect(ctx, 17, 37, 5, 2, '#3a2a1a');
+        rect(ctx, 26, 37, 5, 2, '#3a2a1a');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-hadar-chihuahua — tiny fawn/tan chihuahua, huge ears, big eyes
+  {
+    const c = scene.textures.createCanvas('npc-hadar-chihuahua', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const fur = '#F0EDED';
+    const furDark = darken(fur, 0.15);
+    const furLight = lighten(fur, 0.15);
+    // Shadow
+    rect(ctx, 16, 42, 16, 2, 'rgba(0,0,0,0.12)');
+    // Body (tiny, round)
+    rect(ctx, 18, 32, 12, 8, fur);
+    rect(ctx, 17, 34, 14, 4, fur);
+    // Front legs (tiny)
+    rect(ctx, 17, 38, 2, 5, fur);
+    rect(ctx, 22, 38, 2, 5, fur);
+    // Back legs
+    rect(ctx, 26, 38, 2, 5, fur);
+    rect(ctx, 29, 38, 2, 5, fur);
+    // Tiny paws
+    rect(ctx, 16, 42, 4, 1, furDark);
+    rect(ctx, 21, 42, 4, 1, furDark);
+    rect(ctx, 25, 42, 4, 1, furDark);
+    rect(ctx, 28, 42, 4, 1, furDark);
+    // Head (round, small)
+    rect(ctx, 19, 24, 10, 8, fur);
+    rect(ctx, 20, 23, 8, 9, fur);
+    // Huge ears (signature chihuahua)
+    rect(ctx, 16, 18, 5, 7, fur);
+    rect(ctx, 17, 17, 3, 2, fur);
+    rect(ctx, 27, 18, 5, 7, fur);
+    rect(ctx, 28, 17, 3, 2, fur);
+    // Inner ears
+    rect(ctx, 18, 20, 2, 3, furDark);
+    rect(ctx, 28, 20, 2, 3, furDark);
+    // Big eyes (proportionally large)
+    rect(ctx, 21, 26, 3, 3, '#111111');
+    rect(ctx, 25, 26, 3, 3, '#111111');
+    px(ctx, 22, 26, '#FFFFFF'); // eye shine
+    px(ctx, 26, 26, '#FFFFFF');
+    // Tiny nose
+    rect(ctx, 23, 29, 2, 1, '#333333');
+    // Mouth
+    px(ctx, 23, 30, furDark);
+    px(ctx, 24, 30, furDark);
+    // Tail (tiny, curled up)
+    rect(ctx, 30, 32, 4, 2, fur);
+    rect(ctx, 33, 30, 2, 3, fur);
+    px(ctx, 34, 29, fur);
+    // Belly lighter patch
+    rect(ctx, 20, 36, 8, 2, furLight);
+    c.refresh();
+  }
 }
 
 // ── Main export ─────────────────────────────────────────────────────────
@@ -1699,4 +1892,5 @@ export function generateMauiTextures(scene: Phaser.Scene): void {
   generateMauiCars(scene);
   generateHotelInteriorTextures(scene);
   generateHouseNPCTextures(scene);
+  generateHadarHouseNPCTextures(scene);
 }

@@ -11,7 +11,7 @@ const HOUSE_NPCS: NPCDef[] = [
     id: 'house-mom', tileX: 3, tileY: 4, behavior: 'idle',
     texture: 'npc-house-mom', interactable: true, onInteract: 'dialog',
     facingDirection: 'right',
-    interactionData: { lines: ['Welcome to Studio Lana!', 'We fix, we sew, we make it beautiful!'] },
+    interactionData: { lines: ['אני עשיתי יופי של עבודה'] },
   },
   {
     id: 'house-aunt', tileX: 6, tileY: 4, behavior: 'idle',
@@ -24,13 +24,20 @@ const HOUSE_NPCS: NPCDef[] = [
     id: 'house-grandma', tileX: 4, tileY: 6, behavior: 'idle',
     texture: 'npc-house-grandma', interactable: true, onInteract: 'dialog',
     facingDirection: 'up',
-    interactionData: { lines: ["They're fixing my favorite dress...", "I've been coming here for years!"] },
+    interactionData: { lines: ['החתול שרט לי את כל הבגדים'] },
   },
   // Studio Lana — Mannequin decoration
   {
     id: 'house-mannequin', tileX: 8, tileY: 3, behavior: 'idle',
     texture: 'npc-house-mannequin', interactable: false,
     facingDirection: 'down',
+  },
+  // Studio Lana — Computer
+  {
+    id: 'house-computer', tileX: 8, tileY: 5, behavior: 'idle',
+    texture: 'npc-computer', interactable: true, onInteract: 'dialog',
+    facingDirection: 'down',
+    interactionData: { lines: ['אתה רציני שאתה רוצה לבטל את זה?'] },
   },
   // Kitchen (top-center) — Little Sister ballet twirling
   {
@@ -59,7 +66,7 @@ const HOUSE_NPCS: NPCDef[] = [
     id: 'house-bigsis', tileX: 23, tileY: 16, behavior: 'idle',
     texture: 'npc-house-bigsis', interactable: true, onInteract: 'dialog',
     facingDirection: 'right',
-    interactionData: { lines: ['Oh no, the baby woke up!', "She's running everywhere — help me catch her!"] },
+    interactionData: { lines: ['תחזיקו שנייה את רומי'] },
   },
   // Bottom-right room — Baby toddler
   {
@@ -93,7 +100,7 @@ export class MichaelsHouseScene extends InteriorScene {
         if (npc.id === 'house-bigsis') {
           // Trigger Chase the Baby mini-game
           uiManager.showNPCDialog(
-            ['Oh no, the baby woke up!', "She's running everywhere — help me catch her!"],
+            ['תחזיקו שנייה את רומי'],
             () => {
               uiManager.hideNPCDialog();
               this.inputSystem.unfreeze();
