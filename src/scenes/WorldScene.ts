@@ -318,15 +318,17 @@ export class WorldScene extends Phaser.Scene {
       if (this.fsBtnContainer) {
         this.fsBtnContainer.setPosition(gameSize.width - 70, 54);
       }
+      const zoom = Phaser.Math.Clamp(Math.min(gameSize.width / 533, gameSize.height / 400), 0.7, 3);
+      this.cameras.main.setZoom(zoom);
     });
   }
 
   private setupCamera(): void {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
-    // Slightly higher zoom on small screens so the world doesn't feel tiny
-    const { width } = this.cameras.main;
-    const zoom = width < 500 ? 1.8 : 1.5;
+    // Target: ~533×400 game units visible (matches original 800×600 FIT at 1.5x zoom)
+    const { width, height } = this.cameras.main;
+    const zoom = Phaser.Math.Clamp(Math.min(width / 533, height / 400), 0.7, 3);
     this.cameras.main.setZoom(zoom);
   }
 
