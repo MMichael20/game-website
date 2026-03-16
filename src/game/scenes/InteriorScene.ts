@@ -20,7 +20,7 @@ export abstract class InteriorScene extends Phaser.Scene {
   protected inputSystem!: InputSystem;
   protected layout!: InteriorLayout;
 
-  private returnData!: InteriorSceneData;
+  protected returnData!: InteriorSceneData;
   private interactCooldown = 0;
   private backCooldown = 0;
   private activeExitZone = false;
