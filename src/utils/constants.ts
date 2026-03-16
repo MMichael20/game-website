@@ -1,7 +1,7 @@
 // src/utils/constants.ts
 export const TILE_SIZE = 32;
 export const MAP_WIDTH = 40;   // tiles
-export const MAP_HEIGHT = 32;  // tiles
+export const MAP_HEIGHT = 38;  // tiles
 export const MAP_PX_WIDTH = MAP_WIDTH * TILE_SIZE;   // 960
 export const MAP_PX_HEIGHT = MAP_HEIGHT * TILE_SIZE;  // 768
 

@@ -6,12 +6,28 @@ export const enum TileType {
   Dirt = 1,
   Stone = 2,
   DarkGrass = 3,
+  Tarmac = 4,
+  RunwayMarking = 5,
+  ParkingLot = 6,
 }
 
-// 40x32 tile grid — 0=grass, 1=dirt, 2=stone, 3=dark grass
+// 40x38 tile grid — 0=grass, 1=dirt, 2=stone, 3=dark grass, 4=tarmac, 5=runwaymarking, 6=parkinglot
 // Row-major: tileGrid[y][x]
 export const tileGrid: number[][] = Array.from({ length: MAP_HEIGHT }, (_, y) => {
   return Array.from({ length: MAP_WIDTH }, (_, x) => {
+    // ── Airport zone (rows 28-37) ──
+    // Runway center line (row 36)
+    if (y === 36 && x >= 5 && x <= 34) return TileType.RunwayMarking;
+    // Runway rows (35-37) — tarmac except center marking
+    if (y >= 35 && y <= 37 && x >= 5 && x <= 34) return TileType.Tarmac;
+    // Tarmac apron (rows 32-34)
+    if (y >= 32 && y <= 34 && x >= 5 && x <= 34) return TileType.Tarmac;
+    // Parking lots: left block (x=8-13, y=28-31) and right block (x=26-31, y=28-31)
+    if (y >= 28 && y <= 31 && ((x >= 8 && x <= 13) || (x >= 26 && x <= 31))) return TileType.ParkingLot;
+    // Access road (row 28, connecting parking to terminal)
+    if (y === 28 && x >= 8 && x <= 31) return TileType.Stone;
+
+    // ── Existing town zones ──
     // Main east-west path
     if (y >= 14 && y <= 15 && x >= 3 && x <= 37) return TileType.Dirt;
     // North-south path
@@ -45,8 +61,12 @@ export const walkGrid: boolean[][] = Array.from({ length: MAP_HEIGHT }, (_, y) =
     if (x >= 30 && x <= 32 && y >= 7 && y <= 9) return false;
     // Michael's House footprint
     if (x >= 14 && x <= 16 && y >= 3 && y <= 5) return false;
-    // Airport building footprint
-    if (x >= 32 && x <= 34 && y >= 24 && y <= 26) return false;
+    // Hadar's House footprint
+    if (x >= 24 && x <= 26 && y >= 3 && y <= 5) return false;
+    // Terminal building footprint (new airport zone)
+    if (x >= 14 && x <= 25 && y >= 29 && y <= 31) return false;
+    // Tarmac + runway — all blocked (rows 32-37)
+    if (x >= 5 && x <= 34 && y >= 32 && y <= 37) return false;
     // Everything else is walkable
     return true;
   });
@@ -66,7 +86,8 @@ export const CHECKPOINT_ZONES: CheckpointZone[] = [
   { id: 'park', centerX: 624, centerY: 688, radius: 72, promptText: 'Tap to go in' },
   { id: 'cinema', centerX: 1008, centerY: 336, radius: 72, promptText: 'Tap to go in' },
   { id: 'michaels_house', centerX: 496, centerY: 208, radius: 72, promptText: 'Tap to go in' },
-  { id: 'airport', centerX: 1072, centerY: 880, radius: 72, promptText: 'Tap to go in' },
+  { id: 'airport', centerX: 19 * 32 + 16, centerY: 29 * 32, radius: 56, promptText: 'Enter Airport' },
+  { id: 'hadars_house', centerX: 816, centerY: 208, radius: 72, promptText: 'Tap to go in' },
 ];
 
 export interface DecorationDef {
@@ -88,7 +109,7 @@ export const DECORATIONS: DecorationDef[] = [
   { type: 'tree', tileX: 2, tileY: 20 },
   { type: 'tree', tileX: 38, tileY: 20 },
   { type: 'tree', tileX: 15, tileY: 4 },
-  { type: 'tree', tileX: 25, tileY: 4 },
+  { type: 'tree', tileX: 28, tileY: 4 },
   { type: 'tree', tileX: 2, tileY: 28 },
   { type: 'tree', tileX: 38, tileY: 28 },
   { type: 'tree', tileX: 12, tileY: 12 },
@@ -142,7 +163,7 @@ export const DECORATIONS: DecorationDef[] = [
   { type: 'bush', tileX: 1, tileY: 18 },
   { type: 'bush', tileX: 38, tileY: 24 },
   { type: 'bush', tileX: 13, tileY: 5 },
-  { type: 'bush', tileX: 26, tileY: 5 },
+  { type: 'bush', tileX: 28, tileY: 5 },
 
   // ── Rocks (scattered in nature areas) ──
   { type: 'rock', tileX: 3, tileY: 16 },
