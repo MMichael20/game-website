@@ -225,16 +225,25 @@ function drawCharacter(
   // ===== Layer 4: Body base =====
   drawBody(ctx, cx, metrics, isHer, s);
 
-  // ===== Layer 5: Outfit =====
+  // ===== Layer 5a: Outfit (under arms) =====
   const outfit = OUTFITS[outfitIndex % OUTFITS.length];
   try {
-    outfit.draw(ctx, character, frameIndex, metrics);
+    outfit.drawUnder(ctx, character, frameIndex, metrics);
   } catch (err) {
-    console.warn(`Outfit ${outfitIndex} draw failed (frame ${frameIndex}):`, err);
+    console.warn(`Outfit ${outfitIndex} drawUnder failed (frame ${frameIndex}):`, err);
   }
 
   // ===== Layer 6: Arms =====
   drawArms(ctx, cx, metrics, offsets, isHer, s);
+
+  // ===== Layer 6b: Outfit (over arms — long sleeves) =====
+  if (outfit.drawOver) {
+    try {
+      outfit.drawOver(ctx, character, frameIndex, metrics);
+    } catch (err) {
+      console.warn(`Outfit ${outfitIndex} drawOver failed (frame ${frameIndex}):`, err);
+    }
+  }
 
   // ===== Layer 7: Neck + Head =====
   const headCy = metrics.shoulderY - 22 * s;

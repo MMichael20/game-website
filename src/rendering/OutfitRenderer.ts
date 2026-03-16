@@ -9,7 +9,15 @@ import type { BodyMetrics } from './OffscreenCharacterRenderer';
 
 export interface OutfitDefinition {
   name: string;
-  draw: (
+  /** Draws parts behind the arms: torso, skirts, pants, sleeve caps. */
+  drawUnder: (
+    ctx: CanvasRenderingContext2D,
+    character: 'her' | 'him',
+    frame: number,
+    metrics: BodyMetrics,
+  ) => void;
+  /** Optional: draws parts in front of arms (forearm sleeves, cuffs). Called after arms are drawn. */
+  drawOver?: (
     ctx: CanvasRenderingContext2D,
     character: 'her' | 'him',
     frame: number,
@@ -1208,16 +1216,16 @@ function drawSmartCasual(
 // ---------------------------------------------------------------------------
 
 export const OUTFITS: OutfitDefinition[] = [
-  { name: 'Casual', draw: drawCasual },
-  { name: 'Formal', draw: drawFormal },
-  { name: 'Date Night', draw: drawDateNight },
-  { name: 'Cozy', draw: drawCozy },
-  { name: 'Sporty', draw: drawSporty },
-  { name: 'Restaurant', draw: drawRestaurant },
-  { name: 'Pizza', draw: drawPizza },
-  { name: 'Pajamas', draw: drawPajamas },
-  { name: 'Graphic Tee', draw: drawGraphicTee },
-  { name: 'Smart Casual', draw: drawSmartCasual },
+  { name: 'Casual', drawUnder: drawCasual },
+  { name: 'Formal', drawUnder: drawFormal },
+  { name: 'Date Night', drawUnder: drawDateNight },
+  { name: 'Cozy', drawUnder: drawCozy },
+  { name: 'Sporty', drawUnder: drawSporty },
+  { name: 'Restaurant', drawUnder: drawRestaurant },
+  { name: 'Pizza', drawUnder: drawPizza },
+  { name: 'Pajamas', drawUnder: drawPajamas },
+  { name: 'Graphic Tee', drawUnder: drawGraphicTee },
+  { name: 'Smart Casual', drawUnder: drawSmartCasual },
 ];
 
 export const OUTFIT_NAMES: string[] = OUTFITS.map((o) => o.name);
