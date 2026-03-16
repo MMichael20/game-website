@@ -2262,6 +2262,128 @@ function drawButterfly(ctx: Ctx): void {
   px(ctx, 20, 7, '#664433');
 }
 
+export function generateChaseBabyTextures(scene: Phaser.Scene): void {
+  // Baby running/crying (48x48)
+  const run = scene.textures.createCanvas('chase-baby-run', 48, 48);
+  if (run) {
+    const ctx = run.context;
+    const skin = '#FFE8D6';
+    const skinDark = '#E8D0B8';
+    const onesie = '#FFFFFF';
+    const onesieShade = '#E8E8E8';
+    const hair = '#F0D88A';
+
+    // Body (onesie)
+    rect(ctx, 18, 20, 12, 14, onesie);
+    rect(ctx, 19, 21, 10, 12, onesieShade);
+
+    // Legs apart (running pose)
+    rect(ctx, 16, 32, 5, 8, onesie);  // left leg
+    rect(ctx, 27, 32, 5, 8, onesie);  // right leg
+    // Feet
+    rect(ctx, 15, 39, 6, 3, skin);
+    rect(ctx, 27, 39, 6, 3, skin);
+
+    // Arms forward (reaching)
+    rect(ctx, 12, 22, 6, 4, skin);  // left arm
+    rect(ctx, 30, 22, 6, 4, skin);  // right arm
+
+    // Head
+    circle(ctx, 24, 14, 8, skin);
+    // Hair
+    rect(ctx, 16, 6, 16, 6, hair);
+    rect(ctx, 17, 5, 14, 3, hair);
+
+    // Crying face — open mouth
+    rect(ctx, 22, 16, 4, 3, '#FF6666'); // open mouth
+    // Eyes (wide, crying)
+    rect(ctx, 19, 12, 3, 3, '#FFFFFF');
+    px(ctx, 20, 13, '#333333');
+    rect(ctx, 26, 12, 3, 3, '#FFFFFF');
+    px(ctx, 27, 13, '#333333');
+
+    // Tears
+    px(ctx, 18, 14, '#66CCFF');
+    px(ctx, 18, 15, '#66CCFF');
+    px(ctx, 30, 14, '#66CCFF');
+    px(ctx, 30, 15, '#66CCFF');
+
+    // Blush
+    rect(ctx, 17, 15, 2, 1, '#FFB8B8');
+    rect(ctx, 29, 15, 2, 1, '#FFB8B8');
+
+    run.refresh();
+  }
+
+  // Baby sleeping (48x48)
+  const sleep = scene.textures.createCanvas('chase-baby-sleep', 48, 48);
+  if (sleep) {
+    const ctx = sleep.context;
+    const skin = '#FFE8D6';
+    const onesie = '#FFFFFF';
+    const hair = '#F0D88A';
+
+    // Body curled up
+    rect(ctx, 16, 24, 16, 12, onesie);
+
+    // Legs tucked
+    rect(ctx, 18, 34, 5, 6, onesie);
+    rect(ctx, 25, 34, 5, 6, onesie);
+    rect(ctx, 17, 39, 6, 2, skin);
+    rect(ctx, 25, 39, 6, 2, skin);
+
+    // Arms tucked in
+    rect(ctx, 14, 26, 4, 3, skin);
+    rect(ctx, 30, 26, 4, 3, skin);
+
+    // Head
+    circle(ctx, 24, 16, 8, skin);
+    // Hair
+    rect(ctx, 16, 8, 16, 6, hair);
+    rect(ctx, 17, 7, 14, 3, hair);
+
+    // Closed eyes (lines)
+    rect(ctx, 19, 14, 4, 1, '#666666');
+    rect(ctx, 25, 14, 4, 1, '#666666');
+
+    // Peaceful smile
+    rect(ctx, 22, 18, 4, 1, '#E8A0A0');
+
+    // Blush
+    rect(ctx, 17, 16, 2, 1, '#FFB8B8');
+    rect(ctx, 29, 16, 2, 1, '#FFB8B8');
+
+    sleep.refresh();
+  }
+
+  // Soothe circle (64x64) — glowing blue/purple ring
+  const soothe = scene.textures.createCanvas('chase-soothe-circle', 64, 64);
+  if (soothe) {
+    const ctx = soothe.context;
+    // Outer glow
+    circle(ctx, 32, 32, 28, 'rgba(100, 120, 255, 0.2)');
+    circle(ctx, 32, 32, 24, 'rgba(120, 140, 255, 0.3)');
+    // Ring
+    circle(ctx, 32, 32, 20, 'rgba(150, 160, 255, 0.5)');
+    circle(ctx, 32, 32, 16, 'rgba(0, 0, 0, 0)');
+    // Clear center by drawing transparent — use clearRect instead
+    ctx.clearRect(12, 12, 40, 40);
+    // Redraw just the ring
+    circle(ctx, 32, 32, 20, 'rgba(130, 150, 255, 0.6)');
+    circle(ctx, 32, 32, 15, 'rgba(0, 0, 0, 0)');
+    ctx.globalCompositeOperation = 'destination-out';
+    circle(ctx, 32, 32, 14, '#000000');
+    ctx.globalCompositeOperation = 'source-over';
+    // Inner highlight
+    for (let a = 0; a < Math.PI * 2; a += 0.2) {
+      const rx = 32 + Math.cos(a) * 17;
+      const ry = 32 + Math.sin(a) * 17;
+      px(ctx, Math.round(rx), Math.round(ry), 'rgba(200, 210, 255, 0.8)');
+    }
+    soothe.refresh();
+  }
+}
+
 export function generateCatchItems(scene: Phaser.Scene): void {
   const drawFns: Record<string, (ctx: Ctx) => void> = {
     petal: drawPetal,
@@ -2604,6 +2726,7 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generateBuildings(scene);
   generateDecorations(scene);
   generateCatchItems(scene);
+  generateChaseBabyTextures(scene);
   generateMatchCards(scene);
   generateSky(scene);
   generateAirportTextures(scene);

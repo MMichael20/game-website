@@ -59,7 +59,7 @@ const HOUSE_NPCS: NPCDef[] = [
     id: 'house-bigsis', tileX: 23, tileY: 16, behavior: 'idle',
     texture: 'npc-house-bigsis', interactable: true, onInteract: 'dialog',
     facingDirection: 'right',
-    interactionData: { lines: ['Shhh, the baby just fell asleep...', "She's growing so fast, already one!"] },
+    interactionData: { lines: ['Oh no, the baby woke up!', "She's running everywhere — help me catch her!"] },
   },
   // Bottom-right room — Baby toddler
   {
@@ -89,11 +89,29 @@ export class MichaelsHouseScene extends InteriorScene {
     this.npcSystem.onDwellTrigger = (npc) => {
       if (npc.onInteract === 'dialog' && npc.interactionData?.lines) {
         this.inputSystem.freeze();
-        uiManager.showNPCDialog(npc.interactionData.lines, () => {
-          uiManager.hideNPCDialog();
-          this.inputSystem.unfreeze();
-          this.npcSystem.onDialogueEnd(npc.id);
-        });
+
+        if (npc.id === 'house-bigsis') {
+          // Trigger Chase the Baby mini-game
+          uiManager.showNPCDialog(
+            ['Oh no, the baby woke up!', "She's running everywhere — help me catch her!"],
+            () => {
+              uiManager.hideNPCDialog();
+              this.inputSystem.unfreeze();
+              this.npcSystem.onDialogueEnd(npc.id);
+              this.scene.start('ChaseBabyScene', {
+                returnScene: 'MichaelsHouseScene',
+                returnX: this.returnData.returnX,
+                returnY: this.returnData.returnY,
+              });
+            }
+          );
+        } else {
+          uiManager.showNPCDialog(npc.interactionData.lines, () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.npcSystem.onDialogueEnd(npc.id);
+          });
+        }
       }
     };
   }
