@@ -24,6 +24,7 @@ export abstract class InteriorScene extends Phaser.Scene {
   private interactCooldown = 0;
   private backCooldown = 0;
   private activeExitZone = false;
+  private activeForwardZone = false;
 
   abstract getLayout(): InteriorLayout;
 
@@ -89,9 +90,11 @@ export abstract class InteriorScene extends Phaser.Scene {
     this.player.update(dir);
     this.partner.update(this.player.getPosition());
 
-    // Exit zone check
+    // Zone detection
     const playerPos = this.player.getPosition();
     const playerTile = worldToTile(playerPos.x, playerPos.y);
+
+    // Back exit zone check
     const exit = this.layout.exit;
     const inExitZone =
       playerTile.x >= exit.tileX &&
@@ -99,24 +102,61 @@ export abstract class InteriorScene extends Phaser.Scene {
       playerTile.y >= exit.tileY &&
       playerTile.y < exit.tileY + exit.height;
 
-    if (inExitZone && !this.activeExitZone) {
+    // Forward exit zone check
+    const forwardExit = this.layout.forwardExit;
+    const inForwardZone = forwardExit
+      ? playerTile.x >= forwardExit.tileX &&
+        playerTile.x < forwardExit.tileX + forwardExit.width &&
+        playerTile.y >= forwardExit.tileY &&
+        playerTile.y < forwardExit.tileY + forwardExit.height
+      : false;
+
+    // Update back exit zone prompt (hide if in forward zone)
+    if (inExitZone && !inForwardZone && !this.activeExitZone) {
       this.activeExitZone = true;
+      this.activeForwardZone = false;
       uiManager.showInteractionPrompt(exit.promptText);
-    } else if (!inExitZone && this.activeExitZone) {
+    } else if ((!inExitZone || inForwardZone) && this.activeExitZone) {
       this.activeExitZone = false;
       uiManager.hideInteractionPrompt();
     }
 
+    // Update forward exit zone prompt (hide if in back zone)
+    if (inForwardZone && !inExitZone && !this.activeForwardZone && forwardExit) {
+      this.activeForwardZone = true;
+      this.activeExitZone = false;
+      uiManager.showInteractionPrompt(forwardExit.promptText);
+    } else if ((!inForwardZone || inExitZone) && this.activeForwardZone) {
+      this.activeForwardZone = false;
+      uiManager.hideInteractionPrompt();
+    }
+
     // Interact
-    if (this.inputSystem.isInteractPressed() && this.activeExitZone && this.interactCooldown <= 0) {
+    if (this.inputSystem.isInteractPressed() && this.interactCooldown <= 0) {
       this.interactCooldown = 500;
-      this.exitToOverworld();
+
+      // Let subclass handle first
+      if (this.onInteractPressed()) {
+        // Handled by subclass
+      } else if (this.activeForwardZone && this.layout.nextScene) {
+        this.transitionToScene(this.layout.nextScene);
+      } else if (this.activeExitZone) {
+        if (this.layout.previousScene) {
+          this.transitionToScene(this.layout.previousScene);
+        } else {
+          this.exitToOverworld();
+        }
+      }
     }
 
     // Back/ESC
     if (this.inputSystem.isBackPressed() && this.backCooldown <= 0) {
       this.backCooldown = 500;
-      this.exitToOverworld();
+      if (this.layout.previousScene) {
+        this.transitionToScene(this.layout.previousScene);
+      } else {
+        this.exitToOverworld();
+      }
     }
   }
 
@@ -168,6 +208,27 @@ export abstract class InteriorScene extends Phaser.Scene {
         }
       }
     }
+  }
+
+  protected onInteractPressed(): boolean {
+    return false;
+  }
+
+  protected transitionToScene(sceneKey: string): void {
+    uiManager.hideInteractionPrompt();
+    const cam = this.cameras.main;
+    this.tweens.add({
+      targets: cam,
+      alpha: 0,
+      duration: 300,
+      ease: 'Linear',
+      onComplete: () => {
+        this.scene.start(sceneKey, {
+          returnX: this.returnData.returnX,
+          returnY: this.returnData.returnY,
+        });
+      },
+    });
   }
 
   protected exitToOverworld(): void {

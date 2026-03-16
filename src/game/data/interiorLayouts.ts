@@ -34,6 +34,9 @@ export interface InteriorLayout {
   entrance: { tileX: number; tileY: number };
   exit: ExitZone;
   cameraZoom?: number;
+  forwardExit?: ExitZone;
+  nextScene?: string;
+  previousScene?: string;
 }
 
 interface RoomRect {
@@ -44,7 +47,7 @@ interface Doorway {
   x: number; y: number; width: number; height: number;
 }
 
-function buildWallGrid(
+export function buildWallGrid(
   mapW: number, mapH: number,
   rooms: RoomRect[],
   doorways: Doorway[],
