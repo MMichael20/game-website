@@ -1354,6 +1354,341 @@ function generateHotelInteriorTextures(scene: Phaser.Scene): void {
   }
 }
 
+// ── House NPC textures ─────────────────────────────────────────────────
+
+function generateHouseNPCTextures(scene: Phaser.Scene): void {
+  // npc-house-mom — warm skin, brown hair in bun, red top/apron
+  {
+    const c = scene.textures.createCanvas('npc-house-mom', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#FFE0C0', hair: '#E8C56D', top: '#CC3333', pants: '#333333',
+      detail: (ctx) => {
+        // Hair bun on top
+        circle(ctx, 24, 3, 3, '#E8C56D');
+        // White apron over red top
+        rect(ctx, 16, 24, 16, 10, '#FFFFFF');
+        rect(ctx, 18, 22, 12, 2, '#FFFFFF');
+        // Apron strings
+        rect(ctx, 16, 24, 1, 8, '#EEEEEE');
+        rect(ctx, 31, 24, 1, 8, '#EEEEEE');
+        // Sewing needle in right hand
+        rect(ctx, 36, 32, 1, 5, '#CCCCCC');
+        // Thread from needle
+        rect(ctx, 37, 34, 3, 1, '#FF69B4');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-house-aunt — olive skin, gray hair, green headscarf, blue dress
+  {
+    const c = scene.textures.createCanvas('npc-house-aunt', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#F5D6B8', hair: '#5C3317', top: '#4488CC', pants: '#333366',
+      detail: (ctx) => {
+        // Green headscarf covering hair
+        rect(ctx, 17, 3, 14, 5, '#228B22');
+        rect(ctx, 16, 5, 16, 4, '#228B22');
+        // Scarf draping down sides
+        rect(ctx, 16, 9, 2, 4, '#228B22');
+        rect(ctx, 30, 9, 2, 4, '#228B22');
+        // Glasses
+        rect(ctx, 18, 11, 5, 4, 'rgba(0,0,0,0)');
+        rect(ctx, 18, 11, 5, 1, '#886644');
+        rect(ctx, 18, 14, 5, 1, '#886644');
+        rect(ctx, 18, 11, 1, 4, '#886644');
+        rect(ctx, 22, 11, 1, 4, '#886644');
+        rect(ctx, 25, 11, 5, 1, '#886644');
+        rect(ctx, 25, 14, 5, 1, '#886644');
+        rect(ctx, 25, 11, 1, 4, '#886644');
+        rect(ctx, 29, 11, 1, 4, '#886644');
+        // Bridge between lenses
+        rect(ctx, 23, 12, 2, 1, '#886644');
+        // Fabric piece in left hand
+        rect(ctx, 6, 32, 5, 4, '#FF69B4');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-house-littlesis — smaller child figure, pink tutu, ballet shoes
+  {
+    const c = scene.textures.createCanvas('npc-house-littlesis', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    // Shadow
+    rect(ctx, 16, 44, 16, 3, 'rgba(0,0,0,0.15)');
+    // Ballet shoes (pink)
+    rect(ctx, 19, 42, 4, 2, '#FFB6C1');
+    rect(ctx, 25, 42, 4, 2, '#FFB6C1');
+    // Legs (shorter child proportions)
+    rect(ctx, 19, 38, 4, 4, '#FFE0C0');
+    rect(ctx, 25, 38, 4, 4, '#FFE0C0');
+    // Pink tutu skirt (wide, frilly)
+    rect(ctx, 14, 32, 20, 6, '#FF69B4');
+    rect(ctx, 12, 33, 24, 4, lighten('#FF69B4', 0.15));
+    // Body (pink leotard)
+    rect(ctx, 18, 22, 12, 10, '#FF69B4');
+    // Arms
+    rect(ctx, 14, 26, 4, 6, '#FFE0C0');
+    rect(ctx, 30, 26, 4, 6, '#FFE0C0');
+    // Head (child proportions — rounder)
+    rect(ctx, 19, 12, 10, 9, '#FFE0C0');
+    rect(ctx, 20, 11, 8, 10, '#FFE0C0');
+    // Hair bun (ballet bun on top)
+    rect(ctx, 20, 8, 8, 4, '#E8C56D');
+    rect(ctx, 21, 7, 6, 2, '#E8C56D');
+    circle(ctx, 24, 7, 3, '#E8C56D');
+    // Eyes
+    rect(ctx, 20, 15, 2, 2, '#334');
+    rect(ctx, 26, 15, 2, 2, '#334');
+    // Mouth (smile)
+    rect(ctx, 22, 18, 4, 1, '#c88');
+    c.refresh();
+  }
+
+  // npc-house-dad — dark skin, short black hair, white shirt, cape
+  {
+    const c = scene.textures.createCanvas('npc-house-dad', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#F5D6B8', hair: '#3B2414', top: '#FFFFFF', pants: '#333333',
+      detail: (ctx) => {
+        // Shift head up 2px visually — taller figure (add neck)
+        rect(ctx, 22, 17, 4, 2, '#F5D6B8');
+        // Red/purple cape draped from shoulders
+        rect(ctx, 10, 19, 4, 16, '#8B2252');
+        rect(ctx, 34, 19, 4, 16, '#8B2252');
+        // Cape behind body (extends past arms)
+        rect(ctx, 8, 22, 3, 12, '#8B2252');
+        rect(ctx, 37, 22, 3, 12, '#8B2252');
+        // Cape clasp at neck
+        rect(ctx, 20, 18, 8, 2, '#FFD700');
+        px(ctx, 23, 18, '#FFD700');
+        px(ctx, 24, 18, '#FFD700');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-house-sphinx — hairless sphinx cat, pink/flesh body, big ears
+  {
+    const c = scene.textures.createCanvas('npc-house-sphinx', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const catSkin = '#E8A0B0';
+    const catDark = darken(catSkin, 0.15);
+    // Shadow
+    rect(ctx, 14, 40, 20, 3, 'rgba(0,0,0,0.12)');
+    // Body (small, elongated)
+    rect(ctx, 16, 28, 16, 10, catSkin);
+    rect(ctx, 14, 30, 20, 6, catSkin);
+    // Front legs
+    rect(ctx, 14, 36, 3, 6, catSkin);
+    rect(ctx, 19, 36, 3, 6, catSkin);
+    // Back legs
+    rect(ctx, 26, 36, 3, 6, catSkin);
+    rect(ctx, 31, 36, 3, 6, catSkin);
+    // Paws
+    rect(ctx, 13, 41, 5, 2, catDark);
+    rect(ctx, 18, 41, 5, 2, catDark);
+    rect(ctx, 25, 41, 5, 2, catDark);
+    rect(ctx, 30, 41, 5, 2, catDark);
+    // Head (triangular/angular)
+    rect(ctx, 18, 20, 12, 8, catSkin);
+    rect(ctx, 19, 19, 10, 9, catSkin);
+    // Big pointed ears
+    rect(ctx, 17, 14, 4, 6, catSkin);
+    rect(ctx, 18, 13, 2, 2, catSkin);
+    rect(ctx, 27, 14, 4, 6, catSkin);
+    rect(ctx, 28, 13, 2, 2, catSkin);
+    // Inner ears
+    px(ctx, 19, 16, catDark);
+    px(ctx, 29, 16, catDark);
+    // Big eyes
+    rect(ctx, 20, 22, 3, 2, '#44DD44');
+    rect(ctx, 25, 22, 3, 2, '#44DD44');
+    px(ctx, 21, 22, '#111111');
+    px(ctx, 26, 22, '#111111');
+    // Nose
+    px(ctx, 23, 25, catDark);
+    px(ctx, 24, 25, catDark);
+    // Whisker dots
+    px(ctx, 19, 24, catDark);
+    px(ctx, 28, 24, catDark);
+    // Tail (long, thin, curving right)
+    rect(ctx, 32, 30, 8, 2, catSkin);
+    rect(ctx, 38, 28, 2, 3, catSkin);
+    rect(ctx, 39, 26, 2, 3, catSkin);
+    // Skin wrinkle details
+    rect(ctx, 17, 32, 14, 1, catDark);
+    c.refresh();
+  }
+
+  // npc-house-bigsis — warm skin, long dark hair, yellow top, baby on hip
+  {
+    const c = scene.textures.createCanvas('npc-house-bigsis', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#FFE0C0', hair: '#E8C56D', top: '#DDAA33', pants: '#4466AA',
+      detail: (ctx) => {
+        // Long hair flowing down
+        rect(ctx, 17, 9, 2, 10, '#E8C56D');
+        rect(ctx, 29, 9, 2, 10, '#E8C56D');
+        // Baby bundle on right hip
+        rect(ctx, 34, 24, 8, 8, '#AADDFF'); // blanket
+        circle(ctx, 38, 23, 3, '#FFE8D6');  // baby head
+        // Baby eyes (tiny dots)
+        px(ctx, 37, 23, '#334');
+        px(ctx, 39, 23, '#334');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-house-baby — tiny toddler figure, sitting pose
+  {
+    const c = scene.textures.createCanvas('npc-house-baby', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const babySkin = '#FFE8D6';
+    // Shadow
+    rect(ctx, 18, 42, 12, 3, 'rgba(0,0,0,0.12)');
+    // Sitting body — white onesie
+    rect(ctx, 20, 32, 8, 8, '#FFFFFF');
+    // Legs (tiny, splayed out)
+    rect(ctx, 18, 38, 4, 4, '#FFFFFF');
+    rect(ctx, 26, 38, 4, 4, '#FFFFFF');
+    // Tiny feet
+    rect(ctx, 17, 41, 5, 2, babySkin);
+    rect(ctx, 26, 41, 5, 2, babySkin);
+    // Arms
+    rect(ctx, 17, 34, 3, 4, babySkin);
+    rect(ctx, 28, 34, 3, 4, babySkin);
+    // Head (big round for baby proportions)
+    circle(ctx, 24, 27, 6, babySkin);
+    // Hair wisps
+    px(ctx, 21, 22, '#F0D88A');
+    px(ctx, 24, 21, '#F0D88A');
+    px(ctx, 27, 22, '#F0D88A');
+    // Eyes (big, round)
+    rect(ctx, 21, 26, 2, 2, '#334');
+    rect(ctx, 25, 26, 2, 2, '#334');
+    // Mouth (tiny)
+    px(ctx, 23, 29, '#c88');
+    px(ctx, 24, 29, '#c88');
+    // Onesie button
+    px(ctx, 24, 34, '#AAAAAA');
+    c.refresh();
+  }
+
+  // npc-house-grandma — very old grandmother client, fair wrinkled skin, white hair bun, floral dress
+  {
+    const c = scene.textures.createCanvas('npc-house-grandma', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const skin = '#F0DDD0';
+    const hair = '#CCCCCC';
+    // Shadow
+    rect(ctx, 14, 42, 20, 4, 'rgba(0,0,0,0.15)');
+    // Shoes
+    rect(ctx, 17, 39, 5, 2, '#443322');
+    rect(ctx, 26, 39, 5, 2, '#443322');
+    // Legs / dark skirt
+    rect(ctx, 15, 33, 18, 6, '#333344');
+    // Body / floral top (purple base)
+    rect(ctx, 14, 21, 20, 12, '#886699');
+    // Floral pattern dots
+    px(ctx, 17, 24, '#FF99AA');
+    px(ctx, 22, 26, '#FFCC66');
+    px(ctx, 28, 23, '#FF99AA');
+    px(ctx, 20, 29, '#FFCC66');
+    px(ctx, 30, 28, '#FF99AA');
+    // Arms (sleeves + hands)
+    rect(ctx, 10, 24, 4, 8, '#886699');
+    rect(ctx, 34, 24, 4, 8, '#886699');
+    rect(ctx, 10, 32, 3, 2, skin);
+    rect(ctx, 35, 32, 3, 2, skin);
+    // Head (shifted down 2px — hunched posture)
+    rect(ctx, 19, 9, 10, 11, skin);
+    rect(ctx, 18, 10, 12, 9, skin);
+    // Wrinkle lines
+    rect(ctx, 19, 14, 3, 1, darken(skin, 0.1));
+    rect(ctx, 26, 14, 3, 1, darken(skin, 0.1));
+    rect(ctx, 21, 18, 6, 1, darken(skin, 0.08));
+    // Hair bun (white/silver)
+    rect(ctx, 18, 7, 12, 4, hair);
+    rect(ctx, 19, 6, 10, 2, hair);
+    circle(ctx, 24, 5, 3, hair);
+    // Eyes
+    rect(ctx, 20, 13, 2, 2, '#556');
+    rect(ctx, 26, 13, 2, 2, '#556');
+    // Glasses
+    rect(ctx, 19, 12, 4, 3, 'rgba(0,0,0,0)');
+    rect(ctx, 19, 12, 4, 1, '#998877');
+    rect(ctx, 19, 14, 4, 1, '#998877');
+    rect(ctx, 19, 12, 1, 3, '#998877');
+    rect(ctx, 22, 12, 1, 3, '#998877');
+    rect(ctx, 25, 12, 4, 1, '#998877');
+    rect(ctx, 25, 14, 4, 1, '#998877');
+    rect(ctx, 25, 12, 1, 3, '#998877');
+    rect(ctx, 28, 12, 1, 3, '#998877');
+    rect(ctx, 23, 13, 2, 1, '#998877');
+    // Mouth
+    rect(ctx, 22, 17, 4, 1, '#c88');
+    // Purse in left hand
+    rect(ctx, 6, 30, 5, 5, '#663322');
+    rect(ctx, 7, 29, 3, 1, '#663322');
+    // Cane in right hand
+    rect(ctx, 37, 28, 1, 14, '#8B7355');
+    rect(ctx, 37, 41, 3, 1, '#8B7355');
+    c.refresh();
+  }
+
+  // npc-house-mannequin — dress form / mannequin decoration
+  {
+    const c = scene.textures.createCanvas('npc-house-mannequin', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    // Base/stand
+    rect(ctx, 20, 42, 8, 3, '#5C4033');
+    rect(ctx, 23, 38, 2, 4, '#5C4033');
+    // Tripod legs
+    rect(ctx, 18, 43, 3, 2, '#5C4033');
+    rect(ctx, 27, 43, 3, 2, '#5C4033');
+    // Body form (torso shape)
+    rect(ctx, 18, 14, 12, 24, '#E8D8C8');
+    rect(ctx, 16, 18, 16, 16, '#E8D8C8');
+    // Shoulders
+    rect(ctx, 14, 14, 20, 4, '#E8D8C8');
+    // Neck
+    rect(ctx, 22, 10, 4, 4, '#E8D8C8');
+    // Draped fabric (red/pink dress in progress)
+    rect(ctx, 16, 16, 16, 8, '#CC4455');
+    rect(ctx, 18, 24, 12, 10, '#CC4455');
+    // Fabric folds
+    rect(ctx, 20, 20, 1, 12, darken('#CC4455', 0.15));
+    rect(ctx, 27, 20, 1, 12, darken('#CC4455', 0.15));
+    // Pins on fabric
+    px(ctx, 22, 18, '#CCCCCC');
+    px(ctx, 26, 22, '#CCCCCC');
+    px(ctx, 19, 26, '#CCCCCC');
+    // Measuring tape draped
+    rect(ctx, 30, 18, 6, 1, '#FFDD44');
+    rect(ctx, 35, 18, 1, 6, '#FFDD44');
+    // Tick marks on tape
+    px(ctx, 31, 18, '#333');
+    px(ctx, 33, 18, '#333');
+    c.refresh();
+  }
+}
+
 // ── Main export ─────────────────────────────────────────────────────────
 
 export function generateMauiTextures(scene: Phaser.Scene): void {
@@ -1363,4 +1698,5 @@ export function generateMauiTextures(scene: Phaser.Scene): void {
   generateMauiBuildings(scene);
   generateMauiCars(scene);
   generateHotelInteriorTextures(scene);
+  generateHouseNPCTextures(scene);
 }
