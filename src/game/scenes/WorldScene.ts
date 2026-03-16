@@ -113,6 +113,7 @@ export class WorldScene extends Phaser.Scene {
 
     // 7. Input system
     this.inputSystem = new InputSystem(this);
+    this.inputSystem.enableClickToMove(isWalkable, MAP_WIDTH, MAP_HEIGHT, () => this.player.getPosition());
 
     // 8. Camera
     const cam = this.cameras.main;

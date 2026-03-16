@@ -55,6 +55,7 @@ export abstract class InteriorScene extends Phaser.Scene {
 
     // 4. Input
     this.inputSystem = new InputSystem(this);
+    this.inputSystem.enableClickToMove(walkCheck, layout.widthInTiles, layout.heightInTiles, () => this.player.getPosition());
 
     // 5. Camera
     const cam = this.cameras.main;

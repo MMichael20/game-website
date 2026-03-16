@@ -1,6 +1,7 @@
 // src/game/systems/InputSystem.ts
 import Phaser from 'phaser';
-import { isTouchDevice } from '../../utils/constants';
+import { TILE_SIZE, isTouchDevice } from '../../utils/constants';
+import { findPath } from './Pathfinder';
 
 export class InputSystem {
   private scene: Phaser.Scene;
@@ -21,6 +22,16 @@ export class InputSystem {
   // Action button
   private actionButton?: Phaser.GameObjects.Arc;
   private actionButtonLabel?: Phaser.GameObjects.Text;
+
+  // Click-to-move
+  private pathWaypoints: Array<{ x: number; y: number }> = [];
+  private currentWaypointIndex = 0;
+  private clickMarker?: Phaser.GameObjects.Arc;
+  private clickToMoveEnabled = false;
+  private walkCheck?: (tileX: number, tileY: number) => boolean;
+  private gridW = 0;
+  private gridH = 0;
+  private getPlayerPos?: () => { x: number; y: number };
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -158,6 +169,71 @@ export class InputSystem {
     this.actionButtonLabel = undefined;
   }
 
+  enableClickToMove(
+    walkCheck: (tileX: number, tileY: number) => boolean,
+    gridW: number,
+    gridH: number,
+    getPlayerPos: () => { x: number; y: number },
+  ): void {
+    if (isTouchDevice()) return; // touch devices use joystick
+
+    this.clickToMoveEnabled = true;
+    this.walkCheck = walkCheck;
+    this.gridW = gridW;
+    this.gridH = gridH;
+    this.getPlayerPos = getPlayerPos;
+
+    this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!this.clickToMoveEnabled || !this.walkCheck || !this.getPlayerPos) return;
+
+      // Convert screen coords to world coords
+      const cam = this.scene.cameras.main;
+      const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+      const goalTileX = Math.floor(worldPoint.x / TILE_SIZE);
+      const goalTileY = Math.floor(worldPoint.y / TILE_SIZE);
+
+      // Get player's current tile
+      const playerPos = this.getPlayerPos();
+      const startTileX = Math.floor(playerPos.x / TILE_SIZE);
+      const startTileY = Math.floor(playerPos.y / TILE_SIZE);
+
+      // Run pathfinding
+      const path = findPath(startTileX, startTileY, goalTileX, goalTileY, this.walkCheck, this.gridW, this.gridH);
+      if (path.length === 0) return;
+
+      // Convert tile path to world-pixel waypoints (tile centers)
+      this.pathWaypoints = path.map(t => ({
+        x: t.x * TILE_SIZE + TILE_SIZE / 2,
+        y: t.y * TILE_SIZE + TILE_SIZE / 2,
+      }));
+      this.currentWaypointIndex = 1; // skip first waypoint (current position)
+
+      // Show click marker at destination
+      this.clearClickMarker();
+      const dest = this.pathWaypoints[this.pathWaypoints.length - 1];
+      this.clickMarker = this.scene.add.circle(dest.x, dest.y, 4, 0xffffff, 0.6)
+        .setDepth(1000);
+      this.scene.tweens.add({
+        targets: this.clickMarker,
+        alpha: 0,
+        duration: 1500,
+        ease: 'Linear',
+        onComplete: () => this.clearClickMarker(),
+      });
+    });
+  }
+
+  private cancelPath(): void {
+    this.pathWaypoints = [];
+    this.currentWaypointIndex = 0;
+    this.clearClickMarker();
+  }
+
+  private clearClickMarker(): void {
+    this.clickMarker?.destroy();
+    this.clickMarker = undefined;
+  }
+
   getDirection(): { x: number; y: number } {
     let x = 0;
     let y = 0;
@@ -174,6 +250,35 @@ export class InputSystem {
     if (this.touchEnabled && (this.joystickDirection.x !== 0 || this.joystickDirection.y !== 0)) {
       x = this.joystickDirection.x;
       y = this.joystickDirection.y;
+    }
+
+    // If manual input detected, cancel any active click-to-move path
+    if (x !== 0 || y !== 0) {
+      if (this.pathWaypoints.length > 0) this.cancelPath();
+      return { x, y };
+    }
+
+    // Click-to-move: follow waypoints
+    if (this.pathWaypoints.length > 0 && this.currentWaypointIndex < this.pathWaypoints.length && this.getPlayerPos) {
+      const target = this.pathWaypoints[this.currentWaypointIndex];
+      const playerPos = this.getPlayerPos();
+      const dx = target.x - playerPos.x;
+      const dy = target.y - playerPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 4) {
+        // Reached waypoint, advance
+        this.currentWaypointIndex++;
+        if (this.currentWaypointIndex >= this.pathWaypoints.length) {
+          this.cancelPath();
+          return { x: 0, y: 0 };
+        }
+        // Recurse to get direction to next waypoint
+        return this.getDirection();
+      }
+
+      // Normalize direction toward waypoint
+      return { x: dx / dist, y: dy / dist };
     }
 
     return { x, y };
@@ -197,5 +302,6 @@ export class InputSystem {
   destroy(): void {
     this.destroyVirtualJoystick();
     this.destroyActionButton();
+    this.cancelPath();
   }
 }
