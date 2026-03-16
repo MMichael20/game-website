@@ -9,6 +9,7 @@ import { AirportEntranceScene } from './game/scenes/airport/AirportEntranceScene
 import { AirportSecurityScene } from './game/scenes/airport/AirportSecurityScene';
 import { AirportGateScene } from './game/scenes/airport/AirportGateScene';
 import { AirplaneCutscene } from './game/scenes/airport/AirplaneCutscene';
+import { MauiOverworldScene } from './game/scenes/maui/MauiOverworldScene';
 import { QuizScene } from './game/scenes/minigames/QuizScene';
 import { CatchScene } from './game/scenes/minigames/CatchScene';
 import { MatchScene } from './game/scenes/minigames/MatchScene';
@@ -40,7 +41,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     touch: { capture: true },
   },
-  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, AirportEntranceScene, AirportSecurityScene, AirportGateScene, AirplaneCutscene, QuizScene, CatchScene, MatchScene],
+  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, AirportEntranceScene, AirportSecurityScene, AirportGateScene, AirplaneCutscene, MauiOverworldScene, QuizScene, CatchScene, MatchScene],
 };
 
 new Phaser.Game(config);
