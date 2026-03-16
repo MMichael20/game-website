@@ -1,6 +1,8 @@
 // src/game/rendering/PixelArtGenerator.ts
 // Generates all game textures as pixel art using Canvas 2D
 
+import { generateAirportTextures } from './AirportTextures';
+
 type Ctx = CanvasRenderingContext2D;
 
 // ── helpers ──────────────────────────────────────────────────────────────
@@ -2420,4 +2422,5 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generateCatchItems(scene);
   generateMatchCards(scene);
   generateSky(scene);
+  generateAirportTextures(scene);
 }
