@@ -11,12 +11,12 @@ import {
 } from '../../utils/constants';
 import {
   tileGrid,
-  TileType,
   DECORATIONS,
   CHECKPOINT_ZONES,
   CheckpointZone,
   tileToWorld,
   worldToTile,
+  isWalkable,
 } from '../data/mapLayout';
 import { CHECKPOINTS } from '../data/checkpoints';
 import { Player } from '../entities/Player';
@@ -32,18 +32,11 @@ import {
   getPlayerSpawn,
 } from '../systems/SaveSystem';
 
-const TILE_COLORS: Record<number, number> = {
-  [TileType.Grass]: 0x4a7c4f,
-  [TileType.Dirt]: 0xc4a265,
-  [TileType.Stone]: 0x8a8a8a,
-  [TileType.DarkGrass]: 0x3a6b3f,
-};
-
 // Building definitions: name, tile position, tile size
 const BUILDINGS = [
-  { name: 'restaurant', tileX: 6, tileY: 6, tileW: 3, tileH: 3 },
-  { name: 'park-entrance', tileX: 13, tileY: 15, tileW: 3, tileH: 2 },
-  { name: 'cinema', tileX: 22, tileY: 6, tileW: 3, tileH: 3 },
+  { name: 'restaurant', tileX: 7, tileY: 7, tileW: 3, tileH: 3 },
+  { name: 'park-entrance', tileX: 18, tileY: 19, tileW: 3, tileH: 2 },
+  { name: 'cinema', tileX: 30, tileY: 7, tileW: 3, tileH: 3 },
 ];
 
 export class WorldScene extends Phaser.Scene {
@@ -68,14 +61,18 @@ export class WorldScene extends Phaser.Scene {
     this.skyRenderer = new SkyRenderer();
     this.skyRenderer.create(this);
 
-    // 2. Build tile map
+    // 2. Build tile map (using terrain textures)
     this.buildTileMap();
 
-    // 3. Decorations
+    // 3. Decorations (track lamps for glow effect)
+    const lampPositions: Array<{ x: number; y: number }> = [];
     DECORATIONS.forEach(deco => {
       const pos = tileToWorld(deco.tileX, deco.tileY);
       this.add.image(pos.x, pos.y, `deco-${deco.type}`)
         .setDepth(-10);
+      if (deco.type === 'lamp') {
+        lampPositions.push(pos);
+      }
     });
 
     // 4. Buildings
@@ -88,7 +85,7 @@ export class WorldScene extends Phaser.Scene {
 
     // 5. Player & Partner
     const spawn = getPlayerSpawn();
-    this.player = new Player(this, spawn.x, spawn.y, state.outfits.player);
+    this.player = new Player(this, spawn.x, spawn.y, state.outfits.player, isWalkable);
     this.partner = new Partner(this, spawn.x, spawn.y, state.outfits.partner);
 
     // 6. NPC system
@@ -119,6 +116,10 @@ export class WorldScene extends Phaser.Scene {
     this.scale.on('resize', () => {
       cam.setZoom(getDeviceZoom());
     });
+
+    // 12. Ambient animations
+    this.addLampGlow(lampPositions);
+    this.addButterflies();
   }
 
   update(time: number, delta: number): void {
@@ -178,17 +179,69 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildTileMap(): void {
-    const graphics = this.add.graphics();
-    graphics.setDepth(-50);
+    const rt = this.add.renderTexture(0, 0, MAP_PX_WIDTH, MAP_PX_HEIGHT);
+    rt.setOrigin(0, 0);
+    rt.setDepth(-50);
 
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
         const tileType = tileGrid[y][x];
-        const color = TILE_COLORS[tileType] ?? 0x4a7c4f;
-        graphics.fillStyle(color, 1);
-        graphics.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        rt.drawFrame('terrain', tileType, x * TILE_SIZE, y * TILE_SIZE);
       }
     }
+  }
+
+  private addLampGlow(lampPositions: Array<{ x: number; y: number }>): void {
+    lampPositions.forEach((pos, i) => {
+      const glow = this.add.circle(pos.x, pos.y - 8, 12, 0xffee88, 0.15);
+      glow.setDepth(-9);
+      this.tweens.add({
+        targets: glow,
+        alpha: { from: 0.15, to: 0.05 },
+        scaleX: { from: 1, to: 1.3 },
+        scaleY: { from: 1, to: 1.3 },
+        duration: 2000 + i * 300,
+        ease: 'Sine.easeInOut',
+        repeat: -1,
+        yoyo: true,
+      });
+    });
+  }
+
+  private addButterflies(): void {
+    // Floating butterflies around the park area
+    const parkPositions = [
+      { x: 16 * TILE_SIZE, y: 22 * TILE_SIZE },
+      { x: 24 * TILE_SIZE, y: 25 * TILE_SIZE },
+      { x: 20 * TILE_SIZE, y: 20 * TILE_SIZE },
+    ];
+
+    parkPositions.forEach((pos, i) => {
+      const butterfly = this.add.sprite(pos.x, pos.y, 'catch-butterfly');
+      butterfly.setScale(0.6);
+      butterfly.setDepth(5);
+      butterfly.setAlpha(0.85);
+
+      // Random floating movement
+      const xRange = 80 + i * 20;
+      const yRange = 60 + i * 15;
+      this.tweens.add({
+        targets: butterfly,
+        x: { from: pos.x - xRange / 2, to: pos.x + xRange / 2 },
+        duration: 4000 + i * 1500,
+        ease: 'Sine.easeInOut',
+        repeat: -1,
+        yoyo: true,
+      });
+      this.tweens.add({
+        targets: butterfly,
+        y: { from: pos.y - yRange / 2, to: pos.y + yRange / 2 },
+        duration: 3000 + i * 1200,
+        ease: 'Sine.easeInOut',
+        repeat: -1,
+        yoyo: true,
+      });
+    });
   }
 
   private enterCheckpoint(zone: CheckpointZone): void {

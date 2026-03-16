@@ -1,20 +1,24 @@
 // src/game/entities/Player.ts
 import Phaser from 'phaser';
-import { isWalkable, worldToTile } from '../data/mapLayout';
+import { worldToTile } from '../data/mapLayout';
 
 const SPEED = 120; // pixels per second
+
+export type WalkCheck = (tileX: number, tileY: number) => boolean;
 
 export class Player {
   public sprite: Phaser.Physics.Arcade.Sprite;
   private currentOutfit = 0;
   private facing: 'down' | 'left' | 'right' | 'up' = 'down';
+  private walkCheck: WalkCheck;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, outfit: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, outfit: number, walkCheck?: WalkCheck) {
+    this.walkCheck = walkCheck ?? (() => true);
     this.currentOutfit = outfit;
     const key = `player-outfit-${outfit}`;
     this.sprite = scene.physics.add.sprite(x, y, key, 0);
-    this.sprite.setSize(24, 24);
-    this.sprite.setOffset(4, 8);
+    this.sprite.setSize(36, 36);
+    this.sprite.setOffset(14, 22);
     this.sprite.setDepth(10);
 
     this.createAnimations(scene);
@@ -52,10 +56,10 @@ export class Player {
     let finalVx = vx;
     let finalVy = vy;
 
-    if (!isWalkable(worldToTile(nextX, this.sprite.y).x, worldToTile(nextX, this.sprite.y).y)) {
+    if (!this.walkCheck(worldToTile(nextX, this.sprite.y).x, worldToTile(nextX, this.sprite.y).y)) {
       finalVx = 0;
     }
-    if (!isWalkable(worldToTile(this.sprite.x, nextY).x, worldToTile(this.sprite.x, nextY).y)) {
+    if (!this.walkCheck(worldToTile(this.sprite.x, nextY).x, worldToTile(this.sprite.x, nextY).y)) {
       finalVy = 0;
     }
 
