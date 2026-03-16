@@ -2,6 +2,7 @@
 // Generates all game textures as pixel art using Canvas 2D
 
 import { generateAirportTextures } from './AirportTextures';
+import { generateMauiTextures } from './MauiTextures';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -2423,4 +2424,5 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generateMatchCards(scene);
   generateSky(scene);
   generateAirportTextures(scene);
+  generateMauiTextures(scene);
 }
