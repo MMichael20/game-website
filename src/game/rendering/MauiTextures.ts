@@ -282,6 +282,18 @@ function generateMauiTerrain(scene: Phaser.Scene): void {
   }
 
   c.refresh();
+
+  // Register frames for tile rendering
+  const texture = scene.textures.get('maui-terrain');
+  texture.add(0, 0, 0, 0, 32, 32);     // Sand
+  texture.add(1, 0, 32, 0, 32, 32);    // SandStone
+  texture.add(2, 0, 64, 0, 32, 32);    // Stone
+  texture.add(3, 0, 96, 0, 32, 32);    // ShallowWater
+  texture.add(4, 0, 128, 0, 32, 32);   // Ocean
+  texture.add(5, 0, 160, 0, 32, 32);   // Grass
+  texture.add(6, 0, 192, 0, 32, 32);   // Road
+  texture.add(7, 0, 224, 0, 32, 32);   // ParkingLot
+  texture.add(8, 0, 256, 0, 32, 32);   // Sidewalk
 }
 
 // ── NPC textures ────────────────────────────────────────────────────────
