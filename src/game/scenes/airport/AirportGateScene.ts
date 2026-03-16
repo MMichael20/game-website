@@ -51,6 +51,8 @@ export class AirportGateScene extends InteriorScene {
   create(): void {
     super.create();
     saveCurrentScene('AirportGateScene');
+    this.player.setTemporaryTexture('player-suitcase', this);
+    this.partner.setTemporaryTexture('partner-suitcase', this);
     this.boardingTriggered = false;
     this.npcSystem = new NPCSystem();
     this.npcSystem.create(this, GATE_NPCS);

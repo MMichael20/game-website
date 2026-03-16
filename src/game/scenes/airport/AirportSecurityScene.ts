@@ -36,6 +36,8 @@ export class AirportSecurityScene extends InteriorScene {
   create(): void {
     super.create();
     saveCurrentScene('AirportSecurityScene');
+    this.player.setTemporaryTexture('player-suitcase', this);
+    this.partner.setTemporaryTexture('partner-suitcase', this);
     this.npcSystem = new NPCSystem();
     this.npcSystem.create(this, SECURITY_NPCS);
     this.signTooltip = new SignTooltip(this, SECURITY_SIGNS);

@@ -1170,6 +1170,93 @@ export function generateCharacterOutfits(scene: Phaser.Scene): void {
       }
     }
   }
+
+  // ── Suitcase spritesheets (airport) ──
+  const suitcaseAccessory = (ctx: Ctx, ox: number, oy: number, dir: number, isMale: boolean) => {
+    const bodyFill = isMale ? '#3a3a4a' : '#e06050';
+    const bodyShadow = isMale ? '#2a2a36' : '#b84a3e';
+    const handleColor = isMale ? '#6a6a7a' : '#4a4a4a';
+
+    const bw = 6;  // body width
+    const bh = 8;  // body height
+    const handleH = 4;
+    let bx: number;
+    let by: number;
+
+    if (dir === 0) {
+      // DOWN — suitcase at right side
+      bx = isMale ? ox + 50 : ox + 42;
+      by = oy + 34;
+    } else if (dir === 1) {
+      // LEFT — suitcase trails right
+      bx = isMale ? ox + 48 : ox + 42;
+      by = oy + 32;
+    } else if (dir === 2) {
+      // RIGHT — suitcase trails left
+      bx = isMale ? ox + 10 : ox + 16;
+      by = oy + 32;
+    } else {
+      // UP — suitcase peeks out right
+      bx = isMale ? ox + 50 : ox + 42;
+      by = oy + 36;
+    }
+
+    const hx = bx + 2;
+    const hy = by - handleH;
+
+    // Handle pole
+    rect(ctx, hx, hy, 2, handleH, handleColor);
+    // Handle grip
+    rect(ctx, hx - 1, hy, 4, 1, handleColor);
+    // Body
+    rect(ctx, bx, by, bw, bh, bodyFill);
+    rect(ctx, bx + bw - 1, by, 1, bh, bodyShadow);
+    rect(ctx, bx, by + bh - 1, bw, 1, bodyShadow);
+    rect(ctx, bx + 1, by, bw - 2, 1, lighten(bodyFill, 0.15));
+    // Wheels
+    rect(ctx, bx + 1, by + bh, 1, 1, handleColor);
+    rect(ctx, bx + bw - 2, by + bh, 1, 1, handleColor);
+  };
+
+  const suitcaseStyles: { prefix: string; isMale: boolean; outfit: OutfitStyle }[] = [
+    {
+      prefix: 'player-suitcase',
+      isMale: false,
+      outfit: {
+        ...OUTFIT_STYLES[0],
+        accessory: suitcaseAccessory,
+      },
+    },
+    {
+      prefix: 'partner-suitcase',
+      isMale: true,
+      outfit: {
+        ...OUTFIT_STYLES[0],
+        accessory: suitcaseAccessory,
+      },
+    },
+  ];
+
+  for (const sc of suitcaseStyles) {
+    const scKey = sc.prefix;
+    const canvas = scene.textures.createCanvas(scKey, 192, 256);
+    if (!canvas) continue;
+    const ctx = canvas.context;
+
+    for (let dir = 0; dir < 4; dir++) {
+      for (let frame = 0; frame < 3; frame++) {
+        drawCharFrame(ctx, frame, dir, dir, frame, sc.outfit, sc.isMale);
+      }
+    }
+    canvas.refresh();
+
+    const texture = scene.textures.get(scKey);
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 3; col++) {
+        texture.add(row * 3 + col, 0, col * 64, row * 64, 64, 64);
+      }
+    }
+  }
 }
 
 // ── NPC ──────────────────────────────────────────────────────────────────
@@ -1629,12 +1716,52 @@ function drawMichaelsHouse(ctx: Ctx): void {
   rect(ctx, 34, 80, 28, 4, '#aaa');
 }
 
+function drawHadarsHouse(ctx: Ctx): void {
+  // Walls — light blue/gray exterior
+  rect(ctx, 8, 30, 80, 50, '#b8c8d8');
+  rect(ctx, 10, 32, 76, 46, '#c8d8e8');
+  // Roof — dark slate
+  rect(ctx, 4, 18, 88, 14, '#4a5568');
+  rect(ctx, 8, 14, 80, 8, '#5a6578');
+  rect(ctx, 16, 10, 64, 6, '#4a5568');
+  rect(ctx, 20, 9, 56, 2, '#3a4558');
+  // Roof shingle lines
+  for (let y = 14; y < 32; y += 4) {
+    for (let x = 4 + ((y % 8 === 0) ? 0 : 4); x < 92; x += 8) {
+      rect(ctx, x, y, 7, 1, '#3a4558');
+    }
+  }
+  // Door
+  rect(ctx, 38, 56, 20, 24, '#6a4a2a');
+  rect(ctx, 40, 58, 16, 20, '#7a5a3a');
+  circle(ctx, 52, 68, 2, '#ccaa44');
+  rect(ctx, 36, 54, 24, 2, '#5a6578');
+  // Windows
+  for (const wx of [16, 66]) {
+    rect(ctx, wx, 42, 16, 16, '#88bbdd');
+    rect(ctx, wx + 1, 43, 14, 14, '#aaddff');
+    rect(ctx, wx + 7, 43, 2, 14, '#c8d8e8');
+    rect(ctx, wx + 1, 49, 14, 2, '#c8d8e8');
+    rect(ctx, wx - 1, 58, 18, 2, '#a0b0c0');
+  }
+  // Chimney
+  rect(ctx, 70, 4, 10, 16, '#6a7a8a');
+  rect(ctx, 69, 2, 12, 4, '#7a8a9a');
+  // Awning over door
+  rect(ctx, 34, 50, 28, 5, '#4a6a8a');
+  rect(ctx, 35, 51, 26, 3, '#5a7a9a');
+  // Ground shadow + step
+  rect(ctx, 6, 80, 84, 4, 'rgba(0,0,0,0.1)');
+  rect(ctx, 34, 80, 28, 4, '#aaa');
+}
+
 export function generateBuildings(scene: Phaser.Scene): void {
   const builders: Record<string, (ctx: Ctx) => void> = {
     restaurant: drawRestaurant,
     'park-entrance': drawParkEntrance,
     cinema: drawCinema,
     'michaels-house': drawMichaelsHouse,
+    'hadars-house': drawHadarsHouse,
   };
 
   for (const [name, draw] of Object.entries(builders)) {
