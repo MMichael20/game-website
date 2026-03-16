@@ -310,12 +310,23 @@ function drawFormal(
     ctx.lineTo(m.centerX + 3 * s, m.waistY - 2 * s);
     ctx.stroke();
 
-    // Jacket sleeves
-    const sleeveLen = (m.hipY - m.shoulderY) * 0.75;
-    const sleeveW = hw(m, 'shoulder') * 0.55;
-    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, jacketColor);
-    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, jacketColor);
+    // Jacket sleeves moved to drawFormalOver (rendered after arms for correct Z-order)
   }
+}
+
+function drawFormalOver(
+  ctx: CanvasRenderingContext2D,
+  character: 'her' | 'him',
+  _frame: number,
+  m: BodyMetrics,
+) {
+  if (character !== 'him') return; // Her has off-shoulder dress — no sleeves
+  // Suit jacket sleeves (drawn over arms)
+  const jacketColor = '#1B2A4A';
+  const sleeveLen = (m.hipY - m.shoulderY) * 0.75;
+  const sleeveW = hw(m, 'shoulder') * 0.55;
+  shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, jacketColor);
+  shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, jacketColor);
 }
 
 // ---------------------------------------------------------------------------
@@ -1232,7 +1243,7 @@ function drawSmartCasual(
 
 export const OUTFITS: OutfitDefinition[] = [
   { name: 'Casual', drawUnder: drawCasual },
-  { name: 'Formal', drawUnder: drawFormal },
+  { name: 'Formal', drawUnder: drawFormal, drawOver: drawFormalOver },
   { name: 'Date Night', drawUnder: drawDateNight },
   { name: 'Cozy', drawUnder: drawCozy, drawOver: drawCozyOver },
   { name: 'Sporty', drawUnder: drawSporty },
