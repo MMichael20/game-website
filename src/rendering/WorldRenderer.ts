@@ -1685,70 +1685,125 @@ export class WorldRenderer {
 
   static generateNPCTexture(
     scene: Phaser.Scene,
-    id: string,
-    palette: { skin: string; hair: string; shirt: string; pants: string },
+    npc: { id: string; gender: 'her' | 'him'; palette: { skin: string; hair: string; shirt: string; pants: string } },
   ): void {
+    const isHer = npc.gender === 'her';
+
     for (let frame = 0; frame < 3; frame++) {
       const [canvas, ctx] = this.makeCanvas(32, 48);
 
-      // Head
-      ctx.fillStyle = palette.skin;
+      // Head — slightly narrower for 'her'
+      const headR = isHer ? 5.5 : 6;
+      ctx.fillStyle = npc.palette.skin;
       ctx.beginPath();
-      ctx.arc(16, 12, 6, 0, Math.PI * 2);
+      ctx.arc(16, 12, headR, 0, Math.PI * 2);
       ctx.fill();
 
-      // Hair
-      ctx.fillStyle = palette.hair;
+      // Hair — fuller for 'her' (extends lower on sides)
+      ctx.fillStyle = npc.palette.hair;
       ctx.beginPath();
-      ctx.arc(16, 10, 6, Math.PI, 0); // top half
-      ctx.fill();
+      if (isHer) {
+        ctx.arc(16, 10, headR, Math.PI, 0);
+        ctx.fill();
+        // Side hair extending below ears
+        ctx.fillRect(10, 10, 3, 6);
+        ctx.fillRect(19, 10, 3, 6);
+      } else {
+        ctx.arc(16, 10, headR, Math.PI, 0);
+        ctx.fill();
+      }
 
-      // Body / shirt
-      ctx.fillStyle = palette.shirt;
-      ctx.fillRect(9, 18, 14, 14);
+      // Hair highlight (subtle lighter arc)
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(16, 10, headR - 1, Math.PI + 0.5, -0.5);
+      ctx.stroke();
+
+      // Body / shirt — trapezoid shape instead of flat rect
+      ctx.fillStyle = npc.palette.shirt;
+      ctx.beginPath();
+      if (isHer) {
+        // Narrower shoulders, slightly wider hips
+        ctx.moveTo(10, 18);
+        ctx.lineTo(22, 18);
+        ctx.lineTo(23, 31);
+        ctx.lineTo(9, 31);
+      } else {
+        // Broader shoulders
+        ctx.moveTo(9, 18);
+        ctx.lineTo(23, 18);
+        ctx.lineTo(22, 31);
+        ctx.lineTo(10, 31);
+      }
+      ctx.closePath();
+      ctx.fill();
 
       // Arms (slight swing per frame)
       const armSwing = frame === 0 ? 0 : frame === 1 ? -2 : 2;
-      ctx.fillStyle = palette.shirt;
+      ctx.fillStyle = npc.palette.shirt;
       ctx.fillRect(5, 19 + armSwing, 4, 10);
       ctx.fillRect(23, 19 - armSwing, 4, 10);
 
+      // Skin on lower arms
+      ctx.fillStyle = npc.palette.skin;
+      ctx.fillRect(5, 25 + armSwing, 4, 4);
+      ctx.fillRect(23, 25 - armSwing, 4, 4);
+
       // Hands
-      ctx.fillStyle = palette.skin;
+      ctx.fillStyle = npc.palette.skin;
       ctx.beginPath();
       ctx.arc(7, 30 + armSwing, 2, 0, Math.PI * 2);
       ctx.arc(25, 30 - armSwing, 2, 0, Math.PI * 2);
       ctx.fill();
 
       // Legs / pants
-      ctx.fillStyle = palette.pants;
+      ctx.fillStyle = npc.palette.pants;
       const legOffset = frame === 0 ? 0 : frame === 1 ? 2 : -2;
       ctx.fillRect(10, 32, 5, 12 + legOffset);
       ctx.fillRect(17, 32, 5, 12 - legOffset);
 
-      // Shoes
+      // Shoes — ellipse instead of flat rect
       ctx.fillStyle = '#333333';
-      ctx.fillRect(9, 43 + Math.max(0, legOffset), 6, 3);
-      ctx.fillRect(17, 43 + Math.max(0, -legOffset), 6, 3);
+      ctx.beginPath();
+      ctx.ellipse(12, 44 + Math.max(0, legOffset), 3, 1.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(20, 44 + Math.max(0, -legOffset), 3, 1.5, 0, 0, Math.PI * 2);
+      ctx.fill();
 
       // Eyes (tiny dots)
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(14, 11, 1, 1);
       ctx.fillRect(18, 11, 1, 1);
 
-      this.register(scene, `npc-${id}-frame-${frame}`, canvas);
+      // Cheek blush for 'her'
+      if (isHer) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillStyle = 'rgba(220,150,150,0.25)';
+        ctx.beginPath();
+        ctx.arc(13, 13, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(19, 13, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      this.register(scene, `npc-${npc.id}-frame-${frame}`, canvas);
     }
 
-    // Create walk animation
+    // Create walk animation — 6fps (upgraded from 4fps)
     scene.anims.create({
-      key: `npc-${id}-walk`,
+      key: `npc-${npc.id}-walk`,
       frames: [
-        { key: `npc-${id}-frame-1` },
-        { key: `npc-${id}-frame-0` },
-        { key: `npc-${id}-frame-2` },
-        { key: `npc-${id}-frame-0` },
+        { key: `npc-${npc.id}-frame-1` },
+        { key: `npc-${npc.id}-frame-0` },
+        { key: `npc-${npc.id}-frame-2` },
+        { key: `npc-${npc.id}-frame-0` },
       ],
-      frameRate: 4,
+      frameRate: 6,
       repeat: -1,
     });
   }

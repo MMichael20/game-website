@@ -43,7 +43,7 @@ export class BootScene extends Phaser.Scene {
 
     // Generate NPC textures
     for (const npcDef of NPCS) {
-      WorldRenderer.generateNPCTexture(this, npcDef.id, npcDef.palette);
+      WorldRenderer.generateNPCTexture(this, npcDef);
     }
     updateBar();
 
