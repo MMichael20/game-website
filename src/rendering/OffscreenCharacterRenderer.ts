@@ -898,7 +898,8 @@ function drawFrontHair(
     ctx.fill();
   }
 
-  // Hair sheen — specular highlight
+  // Hair sheen — specular highlight (isolated composite operation)
+  ctx.save();
   ctx.globalCompositeOperation = 'screen';
   ctx.fillStyle = 'rgba(255,255,255,0.12)';
   ctx.beginPath();
@@ -910,7 +911,7 @@ function drawFrontHair(
     -0.4, 0, Math.PI * 2,
   );
   ctx.fill();
-  ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
 
   ctx.restore();
 }
