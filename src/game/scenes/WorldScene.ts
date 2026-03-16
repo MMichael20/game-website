@@ -50,9 +50,21 @@ export class WorldScene extends Phaser.Scene {
   private activeZone: CheckpointZone | null = null;
   private interactCooldown = 0;
   private backCooldown = 0;
+  private returnFromInteriorData: { returnX: number; returnY: number } | null = null;
+  private shouldFadeIn = false;
 
   constructor() {
     super({ key: 'WorldScene' });
+  }
+
+  init(data?: { returnFromInterior?: boolean; returnX?: number; returnY?: number }): void {
+    if (data?.returnFromInterior && data.returnX != null && data.returnY != null) {
+      this.returnFromInteriorData = { returnX: data.returnX, returnY: data.returnY };
+      this.shouldFadeIn = true;
+    } else {
+      this.returnFromInteriorData = null;
+      this.shouldFadeIn = false;
+    }
   }
 
   create(): void {
@@ -89,6 +101,12 @@ export class WorldScene extends Phaser.Scene {
     this.player = new Player(this, spawn.x, spawn.y, state.outfits.player, isWalkable);
     this.partner = new Partner(this, spawn.x, spawn.y, state.outfits.partner);
 
+    if (this.returnFromInteriorData) {
+      this.player.sprite.setPosition(this.returnFromInteriorData.returnX, this.returnFromInteriorData.returnY);
+      this.partner.sprite.setPosition(this.returnFromInteriorData.returnX + 32, this.returnFromInteriorData.returnY);
+      this.returnFromInteriorData = null;
+    }
+
     // 6. NPC system
     this.npcSystem = new NPCSystem();
     this.npcSystem.create(this);
@@ -121,6 +139,18 @@ export class WorldScene extends Phaser.Scene {
     // 12. Ambient animations
     this.addLampGlow(lampPositions);
     this.addButterflies();
+
+    if (this.shouldFadeIn) {
+      const cam = this.cameras.main;
+      cam.setAlpha(0);
+      this.tweens.add({
+        targets: cam,
+        alpha: 1,
+        duration: 300,
+        ease: 'Linear',
+      });
+      this.shouldFadeIn = false;
+    }
   }
 
   update(time: number, delta: number): void {
@@ -246,28 +276,44 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private enterCheckpoint(zone: CheckpointZone): void {
-    // Save current position
     const pos = this.player.getPosition();
     savePlayerPosition(pos.x, pos.y);
 
-    // Mark visited
-    markCheckpointVisited(zone.id);
+    // Interior buildings
+    const interiorSceneMap: Record<string, string> = {
+      michaels_house: 'MichaelsHouseScene',
+    };
 
-    // Find checkpoint config
+    if (interiorSceneMap[zone.id]) {
+      uiManager.hideHUD();
+      uiManager.hideInteractionPrompt();
+      const cam = this.cameras.main;
+      this.tweens.add({
+        targets: cam,
+        alpha: 0,
+        duration: 300,
+        ease: 'Linear',
+        onComplete: () => {
+          this.scene.start(interiorSceneMap[zone.id], {
+            returnX: pos.x,
+            returnY: pos.y,
+          });
+        },
+      });
+      return;
+    }
+
+    // Existing mini-game logic
+    markCheckpointVisited(zone.id);
     const checkpoint = CHECKPOINTS.find(cp => cp.id === zone.id);
     if (!checkpoint) return;
-
-    // Hide world UI
     uiManager.hideHUD();
     uiManager.hideInteractionPrompt();
-
-    // Map mini-game type to scene key
     const sceneMap: Record<string, string> = {
       quiz: 'QuizScene',
       catch: 'CatchScene',
       match: 'MatchScene',
     };
-
     const sceneKey = sceneMap[checkpoint.miniGame.type];
     if (sceneKey) {
       this.scene.start(sceneKey, {
