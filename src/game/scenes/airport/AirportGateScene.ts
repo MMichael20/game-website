@@ -3,9 +3,10 @@ import { InteriorScene } from '../InteriorScene';
 import { InteriorLayout } from '../../data/interiorLayouts';
 import { AIRPORT_GATE_LAYOUT } from './airportLayouts';
 import { NPCSystem } from '../../systems/NPCSystem';
-import { NPCDef } from '../../data/mapLayout';
+import { NPCDef, worldToTile } from '../../data/mapLayout';
 import { uiManager } from '../../../ui/UIManager';
 import { saveCurrentScene } from '../../systems/SaveSystem';
+import { SignTooltip, SignDef } from '../../../ui/SignTooltip';
 
 const GATE_NPCS: NPCDef[] = [
   {
@@ -29,8 +30,14 @@ const GATE_NPCS: NPCDef[] = [
   { id: 'traveler-walk-gate', tileX: 11, tileY: 11, behavior: 'walk', texture: 'npc-traveler-2', walkPath: [{ x: 11, y: 11 }, { x: 19, y: 11 }] },
 ];
 
+const GATE_SIGNS: SignDef[] = [
+  { id: 'cafe-sign', tileX: 2, tileY: 1, texture: 'sign-cafe', tooltipText: 'Sky Cafe' },
+  { id: 'gate-num-sign', tileX: 19, tileY: 1, texture: 'sign-gate-number', tooltipText: 'Gate 7 - Maui' },
+];
+
 export class AirportGateScene extends InteriorScene {
   private npcSystem!: NPCSystem;
+  private signTooltip!: SignTooltip;
   private boardingTriggered = false;
 
   constructor() {
@@ -47,6 +54,7 @@ export class AirportGateScene extends InteriorScene {
     this.boardingTriggered = false;
     this.npcSystem = new NPCSystem();
     this.npcSystem.create(this, GATE_NPCS);
+    this.signTooltip = new SignTooltip(this, GATE_SIGNS);
   }
 
   protected onInteractPressed(): boolean {
@@ -88,10 +96,13 @@ export class AirportGateScene extends InteriorScene {
     super.update(time, delta);
     const pos = this.player.getPosition();
     this.npcSystem.update(delta, pos.x, pos.y);
+    const playerTile = worldToTile(pos.x, pos.y);
+    this.signTooltip.update(playerTile.x, playerTile.y);
   }
 
   shutdown(): void {
     super.shutdown();
     this.npcSystem?.destroy();
+    this.signTooltip?.destroy();
   }
 }

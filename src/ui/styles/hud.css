@@ -103,3 +103,21 @@
     transform: translateX(-50%) translateY(-6px);
   }
 }
+
+/* ========== Sign Tooltip (top center) ========== */
+.sign-tooltip {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 26, 46, 0.9);
+  border: 1px solid #d4a574;
+  border-radius: 4px;
+  padding: 6px 12px;
+  color: #fdf6e3;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  z-index: 150;
+  pointer-events: none;
+  white-space: nowrap;
+}

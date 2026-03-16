@@ -3,9 +3,10 @@ import { InteriorScene } from '../InteriorScene';
 import { InteriorLayout } from '../../data/interiorLayouts';
 import { AIRPORT_ENTRANCE_LAYOUT } from './airportLayouts';
 import { NPCSystem } from '../../systems/NPCSystem';
-import { NPCDef } from '../../data/mapLayout';
+import { NPCDef, worldToTile } from '../../data/mapLayout';
 import { uiManager } from '../../../ui/UIManager';
 import { saveCurrentScene } from '../../systems/SaveSystem';
+import { SignTooltip, SignDef } from '../../../ui/SignTooltip';
 
 const ENTRANCE_NPCS: NPCDef[] = [
   {
@@ -24,8 +25,13 @@ const ENTRANCE_NPCS: NPCDef[] = [
   { id: 'traveler-walk-2', tileX: 15, tileY: 5, behavior: 'walk', texture: 'npc-traveler-2', walkPath: [{ x: 15, y: 5 }, { x: 15, y: 10 }] },
 ];
 
+const ENTRANCE_SIGNS: SignDef[] = [
+  { id: 'dep-sign', tileX: 17, tileY: 2, texture: 'sign-departures', tooltipText: 'Departures →' },
+];
+
 export class AirportEntranceScene extends InteriorScene {
   private npcSystem!: NPCSystem;
+  private signTooltip!: SignTooltip;
 
   constructor() {
     super({ key: 'AirportEntranceScene' });
@@ -40,6 +46,7 @@ export class AirportEntranceScene extends InteriorScene {
     saveCurrentScene('AirportEntranceScene');
     this.npcSystem = new NPCSystem();
     this.npcSystem.create(this, ENTRANCE_NPCS);
+    this.signTooltip = new SignTooltip(this, ENTRANCE_SIGNS);
   }
 
   protected onInteractPressed(): boolean {
@@ -57,10 +64,13 @@ export class AirportEntranceScene extends InteriorScene {
     super.update(time, delta);
     const pos = this.player.getPosition();
     this.npcSystem.update(delta, pos.x, pos.y);
+    const playerTile = worldToTile(pos.x, pos.y);
+    this.signTooltip.update(playerTile.x, playerTile.y);
   }
 
   shutdown(): void {
     super.shutdown();
     this.npcSystem?.destroy();
+    this.signTooltip?.destroy();
   }
 }
