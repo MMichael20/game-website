@@ -27,6 +27,7 @@ const BUILDINGS = [
   { name: 'park-entrance', tileX: 18, tileY: 19, tileW: 3, tileH: 2 },
   { name: 'cinema', tileX: 30, tileY: 7, tileW: 3, tileH: 3 },
   { name: 'michaels-house', tileX: 14, tileY: 3, tileW: 3, tileH: 3 },
+  { name: 'airport', tileX: 32, tileY: 24, tileW: 3, tileH: 3 },
 ];
 
 export class WorldScene extends OverworldScene {

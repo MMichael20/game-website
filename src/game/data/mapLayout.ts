@@ -45,6 +45,8 @@ export const walkGrid: boolean[][] = Array.from({ length: MAP_HEIGHT }, (_, y) =
     if (x >= 30 && x <= 32 && y >= 7 && y <= 9) return false;
     // Michael's House footprint
     if (x >= 14 && x <= 16 && y >= 3 && y <= 5) return false;
+    // Airport building footprint
+    if (x >= 32 && x <= 34 && y >= 24 && y <= 26) return false;
     // Everything else is walkable
     return true;
   });
@@ -64,6 +66,7 @@ export const CHECKPOINT_ZONES: CheckpointZone[] = [
   { id: 'park', tileX: 19, tileY: 19, width: 2, height: 1, promptText: 'Press E to play in the park' },
   { id: 'cinema', tileX: 29, tileY: 6, width: 2, height: 1, promptText: 'Press E to enter cinema' },
   { id: 'michaels_house', tileX: 14, tileY: 6, width: 3, height: 1, promptText: "Press E to enter Michael's House" },
+  { id: 'airport', tileX: 32, tileY: 23, width: 3, height: 1, promptText: 'Press E to enter airport' },
 ];
 
 export interface DecorationDef {
