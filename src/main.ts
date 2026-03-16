@@ -4,6 +4,7 @@ import { uiManager } from './ui/UIManager';
 import { BootScene } from './game/scenes/BootScene';
 import { DressingRoomScene } from './game/scenes/DressingRoomScene';
 import { WorldScene } from './game/scenes/WorldScene';
+import { MichaelsHouseScene } from './game/scenes/MichaelsHouseScene';
 import { QuizScene } from './game/scenes/minigames/QuizScene';
 import { CatchScene } from './game/scenes/minigames/CatchScene';
 import { MatchScene } from './game/scenes/minigames/MatchScene';
@@ -21,6 +22,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: GAME_HEIGHT,
   parent: 'game-container',
   backgroundColor: '#1a1a2e',
+  render: { pixelArt: true },
   physics: {
     default: 'arcade',
     arcade: { gravity: { x: 0, y: 0 }, debug: false },
@@ -34,7 +36,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     touch: { capture: true },
   },
-  scene: [BootScene, DressingRoomScene, WorldScene, QuizScene, CatchScene, MatchScene],
+  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, QuizScene, CatchScene, MatchScene],
 };
 
 new Phaser.Game(config);
