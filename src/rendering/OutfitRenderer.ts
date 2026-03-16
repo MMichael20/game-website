@@ -456,11 +456,7 @@ function drawCozy(
       ctx.stroke();
     }
 
-    // Long sleeves
-    const sleeveLen = (m.armBottomY - m.armTopY) * 0.9;
-    const sleeveW = hw(m, 'shoulder') * 0.6;
-    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, sweaterColor);
-    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, sweaterColor);
+    // Long sleeves moved to drawCozyOver (rendered after arms for correct Z-order)
 
     // Leggings — dark fitted
     const legColor = '#2A2A2A';
@@ -506,11 +502,7 @@ function drawCozy(
     ctx.lineTo(m.centerX + 3 * s, m.shoulderY + 10 * s);
     ctx.stroke();
 
-    // Long sleeves
-    const sleeveLen = (m.armBottomY - m.armTopY) * 0.9;
-    const sleeveW = hw(m, 'shoulder') * 0.6;
-    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, hoodieColor);
-    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, hoodieColor);
+    // Long sleeves moved to drawCozyOver (rendered after arms for correct Z-order)
 
     // Joggers — relaxed fit with cuffed ankle
     const joggerColor = '#4A4A4A';
@@ -529,6 +521,29 @@ function drawCozy(
     const cuffH = 3 * s;
     ctx.fillRect(m.centerX - legW, m.ankleY - cuffH, legW - legInset, cuffH);
     ctx.fillRect(m.centerX + legInset, m.ankleY - cuffH, legW - legInset, cuffH);
+  }
+}
+
+function drawCozyOver(
+  ctx: CanvasRenderingContext2D,
+  character: 'her' | 'him',
+  _frame: number,
+  m: BodyMetrics,
+) {
+  if (character === 'her') {
+    // Long sweater sleeves (drawn over arms)
+    const sweaterColor = '#D4A07A';
+    const sleeveLen = (m.armBottomY - m.armTopY) * 0.9;
+    const sleeveW = hw(m, 'shoulder') * 0.6;
+    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, sweaterColor);
+    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, sweaterColor);
+  } else {
+    // Long hoodie sleeves (drawn over arms)
+    const hoodieColor = '#5A5A6A';
+    const sleeveLen = (m.armBottomY - m.armTopY) * 0.9;
+    const sleeveW = hw(m, 'shoulder') * 0.6;
+    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, hoodieColor);
+    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, hoodieColor);
   }
 }
 
@@ -1219,7 +1234,7 @@ export const OUTFITS: OutfitDefinition[] = [
   { name: 'Casual', drawUnder: drawCasual },
   { name: 'Formal', drawUnder: drawFormal },
   { name: 'Date Night', drawUnder: drawDateNight },
-  { name: 'Cozy', drawUnder: drawCozy },
+  { name: 'Cozy', drawUnder: drawCozy, drawOver: drawCozyOver },
   { name: 'Sporty', drawUnder: drawSporty },
   { name: 'Restaurant', drawUnder: drawRestaurant },
   { name: 'Pizza', drawUnder: drawPizza },
