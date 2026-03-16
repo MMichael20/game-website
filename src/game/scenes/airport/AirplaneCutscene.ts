@@ -1,10 +1,12 @@
 // src/game/scenes/airport/AirplaneCutscene.ts
 // Pure sprite animation cutscene — no tilemap, no physics, no pathfinding.
-// 7 phases: takeoff, cabin settle, flight attendant, cozy moment, cloud whiteout, landing, transition.
+// 8 phases: boarding, takeoff, cabin settle, flight attendant, cozy moment, cloud whiteout, landing, transition.
 
 import Phaser from 'phaser';
 import { loadGameState, saveCurrentScene } from '../../systems/SaveSystem';
 import { generateCutsceneSeatedSprites } from '../../rendering/AirportTextures';
+
+const BOARDING_MS = 10000;
 
 export class AirplaneCutscene extends Phaser.Scene {
   private destination: 'maui' | 'home' = 'maui';
@@ -24,6 +26,37 @@ export class AirplaneCutscene extends Phaser.Scene {
 
     // Generate seated sprites for the active outfits
     generateCutsceneSeatedSprites(this, state.outfits.player, state.outfits.partner);
+
+    // ── Boarding elements (Phase 0) ──────────────────────────────────────
+
+    const boardingSky = this.add.rectangle(w / 2, h / 2, w, h, 0x87ceeb).setAlpha(0);
+    const boardingTarmac = this.add.image(w / 2, h - 50, 'boarding-tarmac').setAlpha(0);
+    boardingTarmac.setDisplaySize(w, h * 0.25);
+    const boardingTerminal = this.add.image(w * 0.08, h * 0.4, 'boarding-terminal').setAlpha(0).setScale(2.5);
+    const boardingRollerStairs = this.add.image(w * 0.22, h * 0.55, 'boarding-roller-stairs').setAlpha(0).setScale(2);
+    const boardingMobileStairs = this.add.image(w * 0.75, h * 0.55, 'boarding-mobile-stairs').setAlpha(0).setScale(2);
+    const boardingPlane = this.add.image(w * 0.88, h * 0.35, 'airplane-exterior').setAlpha(0).setScale(2.5);
+
+    // Boarding traveler sprites
+    const travelerKeys = [
+      'boarding-player-side', 'boarding-partner-side',
+      'boarding-traveler-1', 'boarding-traveler-2',
+      'boarding-traveler-3', 'boarding-traveler-4',
+    ];
+    const boardingSprites: Phaser.GameObjects.Image[] = [];
+    for (let i = 0; i < travelerKeys.length; i++) {
+      const sprite = this.add.image(0, 0, travelerKeys[i])
+        .setAlpha(0).setScale(3).setDepth(5);
+      boardingSprites.push(sprite);
+    }
+
+    // Waypoints for traveler path (terminal door → roller stairs bottom → mobile stairs base → plane door)
+    const wp = {
+      terminalDoor: { x: w * 0.14, y: h * 0.35 },
+      rollerBottom:  { x: w * 0.30, y: h * 0.72 },
+      mobileBase:    { x: w * 0.68, y: h * 0.72 },
+      planeDoor:     { x: w * 0.82, y: h * 0.30 },
+    };
 
     // ── Exterior elements (Phase 1 + 6) ─────────────────────────────────
 
@@ -80,12 +113,95 @@ export class AirplaneCutscene extends Phaser.Scene {
     const landPlane = this.add.image(w / 2, -60, 'airplane-exterior').setAlpha(0).setScale(1.5);
 
     // ═════════════════════════════════════════════════════════════════════
-    // Phase 1 — Takeoff (0–3s)
+    // Phase 0 — Boarding (0–10s)
     // ═════════════════════════════════════════════════════════════════════
 
-    this.tweens.add({ targets: [sky, ground, runway, plane], alpha: 1, duration: 500 });
+    // Fade in boarding scene (0–500ms)
+    const boardingElements = [boardingSky, boardingTarmac, boardingTerminal, boardingRollerStairs, boardingMobileStairs, boardingPlane];
+    this.tweens.add({ targets: boardingElements, alpha: 1, duration: 500 });
 
-    this.time.delayedCall(500, () => {
+    // Position all travelers at terminal door, hidden
+    for (const sprite of boardingSprites) {
+      sprite.setPosition(wp.terminalDoor.x, wp.terminalDoor.y);
+    }
+
+    // Descend roller stairs (500–3500ms) — staggered emergence
+    for (let i = 0; i < boardingSprites.length; i++) {
+      const sprite = boardingSprites[i];
+      const stagger = i * 300;
+
+      // Fade in at terminal door
+      this.time.delayedCall(500 + stagger, () => {
+        sprite.setAlpha(1);
+        // Tween diagonally down roller stairs
+        this.tweens.add({
+          targets: sprite,
+          x: wp.rollerBottom.x,
+          y: wp.rollerBottom.y,
+          duration: 2000,
+          ease: 'Sine.easeInOut',
+        });
+      });
+    }
+
+    // Walk across tarmac (3500–7000ms)
+    for (let i = 0; i < boardingSprites.length; i++) {
+      const sprite = boardingSprites[i];
+      const stagger = i * 300;
+      // Varied speeds for natural crowd feel
+      const speed = 2800 + (i % 3) * 300;
+
+      this.time.delayedCall(3500 + stagger, () => {
+        this.tweens.add({
+          targets: sprite,
+          x: wp.mobileBase.x,
+          y: wp.mobileBase.y,
+          duration: speed,
+          ease: 'Linear',
+        });
+      });
+    }
+
+    // Climb mobile stairs into plane (7000–9000ms)
+    for (let i = 0; i < boardingSprites.length; i++) {
+      const sprite = boardingSprites[i];
+      const stagger = i * 250;
+
+      this.time.delayedCall(7000 + stagger, () => {
+        this.tweens.add({
+          targets: sprite,
+          x: wp.planeDoor.x,
+          y: wp.planeDoor.y,
+          alpha: 0,
+          duration: 1800,
+          ease: 'Sine.easeIn',
+        });
+      });
+    }
+
+    // Cross-fade to takeoff (9000–10000ms)
+    this.time.delayedCall(9000, () => {
+      this.tweens.add({
+        targets: boardingElements,
+        alpha: 0,
+        duration: 1000,
+        ease: 'Linear',
+      });
+      // Hide any remaining traveler sprites
+      for (const sprite of boardingSprites) {
+        this.tweens.add({ targets: sprite, alpha: 0, duration: 500 });
+      }
+    });
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Phase 1 — Takeoff (BOARDING_MS – BOARDING_MS+3s)
+    // ═════════════════════════════════════════════════════════════════════
+
+    this.time.delayedCall(BOARDING_MS, () => {
+      this.tweens.add({ targets: [sky, ground, runway, plane], alpha: 1, duration: 500 });
+    });
+
+    this.time.delayedCall(BOARDING_MS + 500, () => {
       this.tweens.add({
         targets: plane,
         y: h * 0.3,
@@ -109,10 +225,10 @@ export class AirplaneCutscene extends Phaser.Scene {
     });
 
     // ═════════════════════════════════════════════════════════════════════
-    // Phase 2 — Cabin Settle (3–8s)
+    // Phase 2 — Cabin Settle (BOARDING_MS+3s – BOARDING_MS+8s)
     // ═════════════════════════════════════════════════════════════════════
 
-    this.time.delayedCall(3000, () => {
+    this.time.delayedCall(BOARDING_MS + 3000, () => {
       // Fade out exterior
       this.tweens.add({ targets: [sky, ground, runway, plane], alpha: 0, duration: 500 });
 
@@ -147,10 +263,10 @@ export class AirplaneCutscene extends Phaser.Scene {
     });
 
     // ═════════════════════════════════════════════════════════════════════
-    // Phase 3 — Flight Attendant (8–13s)
+    // Phase 3 — Flight Attendant (BOARDING_MS+8s – BOARDING_MS+13s)
     // ═════════════════════════════════════════════════════════════════════
 
-    this.time.delayedCall(8000, () => {
+    this.time.delayedCall(BOARDING_MS + 8000, () => {
       // Attendant 1: walks toward camera
       attendant1.setAlpha(1);
       this.tweens.add({
@@ -199,10 +315,10 @@ export class AirplaneCutscene extends Phaser.Scene {
     });
 
     // ═════════════════════════════════════════════════════════════════════
-    // Phase 4 — Cozy Moment (13–20s)
+    // Phase 4 — Cozy Moment (BOARDING_MS+13s – BOARDING_MS+20s)
     // ═════════════════════════════════════════════════════════════════════
 
-    this.time.delayedCall(13000, () => {
+    this.time.delayedCall(BOARDING_MS + 13000, () => {
       // Hide attendants that have walked off
       attendant1.setAlpha(0);
       attendant2.setAlpha(0);
@@ -308,10 +424,10 @@ export class AirplaneCutscene extends Phaser.Scene {
     });
 
     // ═════════════════════════════════════════════════════════════════════
-    // Phase 5 — Cloud Whiteout (20–23s)
+    // Phase 5 — Cloud Whiteout (BOARDING_MS+20s – BOARDING_MS+23s)
     // ═════════════════════════════════════════════════════════════════════
 
-    this.time.delayedCall(20000, () => {
+    this.time.delayedCall(BOARDING_MS + 20000, () => {
       this.tweens.add({
         targets: whiteout,
         alpha: 1,
@@ -321,10 +437,10 @@ export class AirplaneCutscene extends Phaser.Scene {
     });
 
     // ═════════════════════════════════════════════════════════════════════
-    // Phase 6 — Landing (23–27s)
+    // Phase 6 — Landing (BOARDING_MS+23s – BOARDING_MS+27s)
     // ═════════════════════════════════════════════════════════════════════
 
-    this.time.delayedCall(23000, () => {
+    this.time.delayedCall(BOARDING_MS + 23000, () => {
       // Hide interior elements
       cabinBg.setAlpha(0);
       playerSprite.setAlpha(0);
@@ -371,10 +487,10 @@ export class AirplaneCutscene extends Phaser.Scene {
     });
 
     // ═════════════════════════════════════════════════════════════════════
-    // Phase 7 — Transition (27s)
+    // Phase 7 — Transition (BOARDING_MS+27s)
     // ═════════════════════════════════════════════════════════════════════
 
-    this.time.delayedCall(27000, () => {
+    this.time.delayedCall(BOARDING_MS + 27000, () => {
       skipBtn.remove();
       this.cameras.main.fadeOut(500, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {

@@ -1204,6 +1204,247 @@ export function generateCutsceneSeatedSprites(
   }
 }
 
+// ── Boarding animation textures ───────────────────────────────────────────
+
+function generateBoardingTextures(scene: Phaser.Scene): void {
+  // boarding-tarmac — 800×200: dark gray asphalt with yellow dashed lines
+  {
+    const c = scene.textures.createCanvas('boarding-tarmac', 800, 200);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 800, 200, '#555555');
+    // Asphalt texture variation
+    rect(ctx, 0, 0, 800, 200, '#525252');
+    rect(ctx, 0, 100, 800, 100, '#585858');
+    // Yellow dashed center line
+    ctx.fillStyle = '#DDAA00';
+    for (let x = 20; x < 780; x += 40) {
+      ctx.fillRect(x, 95, 20, 4);
+    }
+    // Edge markings
+    rect(ctx, 0, 0, 800, 2, '#777777');
+    rect(ctx, 0, 198, 800, 2, '#777777');
+    c.refresh();
+  }
+
+  // boarding-terminal — 120×200: gray building wall with doorway
+  {
+    const c = scene.textures.createCanvas('boarding-terminal', 120, 200);
+    if (!c) return;
+    const ctx = c.context;
+    // Main wall
+    rect(ctx, 0, 0, 120, 200, '#8A8A8A');
+    // Roof line
+    rect(ctx, 0, 0, 120, 8, '#2244AA');
+    rect(ctx, 0, 0, 120, 2, lighten('#2244AA', 0.2));
+    // Doorway opening at y=50
+    rect(ctx, 80, 50, 40, 80, '#333333');
+    rect(ctx, 82, 52, 36, 76, '#222222');
+    // Door frame
+    rect(ctx, 78, 48, 2, 84, '#666666');
+    rect(ctx, 78, 48, 42, 2, '#666666');
+    // Windows
+    for (let y = 20; y < 45; y += 24) {
+      for (let x = 10; x < 70; x += 28) {
+        rect(ctx, x, y, 18, 14, '#AADDFF');
+        rect(ctx, x, y, 18, 1, '#777777');
+        rect(ctx, x + 8, y, 2, 14, '#777777');
+        rect(ctx, x, y + 13, 18, 1, '#777777');
+      }
+    }
+    // Wall texture lines
+    rect(ctx, 0, 130, 120, 1, '#7A7A7A');
+    rect(ctx, 0, 160, 120, 1, '#7A7A7A');
+    c.refresh();
+  }
+
+  // boarding-roller-stairs — 80×80: metal staircase angling down-right from terminal
+  {
+    const c = scene.textures.createCanvas('boarding-roller-stairs', 80, 80);
+    if (!c) return;
+    const ctx = c.context;
+    // Staircase frame angling from top-left to bottom-right
+    ctx.fillStyle = '#999999';
+    ctx.beginPath();
+    ctx.moveTo(5, 10);
+    ctx.lineTo(75, 65);
+    ctx.lineTo(75, 75);
+    ctx.lineTo(5, 20);
+    ctx.closePath();
+    ctx.fill();
+    // Step treads
+    const steps = 8;
+    for (let i = 0; i < steps; i++) {
+      const sx = 8 + i * 8;
+      const sy = 12 + i * 7;
+      rect(ctx, sx, sy, 9, 2, '#BBBBBB');
+      rect(ctx, sx, sy + 2, 9, 1, '#777777');
+    }
+    // Left handrail
+    ctx.strokeStyle = '#AAAAAA';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(5, 6);
+    ctx.lineTo(72, 60);
+    ctx.stroke();
+    // Right handrail
+    ctx.beginPath();
+    ctx.moveTo(10, 22);
+    ctx.lineTo(78, 76);
+    ctx.stroke();
+    // Platform at top
+    rect(ctx, 0, 8, 12, 14, '#888888');
+    rect(ctx, 0, 8, 12, 2, '#AAAAAA');
+    c.refresh();
+  }
+
+  // boarding-mobile-stairs — 64×100: wheeled stairs angling up-right to plane door
+  {
+    const c = scene.textures.createCanvas('boarding-mobile-stairs', 64, 100);
+    if (!c) return;
+    const ctx = c.context;
+    // Staircase frame angling from bottom-left up to top-right
+    ctx.fillStyle = '#999999';
+    ctx.beginPath();
+    ctx.moveTo(5, 85);
+    ctx.lineTo(58, 15);
+    ctx.lineTo(62, 15);
+    ctx.lineTo(62, 25);
+    ctx.lineTo(10, 90);
+    ctx.closePath();
+    ctx.fill();
+    // Step treads
+    const steps = 9;
+    for (let i = 0; i < steps; i++) {
+      const sx = 8 + i * 6;
+      const sy = 82 - i * 8;
+      rect(ctx, sx, sy, 8, 2, '#BBBBBB');
+      rect(ctx, sx, sy + 2, 8, 1, '#777777');
+    }
+    // Yellow safety stripes at base
+    for (let x = 2; x < 20; x += 6) {
+      rect(ctx, x, 88, 3, 6, '#DDAA00');
+    }
+    // Handrails
+    ctx.strokeStyle = '#AAAAAA';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(4, 82);
+    ctx.lineTo(56, 10);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(12, 90);
+    ctx.lineTo(62, 20);
+    ctx.stroke();
+    // Wheels at base
+    ctx.fillStyle = '#444444';
+    ctx.beginPath();
+    ctx.arc(8, 96, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(20, 96, 4, 0, Math.PI * 2);
+    ctx.fill();
+    // Platform at top
+    rect(ctx, 52, 12, 12, 16, '#888888');
+    rect(ctx, 52, 12, 12, 2, '#AAAAAA');
+    c.refresh();
+  }
+
+  // boarding-traveler-1 through boarding-traveler-4: tiny side-view silhouettes
+  const travelerColors = [
+    { shirt: '#CC4444', pants: '#333366', skin: '#d4a574', hair: '#443322' },
+    { shirt: '#4488CC', pants: '#444444', skin: '#e8c090', hair: '#222222' },
+    { shirt: '#44AA44', pants: '#555555', skin: '#8B6B4A', hair: '#111111' },
+    { shirt: '#CC8844', pants: '#3344AA', skin: '#F0C8A0', hair: '#554433' },
+  ];
+  for (let i = 0; i < 4; i++) {
+    const tc = travelerColors[i];
+    const c = scene.textures.createCanvas(`boarding-traveler-${i + 1}`, 12, 20);
+    if (!c) continue;
+    const ctx = c.context;
+    // Head
+    ctx.fillStyle = tc.skin;
+    ctx.beginPath();
+    ctx.arc(6, 4, 3, 0, Math.PI * 2);
+    ctx.fill();
+    // Hair (top half)
+    ctx.fillStyle = tc.hair;
+    ctx.beginPath();
+    ctx.arc(6, 3, 3, Math.PI, Math.PI * 2);
+    ctx.fill();
+    // Body
+    rect(ctx, 3, 7, 6, 6, tc.shirt);
+    // Pants/legs
+    rect(ctx, 3, 13, 3, 5, tc.pants);
+    rect(ctx, 6, 13, 3, 5, tc.pants);
+    // Shoes
+    rect(ctx, 3, 18, 3, 2, '#333333');
+    rect(ctx, 6, 18, 3, 2, '#333333');
+    c.refresh();
+  }
+
+  // boarding-player-side — 12×20: recognizable player colors
+  {
+    const playerOutfit = OUTFIT_STYLES[0];
+    const c = scene.textures.createCanvas('boarding-player-side', 12, 20);
+    if (!c) return;
+    const ctx = c.context;
+    // Head
+    ctx.fillStyle = playerOutfit.skin;
+    ctx.beginPath();
+    ctx.arc(6, 4, 3, 0, Math.PI * 2);
+    ctx.fill();
+    // Hair
+    ctx.fillStyle = playerOutfit.hair;
+    ctx.beginPath();
+    ctx.arc(6, 3, 3, Math.PI, Math.PI * 2);
+    ctx.fill();
+    // Long hair sides
+    rect(ctx, 2, 4, 2, 6, playerOutfit.hair);
+    rect(ctx, 8, 4, 2, 6, playerOutfit.hair);
+    // Body
+    rect(ctx, 3, 7, 6, 6, playerOutfit.shirt);
+    // Pants/legs
+    rect(ctx, 3, 13, 3, 5, playerOutfit.pants);
+    rect(ctx, 6, 13, 3, 5, playerOutfit.pants);
+    // Shoes
+    rect(ctx, 3, 18, 3, 2, '#443322');
+    rect(ctx, 6, 18, 3, 2, '#443322');
+    c.refresh();
+  }
+
+  // boarding-partner-side — 12×20: recognizable partner colors
+  {
+    const partnerOutfit = OUTFIT_STYLES[0];
+    const c = scene.textures.createCanvas('boarding-partner-side', 12, 20);
+    if (!c) return;
+    const ctx = c.context;
+    // Head
+    ctx.fillStyle = partnerOutfit.skin;
+    ctx.beginPath();
+    ctx.arc(6, 4, 3, 0, Math.PI * 2);
+    ctx.fill();
+    // Hair (male partner - use maleHair color)
+    const partnerHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    ctx.fillStyle = partnerHair;
+    ctx.beginPath();
+    ctx.arc(6, 3, 3, Math.PI, Math.PI * 2);
+    ctx.fill();
+    // Short hair sides
+    rect(ctx, 2, 4, 2, 3, partnerHair);
+    rect(ctx, 8, 4, 2, 3, partnerHair);
+    // Body (broader shoulders)
+    rect(ctx, 2, 7, 8, 6, partnerOutfit.shirt);
+    // Pants/legs
+    rect(ctx, 3, 13, 3, 5, partnerOutfit.pants);
+    rect(ctx, 6, 13, 3, 5, partnerOutfit.pants);
+    // Shoes
+    rect(ctx, 3, 18, 3, 2, '#443322');
+    rect(ctx, 6, 18, 3, 2, '#443322');
+    c.refresh();
+  }
+}
+
 // ── Main export ──────────────────────────────────────────────────────────
 
 export function generateAirportTextures(scene: Phaser.Scene): void {
@@ -1212,4 +1453,5 @@ export function generateAirportTextures(scene: Phaser.Scene): void {
   generateInteriorTextures(scene);
   generateSignTextures(scene);
   generateAirplaneTextures(scene);
+  generateBoardingTextures(scene);
 }
