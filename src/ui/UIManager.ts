@@ -296,6 +296,54 @@ class UIManager {
     document.getElementById('quiz-overlay')?.remove();
   }
 
+  // --- NPC Dialog ---
+  showNPCDialog(lines: string[], onComplete: () => void): void {
+    this.hideNPCDialog();
+    let currentLine = 0;
+    const el = document.createElement('div');
+    el.className = 'npc-dialog';
+    el.id = 'npc-dialog';
+    el.innerHTML = `
+      <div class="npc-dialog__box">
+        <p class="npc-dialog__text" id="npc-dialog-text">${lines[0]}</p>
+        <span class="npc-dialog__advance">${lines.length > 1 ? 'E / Click ▶' : 'E / Click ✕'}</span>
+      </div>
+    `;
+
+    const advance = () => {
+      currentLine++;
+      if (currentLine >= lines.length) {
+        this.hideNPCDialog();
+        onComplete();
+        return;
+      }
+      const textEl = document.getElementById('npc-dialog-text');
+      if (textEl) textEl.textContent = lines[currentLine];
+      const advEl = el.querySelector('.npc-dialog__advance');
+      if (advEl) advEl.textContent = currentLine === lines.length - 1 ? 'E / Click ✕' : 'E / Click ▶';
+    };
+
+    el.addEventListener('click', advance);
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'e' || e.key === 'E' || e.key === ' ') {
+        advance();
+      }
+    };
+    document.addEventListener('keydown', keyHandler);
+    (el as any)._keyHandler = keyHandler;
+
+    this.dialogContainer.appendChild(el);
+  }
+
+  hideNPCDialog(): void {
+    const el = document.getElementById('npc-dialog');
+    if (el) {
+      const handler = (el as any)._keyHandler;
+      if (handler) document.removeEventListener('keydown', handler);
+      el.remove();
+    }
+  }
+
   // --- Minigame result screen ---
   showMinigameResult(title: string, score: number, onContinue: () => void): void {
     this.dialogContainer.innerHTML = '';

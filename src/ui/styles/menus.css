@@ -264,3 +264,38 @@
   content: '\2605 ';
   color: var(--color-primary);
 }
+
+/* ========== NPC Dialog ========== */
+.npc-dialog {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  pointer-events: auto;
+}
+
+.npc-dialog__box {
+  background: rgba(26, 26, 46, 0.95);
+  border: 2px solid #d4a574;
+  border-radius: 8px;
+  padding: 16px 24px;
+  min-width: 300px;
+  max-width: 500px;
+  text-align: center;
+}
+
+.npc-dialog__text {
+  color: #fdf6e3;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0 0 8px 0;
+}
+
+.npc-dialog__advance {
+  color: #d4a574;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  opacity: 0.7;
+}
