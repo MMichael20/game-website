@@ -13,6 +13,8 @@ import { MauiOverworldScene } from './game/scenes/maui/MauiOverworldScene';
 import { QuizScene } from './game/scenes/minigames/QuizScene';
 import { CatchScene } from './game/scenes/minigames/CatchScene';
 import { MatchScene } from './game/scenes/minigames/MatchScene';
+import { MauiHotelScene } from './game/scenes/maui/MauiHotelScene';
+import { TennisScene } from './game/scenes/minigames/TennisScene';
 import { GAME_WIDTH, GAME_HEIGHT } from './utils/constants';
 
 // Initialize UI layer before Phaser
@@ -42,7 +44,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     touch: { capture: true },
   },
-  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, AirportEntranceScene, AirportSecurityScene, AirportGateScene, AirplaneCutscene, MauiOverworldScene, QuizScene, CatchScene, MatchScene],
+  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, AirportEntranceScene, AirportSecurityScene, AirportGateScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, QuizScene, CatchScene, MatchScene, TennisScene],
 };
 
 new Phaser.Game(config);
