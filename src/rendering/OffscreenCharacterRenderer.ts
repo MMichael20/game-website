@@ -50,6 +50,32 @@ const HIM_HAIR_LIGHT = '#f0d860';
 const HER_EYE_COLOR = '#553311';
 const HIM_EYE_COLOR = '#3377dd';
 
+interface CharacterPalette {
+  skinBase: string;
+  skinShadow: string;
+  skinHighlight: string;
+  hairDark: string;
+  hairLight: string;
+  eyeColor: string;
+}
+
+const HER_PALETTE: CharacterPalette = {
+  skinBase: SKIN_TONE,
+  skinShadow: SKIN_SHADOW,
+  skinHighlight: SKIN_HIGHLIGHT,
+  hairDark: HER_HAIR_DARK,
+  hairLight: HER_HAIR_LIGHT,
+  eyeColor: HER_EYE_COLOR,
+};
+
+const HIM_PALETTE: CharacterPalette = {
+  skinBase: SKIN_TONE,
+  skinShadow: SKIN_SHADOW,
+  skinHighlight: SKIN_HIGHLIGHT,
+  hairDark: HIM_HAIR_DARK,
+  hairLight: HIM_HAIR_LIGHT,
+  eyeColor: HIM_EYE_COLOR,
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -176,12 +202,11 @@ function drawCharacter(
 ): void {
   const s = metrics.scale;
   const isHer = character === 'her';
+  const palette = isHer ? HER_PALETTE : HIM_PALETTE;
   const offsets = getFrameOffsets(frameIndex, s);
 
   const cx = metrics.centerX;
-  const hairDark = isHer ? HER_HAIR_DARK : HIM_HAIR_DARK;
-  const hairLight = isHer ? HER_HAIR_LIGHT : HIM_HAIR_LIGHT;
-  const eyeColor = isHer ? HER_EYE_COLOR : HIM_EYE_COLOR;
+  const { hairDark, hairLight, eyeColor } = palette;
 
   // Clear
   ctx.clearRect(0, 0, canvasW, canvasH);
@@ -901,7 +926,7 @@ function drawFrontHair(
   // Hair sheen — specular highlight (isolated composite operation)
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillStyle = isHer ? 'rgba(255,255,255,0.12)' : 'rgba(255,240,200,0.18)';
   ctx.beginPath();
   ctx.ellipse(
     cx + headRadius * 0.2,
