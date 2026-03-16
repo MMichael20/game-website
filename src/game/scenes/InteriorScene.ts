@@ -121,7 +121,14 @@ export abstract class InteriorScene extends Phaser.Scene {
     if (inExitZone && !inForwardZone && !this.activeExitZone) {
       this.activeExitZone = true;
       this.activeForwardZone = false;
-      uiManager.showInteractionPrompt(exit.promptText);
+      uiManager.showInteractionPrompt(exit.promptText, () => {
+        this.interactCooldown = 500;
+        if (this.layout.previousScene) {
+          this.transitionToScene(this.layout.previousScene);
+        } else {
+          this.exitToOverworld();
+        }
+      });
     } else if ((!inExitZone || inForwardZone) && this.activeExitZone) {
       this.activeExitZone = false;
       uiManager.hideInteractionPrompt();
@@ -131,7 +138,12 @@ export abstract class InteriorScene extends Phaser.Scene {
     if (inForwardZone && !inExitZone && !this.activeForwardZone && forwardExit) {
       this.activeForwardZone = true;
       this.activeExitZone = false;
-      uiManager.showInteractionPrompt(forwardExit.promptText);
+      uiManager.showInteractionPrompt(forwardExit.promptText, () => {
+        this.interactCooldown = 500;
+        if (this.layout.nextScene) {
+          this.transitionToScene(this.layout.nextScene);
+        }
+      });
     } else if ((!inForwardZone || inExitZone) && this.activeForwardZone) {
       this.activeForwardZone = false;
       uiManager.hideInteractionPrompt();

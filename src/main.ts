@@ -37,6 +37,7 @@ const config: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
+    fullscreenTarget: 'game-container',
   },
   input: {
     touch: { capture: true },

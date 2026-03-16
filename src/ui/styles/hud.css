@@ -95,6 +95,10 @@
   animation: prompt-bounce 1.2s ease-in-out infinite;
 }
 
+.interaction-prompt--clickable:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
 @keyframes prompt-bounce {
   0%, 100% {
     transform: translateX(-50%) translateY(0);

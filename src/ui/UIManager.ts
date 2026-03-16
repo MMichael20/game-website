@@ -90,12 +90,18 @@ class UIManager {
   }
 
   // --- Interaction Prompt ---
-  showInteractionPrompt(text: string): void {
+  showInteractionPrompt(text: string, onClick?: () => void): void {
     this.hideInteractionPrompt();
     const prompt = document.createElement('div');
     prompt.className = 'interaction-prompt';
     prompt.id = 'interaction-prompt';
     prompt.textContent = text;
+    if (onClick) {
+      prompt.classList.add('interaction-prompt--clickable');
+      prompt.style.pointerEvents = 'auto';
+      prompt.style.cursor = 'pointer';
+      prompt.addEventListener('click', onClick);
+    }
     this.hud.appendChild(prompt);
   }
 

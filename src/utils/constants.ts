@@ -16,10 +16,6 @@ export function getDeviceZoom(): number {
   return 2;                   // desktop
 }
 
-export function isTouchDevice(): boolean {
-  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-}
-
 export const DEFAULT_SPAWN = { x: 20, y: 16 }; // center of map, in tile coords
 
 export const OUTFIT_NAMES = [

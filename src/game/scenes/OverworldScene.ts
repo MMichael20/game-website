@@ -32,6 +32,7 @@ export abstract class OverworldScene extends Phaser.Scene {
   protected interactCooldown = 0;
   protected backCooldown = 0;
   protected cachedConfig!: OverworldConfig;
+  private pendingNPCInteract: NPC | null = null;
 
   private returnFromInteriorData: { returnX: number; returnY: number } | null = null;
   private shouldFadeIn = false;
@@ -88,6 +89,20 @@ export abstract class OverworldScene extends Phaser.Scene {
     // 5. Input system
     this.inputSystem = new InputSystem(this);
     this.inputSystem.enableClickToMove(config.walkCheck, config.mapWidth, config.mapHeight, () => this.player.getPosition());
+
+    // NPC tap-to-interact: check if tap is on an interactable NPC
+    this.inputSystem.onWorldTap = (worldX: number, worldY: number) => {
+      const npc = this.npcSystem.getNPCAtPosition(worldX, worldY);
+      if (!npc) return false;
+      if (npc.inRange) {
+        this.interactCooldown = 500;
+        this.handleNPCInteract(npc);
+        return true;
+      }
+      // NPC tapped but out of range — set pending interact, walk will happen via click-to-move
+      this.pendingNPCInteract = npc;
+      return false;
+    };
 
     // 6. Camera
     const cam = this.cameras.main;
@@ -159,10 +174,21 @@ export abstract class OverworldScene extends Phaser.Scene {
 
     if (inZone && inZone !== this.activeZone) {
       this.activeZone = inZone;
-      uiManager.showInteractionPrompt(inZone.promptText);
+      uiManager.showInteractionPrompt(inZone.promptText, () => {
+        this.interactCooldown = 500;
+        this.onEnterCheckpoint(inZone);
+      });
     } else if (!inZone && this.activeZone) {
       this.activeZone = null;
       uiManager.hideInteractionPrompt();
+    }
+
+    // Check pending NPC interact (tapped NPC, walked into range)
+    if (this.pendingNPCInteract && this.pendingNPCInteract.inRange) {
+      const npc = this.pendingNPCInteract;
+      this.pendingNPCInteract = null;
+      this.interactCooldown = 500;
+      this.handleNPCInteract(npc);
     }
 
     // 6. Interact press

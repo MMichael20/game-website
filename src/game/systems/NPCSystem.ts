@@ -19,6 +19,17 @@ export class NPCSystem {
     });
   }
 
+  /** Find an interactable NPC whose sprite is near the given world position (tap radius) */
+  getNPCAtPosition(worldX: number, worldY: number, radius = 24): NPC | null {
+    for (const npc of this.npcs) {
+      if (!npc.interactable) continue;
+      const dx = npc.sprite.x - worldX;
+      const dy = npc.sprite.y - worldY;
+      if (Math.sqrt(dx * dx + dy * dy) <= radius) return npc;
+    }
+    return null;
+  }
+
   getInteractableInRange(): NPC | null {
     let closest: NPC | null = null;
     let closestDist = Infinity;
