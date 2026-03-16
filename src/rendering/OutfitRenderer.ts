@@ -5,26 +5,7 @@
  * Each outfit's `draw` function paints on top of the character body layer.
  */
 
-// Try the canonical import first; fall back to a local definition if the
-// module doesn't exist yet (parallel development).
-// import type { BodyMetrics } from './OffscreenCharacterRenderer';
-
-export interface BodyMetrics {
-  centerX: number;
-  shoulderY: number;
-  waistY: number;
-  hipY: number;
-  kneeY: number;
-  ankleY: number;
-  shoulderWidth: number;
-  waistWidth: number;
-  hipWidth: number;
-  leftArmX: number;
-  rightArmX: number;
-  armTopY: number;
-  armBottomY: number;
-  scale: number;
-}
+import type { BodyMetrics } from './OffscreenCharacterRenderer';
 
 export interface OutfitDefinition {
   name: string;
@@ -970,6 +951,259 @@ function drawPajamas(
 }
 
 // ---------------------------------------------------------------------------
+// 8 — Graphic Tee
+// ---------------------------------------------------------------------------
+
+function drawGraphicTee(
+  ctx: CanvasRenderingContext2D,
+  character: 'her' | 'him',
+  _frame: number,
+  m: BodyMetrics,
+) {
+  const s = m.scale;
+  if (character === 'her') {
+    // Oversized graphic tee — mid-thigh length, white
+    const teeColor = '#F5F0E8';
+    const teeGrad = vGrad(ctx, m.centerX, m.shoulderY, m.kneeY - 6 * s, '#FFFFFF', teeColor);
+    ctx.fillStyle = teeGrad;
+    trapezoid(ctx, m.centerX, m.shoulderY, hw(m, 'shoulder') * 1.15, m.kneeY - 6 * s, hw(m, 'hip') * 1.2);
+    ctx.fill();
+
+    // Crew neckline
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder') * 0.25, m.shoulderY);
+    ctx.bezierCurveTo(
+      m.centerX - hw(m, 'shoulder') * 0.1, m.shoulderY + 4 * s,
+      m.centerX + hw(m, 'shoulder') * 0.1, m.shoulderY + 4 * s,
+      m.centerX + hw(m, 'shoulder') * 0.25, m.shoulderY,
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    // Graphic — colorful geometric band across chest
+    const graphicY = m.shoulderY + (m.waistY - m.shoulderY) * 0.35;
+    const graphicH = 10 * s;
+    ctx.fillStyle = '#2DD4BF';
+    ctx.fillRect(m.centerX - hw(m, 'shoulder') * 0.9, graphicY, hw(m, 'shoulder') * 1.8, graphicH * 0.4);
+    ctx.fillStyle = '#FB7185';
+    ctx.fillRect(m.centerX - hw(m, 'shoulder') * 0.9, graphicY + graphicH * 0.4, hw(m, 'shoulder') * 1.8, graphicH * 0.3);
+    ctx.fillStyle = '#FBBF24';
+    ctx.fillRect(m.centerX - hw(m, 'shoulder') * 0.9, graphicY + graphicH * 0.7, hw(m, 'shoulder') * 1.8, graphicH * 0.3);
+
+    // Short sleeves
+    const sleeveLen = (m.waistY - m.shoulderY) * 0.3;
+    const sleeveW = hw(m, 'shoulder') * 0.5;
+    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, teeColor);
+    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, teeColor);
+
+    // Bike shorts underneath
+    ctx.fillStyle = '#1a1a1a';
+    const shortsTop = m.hipY;
+    const shortsBot = m.kneeY - 8 * s;
+    trapezoid(ctx, m.centerX, shortsTop, hw(m, 'hip') * 0.85, shortsBot, hw(m, 'hip') * 0.75);
+    ctx.fill();
+    const legInset = 2 * s;
+    ctx.fillRect(m.centerX - hw(m, 'hip') * 0.75, shortsBot, hw(m, 'hip') * 0.75 - legInset, 4 * s);
+    ctx.fillRect(m.centerX + legInset, shortsBot, hw(m, 'hip') * 0.75 - legInset, 4 * s);
+  } else {
+    // Him: Graphic tee + joggers
+    const teeColor = '#E8E4E0';
+    const teeGrad = vGrad(ctx, m.centerX, m.shoulderY, m.waistY + 6 * s, '#F5F0EA', teeColor);
+    ctx.fillStyle = teeGrad;
+    trapezoid(ctx, m.centerX, m.shoulderY, hw(m, 'shoulder') * 1.05, m.waistY + 6 * s, hw(m, 'waist') * 1.05);
+    ctx.fill();
+
+    // Rounded neckline
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder') * 0.3, m.shoulderY);
+    ctx.bezierCurveTo(
+      m.centerX - hw(m, 'shoulder') * 0.15, m.shoulderY + 5 * s,
+      m.centerX + hw(m, 'shoulder') * 0.15, m.shoulderY + 5 * s,
+      m.centerX + hw(m, 'shoulder') * 0.3, m.shoulderY,
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    // Diagonal stripe graphic
+    const gY = m.shoulderY + (m.waistY - m.shoulderY) * 0.3;
+    ctx.save();
+    ctx.beginPath();
+    trapezoid(ctx, m.centerX, m.shoulderY, hw(m, 'shoulder') * 1.05, m.waistY + 6 * s, hw(m, 'waist') * 1.05);
+    ctx.clip();
+    ctx.fillStyle = '#2DD4BF';
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder'), gY);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder') * 0.3, gY);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder'), gY + 8 * s);
+    ctx.lineTo(m.centerX - hw(m, 'shoulder') * 0.3, gY + 8 * s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#FB7185';
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder') * 0.6, gY + 8 * s);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder') * 0.6, gY + 8 * s);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder'), gY + 14 * s);
+    ctx.lineTo(m.centerX, gY + 14 * s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Short sleeves
+    const sleeveLen = (m.waistY - m.shoulderY) * 0.35;
+    const sleeveW = hw(m, 'shoulder') * 0.55;
+    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, teeColor);
+    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, teeColor);
+
+    // Joggers
+    const joggerColor = '#3A3A3A';
+    const joggerGrad = vGrad(ctx, m.centerX, m.waistY, m.ankleY, '#4A4A4A', joggerColor);
+    ctx.fillStyle = joggerGrad;
+    trapezoid(ctx, m.centerX, m.waistY, hw(m, 'waist'), m.hipY, hw(m, 'hip'));
+    ctx.fill();
+    const legInset = 2 * s;
+    ctx.fillStyle = joggerGrad;
+    ctx.fillRect(m.centerX - hw(m, 'hip'), m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
+    ctx.fillRect(m.centerX + legInset, m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
+
+    // Cuffed ankles
+    ctx.fillStyle = '#2A2A2A';
+    const cuffH = 3 * s;
+    ctx.fillRect(m.centerX - hw(m, 'hip'), m.ankleY - cuffH, hw(m, 'hip') - legInset, cuffH);
+    ctx.fillRect(m.centerX + legInset, m.ankleY - cuffH, hw(m, 'hip') - legInset, cuffH);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 9 — Smart Casual / Blazer
+// ---------------------------------------------------------------------------
+
+function drawSmartCasual(
+  ctx: CanvasRenderingContext2D,
+  character: 'her' | 'him',
+  _frame: number,
+  m: BodyMetrics,
+) {
+  const s = m.scale;
+  if (character === 'her') {
+    // Fitted blazer + straight-leg trousers
+    const blazerColor = '#6B7C93';
+    const blazerGrad = vGrad(ctx, m.centerX, m.shoulderY, m.hipY + 2 * s, '#7B8CA3', blazerColor);
+
+    // Trousers first (underneath blazer)
+    const trouserColor = '#3A3A3A';
+    const trouserGrad = vGrad(ctx, m.centerX, m.waistY, m.ankleY, '#4A4A4A', trouserColor);
+    ctx.fillStyle = trouserGrad;
+    trapezoid(ctx, m.centerX, m.waistY, hw(m, 'waist'), m.hipY, hw(m, 'hip'));
+    ctx.fill();
+    const legInset = 2 * s;
+    ctx.fillStyle = trouserGrad;
+    ctx.fillRect(m.centerX - hw(m, 'hip'), m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
+    ctx.fillRect(m.centerX + legInset, m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
+
+    // Blazer body
+    ctx.fillStyle = blazerGrad;
+    trapezoid(ctx, m.centerX, m.shoulderY, hw(m, 'shoulder') * 1.02, m.hipY + 2 * s, hw(m, 'hip') * 0.95);
+    ctx.fill();
+
+    // Lapels — V-opening showing blouse
+    ctx.fillStyle = '#F5F0E8';
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder') * 0.3, m.shoulderY);
+    ctx.lineTo(m.centerX - hw(m, 'shoulder') * 0.08, m.waistY + 2 * s);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder') * 0.08, m.waistY + 2 * s);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder') * 0.3, m.shoulderY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lapel lines
+    ctx.strokeStyle = '#5A6B80';
+    ctx.lineWidth = Math.max(1, 1.2 * s);
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder') * 0.5, m.shoulderY + 3 * s);
+    ctx.lineTo(m.centerX - hw(m, 'shoulder') * 0.08, m.waistY + 2 * s);
+    ctx.moveTo(m.centerX + hw(m, 'shoulder') * 0.5, m.shoulderY + 3 * s);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder') * 0.08, m.waistY + 2 * s);
+    ctx.stroke();
+
+    // Blazer sleeves (3/4 length)
+    const sleeveLen = (m.armBottomY - m.armTopY) * 0.65;
+    const sleeveW = hw(m, 'shoulder') * 0.5;
+    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, blazerColor);
+    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, blazerColor);
+  } else {
+    // Open blazer over white tee + dark chinos
+    const blazerColor = '#5A6B80';
+
+    // White tee underneath
+    const teeGrad = vGrad(ctx, m.centerX, m.shoulderY, m.waistY + 4 * s, '#FFFFFF', '#F0EBE5');
+    ctx.fillStyle = teeGrad;
+    trapezoid(ctx, m.centerX, m.shoulderY, hw(m, 'shoulder') * 0.9, m.waistY + 4 * s, hw(m, 'waist') * 0.9);
+    ctx.fill();
+
+    // Neckline
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder') * 0.25, m.shoulderY);
+    ctx.bezierCurveTo(
+      m.centerX - hw(m, 'shoulder') * 0.1, m.shoulderY + 4 * s,
+      m.centerX + hw(m, 'shoulder') * 0.1, m.shoulderY + 4 * s,
+      m.centerX + hw(m, 'shoulder') * 0.25, m.shoulderY,
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    // Chinos
+    const chinoColor = '#4A4A4A';
+    const chinoGrad = vGrad(ctx, m.centerX, m.waistY, m.ankleY, '#5A5A5A', chinoColor);
+    ctx.fillStyle = chinoGrad;
+    trapezoid(ctx, m.centerX, m.waistY, hw(m, 'waist'), m.hipY, hw(m, 'hip'));
+    ctx.fill();
+    const legInset = 2 * s;
+    ctx.fillStyle = chinoGrad;
+    ctx.fillRect(m.centerX - hw(m, 'hip'), m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
+    ctx.fillRect(m.centerX + legInset, m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
+
+    // Blazer — open, two panels with gap showing tee
+    const blazerGrad = vGrad(ctx, m.centerX, m.shoulderY, m.hipY + 4 * s, '#6A7B90', blazerColor);
+    // Left panel
+    ctx.fillStyle = blazerGrad;
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder'), m.shoulderY);
+    ctx.lineTo(m.centerX - hw(m, 'shoulder') * 0.15, m.shoulderY);
+    ctx.lineTo(m.centerX - hw(m, 'shoulder') * 0.1, m.hipY + 4 * s);
+    ctx.lineTo(m.centerX - hw(m, 'hip') * 0.95, m.hipY + 4 * s);
+    ctx.closePath();
+    ctx.fill();
+    // Right panel
+    ctx.beginPath();
+    ctx.moveTo(m.centerX + hw(m, 'shoulder'), m.shoulderY);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder') * 0.15, m.shoulderY);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder') * 0.1, m.hipY + 4 * s);
+    ctx.lineTo(m.centerX + hw(m, 'hip') * 0.95, m.hipY + 4 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lapel edges
+    ctx.strokeStyle = '#4A5B70';
+    ctx.lineWidth = Math.max(1, 1 * s);
+    ctx.beginPath();
+    ctx.moveTo(m.centerX - hw(m, 'shoulder') * 0.15, m.shoulderY);
+    ctx.lineTo(m.centerX - hw(m, 'shoulder') * 0.1, m.hipY + 4 * s);
+    ctx.moveTo(m.centerX + hw(m, 'shoulder') * 0.15, m.shoulderY);
+    ctx.lineTo(m.centerX + hw(m, 'shoulder') * 0.1, m.hipY + 4 * s);
+    ctx.stroke();
+
+    // Blazer sleeves
+    const sleeveLen = (m.armBottomY - m.armTopY) * 0.7;
+    const sleeveW = hw(m, 'shoulder') * 0.55;
+    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, blazerColor);
+    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, blazerColor);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // OUTFITS array & OUTFIT_NAMES export
 // ---------------------------------------------------------------------------
 
@@ -982,6 +1216,8 @@ export const OUTFITS: OutfitDefinition[] = [
   { name: 'Restaurant', draw: drawRestaurant },
   { name: 'Pizza', draw: drawPizza },
   { name: 'Pajamas', draw: drawPajamas },
+  { name: 'Graphic Tee', draw: drawGraphicTee },
+  { name: 'Smart Casual', draw: drawSmartCasual },
 ];
 
 export const OUTFIT_NAMES: string[] = OUTFITS.map((o) => o.name);

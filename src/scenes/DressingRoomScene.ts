@@ -114,10 +114,11 @@ export class DressingRoomScene extends Phaser.Scene {
   }
 
   private changeOutfit(delta: number): void {
+    const count = OUTFIT_NAMES.length;
     if (this.currentCharacter === 'her') {
-      this.herOutfit = (this.herOutfit + delta + 8) % 8;
+      this.herOutfit = (this.herOutfit + delta + count) % count;
     } else {
-      this.hisOutfit = (this.hisOutfit + delta + 8) % 8;
+      this.hisOutfit = (this.hisOutfit + delta + count) % count;
     }
 
     this.updatePreview();

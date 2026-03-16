@@ -106,6 +106,49 @@ export function generateParticleTextures(scene: Phaser.Scene): void {
 
     scene.textures.addCanvas('particle-smoke', canvas);
   }
+
+  // --- Butterfly texture (10x10) ---
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 10;
+    canvas.height = 10;
+    const ctx = canvas.getContext('2d')!;
+
+    // Body
+    ctx.fillStyle = '#4a3520';
+    ctx.fillRect(4, 3, 2, 5);
+
+    // Wings (colorful dots)
+    ctx.fillStyle = '#ff69b4';
+    ctx.beginPath();
+    ctx.ellipse(2, 4, 2.5, 3, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffa07a';
+    ctx.beginPath();
+    ctx.ellipse(8, 4, 2.5, 3, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    scene.textures.addCanvas('particle-butterfly', canvas);
+  }
+
+  // --- Fountain water droplet (6x6) ---
+  {
+    const canvas = document.createElement('canvas');
+    canvas.width = 6;
+    canvas.height = 6;
+    const ctx = canvas.getContext('2d')!;
+
+    const gradient = ctx.createRadialGradient(3, 3, 0, 3, 3, 3);
+    gradient.addColorStop(0, 'rgba(106, 184, 232, 1)');
+    gradient.addColorStop(1, 'rgba(106, 184, 232, 0)');
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(3, 3, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    scene.textures.addCanvas('particle-water', canvas);
+  }
 }
 
 /**
@@ -164,6 +207,34 @@ export const PARTICLE_CONFIGS = {
     emitZone: {
       type: 'random' as const,
       source: new Phaser.Geom.Rectangle(-5, -5, 10, 5),
+    },
+  },
+
+  butterflies: {
+    speed: { min: 3, max: 8 },
+    angle: { min: 0, max: 360 },
+    lifespan: 6000,
+    frequency: 2000,
+    alpha: { start: 0.9, end: 0 },
+    scale: { start: 1, end: 0.8 },
+    rotate: { min: -15, max: 15 },
+    emitZone: {
+      type: 'random' as const,
+      source: new Phaser.Geom.Rectangle(-80, -40, 160, 80),
+    },
+  },
+
+  fountainWater: {
+    speed: { min: 8, max: 20 },
+    angle: { min: 240, max: 300 },
+    lifespan: 1500,
+    frequency: 200,
+    alpha: { start: 0.7, end: 0 },
+    scale: { start: 0.6, end: 0.3 },
+    gravityY: 30,
+    emitZone: {
+      type: 'random' as const,
+      source: new Phaser.Geom.Rectangle(-8, -4, 16, 4),
     },
   },
 };

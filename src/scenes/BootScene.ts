@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { WorldRenderer } from '../rendering/WorldRenderer';
+import { buildTileGrid, NPCS } from '../data/mapLayout';
 import OffscreenCharacterRenderer from '../rendering/OffscreenCharacterRenderer';
 import { generateParticleTextures } from '../rendering/ParticleConfigs';
+import { OUTFITS } from '../rendering/OutfitRenderer';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -20,7 +22,8 @@ export class BootScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     let progress = 0;
-    const totalSteps = 35; // 1 world + 1 particles + 1 photo + 32 character (16 texture + 16 preview)
+    const outfitCount = OUTFITS.length;
+    const totalSteps = 5 + outfitCount * 2 * 2; // world + ground + particles + photo + NPCs + outfits
     const updateBar = () => {
       progress++;
       bar.width = 316 * (progress / totalSteps);
@@ -30,22 +33,66 @@ export class BootScene extends Phaser.Scene {
     WorldRenderer.generateAllTextures(this);
     updateBar();
 
+    // Generate pre-rendered ground canvas
+    WorldRenderer.generatePreRenderedGround(this, buildTileGrid());
+    updateBar();
+
     // Generate particle textures
     generateParticleTextures(this);
+    updateBar();
+
+    // Generate NPC textures
+    for (const npcDef of NPCS) {
+      WorldRenderer.generateNPCTexture(this, npcDef.id, npcDef.palette);
+    }
     updateBar();
 
     // Generate placeholder photo
     this.generatePlaceholderPhoto();
     updateBar();
 
-    // Generate character textures (async due to image loading)
+    // Generate character textures in parallel
     const renderer = new OffscreenCharacterRenderer();
+    const tasks: Promise<void>[] = [];
     for (const character of ['her', 'him'] as const) {
-      for (let outfit = 0; outfit < 8; outfit++) {
-        await renderer.generateCharacterTextures(this, character, outfit, `${character}-outfit-${outfit}`);
-        updateBar();
-        await renderer.generatePreviewTexture(this, character, outfit, `${character}-preview-${outfit}`);
-        updateBar();
+      for (let outfit = 0; outfit < outfitCount; outfit++) {
+        tasks.push(
+          renderer.generateCharacterTextures(this, character, outfit, `${character}-outfit-${outfit}`)
+            .then(() => updateBar()),
+        );
+        tasks.push(
+          renderer.generatePreviewTexture(this, character, outfit, `${character}-preview-${outfit}`)
+            .then(() => updateBar()),
+        );
+      }
+    }
+    try {
+      await Promise.all(tasks);
+    } catch (err) {
+      console.error('Boot: some textures failed to generate:', err);
+      // Register fallback textures for any missing keys
+      const fallbackCanvas = document.createElement('canvas');
+      fallbackCanvas.width = 160;
+      fallbackCanvas.height = 200;
+      const fallbackCtx = fallbackCanvas.getContext('2d');
+      if (fallbackCtx) {
+        fallbackCtx.fillStyle = import.meta.env.DEV ? '#ff00ff' : '#888888';
+        fallbackCtx.fillRect(0, 0, 160, 200);
+      }
+      for (const character of ['her', 'him'] as const) {
+        for (let outfit = 0; outfit < outfitCount; outfit++) {
+          const textureKey = `${character}-outfit-${outfit}`;
+          for (let frame = 0; frame < 3; frame++) {
+            const frameKey = `${textureKey}-frame-${frame}`;
+            if (!this.textures.exists(frameKey)) {
+              this.textures.addCanvas(frameKey, fallbackCanvas);
+            }
+          }
+          const previewKey = `${character}-preview-${outfit}`;
+          if (!this.textures.exists(previewKey)) {
+            this.textures.addCanvas(previewKey, fallbackCanvas);
+          }
+        }
       }
     }
 

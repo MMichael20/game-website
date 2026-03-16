@@ -2,6 +2,13 @@ import Phaser from 'phaser';
 import { loadGameState } from '../utils/storage';
 import { loadOutfitSelection } from '../utils/storage';
 import checkpointData from '../data/checkpoints.json';
+import {
+  MAP_WIDTH, MAP_HEIGHT, TILE_SIZE,
+  TREE_POSITIONS, FLOWER_POSITIONS, FENCE_POSITIONS, LAMP_POSITIONS,
+  CHECKPOINT_POSITIONS, DECORATIONS, DECORATIVE_BUILDINGS,
+  NPCS, PATH_NETWORK,
+} from '../data/mapLayout';
+import { NPCSystem } from '../systems/NPCSystem';
 import { PARTICLE_CONFIGS } from '../rendering/ParticleConfigs';
 import {
   createStyledButton,
@@ -12,6 +19,7 @@ import {
   UI_COLORS,
   createCloseButton,
 } from '../rendering/UIRenderer';
+import { SkyRenderer } from '../rendering/SkyRenderer';
 
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
@@ -35,12 +43,22 @@ export class WorldScene extends Phaser.Scene {
   private locationOutfitActive = false;
   private savedPlayerTexture = '';
   private savedPartnerTexture = '';
+  private playerMoving = false;
+  private partnerMoving = false;
+
+  private skyRenderer!: SkyRenderer;
+  private gameTimeMinutes = 480; // start at 8am
+  private npcSystem!: NPCSystem;
 
   constructor() {
     super({ key: 'WorldScene' });
   }
 
   create(): void {
+    // Sky background — must be created before map tiles
+    this.skyRenderer = new SkyRenderer();
+    this.skyRenderer.create(this, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
+
     this.createMap();
     this.createPlayer();
     this.createPartner();
@@ -49,67 +67,92 @@ export class WorldScene extends Phaser.Scene {
     this.setupCamera();
     this.setupInput();
     this.createParticles();
+    this.npcSystem = new NPCSystem(this, NPCS, PATH_NETWORK);
     this.createLighting();
     addFadeTransition(this);
   }
 
   private createMap(): void {
-    const mapWidth = 40;
-    const mapHeight = 30;
-    const tileSize = 32;
+    const mapW = MAP_WIDTH * TILE_SIZE;
+    const mapH = MAP_HEIGHT * TILE_SIZE;
 
-    for (let y = 0; y < mapHeight; y++) {
-      for (let x = 0; x < mapWidth; x++) {
-        this.add.image(x * tileSize + 16, y * tileSize + 16, 'grass-tile');
+    // Single pre-rendered ground image (replaces ~1260 individual tile sprites)
+    if (this.textures.exists('ground-canvas')) {
+      this.add.image(mapW / 2, mapH / 2, 'ground-canvas');
+    } else {
+      // Legacy fallback: individual tiles
+      for (let y = 0; y < MAP_HEIGHT; y++) {
+        for (let x = 0; x < MAP_WIDTH; x++) {
+          this.add.image(x * TILE_SIZE + 16, y * TILE_SIZE + 16, 'grass-tile');
+        }
+      }
+      for (let x = 5; x < 35; x++) {
+        this.add.image(x * TILE_SIZE + 16, 15 * TILE_SIZE + 16, 'dirt-tile');
+      }
+      for (let y = 5; y < 25; y++) {
+        this.add.image(20 * TILE_SIZE + 16, y * TILE_SIZE + 16, 'dirt-tile');
       }
     }
 
-    for (let x = 5; x < 35; x++) {
-      this.add.image(x * tileSize + 16, 15 * tileSize + 16, 'dirt-tile');
-    }
-    for (let y = 5; y < 25; y++) {
-      this.add.image(20 * tileSize + 16, y * tileSize + 16, 'dirt-tile');
-    }
-
-    const treePositions = [
-      [3, 3], [7, 2], [2, 10], [8, 8], [15, 3], [30, 5],
-      [35, 12], [5, 20], [12, 25], [28, 22], [33, 27], [37, 8],
-    ];
-    treePositions.forEach(([x, y]) => {
-      const tree = this.add.image(x * tileSize + 16, y * tileSize + 8, 'tree');
-      tree.setDepth(y * tileSize);
+    // Trees
+    TREE_POSITIONS.forEach(([x, y]) => {
+      const tree = this.add.image(x * TILE_SIZE + 16, y * TILE_SIZE + 8, 'tree');
+      tree.setDepth(y * TILE_SIZE);
     });
 
-    // Flower patches at scenic positions
-    const flowerPositions = [
-      [6, 14], [18, 20], [25, 18], [32, 10], [10, 24], [22, 4],
-    ];
-    flowerPositions.forEach(([x, y]) => {
-      const flower = this.add.image(x * tileSize + 16, y * tileSize + 16, 'flower-patch');
-      flower.setDepth(y * tileSize - 1);
+    // Flowers
+    FLOWER_POSITIONS.forEach(([x, y]) => {
+      const flower = this.add.image(x * TILE_SIZE + 16, y * TILE_SIZE + 16, 'flower-patch');
+      flower.setDepth(y * TILE_SIZE - 1);
     });
 
-    // Fence/hedge segments between areas
-    const fencePositions = [
-      [9, 12], [10, 12], [11, 12], [12, 12],
-      [26, 6], [27, 6], [28, 6],
-    ];
-    fencePositions.forEach(([x, y]) => {
-      const fence = this.add.image(x * tileSize + 16, y * tileSize + 16, 'fence');
-      fence.setDepth(y * tileSize);
+    // Fences
+    FENCE_POSITIONS.forEach(([x, y]) => {
+      const fence = this.add.image(x * TILE_SIZE + 16, y * TILE_SIZE + 16, 'fence');
+      fence.setDepth(y * TILE_SIZE);
     });
 
-    // Lamp posts along dirt paths
-    const lampPositions = [
-      [8, 15], [14, 15], [26, 15], [32, 15],
-      [20, 8], [20, 12], [20, 18], [20, 24],
-    ];
-    lampPositions.forEach(([x, y]) => {
-      const lamp = this.add.image(x * tileSize + 16, y * tileSize + 8, 'lamp-post');
-      lamp.setDepth(y * tileSize);
+    // Lamp posts
+    LAMP_POSITIONS.forEach(([x, y]) => {
+      const lamp = this.add.image(x * TILE_SIZE + 16, y * TILE_SIZE + 8, 'lamp-post');
+      lamp.setDepth(y * TILE_SIZE);
     });
 
-    this.physics.world.setBounds(0, 0, mapWidth * tileSize, mapHeight * tileSize);
+    // Street decorations (benches, mailboxes, etc.)
+    DECORATIONS.forEach((dec) => {
+      const key = dec.type;
+      if (this.textures.exists(key)) {
+        const sprite = this.add.image(
+          dec.tileX * TILE_SIZE + 16,
+          dec.tileY * TILE_SIZE + 16,
+          key,
+        );
+        sprite.setScale(dec.scale ?? 1);
+        sprite.setDepth(dec.tileY * TILE_SIZE);
+      }
+    });
+
+    // Decorative (non-interactive) buildings
+    DECORATIVE_BUILDINGS.forEach((bldg) => {
+      const texKey = `building-${bldg.type}`;
+      if (this.textures.exists(texKey)) {
+        const worldX = bldg.tileX * TILE_SIZE;
+        const worldY = bldg.tileY * TILE_SIZE;
+        const sprite = this.add.image(worldX, worldY, texKey);
+        sprite.setScale(bldg.scale);
+        sprite.setDepth(worldY - 32);
+
+        // Label
+        this.add.text(worldX, worldY + 40, bldg.label, {
+          fontSize: '10px',
+          color: '#ffffff',
+          backgroundColor: '#00000088',
+          padding: { x: 4, y: 2 },
+        }).setOrigin(0.5).setDepth(worldY);
+      }
+    });
+
+    this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
   }
 
   private createPlayer(): void {
@@ -150,16 +193,7 @@ export class WorldScene extends Phaser.Scene {
     };
 
     checkpoints.forEach((cp) => {
-      const positions: Record<string, { x: number; y: number }> = {
-        restaurant: { x: 10 * 32, y: 8 * 32 },
-        cafe: { x: 30 * 32, y: 8 * 32 },
-        park: { x: 20 * 32, y: 22 * 32 },
-        cinema: { x: 16 * 32, y: 6 * 32 },
-        home: { x: 4 * 32, y: 9 * 32 },
-        pizzeria: { x: 14 * 32, y: 10 * 32 },
-      };
-
-      const pos = positions[cp.id];
+      const pos = CHECKPOINT_POSITIONS[cp.id];
       if (!pos) return;
 
       const texKey = buildingTextureMap[cp.id] || 'building-restaurant';
@@ -249,7 +283,7 @@ export class WorldScene extends Phaser.Scene {
 
   private setupCamera(): void {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
-    this.cameras.main.setBounds(0, 0, 40 * 32, 30 * 32);
+    this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
     this.cameras.main.setZoom(1.5);
   }
 
@@ -277,24 +311,61 @@ export class WorldScene extends Phaser.Scene {
       if (hitObjects.length > 0) return;
 
       const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-      const clampedX = Phaser.Math.Clamp(worldPoint.x, 0, 40 * 32);
-      const clampedY = Phaser.Math.Clamp(worldPoint.y, 0, 30 * 32);
+      const clampedX = Phaser.Math.Clamp(worldPoint.x, 0, MAP_WIDTH * TILE_SIZE);
+      const clampedY = Phaser.Math.Clamp(worldPoint.y, 0, MAP_HEIGHT * TILE_SIZE);
       this.moveTarget = new Phaser.Math.Vector2(clampedX, clampedY);
     });
   }
 
   private createParticles(): void {
-    const positions: Record<string, { x: number; y: number }> = {
-      park: { x: 20 * 32, y: 22 * 32 },
-      cafe: { x: 30 * 32, y: 8 * 32 },
-      home: { x: 4 * 32, y: 9 * 32 },
-      pizzeria: { x: 14 * 32, y: 10 * 32 },
-    };
+    // Park leaves
+    this.add.particles(
+      CHECKPOINT_POSITIONS.park.x, CHECKPOINT_POSITIONS.park.y,
+      'particle-leaf',
+      PARTICLE_CONFIGS.leaves as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig,
+    );
 
-    this.add.particles(positions.park.x, positions.park.y, 'particle-leaf', PARTICLE_CONFIGS.leaves as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig);
-    this.add.particles(positions.cafe.x, positions.cafe.y - 20, 'particle-steam', PARTICLE_CONFIGS.steam as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig);
-    this.add.particles(positions.home.x, positions.home.y, 'particle-sparkle', PARTICLE_CONFIGS.sparkles as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig);
-    this.add.particles(positions.pizzeria.x + 20, positions.pizzeria.y - 30, 'particle-smoke', PARTICLE_CONFIGS.smoke as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig);
+    // Cafe steam
+    this.add.particles(
+      CHECKPOINT_POSITIONS.cafe.x, CHECKPOINT_POSITIONS.cafe.y - 20,
+      'particle-steam',
+      PARTICLE_CONFIGS.steam as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig,
+    );
+
+    // Home sparkles
+    this.add.particles(
+      CHECKPOINT_POSITIONS.home.x, CHECKPOINT_POSITIONS.home.y,
+      'particle-sparkle',
+      PARTICLE_CONFIGS.sparkles as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig,
+    );
+
+    // Pizzeria smoke
+    this.add.particles(
+      CHECKPOINT_POSITIONS.pizzeria.x + 20, CHECKPOINT_POSITIONS.pizzeria.y - 30,
+      'particle-smoke',
+      PARTICLE_CONFIGS.smoke as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig,
+    );
+
+    // Butterflies near park
+    this.add.particles(
+      CHECKPOINT_POSITIONS.park.x, CHECKPOINT_POSITIONS.park.y,
+      'particle-butterfly',
+      PARTICLE_CONFIGS.butterflies as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig,
+    );
+
+    // Fountain water effect
+    this.add.particles(
+      22 * TILE_SIZE, 22 * TILE_SIZE - 10,
+      'particle-water',
+      PARTICLE_CONFIGS.fountainWater as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig,
+    );
+
+    // Bakery chimney smoke
+    this.add.particles(
+      6 * TILE_SIZE + 20, 15 * TILE_SIZE - 30,
+      'particle-smoke',
+      PARTICLE_CONFIGS.smoke as Phaser.Types.GameObjects.Particles.ParticleEmitterConfig,
+    );
   }
 
   private createLighting(): void {
@@ -310,9 +381,14 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // Advance game time and update sky
+    this.gameTimeMinutes = (this.gameTimeMinutes + delta * 0.0005) % 1440;
+    this.skyRenderer.update(this, this.gameTimeMinutes, delta);
+
     this.handleMovement();
     this.updatePartner(delta);
     this.checkCheckpointOverlap();
+    this.npcSystem.update(delta, this.gameTimeMinutes);
     this.updateDepthSorting();
   }
 
@@ -373,8 +449,10 @@ export class WorldScene extends Phaser.Scene {
       this.player.play(this.playerTextureKey + '-walk', true);
       if (body.velocity.x < 0) this.player.setFlipX(true);
       else if (body.velocity.x > 0) this.player.setFlipX(false);
-    } else {
-      // Idle — show neutral frame
+      this.playerMoving = true;
+    } else if (this.playerMoving) {
+      // Transition to idle — set texture once
+      this.playerMoving = false;
       this.player.stop();
       this.player.setTexture(this.playerTextureKey + '-frame-0');
     }
@@ -401,8 +479,10 @@ export class WorldScene extends Phaser.Scene {
       this.partner.play(this.partnerTextureKey + '-walk', true);
       if (dx < 0) this.partner.setFlipX(true);
       else if (dx > 0) this.partner.setFlipX(false);
-    } else {
-      // Idle
+      this.partnerMoving = true;
+    } else if (this.partnerMoving) {
+      // Transition to idle — set texture once
+      this.partnerMoving = false;
       this.partner.stop();
       this.partner.setTexture(this.partnerTextureKey + '-frame-0');
     }
@@ -491,14 +571,7 @@ export class WorldScene extends Phaser.Scene {
     const visited = state.visitedCheckpoints.length;
     this.progressText.setText(`${visited}/${total} places visited`);
 
-    const positions: Record<string, { x: number; y: number }> = {
-      restaurant: { x: 10 * 32, y: 8 * 32 },
-      cafe: { x: 30 * 32, y: 8 * 32 },
-      park: { x: 20 * 32, y: 22 * 32 },
-      cinema: { x: 16 * 32, y: 6 * 32 },
-      home: { x: 4 * 32, y: 9 * 32 },
-      pizzeria: { x: 14 * 32, y: 10 * 32 },
-    };
+    const positions = CHECKPOINT_POSITIONS;
 
     state.visitedCheckpoints.forEach((cpId) => {
       if (!this.checkmarkSprites.has(cpId)) {

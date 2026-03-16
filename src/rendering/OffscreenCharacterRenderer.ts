@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { OUTFITS } from './OutfitRenderer';
 
 /**
  * Body metrics exported for use by OutfitRenderer.
@@ -49,8 +50,6 @@ const HIM_HAIR_LIGHT = '#f0d860';
 const HER_EYE_COLOR = '#553311';
 const HIM_EYE_COLOR = '#3377dd';
 
-// Placeholder outfit colors (per outfit index)
-const OUTFIT_COLORS = ['#4488cc', '#cc4444', '#44cc44', '#cccc44', '#cc44cc', '#cc8844', '#44cccc', '#8844cc'];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -132,6 +131,8 @@ function computeMetrics(character: 'her' | 'him', scale: number): BodyMetrics {
 interface FrameOffsets {
   leftLegDx: number;
   rightLegDx: number;
+  leftLegDy: number;
+  rightLegDy: number;
   leftArmDy: number;
   rightArmDy: number;
 }
@@ -140,20 +141,24 @@ function getFrameOffsets(frameIndex: number, scale: number): FrameOffsets {
   switch (frameIndex) {
     case 1: // left step
       return {
-        leftLegDx: -3 * scale,
-        rightLegDx: 2 * scale,
+        leftLegDx: -5 * scale,
+        rightLegDx: 3 * scale,
+        leftLegDy: 0,
+        rightLegDy: -4 * scale,
         leftArmDy: 0,
-        rightArmDy: -3 * scale,
+        rightArmDy: -4 * scale,
       };
     case 2: // right step (mirror)
       return {
-        leftLegDx: 2 * scale,
-        rightLegDx: -3 * scale,
-        leftArmDy: -3 * scale,
+        leftLegDx: 3 * scale,
+        rightLegDx: -5 * scale,
+        leftLegDy: -4 * scale,
+        rightLegDy: 0,
+        leftArmDy: -4 * scale,
         rightArmDy: 0,
       };
     default: // neutral
-      return { leftLegDx: 0, rightLegDx: 0, leftArmDy: 0, rightArmDy: 0 };
+      return { leftLegDx: 0, rightLegDx: 0, leftLegDy: 0, rightLegDy: 0, leftArmDy: 0, rightArmDy: 0 };
   }
 }
 
@@ -195,8 +200,13 @@ function drawCharacter(
   // ===== Layer 4: Body base =====
   drawBody(ctx, cx, metrics, isHer, s);
 
-  // ===== Layer 5: Outfit placeholder =====
-  drawOutfitPlaceholder(ctx, cx, metrics, outfitIndex, isHer, s);
+  // ===== Layer 5: Outfit =====
+  const outfit = OUTFITS[outfitIndex % OUTFITS.length];
+  try {
+    outfit.draw(ctx, character, frameIndex, metrics);
+  } catch (err) {
+    console.warn(`Outfit ${outfitIndex} draw failed (frame ${frameIndex}):`, err);
+  }
 
   // ===== Layer 6: Arms =====
   drawArms(ctx, cx, metrics, offsets, isHer, s);
@@ -276,25 +286,38 @@ function drawLegs(
   const legHeight = metrics.ankleY - legTopY + 6 * s;
   const legSpacing = 6 * s;
 
+  const leftY = legTopY + offsets.leftLegDy;
+  const rightY = legTopY + offsets.rightLegDy;
+
   // Left leg
   ctx.save();
   ctx.fillStyle = '#334466';
-  roundedRect(ctx, cx - legSpacing - legWidth + offsets.leftLegDx, legTopY, legWidth, legHeight, 3 * s);
+  roundedRect(ctx, cx - legSpacing - legWidth + offsets.leftLegDx, leftY, legWidth, legHeight, 3 * s);
   ctx.fill();
   // Left shoe
   ctx.fillStyle = '#553322';
-  roundedRect(ctx, cx - legSpacing - legWidth + offsets.leftLegDx - 1 * s, legTopY + legHeight - 5 * s, legWidth + 2 * s, 6 * s, 2 * s);
+  ctx.beginPath();
+  ctx.ellipse(
+    cx - legSpacing - legWidth / 2 + offsets.leftLegDx,
+    leftY + legHeight - 1 * s,
+    legWidth * 0.7, 4 * s, -0.2, 0, Math.PI * 2,
+  );
   ctx.fill();
   ctx.restore();
 
   // Right leg
   ctx.save();
   ctx.fillStyle = '#334466';
-  roundedRect(ctx, cx + legSpacing + offsets.rightLegDx, legTopY, legWidth, legHeight, 3 * s);
+  roundedRect(ctx, cx + legSpacing + offsets.rightLegDx, rightY, legWidth, legHeight, 3 * s);
   ctx.fill();
   // Right shoe
   ctx.fillStyle = '#553322';
-  roundedRect(ctx, cx + legSpacing + offsets.rightLegDx - 1 * s, legTopY + legHeight - 5 * s, legWidth + 2 * s, 6 * s, 2 * s);
+  ctx.beginPath();
+  ctx.ellipse(
+    cx + legSpacing + legWidth / 2 + offsets.rightLegDx,
+    rightY + legHeight - 1 * s,
+    legWidth * 0.7, 4 * s, 0.2, 0, Math.PI * 2,
+  );
   ctx.fill();
   ctx.restore();
 }
@@ -412,101 +435,6 @@ function drawBody(
   ctx.restore();
 }
 
-function drawOutfitPlaceholder(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  metrics: BodyMetrics,
-  outfitIndex: number,
-  isHer: boolean,
-  s: number,
-): void {
-  const color = OUTFIT_COLORS[outfitIndex % OUTFIT_COLORS.length];
-
-  ctx.save();
-
-  // Draw outfit as a shaped overlay on the body
-  const sw = metrics.shoulderWidth / 2;
-  const ww = metrics.waistWidth / 2;
-  const hw = metrics.hipWidth / 2;
-
-  // Create gradient for the outfit
-  const outfitGrad = ctx.createLinearGradient(cx, metrics.shoulderY, cx, metrics.hipY + 8 * s);
-  outfitGrad.addColorStop(0, lightenHex(color, 0.15));
-  outfitGrad.addColorStop(0.5, color);
-  outfitGrad.addColorStop(1, darkenHex(color, 0.2));
-  ctx.fillStyle = outfitGrad;
-
-  ctx.beginPath();
-  if (isHer) {
-    // Fitted top/dress shape matching hourglass
-    ctx.moveTo(cx - sw + 2 * s, metrics.shoulderY + 2 * s);
-    ctx.bezierCurveTo(
-      cx - sw, metrics.shoulderY + 12 * s,
-      cx - ww - 2 * s, metrics.waistY - 6 * s,
-      cx - ww + 1 * s, metrics.waistY,
-    );
-    ctx.bezierCurveTo(
-      cx - ww - 1 * s, metrics.waistY + 8 * s,
-      cx - hw - 1 * s, metrics.hipY - 2 * s,
-      cx - hw + 1 * s, metrics.hipY + 8 * s,
-    );
-    ctx.lineTo(cx + hw - 1 * s, metrics.hipY + 8 * s);
-    ctx.bezierCurveTo(
-      cx + hw + 1 * s, metrics.hipY - 2 * s,
-      cx + ww + 1 * s, metrics.waistY + 8 * s,
-      cx + ww - 1 * s, metrics.waistY,
-    );
-    ctx.bezierCurveTo(
-      cx + ww + 2 * s, metrics.waistY - 6 * s,
-      cx + sw, metrics.shoulderY + 12 * s,
-      cx + sw - 2 * s, metrics.shoulderY + 2 * s,
-    );
-    // Neckline scoop
-    ctx.bezierCurveTo(
-      cx + 8 * s, metrics.shoulderY - 4 * s,
-      cx - 8 * s, metrics.shoulderY - 4 * s,
-      cx - sw + 2 * s, metrics.shoulderY + 2 * s,
-    );
-  } else {
-    // T-shirt shape for him
-    ctx.moveTo(cx - sw + 2 * s, metrics.shoulderY + 2 * s);
-    ctx.bezierCurveTo(
-      cx - sw, metrics.shoulderY + 14 * s,
-      cx - ww - 3 * s, metrics.waistY - 4 * s,
-      cx - ww, metrics.waistY,
-    );
-    ctx.lineTo(cx - ww + 1 * s, metrics.hipY + 4 * s);
-    ctx.lineTo(cx + ww - 1 * s, metrics.hipY + 4 * s);
-    ctx.lineTo(cx + ww, metrics.waistY);
-    ctx.bezierCurveTo(
-      cx + ww + 3 * s, metrics.waistY - 4 * s,
-      cx + sw, metrics.shoulderY + 14 * s,
-      cx + sw - 2 * s, metrics.shoulderY + 2 * s,
-    );
-    // Crew neckline
-    ctx.bezierCurveTo(
-      cx + 6 * s, metrics.shoulderY - 2 * s,
-      cx - 6 * s, metrics.shoulderY - 2 * s,
-      cx - sw + 2 * s, metrics.shoulderY + 2 * s,
-    );
-  }
-  ctx.closePath();
-  ctx.fill();
-
-  // Fold/crease detail
-  ctx.strokeStyle = darkenHex(color, 0.15);
-  ctx.lineWidth = 0.8 * s;
-  ctx.beginPath();
-  ctx.moveTo(cx - 2 * s, metrics.shoulderY + 10 * s);
-  ctx.bezierCurveTo(
-    cx - 3 * s, metrics.waistY - 4 * s,
-    cx + 1 * s, metrics.waistY + 4 * s,
-    cx + 2 * s, metrics.hipY,
-  );
-  ctx.stroke();
-
-  ctx.restore();
-}
 
 function drawArms(
   ctx: CanvasRenderingContext2D,
@@ -518,30 +446,50 @@ function drawArms(
 ): void {
   const armWidth = isHer ? 8 * s : 10 * s;
   const armLength = metrics.armBottomY - metrics.armTopY;
+  const elbowFrac = 0.5;
 
   // Left arm
   ctx.save();
   const lx = metrics.leftArmX;
   const ly = metrics.armTopY + offsets.leftArmDy;
+  const elbowLx = lx - 2 * s;
+  const elbowLy = ly + armLength * elbowFrac;
 
-  // Arm skin with gradient
   const leftArmGrad = ctx.createLinearGradient(lx, ly, lx, ly + armLength);
   leftArmGrad.addColorStop(0, SKIN_TONE);
   leftArmGrad.addColorStop(1, SKIN_SHADOW);
   ctx.fillStyle = leftArmGrad;
 
+  // Upper arm (shoulder to elbow)
   ctx.beginPath();
   ctx.moveTo(lx - armWidth / 2, ly);
   ctx.bezierCurveTo(
-    lx - armWidth / 2 - 1 * s, ly + armLength * 0.4,
-    lx - armWidth / 2, ly + armLength * 0.8,
+    lx - armWidth / 2 - 1 * s, ly + armLength * 0.2,
+    elbowLx - armWidth / 2, elbowLy - 2 * s,
+    elbowLx - armWidth / 2 + 1 * s, elbowLy,
+  );
+  ctx.lineTo(elbowLx + armWidth / 2 - 1 * s, elbowLy);
+  ctx.bezierCurveTo(
+    lx + armWidth / 2, elbowLy - 2 * s,
+    lx + armWidth / 2 + 1 * s, ly + armLength * 0.2,
+    lx + armWidth / 2, ly,
+  );
+  ctx.closePath();
+  ctx.fill();
+
+  // Lower arm (elbow to wrist)
+  ctx.beginPath();
+  ctx.moveTo(elbowLx - armWidth / 2 + 1 * s, elbowLy);
+  ctx.bezierCurveTo(
+    elbowLx - armWidth / 2, elbowLy + armLength * 0.2,
+    lx - armWidth / 2, ly + armLength * 0.9,
     lx - armWidth / 2 + 1 * s, ly + armLength,
   );
   ctx.lineTo(lx + armWidth / 2 - 1 * s, ly + armLength);
   ctx.bezierCurveTo(
-    lx + armWidth / 2, ly + armLength * 0.8,
-    lx + armWidth / 2 + 1 * s, ly + armLength * 0.4,
-    lx + armWidth / 2, ly,
+    lx + armWidth / 2, ly + armLength * 0.9,
+    elbowLx + armWidth / 2, elbowLy + armLength * 0.2,
+    elbowLx + armWidth / 2 - 1 * s, elbowLy,
   );
   ctx.closePath();
   ctx.fill();
@@ -557,24 +505,44 @@ function drawArms(
   ctx.save();
   const rx = metrics.rightArmX;
   const ry = metrics.armTopY + offsets.rightArmDy;
+  const elbowRx = rx + 2 * s;
+  const elbowRy = ry + armLength * elbowFrac;
 
   const rightArmGrad = ctx.createLinearGradient(rx, ry, rx, ry + armLength);
   rightArmGrad.addColorStop(0, SKIN_TONE);
   rightArmGrad.addColorStop(1, SKIN_SHADOW);
   ctx.fillStyle = rightArmGrad;
 
+  // Upper arm
   ctx.beginPath();
   ctx.moveTo(rx - armWidth / 2, ry);
   ctx.bezierCurveTo(
-    rx - armWidth / 2 - 1 * s, ry + armLength * 0.4,
-    rx - armWidth / 2, ry + armLength * 0.8,
+    rx - armWidth / 2 - 1 * s, ry + armLength * 0.2,
+    elbowRx - armWidth / 2, elbowRy - 2 * s,
+    elbowRx - armWidth / 2 + 1 * s, elbowRy,
+  );
+  ctx.lineTo(elbowRx + armWidth / 2 - 1 * s, elbowRy);
+  ctx.bezierCurveTo(
+    rx + armWidth / 2, elbowRy - 2 * s,
+    rx + armWidth / 2 + 1 * s, ry + armLength * 0.2,
+    rx + armWidth / 2, ry,
+  );
+  ctx.closePath();
+  ctx.fill();
+
+  // Lower arm
+  ctx.beginPath();
+  ctx.moveTo(elbowRx - armWidth / 2 + 1 * s, elbowRy);
+  ctx.bezierCurveTo(
+    elbowRx - armWidth / 2, elbowRy + armLength * 0.2,
+    rx - armWidth / 2, ry + armLength * 0.9,
     rx - armWidth / 2 + 1 * s, ry + armLength,
   );
   ctx.lineTo(rx + armWidth / 2 - 1 * s, ry + armLength);
   ctx.bezierCurveTo(
-    rx + armWidth / 2, ry + armLength * 0.8,
-    rx + armWidth / 2 + 1 * s, ry + armLength * 0.4,
-    rx + armWidth / 2, ry,
+    rx + armWidth / 2, ry + armLength * 0.9,
+    elbowRx + armWidth / 2, elbowRy + armLength * 0.2,
+    elbowRx + armWidth / 2 - 1 * s, elbowRy,
   );
   ctx.closePath();
   ctx.fill();
@@ -930,6 +898,20 @@ function drawFrontHair(
     ctx.fill();
   }
 
+  // Hair sheen — specular highlight
+  ctx.globalCompositeOperation = 'screen';
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.beginPath();
+  ctx.ellipse(
+    cx + headRadius * 0.2,
+    hairTop + headRadius * 0.4,
+    headRadius * 0.3,
+    headRadius * 0.8,
+    -0.4, 0, Math.PI * 2,
+  );
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+
   ctx.restore();
 }
 
@@ -974,10 +956,16 @@ function drawHighlights(
   ctx.save();
   ctx.globalCompositeOperation = 'multiply';
 
-  // Under-chin shadow
-  ctx.fillStyle = 'rgba(200,180,160,0.3)';
+  // Under-chin shadow — wider and more opaque
+  ctx.fillStyle = 'rgba(200,180,160,0.4)';
   ctx.beginPath();
-  ctx.ellipse(cx, headCy + headRadius + 2 * s, 8 * s, 3 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, headCy + headRadius + 2 * s, 10 * s, 3.5 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Under-nose shadow
+  ctx.fillStyle = 'rgba(200,180,160,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(cx, headCy + 6 * s, 4 * s, 1.5 * s, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
