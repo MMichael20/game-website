@@ -95,9 +95,20 @@ export class SkyRenderer {
     return puffs;
   }
 
-  update(_scene: Phaser.Scene, gameTimeMinutes: number, delta: number): void {
+  update(scene: Phaser.Scene, gameTimeMinutes: number, delta: number): void {
     const colors = getSkyColors(gameTimeMinutes);
     const deltaS = delta / 1000;
+    const zoom = scene.cameras.main.zoom;
+
+    // Keep screen dimensions current (they change on resize)
+    this.screenW = scene.cameras.main.width;
+    this.screenH = scene.cameras.main.height;
+
+    // Zoom-compensated origin and dimensions so sky fills the actual screen
+    const ox = -(1 - zoom) * this.screenW / (2 * zoom);
+    const oy = -(1 - zoom) * this.screenH / (2 * zoom);
+    const drawW = this.screenW / zoom;
+    const drawH = this.screenH / zoom;
 
     // Draw sky gradient
     this.skyBg.clear();
@@ -105,16 +116,19 @@ export class SkyRenderer {
     for (let i = 0; i < steps; i++) {
       const t = i / steps;
       const color = lerpColor(colors.topColor, colors.bottomColor, t);
-      const bandH = Math.ceil(this.screenH / steps) + 1;
+      const bandH = Math.ceil(drawH / steps) + 1;
       this.skyBg.fillStyle(this.cssToHex(color), 1);
-      this.skyBg.fillRect(0, Math.floor(t * this.screenH), this.screenW, bandH);
+      this.skyBg.fillRect(ox, oy + Math.floor(t * drawH), drawW, bandH);
     }
 
     // Draw stars (only when visible)
     if (colors.starOpacity > 0.01) {
       for (const star of this.stars) {
         this.skyBg.fillStyle(0xffffff, colors.starOpacity * (0.5 + Math.sin(star.x + gameTimeMinutes * 0.1) * 0.5));
-        this.skyBg.fillCircle(star.x, star.y, star.size);
+        // Offset star positions into zoom-compensated space
+        const starX = ox + (star.x / this.screenW) * drawW;
+        const starY = oy + (star.y / (this.screenH * 0.6)) * (drawH * 0.6);
+        this.skyBg.fillCircle(starX, starY, star.size);
       }
     }
 
@@ -125,8 +139,8 @@ export class SkyRenderer {
       // Daytime — draw sun
       const sunProgress = (t - 360) / (1140 - 360);
       const sunAngle = Math.PI * sunProgress;
-      const sunX = this.screenW * 0.1 + Math.sin(sunAngle) * this.screenW * 0.8;
-      const sunY = this.screenH * 0.45 - Math.sin(sunAngle) * this.screenH * 0.35;
+      const sunX = ox + drawW * 0.1 + Math.sin(sunAngle) * drawW * 0.8;
+      const sunY = oy + drawH * 0.45 - Math.sin(sunAngle) * drawH * 0.35;
 
       // Sun glow
       this.sun.fillStyle(0xfff5c0, 0.15);
@@ -141,8 +155,8 @@ export class SkyRenderer {
         ? (t + 1440 - 1140) / (1440 - 1140 + 360)
         : (t - 1140) / (1440 - 1140 + 360);
       const moonAngle = Math.PI * moonProgress;
-      const moonX = this.screenW * 0.2 + Math.sin(moonAngle) * this.screenW * 0.6;
-      const moonY = this.screenH * 0.4 - Math.sin(moonAngle) * this.screenH * 0.3;
+      const moonX = ox + drawW * 0.2 + Math.sin(moonAngle) * drawW * 0.6;
+      const moonY = oy + drawH * 0.4 - Math.sin(moonAngle) * drawH * 0.3;
 
       // Moon glow
       this.sun.fillStyle(0xc8d8f0, 0.1);
@@ -173,11 +187,12 @@ export class SkyRenderer {
     // Atmospheric haze
     this.haze.clear();
     const hazeAlpha = (t > 300 && t < 480) || (t > 1020 && t < 1200) ? 0.12 : 0.04;
-    const hazeTop = this.screenH * 0.8;
+    const hazeTop = oy + drawH * 0.8;
+    const hazeH = drawH * 0.2;
     for (let i = 0; i < 8; i++) {
       const frac = i / 8;
       this.haze.fillStyle(0xc8dcff, hazeAlpha * frac);
-      this.haze.fillRect(0, hazeTop + frac * (this.screenH - hazeTop), this.screenW, (this.screenH - hazeTop) / 8 + 1);
+      this.haze.fillRect(ox, hazeTop + frac * hazeH, drawW, hazeH / 8 + 1);
     }
   }
 

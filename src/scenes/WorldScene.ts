@@ -60,6 +60,15 @@ export class WorldScene extends Phaser.Scene {
     super({ key: 'WorldScene' });
   }
 
+  private toScreenPos(sx: number, sy: number): { x: number; y: number } {
+    const { width, height } = this.cameras.main;
+    const zoom = this.cameras.main.zoom;
+    return {
+      x: (sx - width / 2) / zoom + width / 2,
+      y: (sy - height / 2) / zoom + height / 2,
+    };
+  }
+
   create(): void {
     // Sky background — must be created before map tiles
     this.skyRenderer = new SkyRenderer();
@@ -279,15 +288,17 @@ export class WorldScene extends Phaser.Scene {
     const total = checkpointData.checkpoints.length;
     const visited = state.visitedCheckpoints.length;
 
-    // Styled progress pill
-    const pill = createPillContainer(this, 60, 20, `${visited}/${total} places visited`);
+    // Styled progress pill — zoom-compensated position
+    const pillPos = this.toScreenPos(60, 20);
+    const pill = createPillContainer(this, pillPos.x, pillPos.y, `${visited}/${total} places visited`);
     pill.bg.setScrollFactor(0).setDepth(90000);
     pill.label.setScrollFactor(0).setDepth(90001);
     this.progressText = pill.label;
     this.progressBg = pill.bg;
 
-    // Settings button
-    const settingsBtn = createStyledButton(this, this.cameras.main.width - 70, 20, 'Settings', {
+    // Settings button — zoom-compensated position
+    const settingsPos = this.toScreenPos(this.cameras.main.width - 70, 20);
+    const settingsBtn = createStyledButton(this, settingsPos.x, settingsPos.y, 'Settings', {
       fontSize: '12px',
       paddingX: 12,
       paddingY: 6,
@@ -301,7 +312,8 @@ export class WorldScene extends Phaser.Scene {
 
     // Fullscreen toggle (only if browser supports it)
     if (this.scale.fullscreen.available) {
-      const fsBtn = createStyledButton(this, this.cameras.main.width - 70, 54, 'Fullscreen', {
+      const fsPos = this.toScreenPos(this.cameras.main.width - 70, 54);
+      const fsBtn = createStyledButton(this, fsPos.x, fsPos.y, 'Fullscreen', {
         fontSize: '12px',
         paddingX: 12,
         paddingY: 6,
@@ -314,13 +326,18 @@ export class WorldScene extends Phaser.Scene {
       this.scale.on('leavefullscreen', () => fsBtn.label.setText('Fullscreen'));
     }
 
-    // Reposition right-aligned UI on resize
-    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-      this.settingsBtnContainer.setPosition(gameSize.width - 70, 20);
-      if (this.fsBtnContainer) {
-        this.fsBtnContainer.setPosition(gameSize.width - 70, 54);
-      }
+    // Reposition UI on resize — zoom-compensated
+    this.scale.on('resize', (_gameSize: Phaser.Structs.Size) => {
       this.recalculateZoom();
+      const sPos = this.toScreenPos(this.cameras.main.width - 70, 20);
+      this.settingsBtnContainer.setPosition(sPos.x, sPos.y);
+      if (this.fsBtnContainer) {
+        const fPos = this.toScreenPos(this.cameras.main.width - 70, 54);
+        this.fsBtnContainer.setPosition(fPos.x, fPos.y);
+      }
+      const pPos = this.toScreenPos(60, 20);
+      this.progressBg.setPosition(pPos.x, pPos.y);
+      this.progressText.setPosition(pPos.x, pPos.y);
       this.redrawVignette();
     });
   }
@@ -431,13 +448,20 @@ export class WorldScene extends Phaser.Scene {
   private redrawVignette(): void {
     if (!this.vignetteGfx) return;
     const { width, height } = this.cameras.main;
+    const zoom = this.cameras.main.zoom;
     this.vignetteGfx.clear();
     this.vignetteGfx.fillStyle(0x000000, 0.15);
-    const border = Math.max(10, Math.min(30, Math.min(width, height) * 0.04));
-    this.vignetteGfx.fillRect(0, 0, width, border); // top
-    this.vignetteGfx.fillRect(0, height - border, width, border); // bottom
-    this.vignetteGfx.fillRect(0, 0, border, height); // left
-    this.vignetteGfx.fillRect(width - border, 0, border, height); // right
+    // Zoom-compensated origin and dimensions so borders touch actual screen edges
+    const ox = -(1 - zoom) * width / (2 * zoom);
+    const oy = -(1 - zoom) * height / (2 * zoom);
+    const drawW = width / zoom;
+    const drawH = height / zoom;
+    const screenBorder = Math.max(10, Math.min(30, Math.min(width, height) * 0.04));
+    const border = screenBorder / zoom;
+    this.vignetteGfx.fillRect(ox, oy, drawW, border); // top
+    this.vignetteGfx.fillRect(ox, oy + drawH - border, drawW, border); // bottom
+    this.vignetteGfx.fillRect(ox, oy, border, drawH); // left
+    this.vignetteGfx.fillRect(ox + drawW - border, oy, border, drawH); // right
   }
 
   update(_time: number, delta: number): void {
@@ -611,6 +635,7 @@ export class WorldScene extends Phaser.Scene {
         zoom: this.baseZoom * 1.12,
         duration: 300,
         ease: 'Sine.easeOut',
+        onComplete: () => this.redrawVignette(),
       });
     }
     if (!foundCheckpoint && this.activeCheckpointId) {
@@ -619,6 +644,7 @@ export class WorldScene extends Phaser.Scene {
         zoom: this.baseZoom,
         duration: 300,
         ease: 'Sine.easeOut',
+        onComplete: () => this.redrawVignette(),
       });
     }
 
@@ -690,34 +716,42 @@ export class WorldScene extends Phaser.Scene {
 
   private showCompletionOverlay(): void {
     const { width, height } = this.cameras.main;
+    const zoom = this.cameras.main.zoom;
     const overlayElements: Phaser.GameObjects.GameObject[] = [];
 
-    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.8)
+    // Zoom-compensated center and dimensions for full-screen coverage
+    const center = this.toScreenPos(width / 2, height / 2);
+    const drawW = width / zoom;
+    const drawH = height / zoom;
+
+    const overlay = this.add.rectangle(center.x, center.y, drawW, drawH, 0x000000, 0.8)
       .setScrollFactor(0).setDepth(95000);
     overlayElements.push(overlay);
 
     const panelW = Math.min(400, width * 0.9);
     const panelH = Math.min(200, height * 0.4);
-    const panelX = (width - panelW) / 2;
-    const panelY = (height - panelH) / 2;
-    const panel = createPanel(this, panelX, panelY, panelW, panelH);
+    const panelPos = this.toScreenPos((width - panelW) / 2, (height - panelH) / 2);
+    const panel = createPanel(this, panelPos.x, panelPos.y, panelW, panelH);
     panel.setScrollFactor(0).setDepth(95001);
     overlayElements.push(panel);
 
     const titleFs = Math.min(28, Math.round(width * 0.07));
-    const title = this.add.text(width / 2, height / 2 - 40, 'You visited all our places!', {
+    const titlePos = this.toScreenPos(width / 2, height / 2 - 40);
+    const title = this.add.text(titlePos.x, titlePos.y, 'You visited all our places!', {
       fontSize: `${titleFs}px`, color: '#ffd700', align: 'center',
       wordWrap: { width: panelW - 40 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(95002);
     overlayElements.push(title);
 
-    const msg = this.add.text(width / 2, height / 2 + 20, 'Thank you for being my favourite person.', {
+    const msgPos = this.toScreenPos(width / 2, height / 2 + 20);
+    const msg = this.add.text(msgPos.x, msgPos.y, 'Thank you for being my favourite person.', {
       fontSize: '16px', color: '#ffffff', fontStyle: 'italic',
       wordWrap: { width: panelW - 40 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(95002);
     overlayElements.push(msg);
 
-    const closeBtn = createStyledButton(this, width / 2, height / 2 + 70, 'Continue Exploring', {
+    const btnPos = this.toScreenPos(width / 2, height / 2 + 70);
+    const closeBtn = createStyledButton(this, btnPos.x, btnPos.y, 'Continue Exploring', {
       color: UI_COLORS.success,
     });
     closeBtn.container.setScrollFactor(0).setDepth(95002);
