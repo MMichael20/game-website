@@ -47,6 +47,8 @@ export class WorldScene extends Phaser.Scene {
   private partnerMoving = false;
 
   private skyRenderer!: SkyRenderer;
+  private settingsBtnContainer!: Phaser.GameObjects.Container;
+  private fsBtnContainer?: Phaser.GameObjects.Container;
   private gameTimeMinutes = 480; // start at 8am
   private npcSystem!: NPCSystem;
   private playerIdleTween?: Phaser.Tweens.Tween;
@@ -65,11 +67,10 @@ export class WorldScene extends Phaser.Scene {
     this.createPlayer();
     this.createPartner();
 
-    // Idle breathing animation — subtle bob + scale when standing still
+    // Idle breathing animation — subtle horizontal scale to simulate chest expansion
     this.playerIdleTween = this.tweens.add({
       targets: this.player,
-      y: this.player.y - 1.5,
-      scaleY: this.player.scaleY * 0.985,
+      scaleX: this.player.scaleX * 1.015,
       duration: 1200,
       yoyo: true,
       repeat: -1,
@@ -79,8 +80,7 @@ export class WorldScene extends Phaser.Scene {
 
     this.partnerIdleTween = this.tweens.add({
       targets: this.partner,
-      y: this.partner.y - 1.5,
-      scaleY: this.partner.scaleY * 0.985,
+      scaleX: this.partner.scaleX * 1.015,
       duration: 1400,
       yoyo: true,
       repeat: -1,
@@ -295,6 +295,7 @@ export class WorldScene extends Phaser.Scene {
       this.scene.pause();
       this.scene.launch('DressingRoomScene', { fromWorld: true });
     });
+    this.settingsBtnContainer = settingsBtn.container;
 
     // Fullscreen toggle (only if browser supports it)
     if (this.scale.fullscreen.available) {
@@ -305,10 +306,19 @@ export class WorldScene extends Phaser.Scene {
       });
       fsBtn.container.setScrollFactor(0).setDepth(90000);
       fsBtn.container.on('pointerdown', () => this.scale.toggleFullscreen());
+      this.fsBtnContainer = fsBtn.container;
 
       this.scale.on('enterfullscreen', () => fsBtn.label.setText('Exit FS'));
       this.scale.on('leavefullscreen', () => fsBtn.label.setText('Fullscreen'));
     }
+
+    // Reposition right-aligned UI on resize
+    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+      this.settingsBtnContainer.setPosition(gameSize.width - 70, 20);
+      if (this.fsBtnContainer) {
+        this.fsBtnContainer.setPosition(gameSize.width - 70, 54);
+      }
+    });
   }
 
   private setupCamera(): void {
@@ -492,9 +502,6 @@ export class WorldScene extends Phaser.Scene {
       this.player.stop();
       this.player.setTexture(this.playerTextureKey + '-frame-0');
       this.playerIdleTween?.resume();
-      if (this.playerIdleTween) {
-        this.playerIdleTween.updateTo('y', this.player.y - 1.5, true);
-      }
     }
   }
 
@@ -506,19 +513,39 @@ export class WorldScene extends Phaser.Scene {
 
     if (dist > 48 && this.playerPositionHistory.length > 10) {
       const target = this.playerPositionHistory[0];
-      const angle = Phaser.Math.Angle.Between(
+      const targetDist = Phaser.Math.Distance.Between(
         this.partner.x, this.partner.y,
         target.x, target.y
       );
-      const partnerSpeed = this.speed * 0.9;
-      const dx = Math.cos(angle) * partnerSpeed * (delta / 1000);
-      this.partner.x += dx;
-      this.partner.y += Math.sin(angle) * partnerSpeed * (delta / 1000);
+
+      let dx: number;
+      if (targetDist < 6) {
+        // Close enough to target — snap and consume
+        this.partner.x = target.x;
+        this.partner.y = target.y;
+        dx = 0;
+      } else if (targetDist < 20) {
+        // Lerp for smooth deceleration near target
+        const prevX = this.partner.x;
+        this.partner.x = Phaser.Math.Linear(this.partner.x, target.x, 0.08);
+        this.partner.y = Phaser.Math.Linear(this.partner.y, target.y, 0.08);
+        dx = this.partner.x - prevX;
+      } else {
+        // Normal constant-speed movement
+        const angle = Phaser.Math.Angle.Between(
+          this.partner.x, this.partner.y,
+          target.x, target.y
+        );
+        const partnerSpeed = this.speed * 0.9;
+        dx = Math.cos(angle) * partnerSpeed * (delta / 1000);
+        this.partner.x += dx;
+        this.partner.y += Math.sin(angle) * partnerSpeed * (delta / 1000);
+      }
 
       // Walk animation and direction
       this.partner.play(this.partnerTextureKey + '-walk', true);
-      if (dx < 0) this.partner.setFlipX(true);
-      else if (dx > 0) this.partner.setFlipX(false);
+      if (dx < -0.1) this.partner.setFlipX(true);
+      else if (dx > 0.1) this.partner.setFlipX(false);
       if (!this.partnerMoving) {
         this.partnerIdleTween?.pause();
       }
@@ -531,8 +558,14 @@ export class WorldScene extends Phaser.Scene {
       this.partner.stop();
       this.partner.setTexture(this.partnerTextureKey + '-frame-0');
       this.partnerIdleTween?.resume();
-      if (this.partnerIdleTween) {
-        this.partnerIdleTween.updateTo('y', this.partner.y - 1.5, true);
+    } else if (!this.playerMoving && dist > 6) {
+      // Player stopped but partner not yet settled — gently drift to final position
+      this.partner.x = Phaser.Math.Linear(this.partner.x, this.player.x - 40, 0.05);
+      this.partner.y = Phaser.Math.Linear(this.partner.y, this.player.y, 0.05);
+      // Snap when close enough
+      if (dist < 8) {
+        this.partner.x = Math.round(this.partner.x);
+        this.partner.y = Math.round(this.partner.y);
       }
     }
   }

@@ -31,6 +31,9 @@ interface NPCEntity {
   idleTimer: number;
   idleDuration: number;
   visible: boolean;
+  // Transition state
+  transitionTween: Phaser.Tweens.Tween | null;
+  skipPositionOnEnter: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,10 +170,13 @@ class IdleAtBehavior implements BehaviorStrategy {
   constructor(private nodeId: string, private networkMap: Map<string, PathNode>) {}
 
   enter(npc: NPCEntity): void {
-    const node = this.networkMap.get(this.nodeId);
-    if (node) {
-      npc.sprite.setPosition(node.x, node.y);
+    if (!npc.skipPositionOnEnter) {
+      const node = this.networkMap.get(this.nodeId);
+      if (node) {
+        npc.sprite.setPosition(node.x, node.y);
+      }
     }
+    npc.skipPositionOnEnter = false;
     npc.sprite.stop();
     npc.sprite.setTexture(`npc-${npc.def.id}-frame-0`);
     npc.idleTimer = 0;
@@ -200,10 +206,13 @@ class SitBenchBehavior implements BehaviorStrategy {
   constructor(private nodeId: string, private networkMap: Map<string, PathNode>) {}
 
   enter(npc: NPCEntity): void {
-    const node = this.networkMap.get(this.nodeId);
-    if (node) {
-      npc.sprite.setPosition(node.x, node.y);
+    if (!npc.skipPositionOnEnter) {
+      const node = this.networkMap.get(this.nodeId);
+      if (node) {
+        npc.sprite.setPosition(node.x, node.y);
+      }
     }
+    npc.skipPositionOnEnter = false;
     npc.sprite.stop();
     npc.sprite.setTexture(`npc-${npc.def.id}-frame-0`);
     // Sitting = slightly lower position
@@ -254,6 +263,8 @@ export class NPCSystem {
         idleTimer: 0,
         idleDuration: 0,
         visible: true,
+        transitionTween: null,
+        skipPositionOnEnter: false,
       };
 
       this.npcs.push(npc);
@@ -337,8 +348,9 @@ export class NPCSystem {
         npc.currentBehavior.exit(npc);
       }
       npc.currentScheduleIdx = scheduleIdx;
-      npc.currentBehavior = this.createBehavior(npc.def.schedule[scheduleIdx]);
-      npc.currentBehavior.enter(npc);
+      const entry = npc.def.schedule[scheduleIdx];
+      const newBehavior = this.createBehavior(entry);
+      this.transitionTo(npc, newBehavior, entry);
     }
 
     // Update current behavior
@@ -360,11 +372,22 @@ export class NPCSystem {
       if (moved < 2) {
         npc.stuckTimer += delta;
         if (npc.stuckTimer > 3000) {
-          // Teleport to nearest path node
+          // Smooth unstick — fade+move to nearest path node
           const nearest = findClosestNode(npc.sprite.x, npc.sprite.y, this.networkMap);
-          npc.sprite.setPosition(nearest.x, nearest.y);
           npc.stuckTimer = 0;
-          console.warn(`NPC ${npc.def.id} was stuck, teleported to ${nearest.id}`);
+          if (npc.transitionTween) npc.transitionTween.stop();
+          npc.transitionTween = this.scene.tweens.add({
+            targets: npc.sprite,
+            x: nearest.x,
+            y: nearest.y,
+            alpha: { from: 1, to: 0.3, yoyo: true },
+            duration: 400,
+            ease: 'Sine.easeInOut',
+            onComplete: () => {
+              npc.sprite.alpha = 1;
+              npc.transitionTween = null;
+            },
+          });
         }
       } else {
         npc.stuckTimer = 0;
@@ -385,6 +408,59 @@ export class NPCSystem {
       }
     }
     return -1; // no active schedule
+  }
+
+  private transitionTo(npc: NPCEntity, newBehavior: BehaviorStrategy, entry: NPCScheduleEntry): void {
+    // Determine target position for the new behavior
+    let targetX = npc.sprite.x;
+    let targetY = npc.sprite.y;
+
+    if (entry.behavior === 'idle-at' || entry.behavior === 'sit-bench') {
+      const node = this.networkMap.get(entry.idleAt ?? '');
+      if (node) {
+        targetX = node.x;
+        targetY = node.y;
+      }
+    } else if (entry.behavior === 'walk-route' && entry.route && entry.route.length > 0) {
+      const node = this.networkMap.get(entry.route[0]);
+      if (node) {
+        targetX = node.x;
+        targetY = node.y;
+      }
+    }
+
+    const dist = Phaser.Math.Distance.Between(npc.sprite.x, npc.sprite.y, targetX, targetY);
+
+    if (dist < 10) {
+      // Close enough — enter directly, no transition needed
+      npc.currentBehavior = newBehavior;
+      newBehavior.enter(npc);
+      return;
+    }
+
+    // Cancel any in-progress transition
+    if (npc.transitionTween) npc.transitionTween.stop();
+
+    // Null behavior during transition (update() already handles null gracefully)
+    npc.currentBehavior = null;
+    npc.sprite.stop();
+    npc.sprite.setTexture(`npc-${npc.def.id}-frame-0`);
+
+    npc.transitionTween = this.scene.tweens.add({
+      targets: npc.sprite,
+      x: targetX,
+      y: targetY,
+      alpha: { from: 1, to: 0.3, yoyo: true },
+      duration: 400,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        npc.sprite.alpha = 1;
+        npc.transitionTween = null;
+        npc.skipPositionOnEnter = true;
+        npc.currentBehavior = newBehavior;
+        newBehavior.enter(npc);
+      },
+    });
   }
 
   private createBehavior(entry: NPCScheduleEntry): BehaviorStrategy {

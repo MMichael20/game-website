@@ -27,6 +27,9 @@ const config: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     fullscreenTarget: document.body,
+    expandParent: true,
+    width: 800,
+    height: 600,
   },
   input: {
     touch: {
