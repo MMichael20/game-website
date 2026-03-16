@@ -11,22 +11,30 @@ export interface GameStateV2 {
   playerPosition?: { x: number; y: number };
 }
 
+export interface GameStateV3 {
+  version: 3;
+  outfits: { player: number; partner: number };
+  visitedCheckpoints: string[];
+  miniGameScores: Record<string, number>;
+  bestScores: Record<string, number>;
+  playerPosition?: { x: number; y: number };
+  currentScene: string;
+}
+
 const STORAGE_KEY = 'couples-map-game';
 
-export function getDefaultState(): GameStateV2 {
+export function getDefaultState(): GameStateV3 {
   return {
-    version: 2,
+    version: 3,
     outfits: { player: 0, partner: 0 },
     visitedCheckpoints: [],
     miniGameScores: {},
     bestScores: {},
+    currentScene: 'WorldScene',
   };
 }
 
-function migrate(raw: any): GameStateV2 {
-  if (raw?.version === 2) return raw as GameStateV2;
-  if (raw?.version && raw.version > 2) return getDefaultState();
-
+function migrateV1ToV2(raw: any): GameStateV2 {
   const filteredScores = Object.fromEntries(
     Object.entries(raw?.miniGameScores ?? {})
       .filter(([id]) => VALID_CHECKPOINT_IDS.includes(id))
@@ -45,7 +53,25 @@ function migrate(raw: any): GameStateV2 {
   };
 }
 
-export function loadGameState(): GameStateV2 {
+function migrateV2ToV3(v2: GameStateV2): GameStateV3 {
+  return {
+    ...v2,
+    version: 3,
+    currentScene: 'WorldScene',
+  };
+}
+
+function migrate(raw: any): GameStateV3 {
+  if (raw?.version === 3) return raw as GameStateV3;
+  if (raw?.version && raw.version > 3) return getDefaultState();
+  if (raw?.version === 2) return migrateV2ToV3(raw as GameStateV2);
+
+  // V1 -> V2 -> V3
+  const v2 = migrateV1ToV2(raw);
+  return migrateV2ToV3(v2);
+}
+
+export function loadGameState(): GameStateV3 {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return getDefaultState();
@@ -55,13 +81,13 @@ export function loadGameState(): GameStateV2 {
   }
 }
 
-export function saveGameState(state: GameStateV2): void {
+export function saveGameState(state: GameStateV3): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 export function hasSavedGame(): boolean {
   const state = loadGameState();
-  return state.visitedCheckpoints.length > 0;
+  return state.visitedCheckpoints.length > 0 || state.currentScene !== 'WorldScene' || state.playerPosition != null;
 }
 
 export function clearGameState(): void {
@@ -103,4 +129,15 @@ export function saveOutfits(player: number, partner: number): void {
   const state = loadGameState();
   state.outfits = { player, partner };
   saveGameState(state);
+}
+
+export function saveCurrentScene(sceneKey: string): void {
+  const state = loadGameState();
+  state.currentScene = sceneKey;
+  saveGameState(state);
+}
+
+export function getCurrentScene(): string {
+  const state = loadGameState();
+  return state.currentScene;
 }
