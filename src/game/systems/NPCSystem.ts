@@ -1,19 +1,36 @@
 // src/game/systems/NPCSystem.ts
 import Phaser from 'phaser';
 import { NPC } from '../entities/NPC';
-import { NPC_DEFS } from '../data/mapLayout';
+import { NPCDef } from '../data/mapLayout';
 
 export class NPCSystem {
   private npcs: NPC[] = [];
 
-  create(scene: Phaser.Scene): void {
-    this.npcs = NPC_DEFS.map(def =>
-      new NPC(scene, def.tileX, def.tileY, def.behavior, def.walkPath, def.texture, def.speed)
-    );
+  create(scene: Phaser.Scene, defs: NPCDef[]): void {
+    this.npcs = defs.map(def => new NPC(scene, def));
   }
 
-  update(delta: number): void {
-    this.npcs.forEach(npc => npc.update(delta));
+  update(delta: number, playerX?: number, playerY?: number): void {
+    this.npcs.forEach(npc => {
+      npc.update(delta);
+      if (playerX != null && playerY != null) {
+        npc.checkProximity(playerX, playerY);
+      }
+    });
+  }
+
+  getInteractableInRange(): NPC | null {
+    let closest: NPC | null = null;
+    let closestDist = Infinity;
+
+    for (const npc of this.npcs) {
+      if (npc.inRange && npc.currentDistance < closestDist) {
+        closest = npc;
+        closestDist = npc.currentDistance;
+      }
+    }
+
+    return closest;
   }
 
   destroy(): void {

@@ -178,6 +178,15 @@ export interface NPCDef {
   walkPath?: Array<{ x: number; y: number }>; // tile coords
   texture?: string;
   speed?: number;
+  // Interaction fields (all optional, existing NPCs unaffected)
+  interactable?: boolean;
+  interactionRadius?: number;   // pixels, default 48
+  onInteract?: 'dialog' | 'cutscene-trigger';
+  interactionData?: {
+    lines?: string[];       // for dialog type
+    sceneKey?: string;      // for cutscene-trigger type
+    sceneData?: any;        // data to pass to target scene
+  };
 }
 
 export const NPC_DEFS: NPCDef[] = [

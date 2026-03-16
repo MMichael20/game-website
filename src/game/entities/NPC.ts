@@ -1,35 +1,53 @@
 // src/game/entities/NPC.ts
 import Phaser from 'phaser';
-import { tileToWorld } from '../data/mapLayout';
+import { NPCDef, tileToWorld } from '../data/mapLayout';
 
 type NPCState = 'idle' | 'walking' | 'sitting';
 
 const DEFAULT_NPC_SPEED = 40;
+const DEFAULT_INTERACTION_RADIUS = 48;
 
 export class NPC {
   public sprite: Phaser.GameObjects.Sprite;
+  public readonly id: string;
+  public readonly interactable: boolean;
+  public readonly onInteract?: string;
+  public readonly interactionData?: object;
+
   private state: NPCState;
   private walkPath: Array<{ x: number; y: number }>;
   private currentPathIndex = 0;
   private targetPos: { x: number; y: number } | null = null;
   private speed: number;
+  private interactionRadius: number;
+  private _inRange = false;
+  private _currentDistance = Infinity;
+  private promptText: Phaser.GameObjects.Text | null = null;
+  private scene: Phaser.Scene;
 
-  constructor(
-    scene: Phaser.Scene,
-    tileX: number,
-    tileY: number,
-    behavior: 'idle' | 'walk' | 'sit',
-    walkPath?: Array<{ x: number; y: number }>,
-    texture: string = 'npc-default',
-    speed: number = DEFAULT_NPC_SPEED,
-  ) {
-    const worldPos = tileToWorld(tileX, tileY);
-    this.sprite = scene.add.sprite(worldPos.x, worldPos.y, texture);
+  get inRange(): boolean {
+    return this._inRange;
+  }
+
+  get currentDistance(): number {
+    return this._currentDistance;
+  }
+
+  constructor(scene: Phaser.Scene, def: NPCDef) {
+    this.scene = scene;
+    this.id = def.id;
+    this.interactable = def.interactable ?? false;
+    this.onInteract = def.onInteract;
+    this.interactionData = def.interactionData;
+    this.interactionRadius = def.interactionRadius ?? DEFAULT_INTERACTION_RADIUS;
+
+    const worldPos = tileToWorld(def.tileX, def.tileY);
+    this.sprite = scene.add.sprite(worldPos.x, worldPos.y, def.texture ?? 'npc-default');
     this.sprite.setDepth(8);
 
-    this.walkPath = walkPath ?? [];
-    this.speed = speed;
-    this.state = behavior === 'walk' ? 'walking' : behavior === 'sit' ? 'sitting' : 'idle';
+    this.walkPath = def.walkPath ?? [];
+    this.speed = def.speed ?? DEFAULT_NPC_SPEED;
+    this.state = def.behavior === 'walk' ? 'walking' : def.behavior === 'sit' ? 'sitting' : 'idle';
 
     if (this.state === 'walking' && this.walkPath.length > 1) {
       this.currentPathIndex = 0;
@@ -43,7 +61,47 @@ export class NPC {
     this.targetPos = tileToWorld(tile.x, tile.y);
   }
 
+  checkProximity(playerX: number, playerY: number): boolean {
+    if (!this.interactable) {
+      this._inRange = false;
+      this._currentDistance = Infinity;
+      return false;
+    }
+
+    const dx = this.sprite.x - playerX;
+    const dy = this.sprite.y - playerY;
+    this._currentDistance = Math.sqrt(dx * dx + dy * dy);
+    this._inRange = this._currentDistance <= this.interactionRadius;
+
+    if (this._inRange) {
+      if (!this.promptText) {
+        this.promptText = this.scene.add.text(
+          this.sprite.x,
+          this.sprite.y - 20,
+          'E',
+          {
+            fontSize: '10px',
+            color: '#ffffff',
+            backgroundColor: '#00000088',
+            padding: { x: 3, y: 2 },
+          },
+        );
+        this.promptText.setOrigin(0.5, 1);
+        this.promptText.setDepth(100);
+      }
+    } else if (this.promptText) {
+      this.promptText.destroy();
+      this.promptText = null;
+    }
+
+    return this._inRange;
+  }
+
   update(delta: number): void {
+    if (this.promptText) {
+      this.promptText.setPosition(this.sprite.x, this.sprite.y - 20);
+    }
+
     if (this.state !== 'walking' || !this.targetPos) return;
 
     const dx = this.targetPos.x - this.sprite.x;
@@ -67,6 +125,10 @@ export class NPC {
   }
 
   destroy(): void {
+    if (this.promptText) {
+      this.promptText.destroy();
+      this.promptText = null;
+    }
     this.sprite.destroy();
   }
 }

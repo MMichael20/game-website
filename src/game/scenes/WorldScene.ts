@@ -14,6 +14,7 @@ import {
   DECORATIONS,
   CHECKPOINT_ZONES,
   CheckpointZone,
+  NPC_DEFS,
   tileToWorld,
   worldToTile,
   isWalkable,
@@ -109,7 +110,7 @@ export class WorldScene extends Phaser.Scene {
 
     // 6. NPC system
     this.npcSystem = new NPCSystem();
-    this.npcSystem.create(this);
+    this.npcSystem.create(this, NPC_DEFS);
 
     // 7. Input system
     this.inputSystem = new InputSystem(this);
@@ -169,11 +170,11 @@ export class WorldScene extends Phaser.Scene {
     // 3. Partner follows player
     this.partner.update(this.player.getPosition());
 
-    // 4. NPCs
-    this.npcSystem.update(delta);
+    // 4. NPCs — pass player position for interaction proximity
+    const playerPos = this.player.getPosition();
+    this.npcSystem.update(delta, playerPos.x, playerPos.y);
 
     // 5. Checkpoint proximity
-    const playerPos = this.player.getPosition();
     const playerTile = worldToTile(playerPos.x, playerPos.y);
     let inZone: CheckpointZone | null = null;
 
