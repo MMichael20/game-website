@@ -11,15 +11,15 @@ export class InputSystem {
   private spaceKey!: Phaser.Input.Keyboard.Key;
 
   // Virtual joystick state
-  private joystickBase?: Phaser.GameObjects.Circle;
-  private joystickThumb?: Phaser.GameObjects.Circle;
+  private joystickBase?: Phaser.GameObjects.Arc;
+  private joystickThumb?: Phaser.GameObjects.Arc;
   private joystickDirection = { x: 0, y: 0 };
   private joystickRadius = 50;
   private touchEnabled = false;
   private actionPressed = false;
 
   // Action button
-  private actionButton?: Phaser.GameObjects.Circle;
+  private actionButton?: Phaser.GameObjects.Arc;
   private actionButtonLabel?: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene) {

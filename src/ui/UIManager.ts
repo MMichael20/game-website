@@ -50,7 +50,7 @@ class UIManager {
   }
 
   // --- Main Menu ---
-  showMainMenu(onNewGame: () => void, onContinue: () => void | null): void {
+  showMainMenu(onNewGame: () => void, onContinue: (() => void) | null): void {
     this.menuContainer.innerHTML = '';
     const menu = document.createElement('div');
     menu.className = 'main-menu';
@@ -62,7 +62,9 @@ class UIManager {
       </div>
     `;
     menu.querySelector('[data-action="new"]')?.addEventListener('click', onNewGame);
-    menu.querySelector('[data-action="continue"]')?.addEventListener('click', onContinue);
+    if (onContinue) {
+      menu.querySelector('[data-action="continue"]')?.addEventListener('click', onContinue);
+    }
     this.menuContainer.appendChild(menu);
   }
 

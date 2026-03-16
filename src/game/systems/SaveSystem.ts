@@ -30,7 +30,7 @@ function migrate(raw: any): GameStateV2 {
   const filteredScores = Object.fromEntries(
     Object.entries(raw?.miniGameScores ?? {})
       .filter(([id]) => VALID_CHECKPOINT_IDS.includes(id))
-  );
+  ) as Record<string, number>;
 
   return {
     version: 2,
