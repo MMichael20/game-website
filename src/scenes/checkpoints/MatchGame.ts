@@ -18,6 +18,8 @@ export class MatchGame extends Phaser.Scene {
   private moves = 0;
   private movesPill!: { bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text };
   private canFlip = true;
+  private cardW = 140;
+  private cardH = 60;
 
   constructor() {
     super({ key: 'MatchGame' });
@@ -79,10 +81,13 @@ export class MatchGame extends Phaser.Scene {
     }).setDepth(999);
 
     // Grid layout
-    const cols = 4;
-    const cardW = 140;
-    const cardH = 60;
     const gap = 10;
+    const availW = width - 20;
+    const cols = availW >= 580 ? 4 : availW >= 340 ? 3 : 2;
+    const cardW = Math.floor((availW - (cols - 1) * gap) / cols);
+    const cardH = Math.min(60, Math.round(cardW * 0.43));
+    this.cardW = cardW;
+    this.cardH = cardH;
     const startX = width / 2 - ((cols * (cardW + gap)) - gap) / 2 + cardW / 2;
     const startY = 90 + cardH / 2;
 
@@ -106,6 +111,8 @@ export class MatchGame extends Phaser.Scene {
       const label = this.add.text(x, y, '?', {
         fontSize: '14px', color: '#666',
         fontFamily: 'Georgia, serif',
+        wordWrap: { width: cardW - 10 },
+        align: 'center',
       }).setOrigin(0.5);
 
       const cardData = {
@@ -130,7 +137,7 @@ export class MatchGame extends Phaser.Scene {
     const card = this.cards[index];
     if (card.revealed || card.matched) return;
 
-    const { width: cardW, height: cardH } = { width: 140, height: 60 };
+    const cardW = this.cardW; const cardH = this.cardH;
     const x = card.hitArea.x;
     const y = card.hitArea.y;
 
@@ -173,8 +180,8 @@ export class MatchGame extends Phaser.Scene {
     this.canFlip = false;
 
     const [i1, i2] = this.flipped;
-    const cardW = 140;
-    const cardH = 60;
+    const cardW = this.cardW;
+    const cardH = this.cardH;
 
     if (this.cards[i1].pairIndex === this.cards[i2].pairIndex) {
       // Match! Green tint with glow
@@ -250,8 +257,8 @@ export class MatchGame extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.moves, true); // lower moves = better
 
     // Results panel
-    const panelW = 320;
-    const panelH = 220;
+    const panelW = Math.min(320, width * 0.9);
+    const panelH = Math.min(220, height * 0.4);
     createPanel(this, width / 2 - panelW / 2, height / 2 - panelH / 2, panelW, panelH, {
       color: UI_COLORS.darkPanel,
       radius: 16,

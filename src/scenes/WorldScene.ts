@@ -53,6 +53,7 @@ export class WorldScene extends Phaser.Scene {
   private npcSystem!: NPCSystem;
   private playerIdleTween?: Phaser.Tweens.Tween;
   private partnerIdleTween?: Phaser.Tweens.Tween;
+  private baseZoom = 1.5;
 
   constructor() {
     super({ key: 'WorldScene' });
@@ -321,23 +322,20 @@ export class WorldScene extends Phaser.Scene {
       const mapW = MAP_WIDTH * TILE_SIZE;
       const mapH = MAP_HEIGHT * TILE_SIZE;
       const minZoomForMap = Math.max(gameSize.width / mapW, gameSize.height / mapH);
-      const targetZoom = Math.min(gameSize.width / 533, gameSize.height / 400);
-      const zoom = Phaser.Math.Clamp(Math.max(targetZoom, minZoomForMap), 0.7, 3);
-      this.cameras.main.setZoom(zoom);
+      this.baseZoom = Phaser.Math.Clamp(Math.max(1.5, minZoomForMap), 0.7, 3);
+      this.cameras.main.setZoom(this.baseZoom);
     });
   }
 
   private setupCamera(): void {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
-    // Target: ~533×400 game units visible, but never zoom out beyond the map
     const { width, height } = this.cameras.main;
     const mapW = MAP_WIDTH * TILE_SIZE;
     const mapH = MAP_HEIGHT * TILE_SIZE;
     const minZoomForMap = Math.max(width / mapW, height / mapH);
-    const targetZoom = Math.min(width / 533, height / 400);
-    const zoom = Phaser.Math.Clamp(Math.max(targetZoom, minZoomForMap), 0.7, 3);
-    this.cameras.main.setZoom(zoom);
+    this.baseZoom = Phaser.Math.Clamp(Math.max(1.5, minZoomForMap), 0.7, 3);
+    this.cameras.main.setZoom(this.baseZoom);
   }
 
   private setupInput(): void {
@@ -427,10 +425,11 @@ export class WorldScene extends Phaser.Scene {
     vignette.setScrollFactor(0).setDepth(89000);
     // Dark edges
     vignette.fillStyle(0x000000, 0.15);
-    vignette.fillRect(0, 0, width, 30); // top
-    vignette.fillRect(0, height - 30, width, 30); // bottom
-    vignette.fillRect(0, 0, 30, height); // left
-    vignette.fillRect(width - 30, 0, 30, height); // right
+    const border = Math.max(10, Math.min(30, Math.min(width, height) * 0.04));
+    vignette.fillRect(0, 0, width, border); // top
+    vignette.fillRect(0, height - border, width, border); // bottom
+    vignette.fillRect(0, 0, border, height); // left
+    vignette.fillRect(width - border, 0, border, height); // right
   }
 
   update(_time: number, delta: number): void {
@@ -601,7 +600,7 @@ export class WorldScene extends Phaser.Scene {
     if (foundCheckpoint && !this.activeCheckpointId) {
       this.tweens.add({
         targets: this.cameras.main,
-        zoom: 1.7,
+        zoom: this.baseZoom * 1.15,
         duration: 300,
         ease: 'Sine.easeOut',
       });
@@ -609,7 +608,7 @@ export class WorldScene extends Phaser.Scene {
     if (!foundCheckpoint && this.activeCheckpointId) {
       this.tweens.add({
         targets: this.cameras.main,
-        zoom: 1.5,
+        zoom: this.baseZoom,
         duration: 300,
         ease: 'Sine.easeOut',
       });
@@ -689,21 +688,24 @@ export class WorldScene extends Phaser.Scene {
       .setScrollFactor(0).setDepth(95000);
     overlayElements.push(overlay);
 
-    const panelW = 400;
-    const panelH = 200;
+    const panelW = Math.min(400, width * 0.9);
+    const panelH = Math.min(200, height * 0.4);
     const panelX = (width - panelW) / 2;
     const panelY = (height - panelH) / 2;
     const panel = createPanel(this, panelX, panelY, panelW, panelH);
     panel.setScrollFactor(0).setDepth(95001);
     overlayElements.push(panel);
 
+    const titleFs = Math.min(28, Math.round(width * 0.07));
     const title = this.add.text(width / 2, height / 2 - 40, 'You visited all our places!', {
-      fontSize: '28px', color: '#ffd700', align: 'center',
+      fontSize: `${titleFs}px`, color: '#ffd700', align: 'center',
+      wordWrap: { width: panelW - 40 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(95002);
     overlayElements.push(title);
 
     const msg = this.add.text(width / 2, height / 2 + 20, 'Thank you for being my favourite person.', {
       fontSize: '16px', color: '#ffffff', fontStyle: 'italic',
+      wordWrap: { width: panelW - 40 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(95002);
     overlayElements.push(msg);
 

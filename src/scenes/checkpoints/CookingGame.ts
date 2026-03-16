@@ -80,7 +80,8 @@ export class CookingGame extends Phaser.Scene {
     });
 
     // Order display panel
-    this.orderPanel = createPanel(this, width / 2 - 160, 75, 320, 60, {
+    const orderPanelW = Math.min(320, width * 0.9);
+    this.orderPanel = createPanel(this, width / 2 - orderPanelW / 2, 75, orderPanelW, 60, {
       color: UI_COLORS.darkPanel,
       radius: 10,
       shadow: false,
@@ -107,10 +108,11 @@ export class CookingGame extends Phaser.Scene {
 
     // Item buttons using createStyledButton
     const shelfY = height / 2 + 40;
+    const itemSpacing = Math.min(80, (width - 40) / itemList.length);
     itemList.forEach((item, i) => {
       const { container: itemBtn } = createStyledButton(
         this,
-        width / 2 - ((itemList.length - 1) * 80) / 2 + i * 80,
+        width / 2 - ((itemList.length - 1) * itemSpacing) / 2 + i * itemSpacing,
         shelfY,
         item.replace(/-/g, ' '),
         {
@@ -227,8 +229,8 @@ export class CookingGame extends Phaser.Scene {
     const { width, height } = this.cameras.main;
 
     // Results panel
-    const panelW = 320;
-    const panelH = 220;
+    const panelW = Math.min(320, width * 0.9);
+    const panelH = Math.min(220, height * 0.4);
     createPanel(this, width / 2 - panelW / 2, height / 2 - panelH / 2, panelW, panelH, {
       color: UI_COLORS.darkPanel,
       radius: 16,

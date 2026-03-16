@@ -34,8 +34,8 @@ export class MemoryCard extends Phaser.Scene {
     overlay.setInteractive(); // Block clicks through
 
     // Card dimensions
-    const cardW = 420;
-    const cardH = 480;
+    const cardW = Math.min(420, width * 0.92);
+    const cardH = Math.min(480, height * 0.75);
     const cardX = width / 2;
     const cardY = height / 2;
 
@@ -77,7 +77,7 @@ export class MemoryCard extends Phaser.Scene {
       ? cp.memory.photo
       : 'placeholder-photo';
     const photo = this.add.image(0, -100, photoKey);
-    photo.setDisplaySize(380, 180);
+    photo.setDisplaySize(Math.min(380, cardW - 40), Math.min(180, cardH * 0.35));
     cardContainer.add(photo);
 
     // Location name in gold
@@ -93,7 +93,7 @@ export class MemoryCard extends Phaser.Scene {
       fontSize: '14px',
       color: UI_COLORS.mutedHex,
       fontStyle: 'italic',
-      wordWrap: { width: 360 },
+      wordWrap: { width: Math.min(360, cardW - 60) },
       align: 'center',
     }).setOrigin(0.5, 0);
     cardContainer.add(messageText);

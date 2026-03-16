@@ -77,18 +77,18 @@ export class QuizGame extends Phaser.Scene {
     const questionText = createStyledText(this, width / 2, height / 3, q.question, {
       fontSize: '20px',
       color: UI_COLORS.textHex,
-      wordWrap: { width: 600 },
+      wordWrap: { width: Math.min(600, width * 0.85) },
       align: 'center',
     }).setOrigin(0.5);
     this.questionElements.push(questionText);
 
     // Answer buttons using createStyledButton
     q.options.forEach((opt, i) => {
-      const { container } = createStyledButton(this, width / 2, height / 2 + i * 60, `${String.fromCharCode(65 + i)}) ${opt}`, {
+      const { container } = createStyledButton(this, width / 2, height / 2 + i * Math.min(60, height * 0.08), `${String.fromCharCode(65 + i)}) ${opt}`, {
         color: UI_COLORS.purple,
         textColor: UI_COLORS.textHex,
         fontSize: '16px',
-        width: 500,
+        width: Math.min(500, width * 0.85),
         paddingY: 14,
       });
       container.on('pointerdown', () => this.handleAnswer(i));
@@ -119,8 +119,8 @@ export class QuizGame extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
 
     // Results panel
-    const panelW = 360;
-    const panelH = 240;
+    const panelW = Math.min(360, width * 0.9);
+    const panelH = Math.min(240, height * 0.4);
     createPanel(this, width / 2 - panelW / 2, height / 2 - panelH / 2, panelW, panelH, {
       color: UI_COLORS.darkPanel,
       radius: 16,

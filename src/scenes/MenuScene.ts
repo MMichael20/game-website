@@ -32,8 +32,9 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // Styled title
+    const titleFs = Math.min(56, Math.round(width * 0.12));
     const title = this.add.text(width / 2, height / 3, 'Our Places', {
-      fontSize: '56px',
+      fontSize: `${titleFs}px`,
       color: UI_COLORS.goldHex,
       fontFamily: 'Georgia, serif',
       fontStyle: 'bold',

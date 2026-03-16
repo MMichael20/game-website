@@ -227,8 +227,8 @@ export class CatchGame extends Phaser.Scene {
     const { width, height } = this.cameras.main;
 
     // Results panel
-    const panelW = 320;
-    const panelH = 220;
+    const panelW = Math.min(320, width * 0.9);
+    const panelH = Math.min(220, height * 0.4);
     createPanel(this, width / 2 - panelW / 2, height / 2 - panelH / 2, panelW, panelH, {
       color: UI_COLORS.darkPanel,
       radius: 16,

@@ -61,7 +61,7 @@ export class PuzzleGame extends Phaser.Scene {
       this.scene.resume('WorldScene');
     }).setDepth(999);
 
-    const tileSize = 80;
+    const tileSize = Math.min(80, Math.floor((Math.min(width, height) - 120) / this.gridSize) - 4);
     const gap = 4;
     const totalSize = this.gridSize * (tileSize + gap) - gap;
     const startX = width / 2 - totalSize / 2 + tileSize / 2;
@@ -226,8 +226,8 @@ export class PuzzleGame extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, seconds, true); // lower time = better
 
     // Results panel
-    const panelW = 320;
-    const panelH = 220;
+    const panelW = Math.min(320, width * 0.9);
+    const panelH = Math.min(220, height * 0.4);
     createPanel(this, width / 2 - panelW / 2, height / 2 - panelH / 2, panelW, panelH, {
       color: UI_COLORS.darkPanel,
       radius: 16,

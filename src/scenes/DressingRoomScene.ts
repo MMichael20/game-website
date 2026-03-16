@@ -69,7 +69,8 @@ export class DressingRoomScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Left arrow button
-    const leftArrow = createStyledButton(this, width / 2 - 120, height - 150, '<', {
+    const arrowSpacing = Math.min(120, width * 0.28);
+    const leftArrow = createStyledButton(this, width / 2 - arrowSpacing, height - 150, '<', {
       width: 40,
       height: 40,
       fontSize: '20px',
@@ -77,7 +78,7 @@ export class DressingRoomScene extends Phaser.Scene {
     leftArrow.container.on('pointerdown', () => this.changeOutfit(-1));
 
     // Right arrow button
-    const rightArrow = createStyledButton(this, width / 2 + 120, height - 150, '>', {
+    const rightArrow = createStyledButton(this, width / 2 + arrowSpacing, height - 150, '>', {
       width: 40,
       height: 40,
       fontSize: '20px',
