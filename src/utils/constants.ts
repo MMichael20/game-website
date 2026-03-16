@@ -13,7 +13,7 @@ export function getDeviceZoom(): number {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const isLandscape = w > h;
-  if (w < 768) return isLandscape ? 2 : 2.5;   // phone
+  if (w < 768) return isLandscape ? 1 : 1.25;   // phone
   if (w < 1024) return isLandscape ? 1.75 : 2;  // tablet
   return 2;                                       // desktop
 }
