@@ -1114,6 +1114,62 @@ export function generateCharacterOutfits(scene: Phaser.Scene): void {
       }
     }
   }
+
+  // ── Swimsuit spritesheets ──
+  const swimsuitStyles: { prefix: string; isMale: boolean; outfit: OutfitStyle }[] = [
+    {
+      prefix: 'player-swimsuit',
+      isMale: false,
+      outfit: {
+        shirt: '#f5d0a9', pants: '#ff69b4', shoes: '#f5d0a9',
+        hair: '#0a0a0a', skin: '#f5d0a9', accent: '#ff69b4',
+        hairStyle: 'long', maleHairStyle: 'short',
+        accessory: (ctx, ox, oy, _dir, isMale) => {
+          if (!isMale) {
+            const bikini = '#ff69b4';
+            const bikiniBand = darken(bikini, 0.15);
+            // Bikini top — band across upper torso
+            rect(ctx, ox + 25, oy + 23, 14, 3, bikini);
+            rect(ctx, ox + 25, oy + 23, 1, 3, bikiniBand);
+            rect(ctx, ox + 38, oy + 23, 1, 3, bikiniBand);
+            // Straps
+            rect(ctx, ox + 28, oy + 21, 2, 2, bikini);
+            rect(ctx, ox + 34, oy + 21, 2, 2, bikini);
+          }
+        },
+      },
+    },
+    {
+      prefix: 'partner-swimsuit',
+      isMale: true,
+      outfit: {
+        shirt: '#f5d0a9', pants: '#2266aa', shoes: '#f5d0a9',
+        hair: '#0a0a0a', maleHair: '#d4a832', skin: '#f5d0a9', accent: '#2266aa',
+        hairStyle: 'long', maleHairStyle: 'short',
+      },
+    },
+  ];
+
+  for (const swim of swimsuitStyles) {
+    const sKey = swim.prefix;
+    const canvas = scene.textures.createCanvas(sKey, 192, 256);
+    if (!canvas) continue;
+    const ctx = canvas.context;
+
+    for (let dir = 0; dir < 4; dir++) {
+      for (let frame = 0; frame < 3; frame++) {
+        drawCharFrame(ctx, frame, dir, dir, frame, swim.outfit, swim.isMale);
+      }
+    }
+    canvas.refresh();
+
+    const texture = scene.textures.get(sKey);
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 3; col++) {
+        texture.add(row * 3 + col, 0, col * 64, row * 64, 64, 64);
+      }
+    }
+  }
 }
 
 // ── NPC ──────────────────────────────────────────────────────────────────

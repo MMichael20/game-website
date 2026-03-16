@@ -11,6 +11,7 @@ export class Player {
   private currentOutfit = 0;
   private facing: 'down' | 'left' | 'right' | 'up' = 'down';
   private walkCheck: WalkCheck;
+  private activeTextureKey: string | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number, outfit: number, walkCheck?: WalkCheck) {
     this.walkCheck = walkCheck ?? (() => true);
@@ -25,23 +26,24 @@ export class Player {
   }
 
   private createAnimations(scene: Phaser.Scene): void {
-    const key = `player-outfit-${this.currentOutfit}`;
+    const key = this.activeTextureKey ?? `player-outfit-${this.currentOutfit}`;
     const directions = ['down', 'left', 'right', 'up'];
     directions.forEach((dir, row) => {
       const animKey = `player-${dir}`;
-      if (!scene.anims.exists(animKey)) {
-        scene.anims.create({
-          key: animKey,
-          frames: [
-            { key, frame: row * 3 },
-            { key, frame: row * 3 + 1 },
-            { key, frame: row * 3 + 2 },
-            { key, frame: row * 3 + 1 },
-          ],
-          frameRate: 8,
-          repeat: -1,
-        });
+      if (scene.anims.exists(animKey)) {
+        scene.anims.remove(animKey);
       }
+      scene.anims.create({
+        key: animKey,
+        frames: [
+          { key, frame: row * 3 },
+          { key, frame: row * 3 + 1 },
+          { key, frame: row * 3 + 2 },
+          { key, frame: row * 3 + 1 },
+        ],
+        frameRate: 8,
+        repeat: -1,
+      });
     });
   }
 
@@ -84,8 +86,21 @@ export class Player {
 
   setOutfit(outfit: number, scene: Phaser.Scene): void {
     this.currentOutfit = outfit;
+    this.activeTextureKey = null;
     this.sprite.setTexture(`player-outfit-${outfit}`);
-    // Re-create anims if needed
+    this.createAnimations(scene);
+  }
+
+  setTemporaryTexture(textureKey: string, scene: Phaser.Scene): void {
+    this.activeTextureKey = textureKey;
+    this.sprite.setTexture(textureKey);
+    this.createAnimations(scene);
+  }
+
+  restoreTexture(scene: Phaser.Scene): void {
+    if (!this.activeTextureKey) return;
+    this.activeTextureKey = null;
+    this.sprite.setTexture(`player-outfit-${this.currentOutfit}`);
     this.createAnimations(scene);
   }
 

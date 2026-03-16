@@ -9,7 +9,12 @@ import {
   MAUI_NPCS, MAUI_CHECKPOINT_ZONES, MAUI_DECORATIONS, MAUI_BUILDINGS,
 } from './mauiMap';
 
+const BEACH_TILE_Y = 14;
+
 export class MauiOverworldScene extends OverworldScene {
+  private playerOnBeach = false;
+  private partnerOnBeach = false;
+
   constructor() {
     super({ key: 'MauiOverworldScene' });
   }
@@ -104,6 +109,29 @@ export class MauiOverworldScene extends OverworldScene {
     });
   }
 
+  update(time: number, delta: number): void {
+    super.update(time, delta);
+
+    // Beach swimsuit detection
+    const playerTileY = Math.floor(this.player.sprite.y / TILE_SIZE);
+    if (playerTileY >= BEACH_TILE_Y && !this.playerOnBeach) {
+      this.playerOnBeach = true;
+      this.player.setTemporaryTexture('player-swimsuit', this);
+    } else if (playerTileY < BEACH_TILE_Y && this.playerOnBeach) {
+      this.playerOnBeach = false;
+      this.player.restoreTexture(this);
+    }
+
+    const partnerTileY = Math.floor(this.partner.sprite.y / TILE_SIZE);
+    if (partnerTileY >= BEACH_TILE_Y && !this.partnerOnBeach) {
+      this.partnerOnBeach = true;
+      this.partner.setTemporaryTexture('partner-swimsuit', this);
+    } else if (partnerTileY < BEACH_TILE_Y && this.partnerOnBeach) {
+      this.partnerOnBeach = false;
+      this.partner.restoreTexture(this);
+    }
+  }
+
   onEnterCheckpoint(zone: CheckpointZone): void {
     const pos = this.player.getPosition();
     if (zone.id === 'maui_hotel') {
@@ -117,6 +145,19 @@ export class MauiOverworldScene extends OverworldScene {
         uiManager.hideNPCDialog();
       });
     }
+  }
+
+  shutdown(): void {
+    // Restore textures before leaving so other scenes don't get stuck in swimsuits
+    if (this.playerOnBeach) {
+      this.player.restoreTexture(this);
+      this.playerOnBeach = false;
+    }
+    if (this.partnerOnBeach) {
+      this.partner.restoreTexture(this);
+      this.partnerOnBeach = false;
+    }
+    super.shutdown();
   }
 
   protected onBack(): void {

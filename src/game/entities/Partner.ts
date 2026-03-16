@@ -10,6 +10,7 @@ export class Partner {
   private currentOutfit = 0;
   private positionHistory: Array<{ x: number; y: number }> = [];
   private historySize = 15;
+  private activeTextureKey: string | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number, outfit: number) {
     this.currentOutfit = outfit;
@@ -23,23 +24,24 @@ export class Partner {
   }
 
   private createAnimations(scene: Phaser.Scene): void {
-    const key = `partner-outfit-${this.currentOutfit}`;
+    const key = this.activeTextureKey ?? `partner-outfit-${this.currentOutfit}`;
     const directions = ['down', 'left', 'right', 'up'];
     directions.forEach((dir, row) => {
       const animKey = `partner-${dir}`;
-      if (!scene.anims.exists(animKey)) {
-        scene.anims.create({
-          key: animKey,
-          frames: [
-            { key, frame: row * 3 },
-            { key, frame: row * 3 + 1 },
-            { key, frame: row * 3 + 2 },
-            { key, frame: row * 3 + 1 },
-          ],
-          frameRate: 8,
-          repeat: -1,
-        });
+      if (scene.anims.exists(animKey)) {
+        scene.anims.remove(animKey);
       }
+      scene.anims.create({
+        key: animKey,
+        frames: [
+          { key, frame: row * 3 },
+          { key, frame: row * 3 + 1 },
+          { key, frame: row * 3 + 2 },
+          { key, frame: row * 3 + 1 },
+        ],
+        frameRate: 8,
+        repeat: -1,
+      });
     });
   }
 
@@ -86,7 +88,21 @@ export class Partner {
 
   setOutfit(outfit: number, scene: Phaser.Scene): void {
     this.currentOutfit = outfit;
+    this.activeTextureKey = null;
     this.sprite.setTexture(`partner-outfit-${outfit}`);
+    this.createAnimations(scene);
+  }
+
+  setTemporaryTexture(textureKey: string, scene: Phaser.Scene): void {
+    this.activeTextureKey = textureKey;
+    this.sprite.setTexture(textureKey);
+    this.createAnimations(scene);
+  }
+
+  restoreTexture(scene: Phaser.Scene): void {
+    if (!this.activeTextureKey) return;
+    this.activeTextureKey = null;
+    this.sprite.setTexture(`partner-outfit-${this.currentOutfit}`);
     this.createAnimations(scene);
   }
 
