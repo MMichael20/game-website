@@ -674,11 +674,7 @@ function drawRestaurant(
     }
     ctx.stroke();
 
-    // Sleeves (3/4 length)
-    const sleeveLen = (m.armBottomY - m.armTopY) * 0.6;
-    const sleeveW = hw(m, 'shoulder') * 0.45;
-    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, blouseColor);
-    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, blouseColor);
+    // 3/4 sleeves moved to drawRestaurantOver (rendered after arms for correct Z-order)
 
     // Pencil skirt — fitted, knee-length, champagne
     const skirtColor = '#C4A882';
@@ -730,7 +726,38 @@ function drawRestaurant(
       ctx.fill();
     }
 
-    // Rolled sleeves (3/4)
+    // Rolled sleeves moved to drawRestaurantOver (rendered after arms for correct Z-order)
+
+    // Chinos — tan
+    const chinoColor = '#C4A46A';
+    const chinoGrad = vGrad(ctx, m.centerX, m.waistY, m.ankleY, '#D4B47A', chinoColor);
+    ctx.fillStyle = chinoGrad;
+    trapezoid(ctx, m.centerX, m.waistY, hw(m, 'waist'), m.hipY, hw(m, 'hip'));
+    ctx.fill();
+    const legInset = 2 * s;
+    ctx.fillStyle = chinoGrad;
+    ctx.fillRect(m.centerX - hw(m, 'hip'), m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
+    ctx.fillRect(m.centerX + legInset, m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
+  }
+}
+
+function drawRestaurantOver(
+  ctx: CanvasRenderingContext2D,
+  character: 'her' | 'him',
+  _frame: number,
+  m: BodyMetrics,
+) {
+  const s = m.scale;
+  if (character === 'her') {
+    // 3/4 blouse sleeves (drawn over arms)
+    const blouseColor = '#F5E6C8';
+    const sleeveLen = (m.armBottomY - m.armTopY) * 0.6;
+    const sleeveW = hw(m, 'shoulder') * 0.45;
+    shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, blouseColor);
+    shortSleeve(ctx, m.rightArmX, m.armTopY, sleeveLen, sleeveW, blouseColor);
+  } else {
+    // Rolled shirt sleeves (drawn over arms)
+    const shirtColor = '#F0EBE0';
     const sleeveLen = (m.armBottomY - m.armTopY) * 0.55;
     const sleeveW = hw(m, 'shoulder') * 0.5;
     shortSleeve(ctx, m.leftArmX, m.armTopY, sleeveLen, sleeveW, shirtColor);
@@ -745,17 +772,6 @@ function drawRestaurant(
     ctx.moveTo(m.rightArmX - sleeveW / 2, cuffY);
     ctx.lineTo(m.rightArmX + sleeveW / 2, cuffY);
     ctx.stroke();
-
-    // Chinos — tan
-    const chinoColor = '#C4A46A';
-    const chinoGrad = vGrad(ctx, m.centerX, m.waistY, m.ankleY, '#D4B47A', chinoColor);
-    ctx.fillStyle = chinoGrad;
-    trapezoid(ctx, m.centerX, m.waistY, hw(m, 'waist'), m.hipY, hw(m, 'hip'));
-    ctx.fill();
-    const legInset = 2 * s;
-    ctx.fillStyle = chinoGrad;
-    ctx.fillRect(m.centerX - hw(m, 'hip'), m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
-    ctx.fillRect(m.centerX + legInset, m.hipY, hw(m, 'hip') - legInset, m.ankleY - m.hipY);
   }
 }
 
@@ -1247,7 +1263,7 @@ export const OUTFITS: OutfitDefinition[] = [
   { name: 'Date Night', drawUnder: drawDateNight },
   { name: 'Cozy', drawUnder: drawCozy, drawOver: drawCozyOver },
   { name: 'Sporty', drawUnder: drawSporty },
-  { name: 'Restaurant', drawUnder: drawRestaurant },
+  { name: 'Restaurant', drawUnder: drawRestaurant, drawOver: drawRestaurantOver },
   { name: 'Pizza', drawUnder: drawPizza },
   { name: 'Pajamas', drawUnder: drawPajamas },
   { name: 'Graphic Tee', drawUnder: drawGraphicTee },
