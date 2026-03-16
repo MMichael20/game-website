@@ -47,7 +47,7 @@ export class AirplaneCutscene extends Phaser.Scene {
     cabinBg.setDisplaySize(w, h);
 
     // Seated sprites instead of standing spritesheet frames
-    const playerSprite = this.add.image(w * 0.62, h * 0.70, 'cutscene-player-seated')
+    const playerSprite = this.add.image(w * 0.67, h * 0.70, 'cutscene-player-seated')
       .setAlpha(0).setScale(2.0);
     const partnerSprite = this.add.image(w * 0.72, h * 0.68, 'cutscene-partner-seated')
       .setAlpha(0).setScale(2.0);
@@ -215,8 +215,8 @@ export class AirplaneCutscene extends Phaser.Scene {
       this.tweens.add({
         targets: playerSprite,
         angle: 25,
-        x: playerSprite.x + 20,
-        y: playerSprite.y + 10,
+        x: playerSprite.x + 35,
+        y: playerSprite.y + 15,
         duration: 1500,
         ease: 'Sine.easeInOut',
       });
