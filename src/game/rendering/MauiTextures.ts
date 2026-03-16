@@ -48,50 +48,61 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-// ── NPC helper (16×16) ──────────────────────────────────────────────────
+// ── NPC helper (48×48) ──────────────────────────────────────────────────
 
-function drawSimpleNPC(ctx: Ctx, opts: {
+function drawNPCBase(ctx: Ctx, opts: {
   skin: string;
   hair: string;
   top: string;
   pants: string;
+  shoes?: string;
   detail?: (ctx: Ctx) => void;
 }): void {
   const { skin, hair, top, pants } = opts;
+  const shoes = opts.shoes || '#443322';
 
   // Shadow
-  rect(ctx, 4, 14, 8, 2, 'rgba(0,0,0,0.15)');
-
-  // Legs / pants
-  rect(ctx, 5, 11, 3, 4, pants);
-  rect(ctx, 8, 11, 3, 4, pants);
+  rect(ctx, 14, 42, 20, 4, 'rgba(0,0,0,0.15)');
 
   // Shoes
-  rect(ctx, 5, 14, 3, 1, '#332211');
-  rect(ctx, 8, 14, 3, 1, '#332211');
+  rect(ctx, 17, 39, 5, 2, shoes);
+  rect(ctx, 26, 39, 5, 2, shoes);
+
+  // Legs / pants
+  rect(ctx, 15, 35, 8, 4, pants);
+  rect(ctx, 25, 35, 8, 4, pants);
 
   // Body / top
-  rect(ctx, 4, 6, 8, 5, top);
+  rect(ctx, 14, 19, 20, 16, top);
 
   // Arms
-  rect(ctx, 3, 7, 1, 4, top);
-  rect(ctx, 12, 7, 1, 4, top);
+  rect(ctx, 10, 24, 4, 10, top);
+  rect(ctx, 34, 24, 4, 10, top);
+
   // Hands
-  px(ctx, 3, 11, skin);
-  px(ctx, 12, 11, skin);
+  rect(ctx, 10, 34, 3, 2, skin);
+  rect(ctx, 35, 34, 3, 2, skin);
 
   // Head
-  rect(ctx, 5, 1, 6, 5, skin);
-  rect(ctx, 6, 0, 4, 1, skin);
+  rect(ctx, 19, 7, 10, 11, skin);
+  rect(ctx, 18, 8, 12, 9, skin);
 
   // Hair
-  rect(ctx, 5, 0, 6, 2, hair);
-  px(ctx, 5, 2, hair);
-  px(ctx, 10, 2, hair);
+  rect(ctx, 18, 5, 12, 4, hair);
+  rect(ctx, 19, 4, 10, 2, hair);
+  px(ctx, 18, 9, hair);
+  px(ctx, 29, 9, hair);
 
   // Eyes
-  px(ctx, 6, 3, '#222');
-  px(ctx, 9, 3, '#222');
+  rect(ctx, 19, 12, 3, 3, '#fff');
+  rect(ctx, 26, 12, 3, 3, '#fff');
+  px(ctx, 20, 12, '#334');
+  px(ctx, 21, 12, '#334');
+  px(ctx, 27, 12, '#334');
+  px(ctx, 28, 12, '#334');
+
+  // Mouth
+  rect(ctx, 22, 16, 4, 1, '#c88');
 
   // Detail overlay
   if (opts.detail) opts.detail(ctx);
@@ -233,50 +244,81 @@ function generateMauiTerrain(scene: Phaser.Scene): void {
 // ── NPC textures ────────────────────────────────────────────────────────
 
 function generateMauiNPCs(scene: Phaser.Scene): void {
-  // npc-maui-local — Hawaiian shirt with floral dots
+  // npc-maui-local — Hawaiian shirt (green with pink/yellow dots), tan shorts, dark skin
   {
-    const c = scene.textures.createCanvas('npc-maui-local', 16, 16);
+    const c = scene.textures.createCanvas('npc-maui-local', 48, 48);
     if (!c) return;
     const ctx = c.context;
-    drawSimpleNPC(ctx, {
-      skin: '#D2A679', hair: '#222222', top: '#228B22', pants: '#C4A265',
+    drawNPCBase(ctx, {
+      skin: '#B87333', hair: '#222222', top: '#228B22', pants: '#C4A265',
+      shoes: '#886644',
       detail: (ctx) => {
-        // Floral dots on shirt
-        px(ctx, 5, 7, '#FF69B4');
-        px(ctx, 7, 8, '#FFD700');
-        px(ctx, 9, 7, '#FF69B4');
-        px(ctx, 6, 9, '#FFD700');
-        px(ctx, 10, 9, '#FF69B4');
-        px(ctx, 8, 10, '#FFD700');
+        // Floral dots on Hawaiian shirt body
+        px(ctx, 16, 22, '#FF69B4');
+        px(ctx, 20, 24, '#FFD700');
+        px(ctx, 18, 27, '#FF69B4');
+        px(ctx, 24, 22, '#FFD700');
+        px(ctx, 28, 25, '#FF69B4');
+        px(ctx, 22, 30, '#FFD700');
+        px(ctx, 30, 28, '#FF69B4');
+        px(ctx, 26, 32, '#FFD700');
+        px(ctx, 16, 31, '#FF69B4');
+        // Floral dots on arms
+        px(ctx, 11, 27, '#FF69B4');
+        px(ctx, 35, 27, '#FFD700');
+        // Open collar
+        rect(ctx, 21, 19, 6, 2, '#B87333');
       },
     });
     c.refresh();
   }
 
-  // npc-surfer — no shirt, teal board shorts
+  // npc-surfer — no shirt (tanned skin torso), teal shorts, wider build
   {
-    const c = scene.textures.createCanvas('npc-surfer', 16, 16);
+    const c = scene.textures.createCanvas('npc-surfer', 48, 48);
     if (!c) return;
     const ctx = c.context;
     const skin = '#D2A679';
-    drawSimpleNPC(ctx, {
+    drawNPCBase(ctx, {
       skin, hair: '#DDBB66', top: skin, pants: '#20B2AA',
+      shoes: '#886644',
+      detail: (ctx) => {
+        // Wider muscular torso — extend body slightly
+        rect(ctx, 12, 20, 2, 14, skin);
+        rect(ctx, 34, 20, 2, 14, skin);
+        // Chest definition (subtle darker lines)
+        rect(ctx, 20, 22, 8, 1, darken(skin, 0.08));
+        rect(ctx, 23, 23, 2, 4, darken(skin, 0.06));
+        // Board shorts waistband
+        rect(ctx, 14, 34, 20, 1, darken('#20B2AA', 0.2));
+        // Shorts pattern stripe
+        rect(ctx, 15, 37, 8, 1, lighten('#20B2AA', 0.15));
+        rect(ctx, 25, 37, 8, 1, lighten('#20B2AA', 0.15));
+      },
     });
     c.refresh();
   }
 
-  // npc-maui-shopkeeper — purple top, yellow accents
+  // npc-maui-shopkeeper — purple top, yellow sash, colorful
   {
-    const c = scene.textures.createCanvas('npc-maui-shopkeeper', 16, 16);
+    const c = scene.textures.createCanvas('npc-maui-shopkeeper', 48, 48);
     if (!c) return;
     const ctx = c.context;
-    drawSimpleNPC(ctx, {
+    drawNPCBase(ctx, {
       skin: '#D2A679', hair: '#443322', top: '#800080', pants: '#333333',
       detail: (ctx) => {
-        // Yellow accents on top (collar and trim)
-        rect(ctx, 5, 6, 6, 1, '#FFD700');
-        px(ctx, 4, 10, '#FFD700');
-        px(ctx, 11, 10, '#FFD700');
+        // Yellow sash / belt across body
+        rect(ctx, 14, 29, 20, 2, '#FFD700');
+        // Yellow collar trim
+        rect(ctx, 18, 19, 12, 2, '#FFD700');
+        // Yellow cuff trim on arms
+        rect(ctx, 10, 33, 4, 1, '#FFD700');
+        rect(ctx, 34, 33, 4, 1, '#FFD700');
+        // Colorful necklace beads
+        px(ctx, 20, 18, '#FF69B4');
+        px(ctx, 22, 18, '#20B2AA');
+        px(ctx, 24, 18, '#FF69B4');
+        px(ctx, 26, 18, '#20B2AA');
       },
     });
     c.refresh();

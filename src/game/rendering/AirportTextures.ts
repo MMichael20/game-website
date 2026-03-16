@@ -29,50 +29,61 @@ function lighten(hex: string, amount = 0.2): string {
   return `#${Math.min(255, Math.round(r + (255 - r) * f)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(g + (255 - g) * f)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(b + (255 - b) * f)).toString(16).padStart(2, '0')}`;
 }
 
-// ── NPC drawing (16×16) ──────────────────────────────────────────────────
+// ── NPC drawing (48×48) ──────────────────────────────────────────────────
 
-function drawSimpleNPC(ctx: Ctx, opts: {
+function drawNPCBase(ctx: Ctx, opts: {
   skin: string;
   hair: string;
   top: string;
   pants: string;
+  shoes?: string;
   detail?: (ctx: Ctx) => void;
 }): void {
   const { skin, hair, top, pants } = opts;
+  const shoes = opts.shoes || '#443322';
 
   // Shadow
-  rect(ctx, 4, 14, 8, 2, 'rgba(0,0,0,0.15)');
-
-  // Legs / pants
-  rect(ctx, 5, 11, 3, 4, pants);
-  rect(ctx, 8, 11, 3, 4, pants);
+  rect(ctx, 14, 42, 20, 4, 'rgba(0,0,0,0.15)');
 
   // Shoes
-  rect(ctx, 5, 14, 3, 1, '#332211');
-  rect(ctx, 8, 14, 3, 1, '#332211');
+  rect(ctx, 17, 39, 5, 2, shoes);
+  rect(ctx, 26, 39, 5, 2, shoes);
+
+  // Legs / pants
+  rect(ctx, 15, 35, 8, 4, pants);
+  rect(ctx, 25, 35, 8, 4, pants);
 
   // Body / top
-  rect(ctx, 4, 6, 8, 5, top);
+  rect(ctx, 14, 19, 20, 16, top);
 
   // Arms
-  rect(ctx, 3, 7, 1, 4, top);
-  rect(ctx, 12, 7, 1, 4, top);
+  rect(ctx, 10, 24, 4, 10, top);
+  rect(ctx, 34, 24, 4, 10, top);
+
   // Hands
-  px(ctx, 3, 11, skin);
-  px(ctx, 12, 11, skin);
+  rect(ctx, 10, 34, 3, 2, skin);
+  rect(ctx, 35, 34, 3, 2, skin);
 
   // Head
-  rect(ctx, 5, 1, 6, 5, skin);
-  rect(ctx, 6, 0, 4, 1, skin);
+  rect(ctx, 19, 7, 10, 11, skin);
+  rect(ctx, 18, 8, 12, 9, skin);
 
   // Hair
-  rect(ctx, 5, 0, 6, 2, hair);
-  px(ctx, 5, 2, hair);
-  px(ctx, 10, 2, hair);
+  rect(ctx, 18, 5, 12, 4, hair);
+  rect(ctx, 19, 4, 10, 2, hair);
+  px(ctx, 18, 9, hair);
+  px(ctx, 29, 9, hair);
 
   // Eyes
-  px(ctx, 6, 3, '#222');
-  px(ctx, 9, 3, '#222');
+  rect(ctx, 19, 12, 3, 3, '#fff');
+  rect(ctx, 26, 12, 3, 3, '#fff');
+  px(ctx, 20, 12, '#334');
+  px(ctx, 21, 12, '#334');
+  px(ctx, 27, 12, '#334');
+  px(ctx, 28, 12, '#334');
+
+  // Mouth
+  rect(ctx, 22, 16, 4, 1, '#c88');
 
   // Detail overlay
   if (opts.detail) opts.detail(ctx);
@@ -81,94 +92,128 @@ function drawSimpleNPC(ctx: Ctx, opts: {
 // ── NPC textures ─────────────────────────────────────────────────────────
 
 function generateNPCTextures(scene: Phaser.Scene): void {
-  // npc-ticket-agent: blue vest over white shirt
+  // npc-ticket-agent: blue vest over white shirt, dark pants, friendly face
   {
-    const c = scene.textures.createCanvas('npc-ticket-agent', 16, 16);
+    const c = scene.textures.createCanvas('npc-ticket-agent', 48, 48);
     if (!c) return;
     const ctx = c.context;
-    drawSimpleNPC(ctx, {
-      skin: '#d4a574', hair: '#443322', top: '#FFFFFF', pants: '#333333',
+    drawNPCBase(ctx, {
+      skin: '#d4a574', hair: '#443322', top: '#EEEEEE', pants: '#333344',
       detail: (ctx) => {
-        // Blue vest over white shirt
-        rect(ctx, 5, 6, 2, 5, '#2244AA');
-        rect(ctx, 9, 6, 2, 5, '#2244AA');
-        rect(ctx, 5, 6, 6, 1, '#2244AA');
+        // Blue vest panels over white shirt
+        rect(ctx, 14, 19, 6, 16, '#2244AA');
+        rect(ctx, 28, 19, 6, 16, '#2244AA');
+        rect(ctx, 14, 19, 20, 2, '#2244AA');
+        // Vest collar
+        rect(ctx, 20, 18, 8, 2, '#2244AA');
+        // Vest buttons
+        px(ctx, 24, 23, darken('#2244AA', 0.3));
+        px(ctx, 24, 27, darken('#2244AA', 0.3));
+        px(ctx, 24, 31, darken('#2244AA', 0.3));
       },
     });
     c.refresh();
   }
 
-  // npc-traveler: tan jacket, backpack
+  // npc-traveler: tan jacket, dark pants, backpack, cap
   {
-    const c = scene.textures.createCanvas('npc-traveler', 16, 16);
+    const c = scene.textures.createCanvas('npc-traveler', 48, 48);
     if (!c) return;
     const ctx = c.context;
-    drawSimpleNPC(ctx, {
+    drawNPCBase(ctx, {
       skin: '#d4a574', hair: '#554433', top: '#C3A080', pants: '#444444',
       detail: (ctx) => {
-        // Backpack on side
-        rect(ctx, 12, 6, 2, 4, '#8B6914');
-        px(ctx, 12, 6, darken('#8B6914'));
+        // Backpack on right side
+        rect(ctx, 36, 20, 6, 12, '#8B6914');
+        rect(ctx, 36, 20, 6, 2, darken('#8B6914', 0.2));
+        rect(ctx, 38, 19, 3, 1, darken('#8B6914', 0.1)); // strap
+        // Cap
+        rect(ctx, 17, 4, 14, 3, '#886644');
+        rect(ctx, 15, 6, 4, 2, '#886644'); // brim
       },
     });
     c.refresh();
   }
 
-  // npc-traveler-2: red top, blue pants
+  // npc-traveler-2: red top, blue pants, different skin tone, no hat
   {
-    const c = scene.textures.createCanvas('npc-traveler-2', 16, 16);
+    const c = scene.textures.createCanvas('npc-traveler-2', 48, 48);
     if (!c) return;
     const ctx = c.context;
-    drawSimpleNPC(ctx, {
+    drawNPCBase(ctx, {
       skin: '#e8c090', hair: '#222222', top: '#CC4444', pants: '#3344AA',
+      detail: (ctx) => {
+        // Collar detail
+        rect(ctx, 20, 18, 8, 2, darken('#CC4444', 0.15));
+      },
     });
     c.refresh();
   }
 
-  // npc-security-guard: dark navy, gold badge
+  // npc-security-guard: dark navy uniform, gold badge, cap
   {
-    const c = scene.textures.createCanvas('npc-security-guard', 16, 16);
+    const c = scene.textures.createCanvas('npc-security-guard', 48, 48);
     if (!c) return;
     const ctx = c.context;
-    drawSimpleNPC(ctx, {
+    drawNPCBase(ctx, {
       skin: '#8B6B4A', hair: '#111111', top: '#1A1A4E', pants: '#111133',
+      shoes: '#111111',
       detail: (ctx) => {
-        // Gold badge
-        px(ctx, 6, 7, '#FFD700');
-        px(ctx, 6, 8, '#FFD700');
+        // Gold badge on chest
+        rect(ctx, 17, 23, 3, 4, '#FFD700');
+        px(ctx, 18, 22, '#FFD700');
+        // Belt
+        rect(ctx, 14, 33, 20, 2, '#333333');
+        px(ctx, 23, 33, '#FFD700'); // belt buckle
+        px(ctx, 24, 33, '#FFD700');
+        // Navy cap
+        rect(ctx, 17, 3, 14, 4, '#1A1A4E');
+        rect(ctx, 15, 6, 4, 2, '#1A1A4E'); // brim
+        rect(ctx, 17, 3, 14, 1, lighten('#1A1A4E', 0.15));
       },
     });
     c.refresh();
   }
 
-  // npc-gate-agent: teal vest over white
+  // npc-gate-agent: teal vest over white shirt, dark pants, no hat
   {
-    const c = scene.textures.createCanvas('npc-gate-agent', 16, 16);
+    const c = scene.textures.createCanvas('npc-gate-agent', 48, 48);
     if (!c) return;
     const ctx = c.context;
-    drawSimpleNPC(ctx, {
-      skin: '#d4a574', hair: '#663322', top: '#FFFFFF', pants: '#333333',
+    drawNPCBase(ctx, {
+      skin: '#d4a574', hair: '#663322', top: '#EEEEEE', pants: '#333344',
       detail: (ctx) => {
-        // Teal vest
-        rect(ctx, 5, 6, 2, 5, '#008080');
-        rect(ctx, 9, 6, 2, 5, '#008080');
-        rect(ctx, 5, 6, 6, 1, '#008080');
+        // Teal vest panels
+        rect(ctx, 14, 19, 6, 16, '#008080');
+        rect(ctx, 28, 19, 6, 16, '#008080');
+        rect(ctx, 14, 19, 20, 2, '#008080');
+        // Vest collar
+        rect(ctx, 20, 18, 8, 2, '#008080');
+        // Vest buttons
+        px(ctx, 24, 24, darken('#008080', 0.3));
+        px(ctx, 24, 28, darken('#008080', 0.3));
       },
     });
     c.refresh();
   }
 
-  // npc-cafe-worker: brown apron over green shirt
+  // npc-cafe-worker: brown apron over green shirt, no hat
   {
-    const c = scene.textures.createCanvas('npc-cafe-worker', 16, 16);
+    const c = scene.textures.createCanvas('npc-cafe-worker', 48, 48);
     if (!c) return;
     const ctx = c.context;
-    drawSimpleNPC(ctx, {
+    drawNPCBase(ctx, {
       skin: '#e8c090', hair: '#443322', top: '#228B22', pants: '#333333',
       detail: (ctx) => {
-        // Brown apron
-        rect(ctx, 5, 7, 6, 4, '#8B4513');
-        rect(ctx, 5, 7, 6, 1, lighten('#8B4513', 0.15));
+        // Brown apron over shirt
+        rect(ctx, 16, 23, 16, 12, '#8B4513');
+        rect(ctx, 16, 23, 16, 2, lighten('#8B4513', 0.15));
+        // Apron strings
+        rect(ctx, 14, 25, 2, 1, '#8B4513');
+        rect(ctx, 32, 25, 2, 1, '#8B4513');
+        // Apron pocket
+        rect(ctx, 20, 29, 8, 4, darken('#8B4513', 0.1));
+        rect(ctx, 20, 29, 8, 1, darken('#8B4513', 0.2));
       },
     });
     c.refresh();
