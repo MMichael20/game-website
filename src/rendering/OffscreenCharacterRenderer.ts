@@ -799,6 +799,22 @@ function drawFace(
     ctx.stroke();
   }
   ctx.restore();
+
+  // Cheek blush (her only) — multiply blend for natural warmth
+  if (isHer) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = 'rgba(220,150,150,0.35)';
+    // Left cheek
+    ctx.beginPath();
+    ctx.ellipse(cx - 6 * s, eyeY + 4 * s, 4 * s, 2.5 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Right cheek
+    ctx.beginPath();
+    ctx.ellipse(cx + 6 * s, eyeY + 4 * s, 4 * s, 2.5 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 function drawFrontHair(
