@@ -652,6 +652,203 @@ function generateSignTextures(scene: Phaser.Scene): void {
   }
 }
 
+// ── Airplane / cutscene textures ─────────────────────────────────────────
+
+function generateAirplaneTextures(scene: Phaser.Scene): void {
+  // airplane-exterior — 128×48: white fuselage, blue tail, gray wing, window dots
+  {
+    const c = scene.textures.createCanvas('airplane-exterior', 128, 48);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Wing (behind fuselage)
+    ctx.fillStyle = '#888888';
+    ctx.beginPath();
+    ctx.moveTo(45, 24);
+    ctx.lineTo(30, 38);
+    ctx.lineTo(70, 38);
+    ctx.lineTo(65, 24);
+    ctx.closePath();
+    ctx.fill();
+
+    // Fuselage (rounded rect / oval)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.ellipse(64, 20, 56, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Nose highlight
+    ctx.fillStyle = '#EEEEEE';
+    ctx.beginPath();
+    ctx.ellipse(112, 20, 10, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tail fin
+    ctx.fillStyle = '#2244AA';
+    ctx.beginPath();
+    ctx.moveTo(8, 20);
+    ctx.lineTo(2, 2);
+    ctx.lineTo(20, 2);
+    ctx.lineTo(22, 20);
+    ctx.closePath();
+    ctx.fill();
+    // Tail fin highlight
+    ctx.fillStyle = '#3355BB';
+    ctx.fillRect(6, 4, 8, 2);
+
+    // Window dots
+    ctx.fillStyle = '#87CEEB';
+    for (let x = 30; x <= 100; x += 6) {
+      ctx.fillRect(x, 17, 3, 3);
+    }
+
+    // Fuselage stripe
+    ctx.fillStyle = '#2244AA';
+    ctx.fillRect(14, 24, 100, 2);
+
+    c.refresh();
+  }
+
+  // airplane-cabin-bg — 800×600: interior cabin view
+  {
+    const c = scene.textures.createCanvas('airplane-cabin-bg', 800, 600);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Background
+    rect(ctx, 0, 0, 800, 600, '#2A2A3E');
+
+    // Overhead bin strip
+    rect(ctx, 0, 0, 800, 60, '#3A3A4A');
+    rect(ctx, 0, 55, 800, 5, '#222233');
+    // Bin panel lines
+    for (let x = 0; x < 800; x += 100) {
+      rect(ctx, x, 5, 1, 50, '#4A4A5A');
+    }
+
+    // Ceiling light strips
+    rect(ctx, 0, 60, 800, 2, '#555577');
+
+    // Left windows
+    for (let y = 120; y < 400; y += 100) {
+      rect(ctx, 20, y, 40, 60, '#444466');
+      rect(ctx, 24, y + 4, 32, 52, '#87CEEB');
+      // Window frame
+      rect(ctx, 24, y + 28, 32, 2, '#444466');
+    }
+
+    // Right windows
+    for (let y = 120; y < 400; y += 100) {
+      rect(ctx, 740, y, 40, 60, '#444466');
+      rect(ctx, 744, y + 4, 32, 52, '#87CEEB');
+      rect(ctx, 744, y + 28, 32, 2, '#444466');
+    }
+
+    // Floor
+    rect(ctx, 0, 480, 800, 120, '#333348');
+    rect(ctx, 0, 480, 800, 2, '#444458');
+
+    // Left row of seats
+    for (let x = 100; x <= 280; x += 90) {
+      // Seat back
+      rect(ctx, x, 340, 60, 80, '#8B7355');
+      rect(ctx, x, 340, 60, 4, '#9B8365');
+      // Headrest
+      rect(ctx, x + 10, 330, 40, 14, '#9B8365');
+      // Seat cushion
+      rect(ctx, x, 420, 60, 40, '#7A6345');
+      rect(ctx, x, 460, 60, 4, '#6A5335');
+    }
+
+    // Right row of seats
+    for (let x = 520; x <= 700; x += 90) {
+      rect(ctx, x, 340, 60, 80, '#8B7355');
+      rect(ctx, x, 340, 60, 4, '#9B8365');
+      rect(ctx, x + 10, 330, 40, 14, '#9B8365');
+      rect(ctx, x, 420, 60, 40, '#7A6345');
+      rect(ctx, x, 460, 60, 4, '#6A5335');
+    }
+
+    // Aisle
+    rect(ctx, 370, 340, 60, 140, '#333348');
+
+    c.refresh();
+  }
+
+  // cloud-1 — 64×32
+  {
+    const c = scene.textures.createCanvas('cloud-1', 64, 32);
+    if (!c) return;
+    const ctx = c.context;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(20, 20, 12, 0, Math.PI * 2);
+    ctx.arc(36, 16, 14, 0, Math.PI * 2);
+    ctx.arc(50, 20, 10, 0, Math.PI * 2);
+    ctx.arc(28, 14, 10, 0, Math.PI * 2);
+    ctx.arc(44, 12, 9, 0, Math.PI * 2);
+    ctx.fill();
+    c.refresh();
+  }
+
+  // cloud-2 — 48×24
+  {
+    const c = scene.textures.createCanvas('cloud-2', 48, 24);
+    if (!c) return;
+    const ctx = c.context;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(14, 14, 8, 0, Math.PI * 2);
+    ctx.arc(26, 11, 10, 0, Math.PI * 2);
+    ctx.arc(38, 14, 7, 0, Math.PI * 2);
+    ctx.fill();
+    c.refresh();
+  }
+
+  // cloud-3 — 80×40
+  {
+    const c = scene.textures.createCanvas('cloud-3', 80, 40);
+    if (!c) return;
+    const ctx = c.context;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(20, 26, 14, 0, Math.PI * 2);
+    ctx.arc(38, 18, 16, 0, Math.PI * 2);
+    ctx.arc(56, 22, 12, 0, Math.PI * 2);
+    ctx.arc(68, 26, 10, 0, Math.PI * 2);
+    ctx.arc(30, 22, 11, 0, Math.PI * 2);
+    ctx.arc(50, 16, 13, 0, Math.PI * 2);
+    ctx.fill();
+    c.refresh();
+  }
+
+  // runway — 800×64
+  {
+    const c = scene.textures.createCanvas('runway', 800, 64);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 800, 64, '#666666');
+    // Dashed center line
+    ctx.fillStyle = '#FFFFFF';
+    for (let x = 10; x < 790; x += 40) {
+      ctx.fillRect(x, 30, 20, 4);
+    }
+    // Edge lines
+    rect(ctx, 0, 0, 800, 2, '#888888');
+    rect(ctx, 0, 62, 800, 2, '#888888');
+    c.refresh();
+  }
+
+  // ground-strip — 800×200
+  {
+    const c = scene.textures.createCanvas('ground-strip', 800, 200);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 800, 200, '#4a7c4f');
+    c.refresh();
+  }
+}
+
 // ── Main export ──────────────────────────────────────────────────────────
 
 export function generateAirportTextures(scene: Phaser.Scene): void {
@@ -659,4 +856,5 @@ export function generateAirportTextures(scene: Phaser.Scene): void {
   generateBuildingTexture(scene);
   generateInteriorTextures(scene);
   generateSignTextures(scene);
+  generateAirplaneTextures(scene);
 }
