@@ -20,14 +20,6 @@ export function isTouchDevice(): boolean {
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
-/** Replace "Press E to" with "Tap to" on touch devices */
-export function formatPrompt(text: string): string {
-  if (isTouchDevice()) {
-    return text.replace(/^Press E to /, 'Tap to ');
-  }
-  return text;
-}
-
 export const DEFAULT_SPAWN = { x: 20, y: 16 }; // center of map, in tile coords
 
 export const OUTFIT_NAMES = [

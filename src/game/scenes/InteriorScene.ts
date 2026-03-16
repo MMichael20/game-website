@@ -1,6 +1,6 @@
 // src/game/scenes/InteriorScene.ts
 import Phaser from 'phaser';
-import { TILE_SIZE, INTERIOR_ZOOM, InteriorTileType, formatPrompt } from '../../utils/constants';
+import { TILE_SIZE, INTERIOR_ZOOM, InteriorTileType } from '../../utils/constants';
 import { InteriorLayout, createInteriorWalkCheck } from '../data/interiorLayouts';
 import { worldToTile, tileToWorld } from '../data/mapLayout';
 import { Player } from '../entities/Player';
@@ -71,7 +71,10 @@ export abstract class InteriorScene extends Phaser.Scene {
     uiManager.setSettingsHandler(() => this.openSettings());
     uiManager.showHUD();
 
-    // 8. Fade in
+    // 8. Register shutdown handler for proper cleanup
+    this.events.on('shutdown', this.shutdown, this);
+
+    // 9. Fade in
     cam.setAlpha(0);
     this.tweens.add({
       targets: cam,
@@ -118,7 +121,7 @@ export abstract class InteriorScene extends Phaser.Scene {
     if (inExitZone && !inForwardZone && !this.activeExitZone) {
       this.activeExitZone = true;
       this.activeForwardZone = false;
-      uiManager.showInteractionPrompt(formatPrompt(exit.promptText));
+      uiManager.showInteractionPrompt(exit.promptText);
     } else if ((!inExitZone || inForwardZone) && this.activeExitZone) {
       this.activeExitZone = false;
       uiManager.hideInteractionPrompt();
@@ -128,7 +131,7 @@ export abstract class InteriorScene extends Phaser.Scene {
     if (inForwardZone && !inExitZone && !this.activeForwardZone && forwardExit) {
       this.activeForwardZone = true;
       this.activeExitZone = false;
-      uiManager.showInteractionPrompt(formatPrompt(forwardExit.promptText));
+      uiManager.showInteractionPrompt(forwardExit.promptText);
     } else if ((!inForwardZone || inExitZone) && this.activeForwardZone) {
       this.activeForwardZone = false;
       uiManager.hideInteractionPrompt();

@@ -1,6 +1,6 @@
 // src/game/scenes/OverworldScene.ts
 import Phaser from 'phaser';
-import { TILE_SIZE, getDeviceZoom, formatPrompt } from '../../utils/constants';
+import { TILE_SIZE, getDeviceZoom } from '../../utils/constants';
 import { CheckpointZone, NPCDef } from '../data/mapLayout';
 import { Player } from '../entities/Player';
 import { Partner } from '../entities/Partner';
@@ -102,7 +102,10 @@ export abstract class OverworldScene extends Phaser.Scene {
     uiManager.setSettingsHandler(() => this.openSettings());
     this.onShowHUD();
 
-    // 9. Resize handler
+    // 9. Register shutdown handler for proper cleanup
+    this.events.on('shutdown', this.shutdown, this);
+
+    // 10. Resize handler
     this.scale.on('resize', () => {
       this.cameras.main.setZoom(getDeviceZoom());
     });
@@ -156,7 +159,7 @@ export abstract class OverworldScene extends Phaser.Scene {
 
     if (inZone && inZone !== this.activeZone) {
       this.activeZone = inZone;
-      uiManager.showInteractionPrompt(formatPrompt(inZone.promptText));
+      uiManager.showInteractionPrompt(inZone.promptText);
     } else if (!inZone && this.activeZone) {
       this.activeZone = null;
       uiManager.hideInteractionPrompt();
@@ -262,6 +265,10 @@ export abstract class OverworldScene extends Phaser.Scene {
         rt.drawFrame(config.terrainTextureKey, tileType, x * TILE_SIZE, y * TILE_SIZE);
       }
     }
+  }
+
+  destroy(): void {
+    this.events.off('shutdown', this.shutdown, this);
   }
 
   shutdown(): void {

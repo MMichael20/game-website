@@ -62,11 +62,11 @@ export interface CheckpointZone {
 
 export const CHECKPOINT_ZONES: CheckpointZone[] = [
   // Zones centered at building doors with generous radius
-  { id: 'restaurant', centerX: 272, centerY: 336, radius: 72, promptText: 'Press E to enter restaurant' },
-  { id: 'park', centerX: 624, centerY: 688, radius: 72, promptText: 'Press E to play in the park' },
-  { id: 'cinema', centerX: 1008, centerY: 336, radius: 72, promptText: 'Press E to enter cinema' },
-  { id: 'michaels_house', centerX: 496, centerY: 208, radius: 72, promptText: "Press E to enter Michael's House" },
-  { id: 'airport', centerX: 1072, centerY: 880, radius: 72, promptText: 'Press E to enter airport' },
+  { id: 'restaurant', centerX: 272, centerY: 336, radius: 72, promptText: 'Tap to go in' },
+  { id: 'park', centerX: 624, centerY: 688, radius: 72, promptText: 'Tap to go in' },
+  { id: 'cinema', centerX: 1008, centerY: 336, radius: 72, promptText: 'Tap to go in' },
+  { id: 'michaels_house', centerX: 496, centerY: 208, radius: 72, promptText: 'Tap to go in' },
+  { id: 'airport', centerX: 1072, centerY: 880, radius: 72, promptText: 'Tap to go in' },
 ];
 
 export interface DecorationDef {

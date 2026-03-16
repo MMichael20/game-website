@@ -82,7 +82,7 @@ export class NPC {
         this.promptText = this.scene.add.text(
           this.sprite.x,
           this.sprite.y - 20,
-          'E',
+          'Tap',
           {
             fontSize: '10px',
             color: '#ffffff',

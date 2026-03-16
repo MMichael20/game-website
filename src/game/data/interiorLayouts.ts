@@ -128,7 +128,7 @@ export const MICHAELS_HOUSE_LAYOUT: InteriorLayout = {
     tileY: 22,
     width: 3,
     height: 2,
-    promptText: 'Press E to exit house',
+    promptText: 'Tap to go out',
   },
 };
 

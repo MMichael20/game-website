@@ -296,7 +296,7 @@ class UIManager {
     el.innerHTML = `
       <div class="npc-dialog__box">
         <p class="npc-dialog__text" id="npc-dialog-text">${lines[0]}</p>
-        <span class="npc-dialog__advance">${lines.length > 1 ? 'E / Click ▶' : 'E / Click ✕'}</span>
+        <span class="npc-dialog__advance">${lines.length > 1 ? 'Tap ▶' : 'Tap ✕'}</span>
       </div>
     `;
 
@@ -310,7 +310,7 @@ class UIManager {
       const textEl = document.getElementById('npc-dialog-text');
       if (textEl) textEl.textContent = lines[currentLine];
       const advEl = el.querySelector('.npc-dialog__advance');
-      if (advEl) advEl.textContent = currentLine === lines.length - 1 ? 'E / Click ✕' : 'E / Click ▶';
+      if (advEl) advEl.textContent = currentLine === lines.length - 1 ? 'Tap ✕' : 'Tap ▶';
     };
 
     el.addEventListener('click', advance);

@@ -55,6 +55,6 @@ body {
   pointer-events: none;
 }
 
-#hud > *, #dialog-container > *, #menu-container > * {
+#dialog-container > *, #menu-container > * {
   pointer-events: auto;
 }
