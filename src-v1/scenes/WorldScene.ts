@@ -104,8 +104,8 @@ export class WorldScene extends Phaser.Scene {
     this.partnerIdleTween.resume();
 
     this.createCheckpointZones();
-    this.createUI();
     this.setupCamera();
+    this.createUI();
     this.setupInput();
     this.createParticles();
     this.npcSystem = new NPCSystem(this, NPCS, PATH_NETWORK);
@@ -296,6 +296,11 @@ export class WorldScene extends Phaser.Scene {
     this.progressText = pill.label;
     this.progressBg = pill.bg;
 
+    // Counter-scale UI to prevent blurry upscaling from camera zoom
+    const zoom = this.cameras.main.zoom;
+    pill.bg.setScale(1 / zoom);
+    pill.label.setScale(1 / zoom);
+
     // Settings button — zoom-compensated position
     const settingsPos = this.toScreenPos(this.cameras.main.width - 70, 20);
     const settingsBtn = createStyledButton(this, settingsPos.x, settingsPos.y, 'Settings', {
@@ -304,6 +309,7 @@ export class WorldScene extends Phaser.Scene {
       paddingY: 6,
     });
     settingsBtn.container.setScrollFactor(0).setDepth(90000);
+    settingsBtn.container.setScale(1 / zoom);
     settingsBtn.container.on('pointerdown', () => {
       this.scene.pause();
       this.scene.launch('DressingRoomScene', { fromWorld: true });
@@ -319,6 +325,7 @@ export class WorldScene extends Phaser.Scene {
         paddingY: 6,
       });
       fsBtn.container.setScrollFactor(0).setDepth(90000);
+      fsBtn.container.setScale(1 / zoom);
       fsBtn.container.on('pointerdown', () => this.scale.toggleFullscreen());
       this.fsBtnContainer = fsBtn.container;
 
@@ -329,15 +336,20 @@ export class WorldScene extends Phaser.Scene {
     // Reposition UI on resize — zoom-compensated
     this.scale.on('resize', (_gameSize: Phaser.Structs.Size) => {
       this.recalculateZoom();
+      const z = this.cameras.main.zoom;
       const sPos = this.toScreenPos(this.cameras.main.width - 70, 20);
       this.settingsBtnContainer.setPosition(sPos.x, sPos.y);
+      this.settingsBtnContainer.setScale(1 / z);
       if (this.fsBtnContainer) {
         const fPos = this.toScreenPos(this.cameras.main.width - 70, 54);
         this.fsBtnContainer.setPosition(fPos.x, fPos.y);
+        this.fsBtnContainer.setScale(1 / z);
       }
       const pPos = this.toScreenPos(60, 20);
       this.progressBg.setPosition(pPos.x, pPos.y);
+      this.progressBg.setScale(1 / z);
       this.progressText.setPosition(pPos.x, pPos.y);
+      this.progressText.setScale(1 / z);
       this.redrawVignette();
     });
   }
@@ -352,7 +364,7 @@ export class WorldScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     const mapW = MAP_WIDTH * TILE_SIZE;
     const mapH = MAP_HEIGHT * TILE_SIZE;
-    const targetZoom = width / 450;
+    const targetZoom = Math.min(1.5, width / 450);
     const minZoomForMap = Math.max(width / mapW, height / mapH);
     this.baseZoom = Phaser.Math.Clamp(Math.max(targetZoom, minZoomForMap), 0.5, 3);
     this.cameras.main.setZoom(this.baseZoom);
@@ -628,25 +640,6 @@ export class WorldScene extends Phaser.Scene {
       }
     });
 
-    // Camera zoom on checkpoint entry/exit
-    if (foundCheckpoint && !this.activeCheckpointId) {
-      this.tweens.add({
-        targets: this.cameras.main,
-        zoom: this.baseZoom * 1.12,
-        duration: 300,
-        ease: 'Sine.easeOut',
-        onComplete: () => this.redrawVignette(),
-      });
-    }
-    if (!foundCheckpoint && this.activeCheckpointId) {
-      this.tweens.add({
-        targets: this.cameras.main,
-        zoom: this.baseZoom,
-        duration: 300,
-        ease: 'Sine.easeOut',
-        onComplete: () => this.redrawVignette(),
-      });
-    }
 
     // Location-based outfit auto-apply
     if ((foundCheckpoint === 'restaurant' || foundCheckpoint === 'pizzeria') && !this.locationOutfitActive) {
