@@ -111,7 +111,7 @@ function drawNPCBase(ctx: Ctx, opts: {
 // ── Terrain spritesheet ─────────────────────────────────────────────────
 
 function generateMauiTerrain(scene: Phaser.Scene): void {
-  const c = scene.textures.createCanvas('maui-terrain', 192, 32);
+  const c = scene.textures.createCanvas('maui-terrain', 288, 32);
   if (!c) return;
   const ctx = c.context;
 
@@ -238,6 +238,49 @@ function generateMauiTerrain(scene: Phaser.Scene): void {
     }
   }
 
+  // Index 6 — Road
+  {
+    const ox = 192;
+    const rng = seededRandom(700);
+    rect(ctx, ox, 0, 32, 32, '#444444');
+    for (let i = 0; i < 40; i++) {
+      const x = Math.floor(rng() * 32);
+      const y = Math.floor(rng() * 32);
+      px(ctx, ox + x, y, rng() > 0.5 ? '#3a3a3a' : '#4e4e4e');
+    }
+    for (let x = 2; x < 32; x += 8) {
+      rect(ctx, ox + x, 15, 5, 2, '#FFD700');
+    }
+  }
+
+  // Index 7 — ParkingLot
+  {
+    const ox = 224;
+    const rng = seededRandom(800);
+    rect(ctx, ox, 0, 32, 32, '#666666');
+    for (let i = 0; i < 30; i++) {
+      const x = Math.floor(rng() * 32);
+      const y = Math.floor(rng() * 32);
+      px(ctx, ox + x, y, rng() > 0.5 ? '#5a5a5a' : '#707070');
+    }
+    rect(ctx, ox + 30, 0, 2, 32, '#CCCCCC');
+  }
+
+  // Index 8 — Sidewalk
+  {
+    const ox = 256;
+    const rng = seededRandom(900);
+    rect(ctx, ox, 0, 32, 32, '#BBBBBB');
+    for (let i = 0; i < 25; i++) {
+      const x = Math.floor(rng() * 32);
+      const y = Math.floor(rng() * 32);
+      px(ctx, ox + x, y, rng() > 0.5 ? '#AAAAAA' : '#CCCCCC');
+    }
+    for (let y = 10; y < 22; y++) {
+      px(ctx, ox + 16 + (y % 3 === 0 ? 1 : 0), y, '#999999');
+    }
+  }
+
   c.refresh();
 }
 
@@ -319,6 +362,89 @@ function generateMauiNPCs(scene: Phaser.Scene): void {
         px(ctx, 22, 18, '#20B2AA');
         px(ctx, 24, 18, '#FF69B4');
         px(ctx, 26, 18, '#20B2AA');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-maui-restaurant — Dark-haired person with white apron
+  {
+    const c = scene.textures.createCanvas('npc-maui-restaurant', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#D2A679', hair: '#222222', top: '#FFFFFF', pants: '#333333',
+      detail: (ctx) => {
+        // Apron strings tied at back
+        rect(ctx, 18, 25, 1, 8, '#DDDDDD');
+        rect(ctx, 29, 25, 1, 8, '#DDDDDD');
+        // Apron waist tie
+        rect(ctx, 18, 25, 12, 1, '#DDDDDD');
+        // Food stain on apron
+        rect(ctx, 22, 28, 2, 2, '#CC6633');
+        px(ctx, 25, 30, '#CC6633');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-maui-greeter — Person in aloha shirt
+  {
+    const c = scene.textures.createCanvas('npc-maui-greeter', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#B87333', hair: '#333333', top: '#FF6347', pants: '#C4A265',
+      detail: (ctx) => {
+        // Floral pattern dots on shirt (yellow, white)
+        px(ctx, 16, 22, '#FFD700');
+        px(ctx, 20, 25, '#FFFFFF');
+        px(ctx, 18, 28, '#FFD700');
+        px(ctx, 24, 23, '#FFFFFF');
+        px(ctx, 28, 26, '#FFD700');
+        px(ctx, 22, 31, '#FFFFFF');
+        px(ctx, 30, 29, '#FFD700');
+        px(ctx, 26, 33, '#FFFFFF');
+        // Dots on arms
+        px(ctx, 11, 27, '#FFD700');
+        px(ctx, 35, 28, '#FFFFFF');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-maui-tourist — Casual vacation outfit with hat
+  {
+    const c = scene.textures.createCanvas('npc-maui-tourist', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#F5DEB3', hair: '#AA8844', top: '#87CEEB', pants: '#F0E68C',
+      detail: (ctx) => {
+        // Wide hat above head
+        rect(ctx, 12, 1, 24, 3, '#C4A265');
+        rect(ctx, 16, 0, 16, 1, '#C4A265');
+        rect(ctx, 18, 3, 12, 2, darken('#C4A265', 0.1));
+        // Sunglasses on face
+        rect(ctx, 19, 11, 4, 3, '#222222');
+        rect(ctx, 25, 11, 4, 3, '#222222');
+        rect(ctx, 23, 12, 2, 1, '#222222');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-maui-frontdesk — Hotel uniform
+  {
+    const c = scene.textures.createCanvas('npc-maui-frontdesk', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#D2A679', hair: '#222222', top: '#2C3E50', pants: '#2C3E50',
+      detail: (ctx) => {
+        // Name badge rectangle on chest
+        rect(ctx, 20, 22, 8, 4, '#FFFFFF');
+        rect(ctx, 21, 23, 6, 2, '#333333');
       },
     });
     c.refresh();
@@ -528,148 +654,436 @@ function generateMauiDecorations(scene: Phaser.Scene): void {
 
     c.refresh();
   }
+
+  // deco-maui-jacuzzi — 64×64 (2x2 tiles)
+  {
+    const c = scene.textures.createCanvas('deco-maui-jacuzzi', 64, 64);
+    if (!c) return;
+    const ctx = c.context;
+    // Wooden rim (outer circle)
+    circle(ctx, 32, 32, 28, '#A0522D');
+    circle(ctx, 32, 32, 25, darken('#A0522D', 0.1));
+    // Water surface
+    circle(ctx, 32, 32, 22, '#5DADE2');
+    // Bubble highlights
+    const bubbles = [[24,26],[36,22],[28,38],[40,34],[20,34],[32,28],[38,40]];
+    bubbles.forEach(([bx,by]) => {
+      circle(ctx, bx, by, 2, lighten('#5DADE2', 0.25));
+      px(ctx, bx-1, by-1, '#FFFFFF');
+    });
+    c.refresh();
+  }
+
+  // deco-maui-tenniscourt — 128×128 (4x4 tiles)
+  {
+    const c = scene.textures.createCanvas('deco-maui-tenniscourt', 128, 128);
+    if (!c) return;
+    const ctx = c.context;
+    // Court surface
+    rect(ctx, 0, 0, 128, 128, '#2E7D32');
+    // Outer boundary lines
+    rect(ctx, 4, 4, 120, 2, '#FFFFFF');     // top
+    rect(ctx, 4, 122, 120, 2, '#FFFFFF');   // bottom
+    rect(ctx, 4, 4, 2, 120, '#FFFFFF');     // left
+    rect(ctx, 122, 4, 2, 120, '#FFFFFF');   // right
+    // Center net line
+    rect(ctx, 4, 63, 120, 2, '#FFFFFF');
+    // Service lines
+    rect(ctx, 20, 4, 2, 120, '#FFFFFF');
+    rect(ctx, 106, 4, 2, 120, '#FFFFFF');
+    // Center mark
+    rect(ctx, 63, 4, 2, 30, '#FFFFFF');
+    rect(ctx, 63, 94, 2, 30, '#FFFFFF');
+    c.refresh();
+  }
+
+  // deco-maui-parkedcar — 32×32 (1x1 tile, top-down view)
+  {
+    // Create 1 parked car texture — gray car, top-down view
+    const c = scene.textures.createCanvas('deco-maui-parkedcar', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Car body
+    rect(ctx, 6, 4, 20, 24, '#888888');
+    // Roof slightly inset
+    rect(ctx, 8, 8, 16, 12, '#777777');
+    // Windshield (front)
+    rect(ctx, 9, 5, 14, 4, '#AADDFF');
+    // Rear window
+    rect(ctx, 9, 23, 14, 3, '#AADDFF');
+    // Wheels
+    rect(ctx, 4, 7, 3, 5, '#333333');
+    rect(ctx, 25, 7, 3, 5, '#333333');
+    rect(ctx, 4, 20, 3, 5, '#333333');
+    rect(ctx, 25, 20, 3, 5, '#333333');
+    c.refresh();
+  }
 }
 
 // ── Buildings ───────────────────────────────────────────────────────────
 
 function generateMauiBuildings(scene: Phaser.Scene): void {
-  // building-maui-shop — 64×64
+  // building-maui-hotel — 256×160 (8x5 tiles)
   {
-    const c = scene.textures.createCanvas('building-maui-shop', 64, 64);
+    const c = scene.textures.createCanvas('building-maui-hotel', 256, 160);
     if (!c) return;
     const ctx = c.context;
-    const wood = '#A0522D';
-    const thatch = '#C4A265';
+    const wallColor = '#D4C5A0';
+    const roofColor = '#888888';
+    const windowColor = '#AADDFF';
+    const frameColor = '#8B7355';
+    const doorColor = '#5C3317';
 
-    // Walls
-    rect(ctx, 4, 24, 56, 38, wood);
-    // Wall texture
-    for (let y = 26; y < 60; y += 4) {
-      rect(ctx, 4, y, 56, 1, darken(wood, 0.1));
+    // Main walls
+    rect(ctx, 0, 16, 256, 144, wallColor);
+
+    // Flat gray roof
+    rect(ctx, 0, 0, 256, 20, roofColor);
+    rect(ctx, 0, 18, 256, 2, darken(roofColor, 0.15));
+
+    // Grid of windows: 4 columns x 3 rows
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 4; col++) {
+        const wx = 24 + col * 58;
+        const wy = 30 + row * 34;
+        // Window frame
+        rect(ctx, wx - 1, wy - 1, 22, 18, frameColor);
+        // Window glass
+        rect(ctx, wx, wy, 20, 16, windowColor);
+        // Cross divider
+        rect(ctx, wx + 9, wy, 2, 16, frameColor);
+        rect(ctx, wx, wy + 7, 20, 2, frameColor);
+      }
     }
 
-    // Thatched roof
-    for (let y = 0; y < 24; y++) {
-      const indent = Math.max(0, 8 - y);
-      rect(ctx, indent, y, 64 - indent * 2, 1, y % 3 === 0 ? darken(thatch, 0.1) : thatch);
-    }
-    // Roof edge shadow
-    rect(ctx, 0, 23, 64, 2, darken(thatch, 0.2));
+    // "HOTEL" pixel text on top area
+    const textY = 6;
+    const tc = '#2C3E50';
+    // H
+    rect(ctx, 96, textY, 2, 8, tc);
+    rect(ctx, 102, textY, 2, 8, tc);
+    rect(ctx, 98, textY + 3, 4, 2, tc);
+    // O
+    rect(ctx, 106, textY, 2, 8, tc);
+    rect(ctx, 112, textY, 2, 8, tc);
+    rect(ctx, 108, textY, 4, 2, tc);
+    rect(ctx, 108, textY + 6, 4, 2, tc);
+    // T
+    rect(ctx, 116, textY, 8, 2, tc);
+    rect(ctx, 119, textY, 2, 8, tc);
+    // E
+    rect(ctx, 126, textY, 2, 8, tc);
+    rect(ctx, 128, textY, 6, 2, tc);
+    rect(ctx, 128, textY + 3, 4, 2, tc);
+    rect(ctx, 128, textY + 6, 6, 2, tc);
+    // L
+    rect(ctx, 136, textY, 2, 8, tc);
+    rect(ctx, 138, textY + 6, 6, 2, tc);
 
-    // Door
-    rect(ctx, 24, 40, 16, 22, '#CC3333');
-    rect(ctx, 24, 40, 16, 2, darken('#CC3333', 0.15));
-    // Door handle
-    px(ctx, 37, 50, '#FFD700');
-    px(ctx, 37, 51, '#FFD700');
+    // Wide entrance door at bottom center (double door)
+    const doorX = 108;
+    const doorY = 126;
+    rect(ctx, doorX, doorY, 40, 34, doorColor);
+    // Door divider
+    rect(ctx, doorX + 19, doorY, 2, 34, darken(doorColor, 0.2));
+    // Door handles
+    rect(ctx, doorX + 14, doorY + 16, 2, 3, '#FFD700');
+    rect(ctx, doorX + 24, doorY + 16, 2, 3, '#FFD700');
+    // Door frame
+    rect(ctx, doorX - 2, doorY, 2, 34, frameColor);
+    rect(ctx, doorX + 40, doorY, 2, 34, frameColor);
+    rect(ctx, doorX - 2, doorY - 2, 44, 2, frameColor);
 
-    // Window
-    rect(ctx, 8, 32, 10, 8, '#AADDFF');
-    rect(ctx, 8, 32, 10, 1, darken(wood, 0.15));
-    rect(ctx, 8, 39, 10, 1, darken(wood, 0.15));
-    rect(ctx, 8, 32, 1, 8, darken(wood, 0.15));
-    rect(ctx, 17, 32, 1, 8, darken(wood, 0.15));
+    // Foundation strip at bottom
+    rect(ctx, 0, 152, 256, 8, '#777777');
 
     c.refresh();
   }
 
-  // building-maui-house — 64×64
+  // building-maui-restaurant — 160×96 (5x3 tiles)
   {
-    const c = scene.textures.createCanvas('building-maui-house', 64, 64);
+    const c = scene.textures.createCanvas('building-maui-restaurant', 160, 96);
     if (!c) return;
     const ctx = c.context;
+    const wallColor = '#CC6B3B';
+    const roofColor = darken(wallColor, 0.25);
+    const windowColor = '#AADDFF';
+    const frameColor = '#5C3317';
 
-    // Walls
-    rect(ctx, 4, 24, 56, 38, '#F5F5F5');
+    // Terracotta walls
+    rect(ctx, 0, 24, 160, 72, wallColor);
 
-    // Blue roof
-    for (let y = 0; y < 24; y++) {
-      const indent = Math.max(0, Math.floor((24 - y) * 0.3));
-      rect(ctx, indent, y, 64 - indent * 2, 1, y % 4 === 0 ? darken('#3366CC', 0.1) : '#3366CC');
+    // Sloped darker roof
+    for (let y = 0; y < 28; y++) {
+      const indent = Math.max(0, Math.floor((28 - y) * 0.4));
+      rect(ctx, indent, y, 160 - indent * 2, 1, y % 3 === 0 ? darken(roofColor, 0.1) : roofColor);
     }
-    rect(ctx, 0, 23, 64, 2, darken('#3366CC', 0.2));
+    // Roof edge
+    rect(ctx, 0, 26, 160, 2, darken(roofColor, 0.2));
 
-    // Door
-    rect(ctx, 24, 42, 14, 20, '#8B4513');
-    px(ctx, 35, 52, '#FFD700');
-
-    // Window
-    rect(ctx, 8, 32, 12, 10, '#AADDFF');
-    // Window frame
-    rect(ctx, 8, 32, 12, 1, '#3366CC');
-    rect(ctx, 8, 41, 12, 1, '#3366CC');
-    rect(ctx, 8, 32, 1, 10, '#3366CC');
-    rect(ctx, 19, 32, 1, 10, '#3366CC');
-    // Cross in window
-    rect(ctx, 13, 32, 1, 10, '#3366CC');
-    rect(ctx, 8, 37, 12, 1, '#3366CC');
-
-    // Second window
-    rect(ctx, 44, 32, 12, 10, '#AADDFF');
-    rect(ctx, 44, 32, 12, 1, '#3366CC');
-    rect(ctx, 44, 41, 12, 1, '#3366CC');
-    rect(ctx, 44, 32, 1, 10, '#3366CC');
-    rect(ctx, 55, 32, 1, 10, '#3366CC');
-    rect(ctx, 49, 32, 1, 10, '#3366CC');
-    rect(ctx, 44, 37, 12, 1, '#3366CC');
-
-    c.refresh();
-  }
-
-  // building-maui-airport — 96×64
-  {
-    const c = scene.textures.createCanvas('building-maui-airport', 96, 64);
-    if (!c) return;
-    const ctx = c.context;
-
-    // Walls
-    rect(ctx, 4, 16, 88, 46, '#CCCCCC');
-
-    // Glass front
-    rect(ctx, 10, 28, 76, 24, '#AADDFF');
-    // Glass reflections
-    for (let x = 10; x < 86; x += 12) {
-      rect(ctx, x, 28, 1, 24, lighten('#AADDFF', 0.2));
-    }
-    // Glass frame dividers
-    for (let x = 22; x < 86; x += 18) {
-      rect(ctx, x, 28, 2, 24, '#999999');
-    }
-
-    // Roof
-    rect(ctx, 0, 12, 96, 6, '#999999');
-    rect(ctx, 0, 12, 96, 1, '#777777');
-
-    // Door
-    rect(ctx, 40, 36, 16, 16, lighten('#AADDFF', 0.15));
-    rect(ctx, 47, 36, 2, 16, '#999999');
-
-    // "MAUI" pixel text on top
-    const textY = 4;
-    const textColor = '#2E86C1';
-    // M
-    rect(ctx, 30, textY, 1, 6, textColor);
-    rect(ctx, 34, textY, 1, 6, textColor);
-    px(ctx, 31, textY + 1, textColor);
-    px(ctx, 33, textY + 1, textColor);
-    px(ctx, 32, textY + 2, textColor);
-    // A
-    rect(ctx, 37, textY + 1, 1, 5, textColor);
-    rect(ctx, 41, textY + 1, 1, 5, textColor);
-    rect(ctx, 38, textY, 3, 1, textColor);
-    rect(ctx, 38, textY + 3, 3, 1, textColor);
+    // "CURRY HOUSE" pixel text
+    const textY = 30;
+    const tc = '#FFFFFF';
+    // C
+    rect(ctx, 30, textY, 2, 6, tc);
+    rect(ctx, 32, textY, 4, 2, tc);
+    rect(ctx, 32, textY + 4, 4, 2, tc);
     // U
-    rect(ctx, 44, textY, 1, 6, textColor);
-    rect(ctx, 48, textY, 1, 6, textColor);
-    rect(ctx, 45, textY + 5, 3, 1, textColor);
-    // I
-    rect(ctx, 51, textY, 3, 1, textColor);
-    rect(ctx, 52, textY, 1, 6, textColor);
-    rect(ctx, 51, textY + 5, 3, 1, textColor);
+    rect(ctx, 38, textY, 2, 6, tc);
+    rect(ctx, 44, textY, 2, 6, tc);
+    rect(ctx, 40, textY + 4, 4, 2, tc);
+    // R
+    rect(ctx, 48, textY, 2, 6, tc);
+    rect(ctx, 50, textY, 4, 2, tc);
+    rect(ctx, 54, textY, 2, 3, tc);
+    rect(ctx, 50, textY + 2, 4, 2, tc);
+    rect(ctx, 53, textY + 4, 3, 2, tc);
+    // R
+    rect(ctx, 58, textY, 2, 6, tc);
+    rect(ctx, 60, textY, 4, 2, tc);
+    rect(ctx, 64, textY, 2, 3, tc);
+    rect(ctx, 60, textY + 2, 4, 2, tc);
+    rect(ctx, 63, textY + 4, 3, 2, tc);
+    // Y
+    rect(ctx, 68, textY, 2, 3, tc);
+    rect(ctx, 74, textY, 2, 3, tc);
+    rect(ctx, 70, textY + 2, 4, 2, tc);
+    rect(ctx, 71, textY + 4, 2, 2, tc);
 
-    // Foundation
-    rect(ctx, 4, 54, 88, 8, '#888888');
+    // H
+    rect(ctx, 82, textY, 2, 6, tc);
+    rect(ctx, 88, textY, 2, 6, tc);
+    rect(ctx, 84, textY + 2, 4, 2, tc);
+    // O
+    rect(ctx, 92, textY, 2, 6, tc);
+    rect(ctx, 98, textY, 2, 6, tc);
+    rect(ctx, 94, textY, 4, 2, tc);
+    rect(ctx, 94, textY + 4, 4, 2, tc);
+    // U
+    rect(ctx, 102, textY, 2, 6, tc);
+    rect(ctx, 108, textY, 2, 6, tc);
+    rect(ctx, 104, textY + 4, 4, 2, tc);
+    // S
+    rect(ctx, 112, textY, 6, 2, tc);
+    rect(ctx, 112, textY, 2, 3, tc);
+    rect(ctx, 112, textY + 2, 6, 2, tc);
+    rect(ctx, 116, textY + 3, 2, 3, tc);
+    rect(ctx, 112, textY + 4, 6, 2, tc);
+    // E
+    rect(ctx, 120, textY, 2, 6, tc);
+    rect(ctx, 122, textY, 4, 2, tc);
+    rect(ctx, 122, textY + 2, 3, 2, tc);
+    rect(ctx, 122, textY + 4, 4, 2, tc);
 
+    // Window on left side
+    rect(ctx, 16, 50, 24, 18, windowColor);
+    rect(ctx, 15, 49, 26, 1, frameColor);
+    rect(ctx, 15, 68, 26, 1, frameColor);
+    rect(ctx, 15, 49, 1, 20, frameColor);
+    rect(ctx, 41, 49, 1, 20, frameColor);
+    rect(ctx, 27, 50, 1, 18, frameColor);
+
+    // Window on right side
+    rect(ctx, 120, 50, 24, 18, windowColor);
+    rect(ctx, 119, 49, 26, 1, frameColor);
+    rect(ctx, 119, 68, 26, 1, frameColor);
+    rect(ctx, 119, 49, 1, 20, frameColor);
+    rect(ctx, 145, 49, 1, 20, frameColor);
+    rect(ctx, 131, 50, 1, 18, frameColor);
+
+    // Doorway at bottom center
+    rect(ctx, 64, 58, 32, 38, darken(wallColor, 0.35));
+    // Door frame
+    rect(ctx, 62, 56, 2, 40, frameColor);
+    rect(ctx, 96, 56, 2, 40, frameColor);
+    rect(ctx, 62, 56, 36, 2, frameColor);
+
+    // Awning over entrance
+    for (let y = 0; y < 8; y++) {
+      rect(ctx, 56 - y, 48 + y, 48 + y * 2, 1, y % 2 === 0 ? '#CC3333' : '#FFEECC');
+    }
+
+    c.refresh();
+  }
+}
+
+// ── Driving cars (side view) ────────────────────────────────────────────
+
+function generateMauiCars(scene: Phaser.Scene): void {
+  const carConfigs: Array<{ key: string; bodyColor: string }> = [
+    { key: 'car-red', bodyColor: '#CC3333' },
+    { key: 'car-blue', bodyColor: '#3366CC' },
+    { key: 'car-white', bodyColor: '#EEEEEE' },
+  ];
+
+  for (const { key, bodyColor } of carConfigs) {
+    const c = scene.textures.createCanvas(key, 48, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Body
+    rect(ctx, 4, 12, 40, 14, bodyColor);
+    // Roof (slightly inset, darker)
+    rect(ctx, 12, 6, 22, 8, darken(bodyColor, 0.1));
+    // Windshield
+    rect(ctx, 10, 7, 6, 6, '#AADDFF');
+    // Rear window
+    rect(ctx, 32, 7, 6, 6, '#AADDFF');
+    // Wheels
+    circle(ctx, 12, 26, 4, '#333333');
+    circle(ctx, 36, 26, 4, '#333333');
+    // Wheel rims
+    circle(ctx, 12, 26, 2, '#888888');
+    circle(ctx, 36, 26, 2, '#888888');
+    // Headlight
+    rect(ctx, 42, 15, 3, 3, '#FFFF88');
+    // Taillight
+    rect(ctx, 3, 15, 3, 3, '#FF4444');
+    c.refresh();
+  }
+}
+
+// ── Hotel interior furniture ────────────────────────────────────────────
+
+function generateHotelInteriorTextures(scene: Phaser.Scene): void {
+  // interior-kitchen-counter — 32×32
+  {
+    const c = scene.textures.createCanvas('interior-kitchen-counter', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const wood = '#8B6914';
+    rect(ctx, 0, 0, 32, 32, wood);
+    rect(ctx, 0, 28, 32, 4, darken(wood, 0.2));
+    // Surface grain
+    for (let x = 2; x < 30; x += 6) {
+      rect(ctx, x, 2, 1, 24, darken(wood, 0.08));
+    }
+    c.refresh();
+  }
+
+  // interior-sink — 32×32
+  {
+    const c = scene.textures.createCanvas('interior-sink', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const counter = '#8B6914';
+    rect(ctx, 0, 0, 32, 32, counter);
+    rect(ctx, 0, 28, 32, 4, darken(counter, 0.2));
+    // Oval basin
+    circle(ctx, 16, 14, 8, '#AAAAAA');
+    circle(ctx, 16, 14, 6, '#CCCCCC');
+    // Faucet
+    rect(ctx, 15, 4, 2, 6, '#888888');
+    rect(ctx, 14, 4, 4, 2, '#888888');
+    c.refresh();
+  }
+
+  // interior-fridge — 32×32
+  {
+    const c = scene.textures.createCanvas('interior-fridge', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 4, 0, 24, 32, '#F0F0F0');
+    // Door divider
+    rect(ctx, 4, 14, 24, 2, '#DDDDDD');
+    // Handle line
+    rect(ctx, 25, 4, 2, 8, '#999999');
+    rect(ctx, 25, 20, 2, 8, '#999999');
+    // Edge shadow
+    rect(ctx, 4, 0, 1, 32, '#DDDDDD');
+    rect(ctx, 27, 0, 1, 32, '#DDDDDD');
+    c.refresh();
+  }
+
+  // interior-bathroom-wall — 32×32
+  {
+    const c = scene.textures.createCanvas('interior-bathroom-wall', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 32, 32, '#E8E0D0');
+    // Tile pattern
+    for (let y = 0; y < 32; y += 8) {
+      rect(ctx, 0, y, 32, 1, '#D8D0C0');
+    }
+    for (let x = 0; x < 32; x += 8) {
+      rect(ctx, x, 0, 1, 32, '#D8D0C0');
+    }
+    c.refresh();
+  }
+
+  // interior-toilet — 32×32
+  {
+    const c = scene.textures.createCanvas('interior-toilet', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Gray tile floor
+    rect(ctx, 0, 0, 32, 32, '#BBBBBB');
+    // Toilet base (white oval)
+    circle(ctx, 16, 18, 8, '#FFFFFF');
+    circle(ctx, 16, 18, 6, '#F0F0F0');
+    // Tank at back
+    rect(ctx, 10, 6, 12, 8, '#FFFFFF');
+    rect(ctx, 10, 6, 12, 1, '#DDDDDD');
+    c.refresh();
+  }
+
+  // interior-tv — 32×32
+  {
+    const c = scene.textures.createCanvas('interior-tv', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // TV body
+    rect(ctx, 2, 4, 28, 20, '#222222');
+    // Screen
+    rect(ctx, 4, 6, 24, 16, '#3366AA');
+    // Screen color bar detail
+    rect(ctx, 4, 14, 8, 8, '#44AA44');
+    rect(ctx, 12, 14, 8, 8, '#CC5533');
+    rect(ctx, 20, 14, 8, 8, '#DDDD44');
+    // Stand
+    rect(ctx, 12, 24, 8, 4, '#333333');
+    rect(ctx, 8, 28, 16, 2, '#333333');
+    c.refresh();
+  }
+
+  // interior-bed — 64×64 (2x2 tiles)
+  {
+    const c = scene.textures.createCanvas('interior-bed', 64, 64);
+    if (!c) return;
+    const ctx = c.context;
+    // Bed frame
+    rect(ctx, 4, 8, 56, 52, '#8B6914');
+    // Mattress / white sheet
+    rect(ctx, 6, 10, 52, 48, '#FFFFFF');
+    // Sheet wrinkle details
+    rect(ctx, 6, 30, 52, 1, '#EEEEEE');
+    rect(ctx, 6, 44, 52, 1, '#EEEEEE');
+    // Blue pillow at top
+    rect(ctx, 10, 12, 20, 12, '#5588CC');
+    rect(ctx, 34, 12, 20, 12, '#5588CC');
+    // Pillow highlights
+    rect(ctx, 12, 14, 16, 2, lighten('#5588CC', 0.15));
+    rect(ctx, 36, 14, 16, 2, lighten('#5588CC', 0.15));
+    // Headboard
+    rect(ctx, 2, 4, 60, 6, darken('#8B6914', 0.15));
+    c.refresh();
+  }
+
+  // interior-desk — 32×32
+  {
+    const c = scene.textures.createCanvas('interior-desk', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const wood = '#8B6914';
+    // Desk top surface
+    rect(ctx, 0, 8, 32, 6, wood);
+    rect(ctx, 0, 8, 32, 1, lighten(wood, 0.1));
+    // Legs
+    rect(ctx, 2, 14, 3, 18, darken(wood, 0.1));
+    rect(ctx, 27, 14, 3, 18, darken(wood, 0.1));
+    // Drawer
+    rect(ctx, 8, 14, 16, 8, darken(wood, 0.05));
+    // Drawer handle
+    rect(ctx, 14, 17, 4, 2, '#999999');
     c.refresh();
   }
 }
@@ -681,4 +1095,6 @@ export function generateMauiTextures(scene: Phaser.Scene): void {
   generateMauiNPCs(scene);
   generateMauiDecorations(scene);
   generateMauiBuildings(scene);
+  generateMauiCars(scene);
+  generateHotelInteriorTextures(scene);
 }
