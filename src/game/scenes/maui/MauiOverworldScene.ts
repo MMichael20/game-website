@@ -144,6 +144,22 @@ export class MauiOverworldScene extends OverworldScene {
       uiManager.showNPCDialog(['Cowabunga! You caught a gnarly wave!'], () => {
         uiManager.hideNPCDialog();
       });
+    } else if (zone.id === 'maui_taxi') {
+      uiManager.showNPCDialog(
+        ['Ready to head to the airport?', 'Hang loose! Enjoy your flight home!'],
+        () => {
+          uiManager.hideNPCDialog();
+          uiManager.hideHUD();
+          uiManager.hideInteractionPrompt();
+          const cam = this.cameras.main;
+          this.tweens.add({
+            targets: cam, alpha: 0, duration: 500, ease: 'Linear',
+            onComplete: () => {
+              this.scene.start('AirplaneCutscene', { destination: 'home' });
+            },
+          });
+        },
+      );
     }
   }
 

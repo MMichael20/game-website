@@ -1,105 +1,64 @@
 // src/game/scenes/maui/MauiHotelScene.ts
 import { InteriorScene } from '../InteriorScene';
-import { InteriorLayout } from '../../data/interiorLayouts';
-import { NPCSystem } from '../../systems/NPCSystem';
-import { NPCDef, worldToTile } from '../../data/mapLayout';
+import { InteriorLayout, buildWallGrid } from '../../data/interiorLayouts';
 import { uiManager } from '../../../ui/UIManager';
 import { saveCurrentScene } from '../../systems/SaveSystem';
 
-const HOTEL_LAYOUT: InteriorLayout = {
+const AIRBNB_ROOMS = [
+  { x: 0, y: 0, w: 11, h: 8 },   // Kitchen (left-top)
+  { x: 10, y: 0, w: 10, h: 8 },   // Bathroom (right-top)
+  { x: 0, y: 7, w: 20, h: 5 },    // Bedroom (full-width bottom)
+];
+
+const AIRBNB_DOORWAYS = [
+  { x: 4, y: 7, width: 2, height: 1 },   // Kitchen → Bedroom
+  { x: 14, y: 7, width: 2, height: 1 },   // Bathroom → Bedroom
+];
+
+const AIRBNB_LAYOUT: InteriorLayout = {
   id: 'maui-hotel',
-  widthInTiles: 10,
-  heightInTiles: 8,
-  wallGrid: Array.from({ length: 8 }, (_, y) =>
-    Array.from({ length: 10 }, (_, x) =>
-      y === 0 || y === 7 || x === 0 || x === 9
-    ),
-  ),
+  widthInTiles: 20,
+  heightInTiles: 12,
+  wallGrid: buildWallGrid(20, 12, AIRBNB_ROOMS, AIRBNB_DOORWAYS),
   floors: [
-    { floorType: 'wood', tileX: 1, tileY: 1, width: 8, height: 6 },
+    { tileX: 1, tileY: 1, width: 9, height: 6, floorType: 'tile_floor' },      // Kitchen
+    { tileX: 11, tileY: 1, width: 8, height: 6, floorType: 'tile_floor' },      // Bathroom
+    { tileX: 1, tileY: 8, width: 18, height: 3, floorType: 'carpet_beige' },    // Bedroom
   ],
   decorations: [
+    // Kitchen
     { type: 'kitchen-counter', tileX: 1, tileY: 1 },
     { type: 'kitchen-counter', tileX: 2, tileY: 1 },
     { type: 'sink', tileX: 3, tileY: 1 },
-    { type: 'fridge', tileX: 1, tileY: 2 },
-    { type: 'bathroom-wall', tileX: 8, tileY: 1 },
-    { type: 'toilet', tileX: 8, tileY: 2 },
-    { type: 'tv', tileX: 3, tileY: 4 },
-    { type: 'bed', tileX: 5, tileY: 5 },
-    { type: 'desk', tileX: 8, tileY: 6 },
+    { type: 'fridge', tileX: 1, tileY: 3 },
+    { type: 'table', tileX: 5, tileY: 4 },
+    { type: 'table', tileX: 7, tileY: 4 },
+    // Bathroom
+    { type: 'bathroom-wall', tileX: 11, tileY: 1 },
+    { type: 'bathroom-wall', tileX: 12, tileY: 1 },
+    { type: 'sink', tileX: 14, tileY: 1 },
+    { type: 'toilet', tileX: 16, tileY: 1 },
+    // Bedroom
+    { type: 'bed', tileX: 3, tileY: 8 },
+    { type: 'tv', tileX: 8, tileY: 8 },
+    { type: 'desk', tileX: 15, tileY: 8 },
   ],
-  entrance: { tileX: 4, tileY: 6 },
-  exit: { tileX: 4, tileY: 7, width: 2, height: 1, promptText: 'Tap to go out' },
+  entrance: { tileX: 10, tileY: 10 },
+  exit: { tileX: 10, tileY: 11, width: 2, height: 1, promptText: 'Tap to go out' },
 };
 
-const HOTEL_NPCS: NPCDef[] = [
-  {
-    id: 'hotel-frontdesk', tileX: 7, tileY: 6, behavior: 'idle',
-    texture: 'npc-maui-frontdesk', interactable: true,
-    onInteract: 'cutscene-trigger',
-    interactionData: {
-      lines: ['Ready to check out?', "We'll arrange your flight home. Mahalo!"],
-      sceneKey: 'AirplaneCutscene',
-      sceneData: { destination: 'home' },
-    },
-    facingDirection: 'left',
-  },
-];
-
 export class MauiHotelScene extends InteriorScene {
-  private npcSystem!: NPCSystem;
-
   constructor() {
     super({ key: 'MauiHotelScene' });
   }
 
   getLayout(): InteriorLayout {
-    return HOTEL_LAYOUT;
+    return AIRBNB_LAYOUT;
   }
 
   create(): void {
     super.create();
     saveCurrentScene('MauiHotelScene');
-    this.npcSystem = new NPCSystem();
-    this.npcSystem.create(this, HOTEL_NPCS);
-
-    // Wire dwell trigger for front desk NPC
-    this.npcSystem.onDwellTrigger = (npc) => {
-      if (npc.onInteract === 'cutscene-trigger' && npc.interactionData?.sceneKey) {
-        this.inputSystem.freeze();
-        const sceneKey = npc.interactionData.sceneKey;
-        const sceneData = npc.interactionData.sceneData ?? {};
-        const triggerCutscene = () => {
-          this.npcSystem.onDialogueEnd(npc.id);
-          uiManager.hideInteractionPrompt();
-          uiManager.hideHUD();
-          const cam = this.cameras.main;
-          this.tweens.add({
-            targets: cam, alpha: 0, duration: 500, ease: 'Linear',
-            onComplete: () => { this.scene.start(sceneKey, sceneData); },
-          });
-        };
-        if (npc.interactionData.lines?.length) {
-          uiManager.showNPCDialog(npc.interactionData.lines, triggerCutscene);
-        } else {
-          triggerCutscene();
-        }
-      } else if (npc.interactionData?.lines) {
-        this.inputSystem.freeze();
-        uiManager.showNPCDialog(npc.interactionData.lines, () => {
-          uiManager.hideNPCDialog();
-          this.inputSystem.unfreeze();
-          this.npcSystem.onDialogueEnd(npc.id);
-        });
-      }
-    };
-  }
-
-  update(time: number, delta: number): void {
-    super.update(time, delta);
-    const pos = this.player.getPosition();
-    this.npcSystem.update(delta, pos.x, pos.y, this.inputSystem.isFrozen);
   }
 
   // Override to return to Maui overworld, not home WorldScene
@@ -116,10 +75,5 @@ export class MauiHotelScene extends InteriorScene {
         });
       },
     });
-  }
-
-  shutdown(): void {
-    super.shutdown();
-    this.npcSystem?.destroy();
   }
 }

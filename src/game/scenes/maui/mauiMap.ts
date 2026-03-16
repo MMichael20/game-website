@@ -66,6 +66,8 @@ export const mauiWalkGrid: boolean[][] = Array.from({ length: MAUI_HEIGHT }, (_,
     if (x >= 35 && x <= 36 && y >= 15 && y <= 16) return false;
     // Parked cars on sidewalk
     if ((x === 5 || x === 15 || x === 35) && y === 10) return false;
+    // Taxi
+    if (x === 40 && y === 10) return false;
     // Everything else walkable
     return true;
   });
@@ -116,6 +118,8 @@ export const MAUI_DECORATIONS = [
   // Restaurant area
   { type: 'palm-tree', tileX: 8, tileY: 16 },
   { type: 'palm-tree', tileX: 16, tileY: 16 },
+  // Taxi
+  { type: 'maui-taxi', tileX: 40, tileY: 10 },
 ];
 
 export const MAUI_BUILDINGS = [
@@ -133,7 +137,7 @@ export const MAUI_NPCS: NPCDef[] = [
   {
     id: 'hotel-greeter', tileX: 25, tileY: 10, behavior: 'idle',
     texture: 'npc-maui-greeter', interactable: true, onInteract: 'dialog',
-    interactionData: { lines: ['Welcome to the hotel!', 'Head inside to rest up.'] },
+    interactionData: { lines: ['Welcome to the Airbnb!', 'Head inside to rest up.'] },
     facingDirection: 'down',
   },
   {
@@ -182,7 +186,7 @@ export const MAUI_CHECKPOINT_ZONES: CheckpointZone[] = [
     centerX: tileToWorld(26, 9).x,
     centerY: tileToWorld(26, 9).y,
     radius: 48,
-    promptText: 'Tap to enter Hotel',
+    promptText: 'Tap to enter Airbnb',
   },
   {
     id: 'maui_tennis',
@@ -197,5 +201,12 @@ export const MAUI_CHECKPOINT_ZONES: CheckpointZone[] = [
     centerY: tileToWorld(10, 22).y,
     radius: 48,
     promptText: 'Tap to go Surfing',
+  },
+  {
+    id: 'maui_taxi',
+    centerX: tileToWorld(40, 10).x,
+    centerY: tileToWorld(40, 10).y,
+    radius: 48,
+    promptText: 'Tap to take Taxi to Airport',
   },
 ];
