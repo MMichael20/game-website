@@ -4,7 +4,7 @@ import { tileToWorld } from '../data/mapLayout';
 
 type NPCState = 'idle' | 'walking' | 'sitting';
 
-const NPC_SPEED = 40;
+const DEFAULT_NPC_SPEED = 40;
 
 export class NPC {
   public sprite: Phaser.GameObjects.Sprite;
@@ -12,6 +12,7 @@ export class NPC {
   private walkPath: Array<{ x: number; y: number }>;
   private currentPathIndex = 0;
   private targetPos: { x: number; y: number } | null = null;
+  private speed: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -19,12 +20,15 @@ export class NPC {
     tileY: number,
     behavior: 'idle' | 'walk' | 'sit',
     walkPath?: Array<{ x: number; y: number }>,
+    texture: string = 'npc-default',
+    speed: number = DEFAULT_NPC_SPEED,
   ) {
     const worldPos = tileToWorld(tileX, tileY);
-    this.sprite = scene.add.sprite(worldPos.x, worldPos.y, 'npc-default');
+    this.sprite = scene.add.sprite(worldPos.x, worldPos.y, texture);
     this.sprite.setDepth(8);
 
     this.walkPath = walkPath ?? [];
+    this.speed = speed;
     this.state = behavior === 'walk' ? 'walking' : behavior === 'sit' ? 'sitting' : 'idle';
 
     if (this.state === 'walking' && this.walkPath.length > 1) {
@@ -57,7 +61,7 @@ export class NPC {
       return;
     }
 
-    const step = NPC_SPEED * (delta / 1000);
+    const step = this.speed * (delta / 1000);
     this.sprite.x += (dx / dist) * step;
     this.sprite.y += (dy / dist) * step;
   }

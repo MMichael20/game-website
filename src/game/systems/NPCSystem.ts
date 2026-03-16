@@ -8,7 +8,7 @@ export class NPCSystem {
 
   create(scene: Phaser.Scene): void {
     this.npcs = NPC_DEFS.map(def =>
-      new NPC(scene, def.tileX, def.tileY, def.behavior, def.walkPath)
+      new NPC(scene, def.tileX, def.tileY, def.behavior, def.walkPath, def.texture, def.speed)
     );
   }
 

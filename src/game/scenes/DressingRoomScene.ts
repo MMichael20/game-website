@@ -48,25 +48,27 @@ export class DressingRoomScene extends Phaser.Scene {
     // Character preview area — upper 60% of viewport
     const previewY = h * 0.3;
     const spacing = w * 0.25;
+    const previewScale = Math.max(2, Math.min(3, Math.floor(w * 0.2 / 64)));
 
     // Player preview (left)
     this.playerSprite = this.add.sprite(w / 2 - spacing, previewY, `player-outfit-${this.playerOutfit}`, 1)
-      .setScale(3)
+      .setScale(previewScale)
       .setDepth(5);
 
     // Partner preview (right)
     this.partnerSprite = this.add.sprite(w / 2 + spacing, previewY, `partner-outfit-${this.partnerOutfit}`, 1)
-      .setScale(3)
+      .setScale(previewScale)
       .setDepth(5);
 
     // Labels
-    this.add.text(w / 2 - spacing, previewY - 60, 'Her', {
+    const labelOffset = previewScale * 36 + 10;
+    this.add.text(w / 2 - spacing, previewY - labelOffset, 'Her', {
       fontFamily: "'Press Start 2P', monospace",
       fontSize: '14px',
       color: '#d4a574',
     }).setOrigin(0.5).setDepth(5);
 
-    this.add.text(w / 2 + spacing, previewY - 60, 'Him', {
+    this.add.text(w / 2 + spacing, previewY - labelOffset, 'Him', {
       fontFamily: "'Press Start 2P', monospace",
       fontSize: '14px',
       color: '#7b5ea7',

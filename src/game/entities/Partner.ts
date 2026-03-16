@@ -1,7 +1,7 @@
 // src/game/entities/Partner.ts
 import Phaser from 'phaser';
 
-const FOLLOW_DISTANCE = 40;
+const FOLLOW_DISTANCE = 64;
 const LERP_SPEED = 0.08;
 const SNAP_DISTANCE = 6;
 
@@ -15,8 +15,8 @@ export class Partner {
     this.currentOutfit = outfit;
     const key = `partner-outfit-${outfit}`;
     this.sprite = scene.physics.add.sprite(x + FOLLOW_DISTANCE, y, key, 0);
-    this.sprite.setSize(24, 24);
-    this.sprite.setOffset(4, 8);
+    this.sprite.setSize(36, 36);
+    this.sprite.setOffset(14, 22);
     this.sprite.setDepth(9);
 
     this.createAnimations(scene);
