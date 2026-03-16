@@ -41,6 +41,8 @@ export class MauiOverworldScene extends OverworldScene {
         .setDepth(-10);
     });
 
+    this.addWaveAnimations();
+
     // Buildings
     MAUI_BUILDINGS.forEach(b => {
       const cx = b.tileX * TILE_SIZE + (b.tileW * TILE_SIZE) / 2;
@@ -77,6 +79,31 @@ export class MauiOverworldScene extends OverworldScene {
     });
   }
 
+  private addWaveAnimations(): void {
+    const wavePositions = [
+      { x: 3, y: 26 }, { x: 10, y: 26 }, { x: 18, y: 26 },
+      { x: 26, y: 26 }, { x: 34, y: 26 }, { x: 42, y: 26 },
+    ];
+
+    wavePositions.forEach((wp, i) => {
+      const pos = tileToWorld(wp.x, wp.y);
+      const wave = this.add.image(pos.x, pos.y, 'deco-wave-foam')
+        .setDepth(-8)
+        .setAlpha(0.6);
+
+      this.tweens.add({
+        targets: wave,
+        x: pos.x + 16,
+        alpha: 0.25,
+        duration: 2000 + i * 200,
+        ease: 'Sine.easeInOut',
+        repeat: -1,
+        yoyo: true,
+        delay: i * 300,
+      });
+    });
+  }
+
   onEnterCheckpoint(zone: CheckpointZone): void {
     const pos = this.player.getPosition();
     if (zone.id === 'maui_hotel') {
@@ -85,6 +112,10 @@ export class MauiOverworldScene extends OverworldScene {
       uiManager.hideHUD();
       uiManager.hideInteractionPrompt();
       this.scene.start('TennisScene', { returnScene: 'MauiOverworldScene' });
+    } else if (zone.id === 'maui_surfing') {
+      uiManager.showNPCDialog(['Cowabunga! You caught a gnarly wave!'], () => {
+        uiManager.hideNPCDialog();
+      });
     }
   }
 

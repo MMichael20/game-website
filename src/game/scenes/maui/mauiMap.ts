@@ -26,7 +26,7 @@ export const mauiTileGrid: number[][] = Array.from({ length: MAUI_HEIGHT }, (_, 
     // 3. Road
     if (y >= 11 && y <= 13) return MauiTileType.Road;
     // 4. Ocean
-    if (y >= 25) return MauiTileType.Ocean;
+    if (y >= 27) return MauiTileType.Ocean;
     // 5. Shallow water (left side)
     if (y >= 21 && x <= 20) return MauiTileType.ShallowWater;
     // 6. Shallow water (center)
@@ -53,13 +53,17 @@ export const mauiWalkGrid: boolean[][] = Array.from({ length: MAUI_HEIGHT }, (_,
     // Map borders
     if (x === 0 || x === 44 || y === 0 || y === 29) return false;
     // Ocean
-    if (y >= 25) return false;
+    if (y >= 27) return false;
     // Hotel building footprint
     if (x >= 22 && x <= 29 && y >= 4 && y <= 8) return false;
     // Restaurant building footprint
     if (x >= 10 && x <= 14 && y >= 15 && y <= 17) return false;
     // Jacuzzi
     if (x >= 34 && x <= 35 && y >= 3 && y <= 4) return false;
+    // Lifeguard tower
+    if (x === 1 && y === 16) return false;
+    // Beach shack
+    if (x >= 35 && x <= 36 && y >= 15 && y <= 16) return false;
     // Parked cars on sidewalk
     if ((x === 5 || x === 15 || x === 35) && y === 10) return false;
     // Everything else walkable
@@ -94,6 +98,21 @@ export const MAUI_DECORATIONS = [
   { type: 'beach-umbrella', tileX: 4, tileY: 17 },
   { type: 'beach-towel', tileX: 6, tileY: 18 },
   { type: 'surfboard', tileX: 10, tileY: 17 },
+  // Beach — new decorations
+  { type: 'sandcastle', tileX: 18, tileY: 19 },
+  { type: 'beach-chair', tileX: 5, tileY: 18 },
+  { type: 'beach-chair', tileX: 20, tileY: 17 },
+  { type: 'beach-umbrella', tileX: 22, tileY: 17 },
+  { type: 'beach-towel', tileX: 23, tileY: 18 },
+  { type: 'beach-towel', tileX: 15, tileY: 19 },
+  { type: 'volleyball-net', tileX: 28, tileY: 16 },
+  { type: 'beach-shack', tileX: 35, tileY: 15 },
+  { type: 'lifeguard-tower', tileX: 1, tileY: 16 },
+  { type: 'shell', tileX: 12, tileY: 20 },
+  { type: 'shell', tileX: 30, tileY: 19 },
+  { type: 'palm-tree', tileX: 25, tileY: 14 },
+  { type: 'palm-tree', tileX: 38, tileY: 14 },
+  { type: 'surfboard', tileX: 32, tileY: 17 },
   // Restaurant area
   { type: 'palm-tree', tileX: 8, tileY: 16 },
   { type: 'palm-tree', tileX: 16, tileY: 16 },
@@ -139,6 +158,22 @@ export const MAUI_NPCS: NPCDef[] = [
     walkPath: [{ x: 12, y: 5 }, { x: 20, y: 5 }] },
   { id: 'beachgoer-1', tileX: 3, tileY: 17, behavior: 'sit', texture: 'npc-traveler' },
   { id: 'beachgoer-2', tileX: 14, tileY: 18, behavior: 'sit', texture: 'npc-traveler-2' },
+  {
+    id: 'lifeguard', tileX: 2, tileY: 16, behavior: 'idle',
+    texture: 'npc-lifeguard', interactable: true, onInteract: 'dialog',
+    interactionData: { lines: ['Stay safe out there!', 'Waves are looking good today.'] },
+    facingDirection: 'down',
+  },
+  {
+    id: 'beach-bar-attendant', tileX: 36, tileY: 14, behavior: 'idle',
+    texture: 'npc-beach-bar', interactable: true, onInteract: 'dialog',
+    interactionData: { lines: ['Want a smoothie? Mango, pineapple, guava!'] },
+    facingDirection: 'down',
+  },
+  { id: 'sandcastle-kid', tileX: 19, tileY: 19, behavior: 'sit', texture: 'npc-sandcastle-kid' },
+  { id: 'beachgoer-3', tileX: 21, tileY: 18, behavior: 'sit', texture: 'npc-maui-tourist' },
+  { id: 'shore-walker', tileX: 5, tileY: 21, behavior: 'walk', texture: 'npc-maui-local',
+    walkPath: [{ x: 5, y: 21 }, { x: 30, y: 21 }] },
 ];
 
 export const MAUI_CHECKPOINT_ZONES: CheckpointZone[] = [
@@ -155,5 +190,12 @@ export const MAUI_CHECKPOINT_ZONES: CheckpointZone[] = [
     centerY: tileToWorld(40, 8).y,
     radius: 64,
     promptText: 'Tap to play Tennis',
+  },
+  {
+    id: 'maui_surfing',
+    centerX: tileToWorld(10, 22).x,
+    centerY: tileToWorld(10, 22).y,
+    radius: 48,
+    promptText: 'Tap to go Surfing',
   },
 ];

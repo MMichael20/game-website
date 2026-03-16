@@ -434,6 +434,79 @@ function generateMauiNPCs(scene: Phaser.Scene): void {
     c.refresh();
   }
 
+  // npc-lifeguard — Red shorts, no shirt, red cross armband
+  {
+    const c = scene.textures.createCanvas('npc-lifeguard', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const skin = '#D2A679';
+    drawNPCBase(ctx, {
+      skin, hair: '#AA6633', top: skin, pants: '#CC3333',
+      shoes: '#886644',
+      detail: (ctx) => {
+        // Wider torso (shirtless detail)
+        rect(ctx, 12, 20, 2, 14, skin);
+        rect(ctx, 34, 20, 2, 14, skin);
+        // Chest definition
+        rect(ctx, 20, 22, 8, 1, darken(skin, 0.08));
+        rect(ctx, 23, 23, 2, 4, darken(skin, 0.06));
+        // Red cross armband on left arm
+        rect(ctx, 10, 26, 4, 4, '#CC3333');
+        rect(ctx, 11, 27, 2, 1, '#FFFFFF');
+        px(ctx, 11, 26, '#FFFFFF');
+        px(ctx, 11, 28, '#FFFFFF');
+        // Shorts waistband
+        rect(ctx, 14, 34, 20, 1, darken('#CC3333', 0.2));
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-beach-bar — Hawaiian shirt, holding a colored drink
+  {
+    const c = scene.textures.createCanvas('npc-beach-bar', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#B87333', hair: '#222222', top: '#FF6347', pants: '#C4A265',
+      shoes: '#886644',
+      detail: (ctx) => {
+        // Hawaiian shirt floral pattern
+        px(ctx, 16, 22, '#FFD700');
+        px(ctx, 20, 25, '#FFFFFF');
+        px(ctx, 24, 22, '#FFD700');
+        px(ctx, 28, 26, '#FFFFFF');
+        px(ctx, 18, 29, '#FFD700');
+        px(ctx, 22, 31, '#FFFFFF');
+        // Drink in right hand — colored block
+        rect(ctx, 35, 30, 4, 6, '#FF8C00');
+        rect(ctx, 35, 30, 4, 1, '#FFDD44');
+        // Tiny straw
+        rect(ctx, 37, 28, 1, 3, '#FFFFFF');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-sandcastle-kid — Bright clothes, bucket detail
+  {
+    const c = scene.textures.createCanvas('npc-sandcastle-kid', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#F5DEB3', hair: '#FFD700', top: '#FF69B4', pants: '#4488CC',
+      shoes: '#886644',
+      detail: (ctx) => {
+        // Bucket in left hand
+        rect(ctx, 6, 32, 5, 5, '#FF4444');
+        rect(ctx, 6, 31, 5, 1, '#CC3333');
+        // Handle on bucket
+        rect(ctx, 7, 30, 3, 1, '#888888');
+      },
+    });
+    c.refresh();
+  }
+
   // npc-maui-frontdesk — Hotel uniform
   {
     const c = scene.textures.createCanvas('npc-maui-frontdesk', 48, 48);
@@ -570,6 +643,187 @@ function generateMauiDecorations(scene: Phaser.Scene): void {
     ctx.strokeStyle = '#CCCCCC';
     ctx.lineWidth = 1;
 
+    c.refresh();
+  }
+
+  // deco-wave-foam — 32×8 (semi-transparent white foam line)
+  {
+    const c = scene.textures.createCanvas('deco-wave-foam', 32, 8);
+    if (!c) return;
+    const ctx = c.context;
+    ctx.globalAlpha = 0.6;
+    // Curved foam line
+    for (let x = 0; x < 32; x++) {
+      const y = Math.round(3 + Math.sin(x * 0.3) * 2);
+      rect(ctx, x, y, 1, 2, '#FFFFFF');
+      if (x % 3 === 0) px(ctx, x, y - 1, '#E8F4FF');
+    }
+    ctx.globalAlpha = 1.0;
+    c.refresh();
+  }
+
+  // deco-sandcastle — 32×32
+  {
+    const c = scene.textures.createCanvas('deco-sandcastle', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const tan = '#D2B48C';
+    const brown = '#A0522D';
+    // Base mound
+    rect(ctx, 4, 20, 24, 12, tan);
+    rect(ctx, 6, 18, 20, 2, tan);
+    // Main tower
+    rect(ctx, 10, 8, 12, 12, tan);
+    // Battlement top
+    rect(ctx, 10, 6, 3, 4, tan);
+    rect(ctx, 15, 6, 3, 4, tan);
+    rect(ctx, 19, 6, 3, 4, tan);
+    // Door
+    rect(ctx, 14, 14, 4, 6, brown);
+    // Red flag on top
+    rect(ctx, 16, 1, 1, 6, brown);
+    rect(ctx, 17, 1, 4, 3, '#CC3333');
+    // Sandy texture
+    for (let i = 0; i < 10; i++) {
+      px(ctx, 8 + (i * 3) % 16, 22 + (i * 7) % 8, darken(tan, 0.1));
+    }
+    c.refresh();
+  }
+
+  // deco-beach-chair — 32×32
+  {
+    const c = scene.textures.createCanvas('deco-beach-chair', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const wood = '#A0522D';
+    const fabric = '#4488CC';
+    // Back legs (angled)
+    rect(ctx, 6, 4, 2, 24, wood);
+    rect(ctx, 24, 4, 2, 24, wood);
+    // Front legs
+    rect(ctx, 10, 16, 2, 16, wood);
+    rect(ctx, 20, 16, 2, 16, wood);
+    // Seat frame
+    rect(ctx, 6, 16, 20, 2, wood);
+    // Fabric back
+    rect(ctx, 8, 6, 16, 10, fabric);
+    rect(ctx, 8, 10, 16, 1, lighten(fabric, 0.15));
+    // Fabric seat
+    rect(ctx, 10, 18, 12, 4, fabric);
+    c.refresh();
+  }
+
+  // deco-volleyball-net — 96×48
+  {
+    const c = scene.textures.createCanvas('deco-volleyball-net', 96, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const pole = '#8B4513';
+    // Left pole
+    rect(ctx, 4, 4, 3, 40, pole);
+    // Right pole
+    rect(ctx, 89, 4, 3, 40, pole);
+    // Net — horizontal lines
+    for (let y = 8; y < 32; y += 4) {
+      rect(ctx, 7, y, 82, 1, '#FFFFFF');
+    }
+    // Net — vertical lines
+    for (let x = 7; x < 89; x += 6) {
+      rect(ctx, x, 8, 1, 24, '#FFFFFF');
+    }
+    // Top rope
+    rect(ctx, 4, 6, 88, 2, '#DDDDDD');
+    c.refresh();
+  }
+
+  // deco-beach-shack — 64×48
+  {
+    const c = scene.textures.createCanvas('deco-beach-shack', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const wood = '#A0522D';
+    // Thatched roof
+    for (let y = 0; y < 18; y++) {
+      const indent = Math.max(0, Math.floor((18 - y) * 0.3));
+      rect(ctx, indent, y, 64 - indent * 2, 1, y % 3 === 0 ? '#B8860B' : '#DAA520');
+    }
+    // Walls
+    rect(ctx, 4, 18, 56, 26, wood);
+    // Wall planks
+    for (let y = 20; y < 44; y += 4) {
+      rect(ctx, 4, y, 56, 1, darken(wood, 0.12));
+    }
+    // Counter opening
+    rect(ctx, 12, 28, 40, 16, darken(wood, 0.3));
+    // Counter surface
+    rect(ctx, 12, 36, 40, 3, lighten(wood, 0.15));
+    // "BAR" text
+    const tc = '#FFFFFF';
+    // B
+    rect(ctx, 22, 20, 2, 6, tc);
+    rect(ctx, 24, 20, 2, 2, tc);
+    rect(ctx, 24, 22, 2, 2, tc);
+    rect(ctx, 24, 24, 2, 2, tc);
+    // A
+    rect(ctx, 28, 22, 2, 4, tc);
+    rect(ctx, 32, 22, 2, 4, tc);
+    rect(ctx, 30, 20, 2, 2, tc);
+    rect(ctx, 28, 23, 6, 1, tc);
+    // R
+    rect(ctx, 36, 20, 2, 6, tc);
+    rect(ctx, 38, 20, 2, 2, tc);
+    rect(ctx, 40, 20, 2, 3, tc);
+    rect(ctx, 38, 22, 2, 1, tc);
+    rect(ctx, 39, 23, 3, 3, tc);
+    c.refresh();
+  }
+
+  // deco-shell — 16×16
+  {
+    const c = scene.textures.createCanvas('deco-shell', 16, 16);
+    if (!c) return;
+    const ctx = c.context;
+    // Spiral shell shape
+    circle(ctx, 8, 8, 5, '#FFCCCC');
+    circle(ctx, 8, 8, 3, '#FFE4E1');
+    circle(ctx, 7, 7, 1, '#FFF0F0');
+    // Spiral ridge lines
+    px(ctx, 10, 5, '#DDA0A0');
+    px(ctx, 11, 7, '#DDA0A0');
+    px(ctx, 10, 10, '#DDA0A0');
+    px(ctx, 6, 11, '#DDA0A0');
+    c.refresh();
+  }
+
+  // deco-lifeguard-tower — 32×64
+  {
+    const c = scene.textures.createCanvas('deco-lifeguard-tower', 32, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const wood = '#A0522D';
+    // Four legs
+    rect(ctx, 4, 30, 3, 34, wood);
+    rect(ctx, 25, 30, 3, 34, wood);
+    // Cross braces
+    for (let i = 0; i < 6; i++) {
+      const y = 34 + i * 5;
+      px(ctx, 7 + i * 3, y, wood);
+      px(ctx, 24 - i * 3, y, wood);
+    }
+    // Platform
+    rect(ctx, 2, 28, 28, 3, wood);
+    // Cabin
+    rect(ctx, 4, 10, 24, 18, lighten(wood, 0.1));
+    // Roof
+    rect(ctx, 2, 6, 28, 5, '#CC3333');
+    rect(ctx, 4, 4, 24, 3, '#CC3333');
+    // Window opening
+    rect(ctx, 8, 14, 16, 8, '#AADDFF');
+    // Window frame
+    rect(ctx, 15, 14, 2, 8, wood);
+    // Red flag on top
+    rect(ctx, 15, 0, 1, 5, wood);
+    rect(ctx, 16, 0, 6, 3, '#CC3333');
     c.refresh();
   }
 
