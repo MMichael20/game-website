@@ -192,6 +192,23 @@ export const DECORATIONS: DecorationDef[] = [
   { type: 'gardenBed', tileX: 9, tileY: 18 },
   { type: 'gardenBed', tileX: 9, tileY: 20 },
   { type: 'gardenBed', tileX: 7, tileY: 22 },
+
+  // ── Airport decorations ──
+  { type: 'airport-fence', tileX: 5, tileY: 32 },
+  { type: 'airport-fence', tileX: 8, tileY: 32 },
+  { type: 'airport-fence', tileX: 11, tileY: 32 },
+  { type: 'airport-fence', tileX: 26, tileY: 32 },
+  { type: 'airport-fence', tileX: 29, tileY: 32 },
+  { type: 'airport-fence', tileX: 32, tileY: 32 },
+  { type: 'windsock', tileX: 34, tileY: 35 },
+  { type: 'runway-light', tileX: 5, tileY: 35 },
+  { type: 'runway-light', tileX: 5, tileY: 37 },
+  { type: 'runway-light', tileX: 34, tileY: 35 },
+  { type: 'runway-light', tileX: 34, tileY: 37 },
+  { type: 'tree', tileX: 7, tileY: 27 },
+  { type: 'tree', tileX: 32, tileY: 27 },
+  { type: 'tree', tileX: 6, tileY: 30 },
+  { type: 'tree', tileX: 33, tileY: 30 },
 ];
 
 export interface NPCDef {
@@ -234,6 +251,15 @@ export const NPC_DEFS: NPCDef[] = [
   // Stroller along main path
   { id: 'npc-8', tileX: 24, tileY: 14, behavior: 'walk', texture: 'npc-villager',
     walkPath: [{ x: 24, y: 14 }, { x: 32, y: 14 }, { x: 32, y: 15 }, { x: 24, y: 15 }] },
+
+  // ── Airport pedestrians ──
+  { id: 'airport-ped-1', tileX: 16, tileY: 28, behavior: 'walk', texture: 'npc-suitcase',
+    walkPath: [{ x: 16, y: 28 }, { x: 22, y: 28 }] },
+  { id: 'airport-ped-2', tileX: 20, tileY: 27, behavior: 'walk', texture: 'npc-suitcase',
+    walkPath: [{ x: 20, y: 27 }, { x: 20, y: 28 }] },
+  { id: 'airport-ped-3', tileX: 10, tileY: 29, behavior: 'idle', texture: 'npc-villager' },
+  { id: 'airport-ped-4', tileX: 28, tileY: 28, behavior: 'walk', texture: 'npc-suitcase',
+    walkPath: [{ x: 28, y: 28 }, { x: 25, y: 28 }] },
 ];
 
 /** Check if a tile is walkable */

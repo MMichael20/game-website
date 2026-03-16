@@ -27,7 +27,8 @@ const BUILDINGS = [
   { name: 'park-entrance', tileX: 18, tileY: 19, tileW: 3, tileH: 2 },
   { name: 'cinema', tileX: 30, tileY: 7, tileW: 3, tileH: 3 },
   { name: 'michaels-house', tileX: 14, tileY: 3, tileW: 3, tileH: 3 },
-  { name: 'airport', tileX: 32, tileY: 24, tileW: 3, tileH: 3 },
+  { name: 'airport', tileX: 14, tileY: 29, tileW: 12, tileH: 3 },
+  { name: 'hadars-house', tileX: 24, tileY: 3, tileW: 3, tileH: 3 },
 ];
 
 export class WorldScene extends OverworldScene {
@@ -79,6 +80,12 @@ export class WorldScene extends OverworldScene {
     // 4. Ambient animations
     this.addLampGlow(lampPositions);
     this.addButterflies();
+
+    // 5. Airport runway animations
+    this.addAirplaneAnimations();
+
+    // 6. Airport cars
+    this.addAirportCars();
   }
 
   protected onShowHUD(): void {
@@ -97,7 +104,8 @@ export class WorldScene extends OverworldScene {
     // Interior buildings
     const interiorSceneMap: Record<string, string> = {
       michaels_house: 'MichaelsHouseScene',
-      airport: 'AirportEntranceScene',
+      hadars_house: 'HadarsHouseScene',
+      airport: 'AirportInteriorScene',
     };
 
     if (interiorSceneMap[zone.id]) {
@@ -176,6 +184,123 @@ export class WorldScene extends OverworldScene {
         ease: 'Sine.easeInOut',
         repeat: -1,
         yoyo: true,
+      });
+    });
+  }
+
+  private addAirplaneAnimations(): void {
+    const departX = 18 * TILE_SIZE + TILE_SIZE / 2;
+    const arriveX = 20 * TILE_SIZE + TILE_SIZE / 2;
+    const apronY = 32 * TILE_SIZE + TILE_SIZE / 2;
+    const runwayY = 36 * TILE_SIZE + TILE_SIZE / 2;
+    const offScreenRight = MAP_WIDTH * TILE_SIZE + 200;
+    const offScreenLeft = -200;
+
+    // Departing plane: taxi south then accelerate east off-screen
+    const departingPlane = this.add.image(departX, apronY, 'airplane-taxiing')
+      .setDepth(-6)
+      .setAlpha(0);
+
+    const startDeparture = () => {
+      departingPlane.setPosition(departX, apronY).setAlpha(1);
+      this.tweens.add({
+        targets: departingPlane,
+        y: runwayY,
+        duration: 3000,
+        ease: 'Linear',
+        onComplete: () => {
+          this.tweens.add({
+            targets: departingPlane,
+            x: offScreenRight,
+            duration: 4000,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+              departingPlane.setAlpha(0);
+            },
+          });
+        },
+      });
+    };
+
+    // Arriving plane: decelerate from left, then taxi north to apron
+    const arrivingPlane = this.add.image(offScreenLeft, runwayY, 'airplane-taxiing')
+      .setDepth(-6)
+      .setAlpha(0)
+      .setFlipX(true);
+
+    const startArrival = () => {
+      arrivingPlane.setPosition(offScreenLeft, runwayY).setAlpha(1).setFlipX(true);
+      this.tweens.add({
+        targets: arrivingPlane,
+        x: arriveX,
+        duration: 4000,
+        ease: 'Quad.easeOut',
+        onComplete: () => {
+          arrivingPlane.setFlipX(false);
+          this.tweens.add({
+            targets: arrivingPlane,
+            y: apronY,
+            duration: 3000,
+            ease: 'Linear',
+            onComplete: () => {
+              arrivingPlane.setAlpha(0);
+            },
+          });
+        },
+      });
+    };
+
+    // Loop departures every 25s, arrivals offset by 17s
+    startDeparture();
+    this.time.addEvent({ delay: 25000, callback: startDeparture, loop: true });
+    this.time.delayedCall(17000, () => {
+      startArrival();
+      this.time.addEvent({ delay: 25000, callback: startArrival, loop: true });
+    });
+  }
+
+  private addAirportCars(): void {
+    // Red car: right to left
+    const carRed = this.add.image(31 * TILE_SIZE, 28 * TILE_SIZE + TILE_SIZE / 2, 'car-red')
+      .setDepth(-3);
+    this.tweens.add({
+      targets: carRed,
+      x: 8 * TILE_SIZE,
+      duration: 12000,
+      ease: 'Linear',
+      yoyo: true,
+      repeat: -1,
+    });
+
+    // Blue car: left to right, delayed 6s
+    const carBlue = this.add.image(8 * TILE_SIZE, 28 * TILE_SIZE + TILE_SIZE / 2, 'car-blue')
+      .setDepth(-3)
+      .setAlpha(0);
+    this.time.delayedCall(6000, () => {
+      carBlue.setAlpha(1);
+      this.tweens.add({
+        targets: carBlue,
+        x: 31 * TILE_SIZE,
+        duration: 12000,
+        ease: 'Linear',
+        yoyo: true,
+        repeat: -1,
+      });
+    });
+
+    // Taxi car: north to south, delayed 3s
+    const carTaxi = this.add.image(19 * TILE_SIZE + TILE_SIZE / 2, 24 * TILE_SIZE, 'car-taxi')
+      .setDepth(-3)
+      .setAlpha(0);
+    this.time.delayedCall(3000, () => {
+      carTaxi.setAlpha(1);
+      this.tweens.add({
+        targets: carTaxi,
+        y: 28 * TILE_SIZE,
+        duration: 5000,
+        ease: 'Linear',
+        yoyo: true,
+        repeat: -1,
       });
     });
   }
