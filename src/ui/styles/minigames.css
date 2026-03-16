@@ -1,1 +1,123 @@
-/* Mini-game overlay styles — populated in Tasks 11-13 */
+/* Mini-game overlay and quiz styles */
+
+/* --- Minigame Overlay --- */
+.minigame-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  padding: 12px;
+  z-index: 10;
+}
+
+.minigame-overlay__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.minigame-overlay__title {
+  font-family: 'Press Start 2P', monospace;
+  color: #ffd700;
+  font-size: clamp(0.6rem, 2vw, 1rem);
+}
+
+.minigame-overlay__progress {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.5rem, 1.5vw, 0.75rem);
+  color: #aaa;
+}
+
+.minigame-overlay__stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  padding: 6px 16px;
+}
+
+.minigame-overlay__score,
+.minigame-overlay__timer {
+  font-family: 'Inter', sans-serif;
+  color: #fff;
+  font-size: clamp(0.6rem, 1.8vw, 0.9rem);
+}
+
+/* --- Quiz Overlay --- */
+.quiz-overlay {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: min(90vw, 500px);
+  width: 100%;
+  z-index: 20;
+}
+
+.quiz-overlay__question {
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.85rem, 2.5vw, 1.15rem);
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.quiz-overlay__options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .quiz-overlay__options {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn--quiz {
+  background: #6a1b9a;
+  color: #fff;
+  border: 2px solid #8e24aa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn--quiz:hover {
+  background: #ffd700;
+  color: #1a1a2e;
+  border-color: #ffd700;
+}
+
+.quiz-overlay__feedback {
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  padding: 10px;
+  margin-top: 12px;
+  border-radius: 6px;
+}
+
+.quiz-overlay__feedback--correct {
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.15);
+}
+
+.quiz-overlay__feedback--wrong {
+  color: #ff7043;
+  background: rgba(255, 112, 67, 0.15);
+}
