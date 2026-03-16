@@ -75,7 +75,19 @@ export function loadGameState(): GameStateV3 {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return getDefaultState();
-    return migrate(JSON.parse(raw));
+    const state = migrate(JSON.parse(raw));
+
+    // Migrate removed airport scene keys to unified interior scene
+    const sceneKeyMigration: Record<string, string> = {
+      'AirportEntranceScene': 'AirportInteriorScene',
+      'AirportSecurityScene': 'AirportInteriorScene',
+      'AirportGateScene': 'AirportInteriorScene',
+    };
+    if (state.currentScene && sceneKeyMigration[state.currentScene]) {
+      state.currentScene = sceneKeyMigration[state.currentScene];
+    }
+
+    return state;
   } catch {
     return getDefaultState();
   }
