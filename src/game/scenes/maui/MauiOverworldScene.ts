@@ -3,6 +3,7 @@ import { OverworldScene, OverworldConfig } from '../OverworldScene';
 import { TILE_SIZE } from '../../../utils/constants';
 import { tileToWorld, CheckpointZone } from '../../data/mapLayout';
 import { saveCurrentScene } from '../../systems/SaveSystem';
+import { uiManager } from '../../../ui/UIManager';
 import {
   MAUI_WIDTH, MAUI_HEIGHT, mauiTileGrid, isMauiWalkable,
   MAUI_NPCS, MAUI_CHECKPOINT_ZONES, MAUI_DECORATIONS, MAUI_BUILDINGS,
@@ -21,8 +22,8 @@ export class MauiOverworldScene extends OverworldScene {
       walkCheck: isMauiWalkable,
       npcs: MAUI_NPCS,
       checkpointZones: MAUI_CHECKPOINT_ZONES,
-      spawnX: 24 * TILE_SIZE + TILE_SIZE / 2,
-      spawnY: 10 * TILE_SIZE + TILE_SIZE / 2,
+      spawnX: 38 * TILE_SIZE + TILE_SIZE / 2,
+      spawnY: 2 * TILE_SIZE + TILE_SIZE / 2,
       terrainTextureKey: 'maui-terrain',
     };
   }
@@ -47,10 +48,44 @@ export class MauiOverworldScene extends OverworldScene {
       this.add.image(cx, cy, `building-${b.name}`)
         .setDepth(-5);
     });
+
+    // Driving cars (visual-only, not NPCs)
+    const mapPxWidth = MAUI_WIDTH * TILE_SIZE;
+    const carDefs = [
+      { key: 'car-red',   y: 12, direction: 1,  delay: 0 },
+      { key: 'car-blue',  y: 11, direction: -1, delay: 3000 },
+      { key: 'car-white', y: 13, direction: 1,  delay: 6000 },
+    ];
+
+    carDefs.forEach(def => {
+      const worldY = def.y * TILE_SIZE + TILE_SIZE / 2;
+      const startX = def.direction > 0 ? -48 : mapPxWidth + 48;
+      const endX = def.direction > 0 ? mapPxWidth + 48 : -48;
+      const car = this.add.sprite(startX, worldY, def.key).setDepth(-3);
+      if (def.direction < 0) car.setFlipX(true);
+
+      this.time.delayedCall(def.delay, () => {
+        this.tweens.add({
+          targets: car,
+          x: endX,
+          duration: 10000,
+          ease: 'Linear',
+          repeat: -1,
+          onRepeat: () => { car.x = startX; },
+        });
+      });
+    });
   }
 
-  onEnterCheckpoint(_zone: CheckpointZone): void {
-    // No checkpoint zones in Maui yet — return handled by NPC cutscene-trigger
+  onEnterCheckpoint(zone: CheckpointZone): void {
+    const pos = this.player.getPosition();
+    if (zone.id === 'maui_hotel') {
+      this.fadeToScene('MauiHotelScene', { returnX: pos.x, returnY: pos.y });
+    } else if (zone.id === 'maui_tennis') {
+      uiManager.hideHUD();
+      uiManager.hideInteractionPrompt();
+      this.scene.start('TennisScene', { returnScene: 'MauiOverworldScene' });
+    }
   }
 
   protected onBack(): void {
