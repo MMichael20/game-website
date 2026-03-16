@@ -49,6 +49,8 @@ export class WorldScene extends Phaser.Scene {
   private skyRenderer!: SkyRenderer;
   private gameTimeMinutes = 480; // start at 8am
   private npcSystem!: NPCSystem;
+  private playerIdleTween?: Phaser.Tweens.Tween;
+  private partnerIdleTween?: Phaser.Tweens.Tween;
 
   constructor() {
     super({ key: 'WorldScene' });
@@ -62,6 +64,34 @@ export class WorldScene extends Phaser.Scene {
     this.createMap();
     this.createPlayer();
     this.createPartner();
+
+    // Idle breathing animation — subtle bob + scale when standing still
+    this.playerIdleTween = this.tweens.add({
+      targets: this.player,
+      y: this.player.y - 1.5,
+      scaleY: this.player.scaleY * 0.985,
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+      paused: true,
+    });
+
+    this.partnerIdleTween = this.tweens.add({
+      targets: this.partner,
+      y: this.partner.y - 1.5,
+      scaleY: this.partner.scaleY * 0.985,
+      duration: 1400,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+      paused: true,
+    });
+
+    // Start idle immediately (player starts standing)
+    this.playerIdleTween.resume();
+    this.partnerIdleTween.resume();
+
     this.createCheckpointZones();
     this.createUI();
     this.setupCamera();
@@ -284,7 +314,10 @@ export class WorldScene extends Phaser.Scene {
   private setupCamera(): void {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
-    this.cameras.main.setZoom(1.5);
+    // Slightly higher zoom on small screens so the world doesn't feel tiny
+    const { width } = this.cameras.main;
+    const zoom = width < 500 ? 1.8 : 1.5;
+    this.cameras.main.setZoom(zoom);
   }
 
   private setupInput(): void {
@@ -449,12 +482,19 @@ export class WorldScene extends Phaser.Scene {
       this.player.play(this.playerTextureKey + '-walk', true);
       if (body.velocity.x < 0) this.player.setFlipX(true);
       else if (body.velocity.x > 0) this.player.setFlipX(false);
+      if (!this.playerMoving) {
+        this.playerIdleTween?.pause();
+      }
       this.playerMoving = true;
     } else if (this.playerMoving) {
       // Transition to idle — set texture once
       this.playerMoving = false;
       this.player.stop();
       this.player.setTexture(this.playerTextureKey + '-frame-0');
+      this.playerIdleTween?.resume();
+      if (this.playerIdleTween) {
+        this.playerIdleTween.updateTo('y', this.player.y - 1.5, true);
+      }
     }
   }
 
@@ -479,12 +519,21 @@ export class WorldScene extends Phaser.Scene {
       this.partner.play(this.partnerTextureKey + '-walk', true);
       if (dx < 0) this.partner.setFlipX(true);
       else if (dx > 0) this.partner.setFlipX(false);
+      if (!this.partnerMoving) {
+        this.partnerIdleTween?.pause();
+      }
       this.partnerMoving = true;
     } else if (this.partnerMoving) {
-      // Transition to idle — set texture once
+      // Transition to idle — snap to pixel grid to prevent sub-pixel blur
       this.partnerMoving = false;
+      this.partner.x = Math.round(this.partner.x);
+      this.partner.y = Math.round(this.partner.y);
       this.partner.stop();
       this.partner.setTexture(this.partnerTextureKey + '-frame-0');
+      this.partnerIdleTween?.resume();
+      if (this.partnerIdleTween) {
+        this.partnerIdleTween.updateTo('y', this.partner.y - 1.5, true);
+      }
     }
   }
 
