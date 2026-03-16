@@ -12,17 +12,30 @@ interface Node {
 
 type WalkCheck = (tileX: number, tileY: number) => boolean;
 
-const DIRS = [
+const CARDINAL = [
   { x: 0, y: -1 }, // up
   { x: 1, y: 0 },  // right
   { x: 0, y: 1 },  // down
   { x: -1, y: 0 }, // left
 ];
 
+const DIAGONAL = [
+  { x: -1, y: -1 }, // up-left
+  { x: 1, y: -1 },  // up-right
+  { x: -1, y: 1 },  // down-left
+  { x: 1, y: 1 },   // down-right
+];
+
+const DIRS = [...CARDINAL, ...DIAGONAL];
+const SQRT2 = Math.SQRT2;
+
 const MAX_VISITED = 2000;
 
-function manhattan(ax: number, ay: number, bx: number, by: number): number {
-  return Math.abs(ax - bx) + Math.abs(ay - by);
+/** Octile distance — admissible heuristic for 8-directional grids */
+function octile(ax: number, ay: number, bx: number, by: number): number {
+  const dx = Math.abs(ax - bx);
+  const dy = Math.abs(ay - by);
+  return dx + dy + (SQRT2 - 2) * Math.min(dx, dy);
 }
 
 function key(x: number, y: number): string {
@@ -30,9 +43,10 @@ function key(x: number, y: number): string {
 }
 
 /**
- * A* pathfinding on a tile grid (4-directional, cardinal only).
+ * A* pathfinding on a tile grid (8-directional with diagonal support).
  * Returns array of tile coords from start to end (inclusive), or empty if unreachable.
  * If endX/endY is unwalkable, tries the nearest walkable neighbor.
+ * Diagonals are blocked when either adjacent cardinal tile is unwalkable (no corner-cutting).
  */
 export function findPath(
   startX: number,
@@ -55,7 +69,7 @@ export function findPath(
       const nx = goalX + d.x;
       const ny = goalY + d.y;
       if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH && walkCheck(nx, ny)) {
-        const dist = manhattan(startX, startY, nx, ny);
+        const dist = octile(startX, startY, nx, ny);
         if (!best || dist < best.dist) {
           best = { x: nx, y: ny, dist };
         }
@@ -77,8 +91,8 @@ export function findPath(
     x: startX,
     y: startY,
     g: 0,
-    h: manhattan(startX, startY, goalX, goalY),
-    f: manhattan(startX, startY, goalX, goalY),
+    h: octile(startX, startY, goalX, goalY),
+    f: octile(startX, startY, goalX, goalY),
     parent: null,
   };
   open.push(startNode);
@@ -119,8 +133,15 @@ export function findPath(
       if (!walkCheck(nx, ny)) continue;
       if (closed.has(key(nx, ny))) continue;
 
-      const g = current.g + 1;
-      const h = manhattan(nx, ny, goalX, goalY);
+      // Prevent corner-cutting: for diagonal moves, both adjacent cardinal tiles must be walkable
+      const isDiag = d.x !== 0 && d.y !== 0;
+      if (isDiag) {
+        if (!walkCheck(current.x + d.x, current.y) || !walkCheck(current.x, current.y + d.y)) continue;
+      }
+
+      const cost = isDiag ? SQRT2 : 1;
+      const g = current.g + cost;
+      const h = octile(nx, ny, goalX, goalY);
       open.push({ x: nx, y: ny, g, h, f: g + h, parent: current });
     }
   }

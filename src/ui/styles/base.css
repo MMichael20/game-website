@@ -48,10 +48,6 @@ body {
   z-index: 10;
 }
 
-#ui-layer > * {
-  pointer-events: auto;
-}
-
 #hud, #dialog-container, #menu-container {
   position: absolute;
   top: 0; left: 0;

@@ -175,8 +175,6 @@ export class InputSystem {
     gridH: number,
     getPlayerPos: () => { x: number; y: number },
   ): void {
-    if (isTouchDevice()) return; // touch devices use joystick
-
     this.clickToMoveEnabled = true;
     this.walkCheck = walkCheck;
     this.gridW = gridW;
@@ -185,6 +183,8 @@ export class InputSystem {
 
     this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!this.clickToMoveEnabled || !this.walkCheck || !this.getPlayerPos) return;
+      // Skip touch inputs (handled by joystick) and non-left-clicks
+      if (pointer.wasTouch || pointer.button !== 0) return;
 
       // Convert screen coords to world coords
       const cam = this.scene.cameras.main;
