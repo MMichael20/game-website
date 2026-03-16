@@ -54,6 +54,7 @@ export class WorldScene extends Phaser.Scene {
   private playerIdleTween?: Phaser.Tweens.Tween;
   private partnerIdleTween?: Phaser.Tweens.Tween;
   private baseZoom = 1.5;
+  private vignetteGfx?: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: 'WorldScene' });
@@ -319,22 +320,24 @@ export class WorldScene extends Phaser.Scene {
       if (this.fsBtnContainer) {
         this.fsBtnContainer.setPosition(gameSize.width - 70, 54);
       }
-      const mapW = MAP_WIDTH * TILE_SIZE;
-      const mapH = MAP_HEIGHT * TILE_SIZE;
-      const minZoomForMap = Math.max(gameSize.width / mapW, gameSize.height / mapH);
-      this.baseZoom = Phaser.Math.Clamp(Math.max(1.5, minZoomForMap), 0.7, 3);
-      this.cameras.main.setZoom(this.baseZoom);
+      this.recalculateZoom();
+      this.redrawVignette();
     });
   }
 
   private setupCamera(): void {
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
+    this.recalculateZoom();
+  }
+
+  private recalculateZoom(): void {
     const { width, height } = this.cameras.main;
     const mapW = MAP_WIDTH * TILE_SIZE;
     const mapH = MAP_HEIGHT * TILE_SIZE;
+    const targetZoom = width / 450;
     const minZoomForMap = Math.max(width / mapW, height / mapH);
-    this.baseZoom = Phaser.Math.Clamp(Math.max(1.5, minZoomForMap), 0.7, 3);
+    this.baseZoom = Phaser.Math.Clamp(Math.max(targetZoom, minZoomForMap), 0.5, 3);
     this.cameras.main.setZoom(this.baseZoom);
   }
 
@@ -420,16 +423,21 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private createLighting(): void {
+    this.vignetteGfx = this.add.graphics();
+    this.vignetteGfx.setScrollFactor(0).setDepth(89000);
+    this.redrawVignette();
+  }
+
+  private redrawVignette(): void {
+    if (!this.vignetteGfx) return;
     const { width, height } = this.cameras.main;
-    const vignette = this.add.graphics();
-    vignette.setScrollFactor(0).setDepth(89000);
-    // Dark edges
-    vignette.fillStyle(0x000000, 0.15);
+    this.vignetteGfx.clear();
+    this.vignetteGfx.fillStyle(0x000000, 0.15);
     const border = Math.max(10, Math.min(30, Math.min(width, height) * 0.04));
-    vignette.fillRect(0, 0, width, border); // top
-    vignette.fillRect(0, height - border, width, border); // bottom
-    vignette.fillRect(0, 0, border, height); // left
-    vignette.fillRect(width - border, 0, border, height); // right
+    this.vignetteGfx.fillRect(0, 0, width, border); // top
+    this.vignetteGfx.fillRect(0, height - border, width, border); // bottom
+    this.vignetteGfx.fillRect(0, 0, border, height); // left
+    this.vignetteGfx.fillRect(width - border, 0, border, height); // right
   }
 
   update(_time: number, delta: number): void {
@@ -600,7 +608,7 @@ export class WorldScene extends Phaser.Scene {
     if (foundCheckpoint && !this.activeCheckpointId) {
       this.tweens.add({
         targets: this.cameras.main,
-        zoom: this.baseZoom * 1.15,
+        zoom: this.baseZoom * 1.12,
         duration: 300,
         ease: 'Sine.easeOut',
       });

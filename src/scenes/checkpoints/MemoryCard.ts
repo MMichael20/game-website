@@ -19,6 +19,11 @@ export class MemoryCard extends Phaser.Scene {
   }
 
   create(): void {
+    // Reset camera for mini-game (clear WorldScene's zoom/bounds)
+    this.cameras.main.setZoom(1);
+    this.cameras.main.setScroll(0, 0);
+    this.cameras.main.removeBounds();
+
     const { width, height } = this.cameras.main;
     const cp = checkpointData.checkpoints.find((c) => c.id === this.checkpointId);
     if (!cp) {

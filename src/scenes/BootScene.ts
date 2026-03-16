@@ -14,8 +14,9 @@ export class BootScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
 
     // Show loading bar
-    const barBg = this.add.rectangle(width / 2, height / 2, 320, 20, 0x333333);
-    const bar = this.add.rectangle(width / 2 - 158, height / 2, 0, 16, 0x7c3aed).setOrigin(0, 0.5);
+    const barW = Math.min(320, width * 0.8);
+    const barBg = this.add.rectangle(width / 2, height / 2, barW, 20, 0x333333);
+    const bar = this.add.rectangle(width / 2 - barW / 2 + 2, height / 2, 0, 16, 0x7c3aed).setOrigin(0, 0.5);
     const loadingText = this.add.text(width / 2, height / 2 - 30, 'Loading...', {
       fontSize: '16px',
       color: '#ffffff',
@@ -26,7 +27,7 @@ export class BootScene extends Phaser.Scene {
     const totalSteps = 5 + outfitCount * 2 * 2; // world + ground + particles + photo + NPCs + outfits
     const updateBar = () => {
       progress++;
-      bar.width = 316 * (progress / totalSteps);
+      bar.width = (barW - 4) * (progress / totalSteps);
     };
 
     // Generate world textures (synchronous canvas operations)

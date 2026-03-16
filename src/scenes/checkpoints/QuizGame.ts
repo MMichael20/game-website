@@ -35,6 +35,11 @@ export class QuizGame extends Phaser.Scene {
   }
 
   create(): void {
+    // Reset camera for mini-game (clear WorldScene's zoom/bounds)
+    this.cameras.main.setZoom(1);
+    this.cameras.main.setScroll(0, 0);
+    this.cameras.main.removeBounds();
+
     const { width, height } = this.cameras.main;
 
     // Background gradient
@@ -82,9 +87,12 @@ export class QuizGame extends Phaser.Scene {
     }).setOrigin(0.5);
     this.questionElements.push(questionText);
 
-    // Answer buttons using createStyledButton
+    // Answer buttons using createStyledButton — center them vertically below the question
+    const btnSpacing = Math.min(60, height * 0.08);
+    const totalBtnsHeight = (q.options.length - 1) * btnSpacing;
+    const btnsStartY = Math.max(height / 3 + 60, (height - totalBtnsHeight) / 2 + 20);
     q.options.forEach((opt, i) => {
-      const { container } = createStyledButton(this, width / 2, height / 2 + i * Math.min(60, height * 0.08), `${String.fromCharCode(65 + i)}) ${opt}`, {
+      const { container } = createStyledButton(this, width / 2, btnsStartY + i * btnSpacing, `${String.fromCharCode(65 + i)}) ${opt}`, {
         color: UI_COLORS.purple,
         textColor: UI_COLORS.textHex,
         fontSize: '16px',
