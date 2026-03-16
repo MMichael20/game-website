@@ -1,0 +1,64 @@
+/* src/ui/styles/base.css */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap');
+
+:root {
+  --color-primary: #d4a574;
+  --color-secondary: #7b5ea7;
+  --color-bg: #fdf6e3;
+  --color-text: #3c3c3c;
+  --color-accent: #e8836b;
+  --font-display: 'Press Start 2P', monospace;
+  --font-body: 'Inter', sans-serif;
+  --radius: 8px;
+  --shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #1a1a2e;
+  font-family: var(--font-body);
+}
+
+body {
+  display: flex; justify-content: center; align-items: center;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#game-container {
+  position: relative;
+  width: 100%; height: 100%;
+}
+
+#game-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#ui-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#ui-layer > * {
+  pointer-events: auto;
+}
+
+#hud, #dialog-container, #menu-container {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+#hud > *, #dialog-container > *, #menu-container > * {
+  pointer-events: auto;
+}
