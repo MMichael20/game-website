@@ -223,76 +223,86 @@ function generateNPCTextures(scene: Phaser.Scene): void {
 // ── Building ─────────────────────────────────────────────────────────────
 
 function generateBuildingTexture(scene: Phaser.Scene): void {
-  const c = scene.textures.createCanvas('building-airport', 96, 64);
+  const c = scene.textures.createCanvas('building-airport', 384, 96);
   if (!c) return;
   const ctx = c.context;
 
   // Main walls
-  rect(ctx, 0, 12, 96, 52, '#8A8A8A');
-  rect(ctx, 0, 12, 96, 1, lighten('#8A8A8A', 0.15));
+  rect(ctx, 0, 16, 384, 78, '#8A8A8A');
+  rect(ctx, 0, 16, 384, 1, lighten('#8A8A8A', 0.15));
 
-  // Blue roof accent band
-  rect(ctx, 0, 0, 96, 12, '#2244AA');
-  rect(ctx, 0, 0, 96, 2, lighten('#2244AA', 0.2));
-  rect(ctx, 0, 10, 96, 2, darken('#2244AA', 0.2));
+  // Blue roof accent band (12px)
+  rect(ctx, 0, 4, 384, 12, '#2244AA');
+  rect(ctx, 0, 4, 384, 2, lighten('#2244AA', 0.2));
+  rect(ctx, 0, 14, 384, 2, darken('#2244AA', 0.2));
 
-  // Windows along wall
-  for (let x = 4; x < 90; x += 12) {
-    if (x >= 36 && x <= 56) continue; // skip door area
-    rect(ctx, x, 22, 8, 10, '#AADDFF');
-    rect(ctx, x, 22, 8, 1, '#999999');
-    rect(ctx, x, 31, 8, 1, '#999999');
-    rect(ctx, x, 22, 1, 10, '#999999');
-    rect(ctx, x + 7, 22, 1, 10, '#999999');
+  // Glass windows — repeating 24px pattern along wall
+  for (let x = 8; x < 376; x += 24) {
+    if (x >= 168 && x <= 216) continue; // skip door area
+    rect(ctx, x, 30, 16, 14, '#AADDFF');
+    rect(ctx, x, 30, 16, 1, '#999999');
+    rect(ctx, x, 43, 16, 1, '#999999');
+    rect(ctx, x, 30, 1, 14, '#999999');
+    rect(ctx, x + 15, 30, 1, 14, '#999999');
     // Mullion
-    rect(ctx, x + 3, 22, 2, 10, '#999999');
+    rect(ctx, x + 7, 30, 2, 14, '#999999');
   }
 
-  // Glass door center
-  rect(ctx, 38, 24, 20, 40, '#AADDFF');
-  rect(ctx, 38, 24, 1, 40, '#777777');
-  rect(ctx, 57, 24, 1, 40, '#777777');
-  rect(ctx, 47, 24, 2, 40, '#777777');
+  // Central entrance doors
+  rect(ctx, 172, 34, 40, 60, '#AADDFF');
+  rect(ctx, 172, 34, 1, 60, '#777777');
+  rect(ctx, 211, 34, 1, 60, '#777777');
+  rect(ctx, 191, 34, 2, 60, '#777777');
   // Door handle dots
-  px(ctx, 46, 44, '#CCCCCC');
-  px(ctx, 49, 44, '#CCCCCC');
+  px(ctx, 189, 64, '#CCCCCC');
+  px(ctx, 194, 64, '#CCCCCC');
 
-  // "AIRPORT" text suggestion — a row of colored pixel clusters
-  const textY = 4;
-  const textColors = '#FFFFFF';
+  // Control tower bump on right side (inside canvas)
+  rect(ctx, 330, 0, 40, 20, '#7A7A7A');
+  rect(ctx, 330, 0, 40, 2, lighten('#7A7A7A', 0.2));
+  // Tower windows
+  for (let x = 334; x < 366; x += 10) {
+    rect(ctx, x, 4, 6, 8, '#AADDFF');
+    rect(ctx, x, 4, 6, 1, '#999999');
+  }
+
+  // "AIRPORT" pixel text — centered on 384px width (center ~192)
+  const textY = 7;
+  const tc = '#FFFFFF';
+  const tx = 172; // start X for centered text
   // A
-  px(ctx, 28, textY, textColors); px(ctx, 29, textY, textColors);
-  px(ctx, 27, textY + 1, textColors); px(ctx, 30, textY + 1, textColors);
-  px(ctx, 27, textY + 2, textColors); px(ctx, 28, textY + 2, textColors); px(ctx, 29, textY + 2, textColors); px(ctx, 30, textY + 2, textColors);
-  px(ctx, 27, textY + 3, textColors); px(ctx, 30, textY + 3, textColors);
+  px(ctx, tx, textY, tc); px(ctx, tx + 1, textY, tc);
+  px(ctx, tx - 1, textY + 1, tc); px(ctx, tx + 2, textY + 1, tc);
+  px(ctx, tx - 1, textY + 2, tc); px(ctx, tx, textY + 2, tc); px(ctx, tx + 1, textY + 2, tc); px(ctx, tx + 2, textY + 2, tc);
+  px(ctx, tx - 1, textY + 3, tc); px(ctx, tx + 2, textY + 3, tc);
   // I
-  px(ctx, 32, textY, textColors); px(ctx, 32, textY + 1, textColors); px(ctx, 32, textY + 2, textColors); px(ctx, 32, textY + 3, textColors);
+  px(ctx, tx + 4, textY, tc); px(ctx, tx + 4, textY + 1, tc); px(ctx, tx + 4, textY + 2, tc); px(ctx, tx + 4, textY + 3, tc);
   // R
-  px(ctx, 34, textY, textColors); px(ctx, 35, textY, textColors);
-  px(ctx, 34, textY + 1, textColors); px(ctx, 36, textY + 1, textColors);
-  px(ctx, 34, textY + 2, textColors); px(ctx, 35, textY + 2, textColors);
-  px(ctx, 34, textY + 3, textColors); px(ctx, 36, textY + 3, textColors);
+  px(ctx, tx + 6, textY, tc); px(ctx, tx + 7, textY, tc);
+  px(ctx, tx + 6, textY + 1, tc); px(ctx, tx + 8, textY + 1, tc);
+  px(ctx, tx + 6, textY + 2, tc); px(ctx, tx + 7, textY + 2, tc);
+  px(ctx, tx + 6, textY + 3, tc); px(ctx, tx + 8, textY + 3, tc);
   // P
-  px(ctx, 38, textY, textColors); px(ctx, 39, textY, textColors);
-  px(ctx, 38, textY + 1, textColors); px(ctx, 40, textY + 1, textColors);
-  px(ctx, 38, textY + 2, textColors); px(ctx, 39, textY + 2, textColors);
-  px(ctx, 38, textY + 3, textColors);
+  px(ctx, tx + 10, textY, tc); px(ctx, tx + 11, textY, tc);
+  px(ctx, tx + 10, textY + 1, tc); px(ctx, tx + 12, textY + 1, tc);
+  px(ctx, tx + 10, textY + 2, tc); px(ctx, tx + 11, textY + 2, tc);
+  px(ctx, tx + 10, textY + 3, tc);
   // O
-  px(ctx, 42, textY, textColors); px(ctx, 43, textY, textColors);
-  px(ctx, 41, textY + 1, textColors); px(ctx, 44, textY + 1, textColors);
-  px(ctx, 41, textY + 2, textColors); px(ctx, 44, textY + 2, textColors);
-  px(ctx, 42, textY + 3, textColors); px(ctx, 43, textY + 3, textColors);
+  px(ctx, tx + 14, textY, tc); px(ctx, tx + 15, textY, tc);
+  px(ctx, tx + 13, textY + 1, tc); px(ctx, tx + 16, textY + 1, tc);
+  px(ctx, tx + 13, textY + 2, tc); px(ctx, tx + 16, textY + 2, tc);
+  px(ctx, tx + 14, textY + 3, tc); px(ctx, tx + 15, textY + 3, tc);
   // R
-  px(ctx, 46, textY, textColors); px(ctx, 47, textY, textColors);
-  px(ctx, 46, textY + 1, textColors); px(ctx, 48, textY + 1, textColors);
-  px(ctx, 46, textY + 2, textColors); px(ctx, 47, textY + 2, textColors);
-  px(ctx, 46, textY + 3, textColors); px(ctx, 48, textY + 3, textColors);
+  px(ctx, tx + 18, textY, tc); px(ctx, tx + 19, textY, tc);
+  px(ctx, tx + 18, textY + 1, tc); px(ctx, tx + 20, textY + 1, tc);
+  px(ctx, tx + 18, textY + 2, tc); px(ctx, tx + 19, textY + 2, tc);
+  px(ctx, tx + 18, textY + 3, tc); px(ctx, tx + 20, textY + 3, tc);
   // T
-  px(ctx, 50, textY, textColors); px(ctx, 51, textY, textColors); px(ctx, 52, textY, textColors);
-  px(ctx, 51, textY + 1, textColors); px(ctx, 51, textY + 2, textColors); px(ctx, 51, textY + 3, textColors);
+  px(ctx, tx + 22, textY, tc); px(ctx, tx + 23, textY, tc); px(ctx, tx + 24, textY, tc);
+  px(ctx, tx + 23, textY + 1, tc); px(ctx, tx + 23, textY + 2, tc); px(ctx, tx + 23, textY + 3, tc);
 
-  // Ground line
-  rect(ctx, 0, 62, 96, 2, '#666666');
+  // Ground strip
+  rect(ctx, 0, 92, 384, 4, '#666666');
 
   c.refresh();
 }
@@ -1445,6 +1455,184 @@ function generateBoardingTextures(scene: Phaser.Scene): void {
   }
 }
 
+// ── Airplane taxiing sprite (top-down, 64×32) ──────────────────────────
+
+function generateAirplaneTaxiingTexture(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas('airplane-taxiing', 64, 32);
+  if (!c) return;
+  const ctx = c.context;
+
+  // White fuselage (horizontal, centered)
+  rect(ctx, 8, 12, 48, 8, '#EEEEF0');
+  // Nose cone
+  rect(ctx, 56, 13, 4, 6, '#DDDDE0');
+  px(ctx, 60, 14, '#DDDDE0'); px(ctx, 60, 17, '#DDDDE0');
+  px(ctx, 61, 15, '#CCCCCC'); px(ctx, 61, 16, '#CCCCCC');
+  // Tail
+  rect(ctx, 4, 10, 6, 12, '#DDDDE0');
+
+  // Grey wings (swept back)
+  rect(ctx, 20, 2, 18, 6, '#AAAAAA');
+  rect(ctx, 20, 24, 18, 6, '#AAAAAA');
+  // Wing tips
+  rect(ctx, 18, 4, 4, 2, '#999999');
+  rect(ctx, 18, 26, 4, 2, '#999999');
+
+  // Blue tail fin (vertical stabilizer)
+  rect(ctx, 2, 8, 6, 4, '#2244AA');
+  rect(ctx, 0, 9, 4, 2, '#2244AA');
+
+  // Tiny window dots along fuselage
+  for (let x = 14; x < 54; x += 4) {
+    px(ctx, x, 14, '#88AACC');
+    px(ctx, x, 17, '#88AACC');
+  }
+
+  // Engine nacelles (under wings)
+  rect(ctx, 26, 8, 6, 3, '#999999');
+  rect(ctx, 26, 21, 6, 3, '#999999');
+
+  c.refresh();
+}
+
+// ── Airport exterior decoration textures ────────────────────────────────
+
+function generateExteriorDecoTextures(scene: Phaser.Scene): void {
+  // deco-airport-fence (32×32): chain-link fence with posts and rails
+  {
+    const c = scene.textures.createCanvas('deco-airport-fence', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Posts
+    rect(ctx, 2, 4, 3, 28, '#888888');
+    rect(ctx, 27, 4, 3, 28, '#888888');
+    // Post caps
+    rect(ctx, 1, 2, 5, 3, '#999999');
+    rect(ctx, 26, 2, 5, 3, '#999999');
+    // Top rail
+    rect(ctx, 5, 6, 22, 2, '#AAAAAA');
+    // Bottom rail
+    rect(ctx, 5, 26, 22, 2, '#AAAAAA');
+    // Chain-link pattern (diagonal cross-hatch)
+    for (let i = 0; i < 20; i += 3) {
+      for (let j = 0; j < 16; j += 3) {
+        px(ctx, 6 + i, 10 + j, '#7A7A7A');
+        px(ctx, 7 + i, 11 + j, '#7A7A7A');
+      }
+    }
+    c.refresh();
+  }
+
+  // deco-windsock (32×32): pole with orange/white striped cone
+  {
+    const c = scene.textures.createCanvas('deco-windsock', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Pole
+    rect(ctx, 15, 8, 2, 24, '#888888');
+    rect(ctx, 14, 6, 4, 3, '#999999');
+    // Windsock cone (blowing right)
+    const sockColors = ['#FF6600', '#FFFFFF', '#FF6600', '#FFFFFF', '#FF6600'];
+    for (let i = 0; i < 5; i++) {
+      const segW = 3;
+      const segH = 8 - i;
+      rect(ctx, 17 + i * segW, 6 + Math.floor(i / 2), segW, segH, sockColors[i]);
+    }
+    c.refresh();
+  }
+
+  // deco-runway-light (32×32): yellow light with subtle glow
+  {
+    const c = scene.textures.createCanvas('deco-runway-light', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Base mount
+    rect(ctx, 13, 22, 6, 10, '#666666');
+    rect(ctx, 12, 20, 8, 3, '#777777');
+    // Light housing
+    rect(ctx, 12, 16, 8, 5, '#888888');
+    // Yellow light
+    rect(ctx, 13, 17, 6, 3, '#FFCC00');
+    // Subtle glow
+    rect(ctx, 10, 14, 12, 2, 'rgba(255,204,0,0.25)');
+    rect(ctx, 11, 12, 10, 2, 'rgba(255,204,0,0.15)');
+    c.refresh();
+  }
+
+  // car-taxi (32×32): yellow taxi matching deco-maui-parkedcar size
+  {
+    const c = scene.textures.createCanvas('car-taxi', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Car body
+    rect(ctx, 4, 10, 24, 14, '#F0C030');
+    // Roof
+    rect(ctx, 8, 6, 16, 6, '#E8B828');
+    // Windshield
+    rect(ctx, 8, 6, 6, 5, '#AADDFF');
+    rect(ctx, 18, 6, 6, 5, '#AADDFF');
+    // Wheels
+    rect(ctx, 6, 24, 6, 4, '#333333');
+    rect(ctx, 20, 24, 6, 4, '#333333');
+    // Headlights
+    rect(ctx, 4, 12, 2, 2, '#FFFFAA');
+    rect(ctx, 26, 12, 2, 2, '#FFFFAA');
+    // Taxi sign on roof
+    rect(ctx, 12, 4, 8, 3, '#FFFFFF');
+    px(ctx, 14, 5, '#333333'); px(ctx, 15, 5, '#333333'); px(ctx, 17, 5, '#333333');
+    // Door line
+    rect(ctx, 15, 12, 1, 10, darken('#F0C030', 0.15));
+    c.refresh();
+  }
+
+  // npc-suitcase (48×48): traveler NPC holding a suitcase
+  {
+    const c = scene.textures.createCanvas('npc-suitcase', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const skin = '#e0b080';
+    const shirt = '#4488AA';
+    const pants = '#334455';
+
+    // Shadow
+    rect(ctx, 14, 42, 20, 4, 'rgba(0,0,0,0.15)');
+
+    // Shoes
+    rect(ctx, 16, 40, 6, 3, '#443322');
+    rect(ctx, 26, 40, 6, 3, '#443322');
+
+    // Legs
+    rect(ctx, 17, 34, 5, 7, pants);
+    rect(ctx, 26, 34, 5, 7, pants);
+
+    // Torso
+    rect(ctx, 16, 22, 16, 13, shirt);
+    rect(ctx, 16, 22, 16, 2, lighten(shirt, 0.15));
+
+    // Arms
+    rect(ctx, 12, 23, 4, 12, shirt);
+    rect(ctx, 32, 23, 4, 10, shirt);
+    // Hands
+    rect(ctx, 12, 35, 4, 2, skin);
+    rect(ctx, 32, 33, 4, 2, skin);
+
+    // Head
+    rect(ctx, 18, 10, 12, 12, skin);
+    // Hair
+    rect(ctx, 17, 8, 14, 5, '#554433');
+    // Eyes
+    px(ctx, 21, 15, '#333333');
+    px(ctx, 27, 15, '#333333');
+
+    // Suitcase (held by right hand)
+    rect(ctx, 33, 34, 8, 10, '#AA4444');
+    rect(ctx, 33, 34, 8, 1, lighten('#AA4444', 0.2));
+    rect(ctx, 36, 32, 2, 3, '#888888'); // handle
+
+    c.refresh();
+  }
+}
+
 // ── Main export ──────────────────────────────────────────────────────────
 
 export function generateAirportTextures(scene: Phaser.Scene): void {
@@ -1454,4 +1642,6 @@ export function generateAirportTextures(scene: Phaser.Scene): void {
   generateSignTextures(scene);
   generateAirplaneTextures(scene);
   generateBoardingTextures(scene);
+  generateAirplaneTaxiingTexture(scene);
+  generateExteriorDecoTextures(scene);
 }

@@ -57,12 +57,15 @@ function seededRandom(seed: number): () => number {
 
 // ── terrain ──────────────────────────────────────────────────────────────
 
-function drawTerrainTile(ctx: Ctx, offsetX: number, type: 'grass' | 'dirt' | 'stone' | 'darkgrass'): void {
+function drawTerrainTile(ctx: Ctx, offsetX: number, type: 'grass' | 'dirt' | 'stone' | 'darkgrass' | 'tarmac' | 'runwaymarking' | 'parkinglot'): void {
   const colors: Record<string, { base: string; mid: string; detail: string; accent: string; highlight: string }> = {
-    grass:     { base: '#4a7c4f', mid: '#448048', detail: '#3d6b42', accent: '#5a9c5f', highlight: '#6ab86f' },
-    dirt:      { base: '#c4a265', mid: '#b8975c', detail: '#a88b52', accent: '#d4b87a', highlight: '#dcc48a' },
-    stone:     { base: '#8a8a8a', mid: '#808080', detail: '#6e6e6e', accent: '#9e9e9e', highlight: '#aaaaaa' },
-    darkgrass: { base: '#3a6b3f', mid: '#356538', detail: '#2d5832', accent: '#4a8b4f', highlight: '#5a9b5f' },
+    grass:         { base: '#4a7c4f', mid: '#448048', detail: '#3d6b42', accent: '#5a9c5f', highlight: '#6ab86f' },
+    dirt:          { base: '#c4a265', mid: '#b8975c', detail: '#a88b52', accent: '#d4b87a', highlight: '#dcc48a' },
+    stone:         { base: '#8a8a8a', mid: '#808080', detail: '#6e6e6e', accent: '#9e9e9e', highlight: '#aaaaaa' },
+    darkgrass:     { base: '#3a6b3f', mid: '#356538', detail: '#2d5832', accent: '#4a8b4f', highlight: '#5a9b5f' },
+    tarmac:        { base: '#3a3a4a', mid: '#363646', detail: '#323240', accent: '#424250', highlight: '#4a4a58' },
+    runwaymarking: { base: '#3a3a4a', mid: '#363646', detail: '#323240', accent: '#424250', highlight: '#4a4a58' },
+    parkinglot:    { base: '#4a4a52', mid: '#46464e', detail: '#404048', accent: '#525258', highlight: '#58585e' },
   };
   const c = colors[type];
   const rng = seededRandom(offsetX * 17 + type.length * 31);
@@ -145,25 +148,54 @@ function drawTerrainTile(ctx: Ctx, offsetX: number, type: 'grass' | 'dirt' | 'st
     for (let x = 1; x < 32; x += 8) {
       rect(ctx, offsetX + x, 1, 6, 1, c.highlight);
     }
+  } else if (type === 'tarmac') {
+    // Deterministic noise dots for asphalt texture
+    for (let i = 0; i < 20; i++) {
+      px(ctx, offsetX + 2 + (i * 3) % 28, 4 + (i * 7) % 24, '#424250');
+      px(ctx, offsetX + 5 + (i * 11) % 26, 2 + (i * 5) % 28, '#323240');
+    }
+  } else if (type === 'runwaymarking') {
+    // Tarmac base noise
+    for (let i = 0; i < 12; i++) {
+      px(ctx, offsetX + 2 + (i * 3) % 28, 4 + (i * 7) % 24, '#424250');
+    }
+    // White dashed center line
+    for (let x = 0; x < 32; x += 8) {
+      rect(ctx, offsetX + x, 14, 5, 4, '#EEEEEE');
+    }
+  } else if (type === 'parkinglot') {
+    // Faint parking lines (vertical stripes every 8px)
+    for (let x = 7; x < 32; x += 8) {
+      rect(ctx, offsetX + x, 0, 1, 32, '#5a5a60');
+    }
+    // Horizontal border lines top/bottom
+    rect(ctx, offsetX, 0, 32, 1, '#5a5a60');
+    rect(ctx, offsetX, 31, 32, 1, '#5a5a60');
   }
 }
 
 export function generateTerrain(scene: Phaser.Scene): void {
-  const canvas = scene.textures.createCanvas('terrain', 128, 32);
+  const canvas = scene.textures.createCanvas('terrain', 224, 32);
   if (!canvas) return;
   const ctx = canvas.context;
   drawTerrainTile(ctx, 0, 'grass');
   drawTerrainTile(ctx, 32, 'dirt');
   drawTerrainTile(ctx, 64, 'stone');
   drawTerrainTile(ctx, 96, 'darkgrass');
+  drawTerrainTile(ctx, 128, 'tarmac');
+  drawTerrainTile(ctx, 160, 'runwaymarking');
+  drawTerrainTile(ctx, 192, 'parkinglot');
   canvas.refresh();
 
   // Register frames for tile rendering
   const texture = scene.textures.get('terrain');
-  texture.add(0, 0, 0, 0, 32, 32);   // Grass
-  texture.add(1, 0, 32, 0, 32, 32);  // Dirt
-  texture.add(2, 0, 64, 0, 32, 32);  // Stone
-  texture.add(3, 0, 96, 0, 32, 32);  // DarkGrass
+  texture.add(0, 0, 0, 0, 32, 32);     // Grass
+  texture.add(1, 0, 32, 0, 32, 32);    // Dirt
+  texture.add(2, 0, 64, 0, 32, 32);    // Stone
+  texture.add(3, 0, 96, 0, 32, 32);    // DarkGrass
+  texture.add(4, 0, 128, 0, 32, 32);   // Tarmac
+  texture.add(5, 0, 160, 0, 32, 32);   // RunwayMarking
+  texture.add(6, 0, 192, 0, 32, 32);   // ParkingLot
 }
 
 // ── interior terrain ─────────────────────────────────────────────────
