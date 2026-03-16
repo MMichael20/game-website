@@ -1,12 +1,12 @@
 // src/game/scenes/InteriorScene.ts
 import Phaser from 'phaser';
-import { TILE_SIZE, INTERIOR_ZOOM, InteriorTileType } from '../../utils/constants';
+import { TILE_SIZE, INTERIOR_ZOOM, InteriorTileType, formatPrompt } from '../../utils/constants';
 import { InteriorLayout, createInteriorWalkCheck } from '../data/interiorLayouts';
 import { worldToTile, tileToWorld } from '../data/mapLayout';
 import { Player } from '../entities/Player';
 import { Partner } from '../entities/Partner';
 import { InputSystem } from '../systems/InputSystem';
-import { loadGameState } from '../systems/SaveSystem';
+import { loadGameState, clearGameState } from '../systems/SaveSystem';
 import { uiManager } from '../../ui/UIManager';
 
 interface InteriorSceneData {
@@ -66,9 +66,12 @@ export abstract class InteriorScene extends Phaser.Scene {
 
     // 6. Physics bounds
     this.physics.world.setBounds(0, 0, mapPxW, mapPxH);
-    this.player.sprite.setCollideWorldBounds(true);
 
-    // 7. Fade in
+    // 7. HUD & Settings
+    uiManager.setSettingsHandler(() => this.openSettings());
+    uiManager.showHUD();
+
+    // 8. Fade in
     cam.setAlpha(0);
     this.tweens.add({
       targets: cam,
@@ -115,7 +118,7 @@ export abstract class InteriorScene extends Phaser.Scene {
     if (inExitZone && !inForwardZone && !this.activeExitZone) {
       this.activeExitZone = true;
       this.activeForwardZone = false;
-      uiManager.showInteractionPrompt(exit.promptText);
+      uiManager.showInteractionPrompt(formatPrompt(exit.promptText));
     } else if ((!inExitZone || inForwardZone) && this.activeExitZone) {
       this.activeExitZone = false;
       uiManager.hideInteractionPrompt();
@@ -125,7 +128,7 @@ export abstract class InteriorScene extends Phaser.Scene {
     if (inForwardZone && !inExitZone && !this.activeForwardZone && forwardExit) {
       this.activeForwardZone = true;
       this.activeExitZone = false;
-      uiManager.showInteractionPrompt(forwardExit.promptText);
+      uiManager.showInteractionPrompt(formatPrompt(forwardExit.promptText));
     } else if ((!inForwardZone || inExitZone) && this.activeForwardZone) {
       this.activeForwardZone = false;
       uiManager.hideInteractionPrompt();
@@ -210,6 +213,35 @@ export abstract class InteriorScene extends Phaser.Scene {
     }
   }
 
+  protected openSettings(): void {
+    uiManager.showSettings({
+      onFullscreen: () => {
+        if (this.scale.isFullscreen) this.scale.stopFullscreen();
+        else this.scale.startFullscreen();
+      },
+      onNewGame: () => {
+        uiManager.hideDialog();
+        uiManager.showDialog({
+          title: 'New Game',
+          message: 'Are you sure? All progress will be lost.',
+          buttons: [
+            {
+              label: 'Yes',
+              onClick: () => {
+                clearGameState();
+                uiManager.hideDialog();
+                uiManager.hideHUD();
+                this.scene.start('DressingRoomScene', { isNewGame: true });
+              },
+            },
+            { label: 'No', onClick: () => uiManager.hideDialog() },
+          ],
+        });
+      },
+      onClose: () => uiManager.hideDialog(),
+    });
+  }
+
   protected onInteractPressed(): boolean {
     return false;
   }
@@ -253,6 +285,7 @@ export abstract class InteriorScene extends Phaser.Scene {
     this.inputSystem?.destroy();
     this.player?.destroy();
     this.partner?.destroy();
+    uiManager.hideHUD();
     uiManager.hideInteractionPrompt();
   }
 }

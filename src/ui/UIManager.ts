@@ -1,11 +1,5 @@
 // src/ui/UIManager.ts
 
-export interface CheckpointStatus {
-  id: string;
-  name: string;
-  visited: boolean;
-}
-
 export interface DialogConfig {
   title: string;
   message: string;
@@ -41,6 +35,7 @@ class UIManager {
   private hud!: HTMLElement;
   private dialogContainer!: HTMLElement;
   private menuContainer!: HTMLElement;
+  private settingsHandler: (() => void) | null = null;
 
   init(container: HTMLElement): void {
     this.container = container;
@@ -55,7 +50,7 @@ class UIManager {
     const menu = document.createElement('div');
     menu.className = 'main-menu';
     menu.innerHTML = `
-      <h1 class="main-menu__title">Our Places</h1>
+      <h1 class="main-menu__title">H&M Adventures</h1>
       <div class="main-menu__buttons">
         <button class="btn btn--primary" data-action="new">New Game</button>
         ${onContinue ? '<button class="btn btn--secondary" data-action="continue">Continue</button>' : ''}
@@ -73,26 +68,21 @@ class UIManager {
   }
 
   // --- HUD ---
-  showHUD(checkpoints: CheckpointStatus[]): void {
+  showHUD(): void {
     this.hud.innerHTML = '';
     const hudEl = document.createElement('div');
     hudEl.className = 'hud';
     hudEl.innerHTML = `
-      <div class="hud__progress">
-        ${checkpoints.map(cp => `
-          <span class="hud__checkpoint ${cp.visited ? 'hud__checkpoint--visited' : ''}"
-                title="${cp.name}">
-            ${cp.visited ? '\u2713' : '\u25CB'}
-          </span>
-        `).join('')}
-      </div>
       <button class="hud__settings-btn" title="Settings">\u2699</button>
     `;
+    hudEl.querySelector('.hud__settings-btn')?.addEventListener('click', () => {
+      this.settingsHandler?.();
+    });
     this.hud.appendChild(hudEl);
   }
 
-  updateHUD(checkpoints: CheckpointStatus[]): void {
-    this.showHUD(checkpoints); // simple re-render
+  setSettingsHandler(handler: () => void): void {
+    this.settingsHandler = handler;
   }
 
   hideHUD(): void {
@@ -226,7 +216,7 @@ class UIManager {
     el.innerHTML = `
       <div class="dressing-room-ui__row">
         <div class="dressing-room-ui__picker">
-          <span class="dressing-room-ui__label">Her</span>
+          <span class="dressing-room-ui__label">Hadar</span>
           <div class="dressing-room-ui__controls">
             <button class="btn btn--icon" data-action="prev-player">\u25C0</button>
             <span class="dressing-room-ui__outfit-name" id="player-outfit-name">${config.playerOutfitName}</span>
@@ -234,7 +224,7 @@ class UIManager {
           </div>
         </div>
         <div class="dressing-room-ui__picker">
-          <span class="dressing-room-ui__label">Him</span>
+          <span class="dressing-room-ui__label">Michael</span>
           <div class="dressing-room-ui__controls">
             <button class="btn btn--icon" data-action="prev-partner">\u25C0</button>
             <span class="dressing-room-ui__outfit-name" id="partner-outfit-name">${config.partnerOutfitName}</span>

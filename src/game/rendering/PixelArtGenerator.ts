@@ -435,7 +435,7 @@ interface OutfitStyle {
 // Draws a single character frame at (fx, fy) within a 64x64 cell.
 // direction: 0=down, 1=left, 2=right, 3=up
 // frame: 0=stand, 1=walk-left, 2=walk-right
-// isMale: false=female (player/"Her"), true=male (partner/"Him")
+// isMale: false=female (player/"Hadar"), true=male (partner/"Michael")
 function drawCharFrame(
   ctx: Ctx, fx: number, fy: number,
   direction: number, frame: number,

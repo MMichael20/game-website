@@ -1,13 +1,13 @@
 // src/game/scenes/OverworldScene.ts
 import Phaser from 'phaser';
-import { TILE_SIZE, getDeviceZoom } from '../../utils/constants';
-import { CheckpointZone, NPCDef, worldToTile } from '../data/mapLayout';
+import { TILE_SIZE, getDeviceZoom, formatPrompt } from '../../utils/constants';
+import { CheckpointZone, NPCDef } from '../data/mapLayout';
 import { Player } from '../entities/Player';
 import { Partner } from '../entities/Partner';
 import { NPC } from '../entities/NPC';
 import { InputSystem } from '../systems/InputSystem';
 import { NPCSystem } from '../systems/NPCSystem';
-import { loadGameState } from '../systems/SaveSystem';
+import { loadGameState, clearGameState } from '../systems/SaveSystem';
 import { uiManager } from '../../ui/UIManager';
 
 export interface OverworldConfig {
@@ -42,7 +42,9 @@ export abstract class OverworldScene extends Phaser.Scene {
   abstract onCreateExtras(): void;
 
   // --- Optional hooks subclasses can override ---
-  protected onShowHUD(): void { /* no-op by default */ }
+  protected onShowHUD(): void {
+    uiManager.showHUD();
+  }
   protected onBack(): void { /* no-op by default */ }
 
   init(data?: { returnFromInterior?: boolean; returnX?: number; returnY?: number }): void {
@@ -95,9 +97,9 @@ export abstract class OverworldScene extends Phaser.Scene {
 
     // 7. Physics world bounds
     this.physics.world.setBounds(0, 0, mapPxWidth, mapPxHeight);
-    this.player.sprite.setCollideWorldBounds(true);
 
-    // 8. HUD
+    // 8. HUD & Settings
+    uiManager.setSettingsHandler(() => this.openSettings());
     this.onShowHUD();
 
     // 9. Resize handler
@@ -140,17 +142,13 @@ export abstract class OverworldScene extends Phaser.Scene {
     const playerPos = this.player.getPosition();
     this.npcSystem.update(delta, playerPos.x, playerPos.y);
 
-    // 5. Checkpoint proximity
-    const playerTile = worldToTile(playerPos.x, playerPos.y);
+    // 5. Checkpoint proximity (radius-based)
     let inZone: CheckpointZone | null = null;
 
     for (const zone of config.checkpointZones) {
-      if (
-        playerTile.x >= zone.tileX &&
-        playerTile.x < zone.tileX + zone.width &&
-        playerTile.y >= zone.tileY &&
-        playerTile.y < zone.tileY + zone.height
-      ) {
+      const dx = playerPos.x - zone.centerX;
+      const dy = playerPos.y - zone.centerY;
+      if (dx * dx + dy * dy <= zone.radius * zone.radius) {
         inZone = zone;
         break;
       }
@@ -158,7 +156,7 @@ export abstract class OverworldScene extends Phaser.Scene {
 
     if (inZone && inZone !== this.activeZone) {
       this.activeZone = inZone;
-      uiManager.showInteractionPrompt(inZone.promptText);
+      uiManager.showInteractionPrompt(formatPrompt(inZone.promptText));
     } else if (!inZone && this.activeZone) {
       this.activeZone = null;
       uiManager.hideInteractionPrompt();
@@ -206,6 +204,35 @@ export abstract class OverworldScene extends Phaser.Scene {
         triggerCutscene();
       }
     }
+  }
+
+  protected openSettings(): void {
+    uiManager.showSettings({
+      onFullscreen: () => {
+        if (this.scale.isFullscreen) this.scale.stopFullscreen();
+        else this.scale.startFullscreen();
+      },
+      onNewGame: () => {
+        uiManager.hideDialog();
+        uiManager.showDialog({
+          title: 'New Game',
+          message: 'Are you sure? All progress will be lost.',
+          buttons: [
+            {
+              label: 'Yes',
+              onClick: () => {
+                clearGameState();
+                uiManager.hideDialog();
+                uiManager.hideHUD();
+                this.scene.start('DressingRoomScene', { isNewGame: true });
+              },
+            },
+            { label: 'No', onClick: () => uiManager.hideDialog() },
+          ],
+        });
+      },
+      onClose: () => uiManager.hideDialog(),
+    });
   }
 
   /** Fade camera to black and start a new scene */

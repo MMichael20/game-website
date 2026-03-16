@@ -54,19 +54,19 @@ export const walkGrid: boolean[][] = Array.from({ length: MAP_HEIGHT }, (_, y) =
 
 export interface CheckpointZone {
   id: string;
-  tileX: number;
-  tileY: number;
-  width: number;  // in tiles
-  height: number; // in tiles
+  centerX: number;  // world pixel X
+  centerY: number;  // world pixel Y
+  radius: number;   // detection radius in pixels
   promptText: string;
 }
 
 export const CHECKPOINT_ZONES: CheckpointZone[] = [
-  { id: 'restaurant', tileX: 6, tileY: 6, width: 2, height: 1, promptText: 'Press E to enter restaurant' },
-  { id: 'park', tileX: 19, tileY: 19, width: 2, height: 1, promptText: 'Press E to play in the park' },
-  { id: 'cinema', tileX: 29, tileY: 6, width: 2, height: 1, promptText: 'Press E to enter cinema' },
-  { id: 'michaels_house', tileX: 14, tileY: 6, width: 3, height: 1, promptText: "Press E to enter Michael's House" },
-  { id: 'airport', tileX: 32, tileY: 23, width: 3, height: 1, promptText: 'Press E to enter airport' },
+  // Zones centered at building doors with generous radius
+  { id: 'restaurant', centerX: 272, centerY: 336, radius: 72, promptText: 'Press E to enter restaurant' },
+  { id: 'park', centerX: 624, centerY: 688, radius: 72, promptText: 'Press E to play in the park' },
+  { id: 'cinema', centerX: 1008, centerY: 336, radius: 72, promptText: 'Press E to enter cinema' },
+  { id: 'michaels_house', centerX: 496, centerY: 208, radius: 72, promptText: "Press E to enter Michael's House" },
+  { id: 'airport', centerX: 1072, centerY: 880, radius: 72, promptText: 'Press E to enter airport' },
 ];
 
 export interface DecorationDef {

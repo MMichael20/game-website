@@ -1,5 +1,5 @@
 // src/game/scenes/WorldScene.ts
-import { uiManager, CheckpointStatus } from '../../ui/UIManager';
+import { uiManager } from '../../ui/UIManager';
 import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from '../../utils/constants';
 import {
   tileGrid,
@@ -76,17 +76,14 @@ export class WorldScene extends OverworldScene {
         .setDepth(-5);
     });
 
-    // 4. Settings button handler
-    const settingsBtn = document.querySelector('.hud__settings-btn');
-    settingsBtn?.addEventListener('click', () => this.openSettings());
-
-    // 5. Ambient animations
+    // 4. Ambient animations
     this.addLampGlow(lampPositions);
     this.addButterflies();
   }
 
   protected onShowHUD(): void {
-    this.updateHUD();
+    uiManager.showHUD();
+    this.checkCompletion();
   }
 
   protected onBack(): void {
@@ -115,7 +112,6 @@ export class WorldScene extends OverworldScene {
     markCheckpointVisited(zone.id);
     const checkpoint = CHECKPOINTS.find(cp => cp.id === zone.id);
     if (!checkpoint) return;
-    uiManager.hideHUD();
     uiManager.hideInteractionPrompt();
     const sceneMap: Record<string, string> = {
       quiz: 'QuizScene',
@@ -184,56 +180,8 @@ export class WorldScene extends OverworldScene {
     });
   }
 
-  private openSettings(): void {
-    uiManager.showSettings({
-      onFullscreen: () => {
-        if (this.scale.isFullscreen) {
-          this.scale.stopFullscreen();
-        } else {
-          this.scale.startFullscreen();
-        }
-      },
-      onNewGame: () => {
-        uiManager.hideDialog();
-        uiManager.showDialog({
-          title: 'New Game',
-          message: 'Are you sure? All progress will be lost.',
-          buttons: [
-            {
-              label: 'Yes',
-              onClick: () => {
-                clearGameState();
-                uiManager.hideDialog();
-                uiManager.hideHUD();
-                this.scene.start('DressingRoomScene', { isNewGame: true });
-              },
-            },
-            {
-              label: 'No',
-              onClick: () => {
-                uiManager.hideDialog();
-              },
-            },
-          ],
-        });
-      },
-      onClose: () => {
-        uiManager.hideDialog();
-      },
-    });
-  }
-
-  private updateHUD(): void {
+  private checkCompletion(): void {
     const state = loadGameState();
-    const statuses: CheckpointStatus[] = CHECKPOINTS.map(cp => ({
-      id: cp.id,
-      name: cp.name,
-      visited: state.visitedCheckpoints.includes(cp.id),
-    }));
-
-    uiManager.showHUD(statuses);
-
-    // Check completion
     const allVisited = CHECKPOINTS.every(cp =>
       state.visitedCheckpoints.includes(cp.id),
     );

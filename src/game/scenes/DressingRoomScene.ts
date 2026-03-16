@@ -62,13 +62,13 @@ export class DressingRoomScene extends Phaser.Scene {
 
     // Labels
     const labelOffset = previewScale * 36 + 10;
-    this.add.text(w / 2 - spacing, previewY - labelOffset, 'Her', {
+    this.add.text(w / 2 - spacing, previewY - labelOffset, 'Hadar', {
       fontFamily: "'Press Start 2P', monospace",
       fontSize: '14px',
       color: '#d4a574',
     }).setOrigin(0.5).setDepth(5);
 
-    this.add.text(w / 2 + spacing, previewY - labelOffset, 'Him', {
+    this.add.text(w / 2 + spacing, previewY - labelOffset, 'Michael', {
       fontFamily: "'Press Start 2P', monospace",
       fontSize: '14px',
       color: '#7b5ea7',
