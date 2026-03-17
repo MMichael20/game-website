@@ -39,7 +39,7 @@ export class MauiOverworldScene extends OverworldScene {
   getLabelMap(): Record<string, string> {
     return {
       maui_hotel: 'Airbnb',
-      maui_tennis: 'Tennis',
+      maui_airbnb: 'Airbnb Compound',
       maui_surfing: 'Surf Spot',
       maui_taxi: 'Taxi',
     };
@@ -159,10 +159,8 @@ export class MauiOverworldScene extends OverworldScene {
     const pos = this.player.getPosition();
     if (zone.id === 'maui_hotel') {
       this.fadeToScene('MauiHotelScene', { returnX: pos.x, returnY: pos.y });
-    } else if (zone.id === 'maui_tennis') {
-      uiManager.hideHUD();
-      uiManager.hideInteractionPrompt();
-      this.scene.start('TennisScene', { returnScene: 'MauiOverworldScene' });
+    } else if (zone.id === 'maui_airbnb') {
+      this.fadeToScene('AirbnbCompoundScene', { returnX: pos.x, returnY: pos.y });
     } else if (zone.id === 'maui_surfing') {
       uiManager.showNPCDialog(['Cowabunga! You caught a gnarly wave!'], () => {
         uiManager.hideNPCDialog();

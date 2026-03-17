@@ -65,8 +65,6 @@ export const mauiWalkGrid: boolean[][] = Array.from({ length: MAUI_HEIGHT }, (_,
     if (x >= 22 && x <= 29 && y >= 4 && y <= 8) return false;
     // Restaurant building footprint
     if (x >= 10 && x <= 14 && y >= 15 && y <= 17) return false;
-    // Jacuzzi
-    if (x >= 34 && x <= 35 && y >= 3 && y <= 4) return false;
     // Lifeguard tower
     if (x === 1 && y === 16) return false;
     // Beach shack
@@ -94,8 +92,7 @@ export function getMauiTileType(tileX: number, tileY: number): number {
 
 export const MAUI_DECORATIONS = [
   // Airbnb area
-  { type: 'maui-jacuzzi', tileX: 34, tileY: 3 },
-  { type: 'maui-tenniscourt', tileX: 38, tileY: 6 },
+  { type: 'compound-gate', tileX: 36, tileY: 4 },
   { type: 'maui-parkedcar', tileX: 36, tileY: 1 },
   { type: 'maui-parkedcar', tileX: 39, tileY: 1 },
   { type: 'palm-tree', tileX: 33, tileY: 1 },
@@ -154,18 +151,6 @@ export const MAUI_NPCS: NPCDef[] = [
     facingDirection: 'down',
   },
   {
-    id: 'jacuzzi-npc', tileX: 34, tileY: 5, behavior: 'idle',
-    texture: 'npc-maui-tourist', interactable: true, onInteract: 'dialog',
-    interactionData: { lines: ['This jacuzzi is amazing!', 'So relaxing after a day at the beach...', 'Ahhh...'] },
-    facingDirection: 'up',
-  },
-  {
-    id: 'airbnb-neighbor', tileX: 37, tileY: 5, behavior: 'idle',
-    texture: 'npc-maui-tourist', interactable: true, onInteract: 'dialog',
-    interactionData: { lines: ['Hey neighbor! This Airbnb is great, right?', 'Have you tried the tennis court?'] },
-    facingDirection: 'left',
-  },
-  {
     id: 'beach-surfer', tileX: 7, tileY: 17, behavior: 'idle',
     texture: 'npc-surfer', interactable: true, onInteract: 'dialog',
     interactionData: { lines: ["Surf's up, brah!", 'Maui has the best breaks in all of Hawaii.'] },
@@ -202,11 +187,11 @@ export const MAUI_CHECKPOINT_ZONES: CheckpointZone[] = [
     promptText: 'Tap to enter Airbnb',
   },
   {
-    id: 'maui_tennis',
-    centerX: tileToWorld(40, 8).x,
-    centerY: tileToWorld(40, 8).y,
-    radius: 64,
-    promptText: 'Tap to play Tennis',
+    id: 'maui_airbnb',
+    centerX: tileToWorld(37, 5).x,
+    centerY: tileToWorld(37, 5).y,
+    radius: 48,
+    promptText: 'Enter Airbnb compound',
   },
   {
     id: 'maui_surfing',
