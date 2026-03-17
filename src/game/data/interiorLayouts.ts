@@ -39,6 +39,7 @@ export interface InteriorLayout {
   nextScene?: string;
   previousScene?: string;
   windowTiles?: { tileX: number; tileY: number }[];
+  tarmacZoneMaxY?: number;  // rows 0..N are tarmac background, skip all tile rendering
 }
 
 interface RoomRect {

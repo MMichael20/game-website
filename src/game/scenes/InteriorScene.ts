@@ -208,31 +208,34 @@ export abstract class InteriorScene extends Phaser.Scene {
       tile_floor: InteriorTileType.TileFloor,
     };
 
-    // First pass: draw walls everywhere (skip window tiles)
+    // First pass: draw walls everywhere (skip window tiles and tarmac zone)
     const windowSet = new Set(
       (layout.windowTiles ?? []).map(t => `${t.tileX},${t.tileY}`)
     );
     for (let y = 0; y < layout.heightInTiles; y++) {
       for (let x = 0; x < layout.widthInTiles; x++) {
+        if (layout.tarmacZoneMaxY !== undefined && y <= layout.tarmacZoneMaxY) continue;
         if (layout.wallGrid[y][x] && !windowSet.has(`${x},${y}`)) {
           rt.drawFrame('interior-terrain', InteriorTileType.Wall, x * TILE_SIZE, y * TILE_SIZE);
         }
       }
     }
 
-    // Second pass: draw floor zones
+    // Second pass: draw floor zones (skip tarmac zone)
     for (const fz of layout.floors) {
       const frame = floorTypeToFrame[fz.floorType] ?? InteriorTileType.Wood;
       for (let y = fz.tileY; y < fz.tileY + fz.height; y++) {
+        if (layout.tarmacZoneMaxY !== undefined && y <= layout.tarmacZoneMaxY) continue;
         for (let x = fz.tileX; x < fz.tileX + fz.width; x++) {
           rt.drawFrame('interior-terrain', frame, x * TILE_SIZE, y * TILE_SIZE);
         }
       }
     }
 
-    // Third pass: draw door frames at doorway positions
+    // Third pass: draw door frames at doorway positions (skip tarmac zone)
     for (let y = 0; y < layout.heightInTiles; y++) {
       for (let x = 0; x < layout.widthInTiles; x++) {
+        if (layout.tarmacZoneMaxY !== undefined && y <= layout.tarmacZoneMaxY) continue;
         if (!layout.wallGrid[y][x]) {
           let inFloorZone = false;
           for (const fz of layout.floors) {
