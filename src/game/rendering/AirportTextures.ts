@@ -2424,6 +2424,189 @@ function generateBenGurionTextures(scene: Phaser.Scene): void {
   }
 }
 
+function generateTarmacTextures(scene: Phaser.Scene): void {
+  // ── Tall window frame (32×320) — transparent panes, opaque mullions ──
+  {
+    const c = scene.textures.createCanvas('interior-airport-window-tall', 32, 320);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 32, 320, '#777777');
+    rect(ctx, 2, 2, 28, 316, '#999999');
+    for (let i = 0; i < 5; i++) {
+      const paneY = 4 + i * 64;
+      ctx.clearRect(4, paneY, 11, 58);
+      ctx.clearRect(17, paneY, 11, 58);
+      ctx.fillStyle = 'rgba(170,221,255,0.15)';
+      ctx.fillRect(4, paneY, 11, 8);
+      ctx.fillRect(17, paneY, 11, 4);
+    }
+    c.refresh();
+  }
+
+  // ── Luggage cart (48×20) ──
+  {
+    const c = scene.textures.createCanvas('tarmac-luggage-cart', 48, 20);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 4, 14, 12, '#DDBB22');
+    rect(ctx, 1, 2, 10, 3, '#CCAA11');
+    rect(ctx, 10, 8, 4, 4, '#333333');
+    rect(ctx, 2, 16, 4, 3, '#222222');
+    rect(ctx, 8, 16, 4, 3, '#222222');
+    rect(ctx, 16, 6, 12, 10, '#888888');
+    rect(ctx, 18, 2, 3, 5, '#CC4444');
+    rect(ctx, 22, 3, 4, 4, '#4444CC');
+    rect(ctx, 20, 16, 4, 3, '#222222');
+    rect(ctx, 30, 6, 12, 10, '#888888');
+    rect(ctx, 32, 2, 4, 5, '#44AA44');
+    rect(ctx, 37, 3, 3, 4, '#AA44AA');
+    rect(ctx, 34, 16, 4, 3, '#222222');
+    rect(ctx, 14, 10, 2, 2, '#555555');
+    rect(ctx, 28, 10, 2, 2, '#555555');
+    c.refresh();
+  }
+
+  // ── Fuel truck (56×24) ──
+  {
+    const c = scene.textures.createCanvas('tarmac-fuel-truck', 56, 24);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 4, 16, 14, '#EEEEEE');
+    rect(ctx, 1, 2, 12, 4, '#DDDDDD');
+    rect(ctx, 2, 6, 6, 4, '#88BBDD');
+    rect(ctx, 18, 2, 34, 16, '#CCCCCC');
+    rect(ctx, 19, 4, 32, 12, '#BBBBBB');
+    rect(ctx, 20, 3, 30, 2, lighten('#CCCCCC', 0.3));
+    rect(ctx, 28, 8, 2, 4, '#333333');
+    rect(ctx, 28, 8, 4, 1, '#333333');
+    rect(ctx, 28, 10, 3, 1, '#333333');
+    rect(ctx, 33, 8, 2, 5, '#333333');
+    rect(ctx, 33, 12, 4, 1, '#333333');
+    rect(ctx, 36, 8, 2, 5, '#333333');
+    rect(ctx, 39, 8, 2, 5, '#333333');
+    rect(ctx, 39, 8, 4, 1, '#333333');
+    rect(ctx, 39, 10, 3, 1, '#333333');
+    rect(ctx, 39, 12, 4, 1, '#333333');
+    rect(ctx, 44, 8, 2, 5, '#333333');
+    rect(ctx, 44, 12, 4, 1, '#333333');
+    rect(ctx, 4, 18, 6, 4, '#222222');
+    rect(ctx, 22, 18, 6, 4, '#222222');
+    rect(ctx, 40, 18, 6, 4, '#222222');
+    c.refresh();
+  }
+
+  // ── Tarmac worker (20×28) ──
+  {
+    const c = scene.textures.createCanvas('tarmac-worker', 20, 28);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 6, 0, 8, 4, '#FFDD00');
+    rect(ctx, 5, 3, 10, 2, '#FFDD00');
+    rect(ctx, 7, 5, 6, 5, '#D4A76A');
+    rect(ctx, 5, 10, 10, 8, '#FF6600');
+    rect(ctx, 5, 12, 10, 1, '#FFFF88');
+    rect(ctx, 5, 15, 10, 1, '#FFFF88');
+    rect(ctx, 2, 11, 3, 6, '#FF6600');
+    rect(ctx, 15, 11, 3, 6, '#FF6600');
+    rect(ctx, 2, 17, 3, 2, '#D4A76A');
+    rect(ctx, 15, 17, 3, 2, '#D4A76A');
+    rect(ctx, 6, 18, 4, 6, '#333355');
+    rect(ctx, 11, 18, 4, 6, '#333355');
+    rect(ctx, 5, 24, 5, 3, '#222222');
+    rect(ctx, 10, 24, 5, 3, '#222222');
+    c.refresh();
+  }
+
+  // ── Ground crew (20×28) — arms extended ──
+  {
+    const c = scene.textures.createCanvas('tarmac-ground-crew', 20, 28);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 6, 0, 8, 4, '#FFDD00');
+    rect(ctx, 5, 3, 10, 2, '#FFDD00');
+    rect(ctx, 7, 5, 6, 5, '#D4A76A');
+    rect(ctx, 5, 10, 10, 8, '#FF6600');
+    rect(ctx, 5, 12, 10, 1, '#FFFF88');
+    rect(ctx, 5, 15, 10, 1, '#FFFF88');
+    rect(ctx, 0, 11, 5, 3, '#FF6600');
+    rect(ctx, 15, 11, 5, 3, '#FF6600');
+    rect(ctx, 0, 14, 2, 2, '#D4A76A');
+    rect(ctx, 18, 14, 2, 2, '#D4A76A');
+    rect(ctx, 6, 18, 4, 6, '#333355');
+    rect(ctx, 11, 18, 4, 6, '#333355');
+    rect(ctx, 5, 24, 5, 3, '#222222');
+    rect(ctx, 10, 24, 5, 3, '#222222');
+    c.refresh();
+  }
+
+  // ── Wand (10×3) ──
+  {
+    const c = scene.textures.createCanvas('tarmac-wand', 10, 3);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 10, 3, '#FF4400');
+    rect(ctx, 1, 1, 8, 1, '#FF8800');
+    c.refresh();
+  }
+
+  // ── Runway light (6×6) ──
+  {
+    const c = scene.textures.createCanvas('tarmac-runway-light', 6, 6);
+    if (!c) return;
+    const ctx = c.context;
+    ctx.fillStyle = 'rgba(255,255,200,0.4)';
+    ctx.fillRect(0, 0, 6, 6);
+    rect(ctx, 1, 1, 4, 4, '#FFFFAA');
+    rect(ctx, 2, 2, 2, 2, '#FFFFFF');
+    c.refresh();
+  }
+
+  // ── Control tower (24×48) ──
+  {
+    const c = scene.textures.createCanvas('tarmac-control-tower', 24, 48);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 8, 16, 8, 32, '#888888');
+    rect(ctx, 9, 16, 6, 32, '#999999');
+    rect(ctx, 2, 8, 20, 10, '#777777');
+    rect(ctx, 3, 9, 18, 8, '#888888');
+    for (let x = 4; x < 20; x += 3) {
+      rect(ctx, x, 10, 2, 5, '#88CCEE');
+    }
+    rect(ctx, 4, 4, 16, 5, '#666666');
+    rect(ctx, 6, 2, 12, 3, '#555555');
+    rect(ctx, 11, 0, 2, 3, '#444444');
+    rect(ctx, 4, 44, 16, 4, '#777777');
+    c.refresh();
+  }
+
+  // ── Windsock (16×20) ──
+  {
+    const c = scene.textures.createCanvas('tarmac-windsock', 16, 20);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 2, 6, 2, 14, '#888888');
+    rect(ctx, 2, 6, 6, 2, '#888888');
+    rect(ctx, 6, 4, 8, 6, '#FF6600');
+    rect(ctx, 8, 4, 2, 6, '#FFFFFF');
+    rect(ctx, 12, 4, 2, 6, '#FFFFFF');
+    rect(ctx, 14, 5, 2, 4, '#FF6600');
+    c.refresh();
+  }
+
+  // ── Blink light (6×6) — red anti-collision ──
+  {
+    const c = scene.textures.createCanvas('tarmac-blink-light', 6, 6);
+    if (!c) return;
+    const ctx = c.context;
+    ctx.fillStyle = 'rgba(255,0,0,0.3)';
+    ctx.fillRect(0, 0, 6, 6);
+    rect(ctx, 1, 1, 4, 4, '#FF2222');
+    rect(ctx, 2, 2, 2, 2, '#FF6666');
+    c.refresh();
+  }
+}
+
 export function generateAirportTextures(scene: Phaser.Scene): void {
   generateNPCTextures(scene);
   generateBuildingTexture(scene);
@@ -2436,4 +2619,5 @@ export function generateAirportTextures(scene: Phaser.Scene): void {
   generateCheckinPropTextures(scene);
   generateStationSignTextures(scene);
   generateBenGurionTextures(scene);
+  generateTarmacTextures(scene);
 }
