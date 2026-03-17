@@ -14,6 +14,13 @@ export const enum MauiTileType {
   Road = 6,
   ParkingLot = 7,
   Sidewalk = 8,
+  // Airbnb compound additions
+  StonePath = 9,
+  WoodDeck = 10,
+  TennisCourt = 11,
+  Asphalt = 12,
+  HedgeWall = 13,
+  PoolEdge = 14,
 }
 
 // 45×30 tile grid — row-major: mauiTileGrid[y][x]

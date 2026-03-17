@@ -111,7 +111,7 @@ function drawNPCBase(ctx: Ctx, opts: {
 // ── Terrain spritesheet ─────────────────────────────────────────────────
 
 function generateMauiTerrain(scene: Phaser.Scene): void {
-  const c = scene.textures.createCanvas('maui-terrain', 288, 32);
+  const c = scene.textures.createCanvas('maui-terrain', 480, 32);
   if (!c) return;
   const ctx = c.context;
 
@@ -281,6 +281,102 @@ function generateMauiTerrain(scene: Phaser.Scene): void {
     }
   }
 
+  // Index 9 — StonePath (light gray cobblestone)
+  {
+    const ox = 288;
+    const rng = seededRandom(1000);
+    rect(ctx, ox, 0, 32, 32, '#C8C8C8');
+    for (let gy = 0; gy < 4; gy++) {
+      for (let gx = 0; gx < 4; gx++) {
+        const sx = ox + gx * 8 + (gy % 2 === 0 ? 0 : 4);
+        const sy = gy * 8;
+        rect(ctx, sx, sy, 7, 7, rng() > 0.5 ? '#BEBEBE' : '#D2D2D2');
+        rect(ctx, sx, sy, 7, 1, lighten('#D2D2D2', 0.1));
+      }
+    }
+    for (let i = 0; i < 15; i++) {
+      const x = Math.floor(rng() * 32);
+      const y = Math.floor(rng() * 32);
+      px(ctx, ox + x, y, rng() > 0.5 ? '#B0B0B0' : '#DADADA');
+    }
+  }
+
+  // Index 10 — WoodDeck (brown horizontal planks)
+  {
+    const ox = 320;
+    const rng = seededRandom(1100);
+    rect(ctx, ox, 0, 32, 32, '#A0724A');
+    for (let y = 0; y < 32; y += 8) {
+      rect(ctx, ox, y, 32, 1, darken('#A0724A', 0.15));
+      rect(ctx, ox, y + 7, 32, 1, darken('#A0724A', 0.1));
+    }
+    for (let i = 0; i < 20; i++) {
+      const x = Math.floor(rng() * 32);
+      const y = Math.floor(rng() * 32);
+      px(ctx, ox + x, y, rng() > 0.5 ? '#8B6340' : '#B8845A');
+    }
+  }
+
+  // Index 11 — TennisCourt (green with white line accents)
+  {
+    const ox = 352;
+    rect(ctx, ox, 0, 32, 32, '#3E8E41');
+    for (let y = 0; y < 32; y += 2) {
+      for (let x = 0; x < 32; x += 4) {
+        px(ctx, ox + x + (y % 4 === 0 ? 0 : 2), y, '#368438');
+      }
+    }
+    rect(ctx, ox, 0, 32, 1, '#FFFFFF');
+    rect(ctx, ox, 31, 32, 1, '#FFFFFF');
+    rect(ctx, ox, 0, 1, 32, '#FFFFFF');
+    rect(ctx, ox + 31, 0, 1, 32, '#FFFFFF');
+  }
+
+  // Index 12 — Asphalt (dark gray parking)
+  {
+    const ox = 384;
+    const rng = seededRandom(1200);
+    rect(ctx, ox, 0, 32, 32, '#555555');
+    for (let i = 0; i < 35; i++) {
+      const x = Math.floor(rng() * 32);
+      const y = Math.floor(rng() * 32);
+      px(ctx, ox + x, y, rng() > 0.5 ? '#4a4a4a' : '#606060');
+    }
+  }
+
+  // Index 13 — HedgeWall (dense green hedge)
+  {
+    const ox = 416;
+    const rng = seededRandom(1300);
+    rect(ctx, ox, 0, 32, 32, '#2D6B2A');
+    for (let i = 0; i < 40; i++) {
+      const x = Math.floor(rng() * 32);
+      const y = Math.floor(rng() * 32);
+      const r = Math.floor(rng() * 3) + 2;
+      circle(ctx, ox + x, y, r, rng() > 0.5 ? '#1F5C1C' : '#3A8537');
+    }
+    rect(ctx, ox, 28, 32, 4, darken('#2D6B2A', 0.25));
+  }
+
+  // Index 14 — PoolEdge (blue-tinted stone border)
+  {
+    const ox = 448;
+    const rng = seededRandom(1400);
+    rect(ctx, ox, 0, 32, 32, '#8FAAB5');
+    for (let gy = 0; gy < 4; gy++) {
+      for (let gx = 0; gx < 4; gx++) {
+        const sx = ox + gx * 8;
+        const sy = gy * 8;
+        rect(ctx, sx, sy, 7, 7, rng() > 0.5 ? '#84A0AC' : '#9AB4BF');
+      }
+    }
+    for (let i = 0; i < 10; i++) {
+      const x = Math.floor(rng() * 32);
+      const y = Math.floor(rng() * 32);
+      px(ctx, ox + x, y, '#7A96A2');
+    }
+  }
+
   c.refresh();
 
   // Register frames for tile rendering
@@ -294,6 +390,12 @@ function generateMauiTerrain(scene: Phaser.Scene): void {
   texture.add(6, 0, 192, 0, 32, 32);   // Road
   texture.add(7, 0, 224, 0, 32, 32);   // ParkingLot
   texture.add(8, 0, 256, 0, 32, 32);   // Sidewalk
+  texture.add(9, 0, 288, 0, 32, 32);   // StonePath
+  texture.add(10, 0, 320, 0, 32, 32);  // WoodDeck
+  texture.add(11, 0, 352, 0, 32, 32);  // TennisCourt
+  texture.add(12, 0, 384, 0, 32, 32);  // Asphalt
+  texture.add(13, 0, 416, 0, 32, 32);  // HedgeWall
+  texture.add(14, 0, 448, 0, 32, 32);  // PoolEdge
 }
 
 // ── NPC textures ────────────────────────────────────────────────────────
