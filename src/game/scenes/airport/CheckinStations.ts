@@ -31,7 +31,7 @@ interface AirportScene extends Phaser.Scene {
 // Layout flows left-to-right: check-in → passport → security → duty free/food/terminal → gate
 export const STATIONS: StationDef[] = [
   { id: 'ticket-counter',     triggerTileX: 4,  triggerTileY: 16 },  // Agent at (4,15)
-  { id: 'luggage-checkin',    triggerTileX: 12, triggerTileY: 16 },  // Agent at (12,15)
+  { id: 'luggage-checkin',    triggerTileX: 13, triggerTileY: 16 },  // Agent at (12,15), right of belt
   { id: 'passport-control',   triggerTileX: 22, triggerTileY: 19 },  // Agent at (22,18)
   { id: 'security-screening', triggerTileX: 30, triggerTileY: 19 },  // Agent at (30,18)
   { id: 'boarding-gate',      triggerTileX: 76, triggerTileY: 11 },  // Agent at (76,10)
