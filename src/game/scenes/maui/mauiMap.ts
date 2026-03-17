@@ -92,7 +92,7 @@ export function getMauiTileType(tileX: number, tileY: number): number {
 
 export const MAUI_DECORATIONS = [
   // Airbnb area
-  { type: 'compound-gate', tileX: 36, tileY: 4 },
+  { type: 'compound-preview', tileX: 37, tileY: 4 },
   { type: 'maui-parkedcar', tileX: 36, tileY: 1 },
   { type: 'maui-parkedcar', tileX: 39, tileY: 1 },
   { type: 'palm-tree', tileX: 33, tileY: 1 },

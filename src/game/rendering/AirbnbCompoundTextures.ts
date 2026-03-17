@@ -223,8 +223,80 @@ function generateCompoundGate(scene: Phaser.Scene): void {
   c.refresh();
 }
 
+function generateCompoundPreview(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas('deco-compound-preview', 128, 96);
+  if (!c) return;
+  const ctx = c.context;
+
+  // Green grass background
+  rect(ctx, 0, 0, 128, 96, '#5A8A3C');
+
+  // Dark green hedge border (2px outline)
+  rect(ctx, 0, 0, 128, 2, '#2D5A1B');
+  rect(ctx, 0, 94, 128, 2, '#2D5A1B');
+  rect(ctx, 0, 0, 2, 96, '#2D5A1B');
+  rect(ctx, 126, 0, 2, 96, '#2D5A1B');
+
+  // Cream building rectangle with brown roof (top-center)
+  rect(ctx, 38, 6, 52, 28, '#B74C2C'); // brown roof
+  rect(ctx, 40, 10, 48, 22, '#FFF8DC'); // cream walls
+
+  // Blue pool rectangle with gray edge (right-center)
+  rect(ctx, 82, 36, 34, 22, '#8A9AA0'); // gray pool edge
+  rect(ctx, 84, 38, 30, 18, '#5BA3C9'); // blue pool water
+  rect(ctx, 87, 40, 24, 12, lighten('#5BA3C9', 0.15)); // pool highlight
+
+  // Smaller blue jacuzzi square (left-center)
+  rect(ctx, 10, 36, 16, 16, '#7090A0'); // gray jacuzzi edge
+  rect(ctx, 12, 38, 12, 12, '#6ABED6'); // blue jacuzzi water
+  rect(ctx, 13, 39, 8, 7, lighten('#6ABED6', 0.15)); // jacuzzi highlight
+
+  // Green tennis court rectangle with white net line (bottom-left)
+  rect(ctx, 6, 62, 44, 26, '#3A7A3A'); // court surface
+  rect(ctx, 7, 63, 42, 24, '#4A8A4A'); // lighter court
+  rect(ctx, 28, 63, 1, 24, '#FFFFFF'); // white net line
+  rect(ctx, 7, 74, 42, 1, 'rgba(255,255,255,0.4)'); // service line
+
+  // Tan stone path lines connecting areas
+  rect(ctx, 38, 34, 6, 28, '#C8B090'); // path from building to pool area
+  rect(ctx, 26, 55, 62, 6, '#C8B090'); // horizontal path
+  rect(ctx, 50, 62, 6, 26, '#C8B090'); // path to tennis court
+
+  // Brown wood deck strip (right of pool)
+  rect(ctx, 116, 34, 10, 30, '#A0724A'); // deck
+  for (let i = 0; i < 5; i++) {
+    rect(ctx, 116, 34 + i * 6, 10, 1, darken('#A0724A', 0.1)); // deck planks
+  }
+
+  // Dark gray parking lot strip (bottom)
+  rect(ctx, 56, 78, 68, 16, '#555555'); // parking lot
+  rect(ctx, 68, 78, 1, 16, '#FFFF00'); // parking line
+  rect(ctx, 84, 78, 1, 16, '#FFFF00');
+  rect(ctx, 100, 78, 1, 16, '#FFFF00');
+
+  // A few tiny palm trees (green circles with brown trunk pixel)
+  // Palm near building left
+  px(ctx, 32, 20, '#5C3A1E');
+  circle(ctx, 32, 18, 3, '#2D7A2D');
+  // Palm near building right
+  px(ctx, 95, 20, '#5C3A1E');
+  circle(ctx, 95, 18, 3, '#2D7A2D');
+  // Palm between jacuzzi and building
+  px(ctx, 28, 44, '#5C3A1E');
+  circle(ctx, 28, 42, 3, '#2D7A2D');
+  // Palm near tennis court top-right
+  px(ctx, 52, 58, '#5C3A1E');
+  circle(ctx, 52, 56, 3, '#2D7A2D');
+  // Palm near parking lot
+  px(ctx, 113, 75, '#5C3A1E');
+  circle(ctx, 113, 73, 3, '#2D7A2D');
+
+  c.refresh();
+}
+
 export function generateAirbnbCompoundTextures(scene: Phaser.Scene): void {
   generateAirbnbBuilding(scene);
   generateCompoundDecorations(scene);
   generateCompoundGate(scene);
+  generateCompoundPreview(scene);
 }
