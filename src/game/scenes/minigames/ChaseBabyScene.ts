@@ -1,12 +1,13 @@
 // src/game/scenes/minigames/ChaseBabyScene.ts
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
+import { loadGameState } from '../../systems/SaveSystem';
 
 const CHASE_DURATION = 45;
 const BABY_BASE_SPEED = 80;
 const BABY_MAX_SPEED = 140;
 const PLAYER_SPEED = 100;
-const CATCH_RADIUS = 24;
+const CATCH_RADIUS = 28;
 const DODGE_RADIUS = 60;
 const CATCHES_NEEDED = 3;
 const SOOTHE_BEATS = 8;
@@ -29,7 +30,11 @@ export class ChaseBabyScene extends Phaser.Scene {
   private returnData: ReturnData = {};
 
   // Chase phase
-  private playerSprite!: Phaser.GameObjects.Arc;
+  private playerSprite!: Phaser.GameObjects.Sprite;
+  private partnerSprite!: Phaser.GameObjects.Sprite;
+  private playerFacing = 'down';
+  private partnerFacing = 'down';
+  private partnerHistory: { x: number; y: number }[] = [];
   private babySprite!: Phaser.GameObjects.Sprite;
   private babyVelX = 0;
   private babyVelY = 0;
@@ -87,6 +92,9 @@ export class ChaseBabyScene extends Phaser.Scene {
     this.soothePerfects = 0;
     this.sootheActive = false;
     this.moveTarget = null;
+    this.playerFacing = 'down';
+    this.partnerFacing = 'down';
+    this.partnerHistory = [];
   }
 
   create(): void {
@@ -107,11 +115,22 @@ export class ChaseBabyScene extends Phaser.Scene {
     this.add.rectangle(20, height / 2, 40, height, 0x8b6914);  // left
     this.add.rectangle(width - 20, height / 2, 40, height, 0x8b6914);  // right
 
-    // Player circle (blue)
-    this.playerSprite = this.add.circle(width / 2, height - 100, 14, 0x3366ff);
+    // Character sprites with current outfits
+    const { outfits } = loadGameState();
+    const playerTex = `player-outfit-${outfits.player}`;
+    const partnerTex = `partner-outfit-${outfits.partner}`;
+
+    this.playerSprite = this.add.sprite(width / 2, height - 100, playerTex);
+    this.playerSprite.setDisplaySize(32, 32);
     this.playerSprite.setDepth(10);
-    // Player head
-    this.add.circle(width / 2, height - 100, 8, 0xf5deb3).setDepth(11);
+    this.createCharacterAnims(playerTex, 'player');
+
+    this.partnerSprite = this.add.sprite(width / 2 - 30, height - 80, partnerTex);
+    this.partnerSprite.setDisplaySize(32, 32);
+    this.partnerSprite.setDepth(9);
+    this.createCharacterAnims(partnerTex, 'partner');
+
+    this.partnerHistory = [];
 
     // Baby sprite
     this.babySprite = this.add.sprite(width / 2, height / 3, 'chase-baby-run');
@@ -253,13 +272,52 @@ export class ChaseBabyScene extends Phaser.Scene {
       this.arenaTop, this.arenaBottom
     );
 
-    // Update player head position
-    const head = this.children.list.find(
-      c => c !== this.playerSprite && c instanceof Phaser.GameObjects.Arc && (c as Phaser.GameObjects.Arc).radius === 8
-    ) as Phaser.GameObjects.Arc | undefined;
-    if (head) {
-      head.x = this.playerSprite.x;
-      head.y = this.playerSprite.y;
+    // Player animation
+    if (Math.abs(pdx) > 0.1 || Math.abs(pdy) > 0.1) {
+      if (Math.abs(pdx) > Math.abs(pdy)) {
+        this.playerFacing = pdx > 0 ? 'right' : 'left';
+      } else {
+        this.playerFacing = pdy > 0 ? 'down' : 'up';
+      }
+      const animKey = `player-${this.playerFacing}`;
+      if (this.playerSprite.anims.currentAnim?.key !== animKey) {
+        this.playerSprite.play(animKey);
+      }
+    } else {
+      this.playerSprite.stop();
+      // Idle frame: row * 3, col 0 (stand)
+      const rowMap: Record<string, number> = { down: 0, left: 1, right: 2, up: 3 };
+      this.playerSprite.setFrame(rowMap[this.playerFacing] * 3);
+    }
+
+    // Partner follow logic (position history buffer)
+    this.partnerHistory.push({ x: this.playerSprite.x, y: this.playerSprite.y });
+    const PARTNER_HISTORY_SIZE = 12;
+    while (this.partnerHistory.length > PARTNER_HISTORY_SIZE) {
+      this.partnerHistory.shift();
+    }
+    const target = this.partnerHistory[0];
+    const ptdx = target.x - this.partnerSprite.x;
+    const ptdy = target.y - this.partnerSprite.y;
+    const ptDist = Math.sqrt(ptdx * ptdx + ptdy * ptdy);
+    if (ptDist > 4) {
+      const lerpFactor = 0.08;
+      this.partnerSprite.x += ptdx * lerpFactor * 60 * dt;
+      this.partnerSprite.y += ptdy * lerpFactor * 60 * dt;
+      // Partner animation
+      if (Math.abs(ptdx) > Math.abs(ptdy)) {
+        this.partnerFacing = ptdx > 0 ? 'right' : 'left';
+      } else {
+        this.partnerFacing = ptdy > 0 ? 'down' : 'up';
+      }
+      const partnerAnimKey = `partner-${this.partnerFacing}`;
+      if (this.partnerSprite.anims.currentAnim?.key !== partnerAnimKey) {
+        this.partnerSprite.play(partnerAnimKey);
+      }
+    } else {
+      this.partnerSprite.stop();
+      const rowMap: Record<string, number> = { down: 0, left: 1, right: 2, up: 3 };
+      this.partnerSprite.setFrame(rowMap[this.partnerFacing] * 3);
     }
 
     // --- Baby AI ---
@@ -289,7 +347,22 @@ export class ChaseBabyScene extends Phaser.Scene {
       const awayLen = Math.sqrt(awayX * awayX + awayY * awayY) || 1;
       this.babyVelX = (awayX / awayLen) * this.babySpeed * 1.4;
       this.babyVelY = (awayY / awayLen) * this.babySpeed * 1.4;
-      this.directionTimer = 300; // Short burst before next direction change
+      this.directionTimer = 300;
+      this.spawnDust(this.babySprite.x, this.babySprite.y);
+    }
+
+    // Baby also dodges partner
+    const distToPartner = Phaser.Math.Distance.Between(
+      this.babySprite.x, this.babySprite.y,
+      this.partnerSprite.x, this.partnerSprite.y
+    );
+    if (distToPartner < DODGE_RADIUS) {
+      const awayX = this.babySprite.x - this.partnerSprite.x;
+      const awayY = this.babySprite.y - this.partnerSprite.y;
+      const awayLen = Math.sqrt(awayX * awayX + awayY * awayY) || 1;
+      this.babyVelX = (awayX / awayLen) * this.babySpeed * 1.4;
+      this.babyVelY = (awayY / awayLen) * this.babySpeed * 1.4;
+      this.directionTimer = 300;
       this.spawnDust(this.babySprite.x, this.babySprite.y);
     }
 
@@ -321,6 +394,27 @@ export class ChaseBabyScene extends Phaser.Scene {
     // --- Catch check ---
     if (distToPlayer < CATCH_RADIUS) {
       this.onCatch();
+    }
+  }
+
+  private createCharacterAnims(textureKey: string, prefix: string): void {
+    const directions = ['down', 'left', 'right', 'up'];
+    for (let row = 0; row < directions.length; row++) {
+      const key = `${prefix}-${directions[row]}`;
+      if (this.anims.exists(key)) {
+        this.anims.remove(key);
+      }
+      this.anims.create({
+        key,
+        frames: [
+          { key: textureKey, frame: row * 3 + 1 },
+          { key: textureKey, frame: row * 3 },
+          { key: textureKey, frame: row * 3 + 2 },
+          { key: textureKey, frame: row * 3 },
+        ],
+        frameRate: 8,
+        repeat: -1,
+      });
     }
   }
 
@@ -445,12 +539,9 @@ export class ChaseBabyScene extends Phaser.Scene {
     for (const d of [...this.dustParticles]) d.destroy();
     this.dustParticles = [];
 
-    // Hide player head
-    const head = this.children.list.find(
-      c => c !== this.playerSprite && c instanceof Phaser.GameObjects.Arc && (c as Phaser.GameObjects.Arc).radius === 8
-    ) as Phaser.GameObjects.Arc | undefined;
-    if (head) head.setVisible(false);
+    // Hide character sprites
     this.playerSprite.setVisible(false);
+    this.partnerSprite.setVisible(false);
 
     const { width, height } = this.scale;
 
