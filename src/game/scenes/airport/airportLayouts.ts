@@ -83,8 +83,8 @@ export const AIRPORT_INTERIOR_LAYOUT: InteriorLayout = {
     // Departures board
     { tileX: 9, tileY: 2, type: 'airport-departures-board' },
     // Luggage carts
-    { tileX: 2, tileY: 17, type: 'airport-luggage-cart' },
-    { tileX: 15, tileY: 24, type: 'airport-luggage-cart' },
+    { tileX: 1, tileY: 27, type: 'airport-luggage-cart' },
+    { tileX: 16, tileY: 27, type: 'airport-luggage-cart' },
     // Benches (waiting area lower half)
     { tileX: 3, tileY: 30, type: 'airport-bench' },
     { tileX: 7, tileY: 30, type: 'airport-bench' },
