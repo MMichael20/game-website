@@ -1915,6 +1915,38 @@ function generateCheckinPropTextures(scene: Phaser.Scene): void {
 
 // ── Main export ──────────────────────────────────────────────────────────
 
+function generateStationSignTextures(scene: Phaser.Scene): void {
+  const colors = ['#E74C3C', '#E67E22', '#2ECC71', '#3498DB', '#9B59B6'];
+  for (let i = 0; i < 5; i++) {
+    const key = `interior-airport-sign-${i + 1}`;
+    const c = scene.textures.createCanvas(key, 32, 32);
+    if (!c) continue;
+    const ctx = c.context;
+
+    // Circle background
+    ctx.fillStyle = colors[i];
+    ctx.beginPath();
+    ctx.arc(16, 16, 13, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Darker border
+    ctx.strokeStyle = darken(colors[i], 0.3);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(16, 16, 13, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Number text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${i + 1}`, 16, 17);
+
+    c.refresh();
+  }
+}
+
 export function generateAirportTextures(scene: Phaser.Scene): void {
   generateNPCTextures(scene);
   generateBuildingTexture(scene);
@@ -1925,4 +1957,5 @@ export function generateAirportTextures(scene: Phaser.Scene): void {
   generateAirplaneTaxiingTexture(scene);
   generateExteriorDecoTextures(scene);
   generateCheckinPropTextures(scene);
+  generateStationSignTextures(scene);
 }

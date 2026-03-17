@@ -71,9 +71,12 @@ async function focusCamera(
   const origZoom = cam.zoom;
   const target = tileToWorld(tileX, tileY);
   cam.stopFollow();
-  cam.pan(target.x, target.y, 300, 'Sine.easeInOut');
   cam.zoomTo(origZoom + zoomBoost, 300, 'Sine.easeInOut');
-  await delayAsync(scene, 320);
+  await new Promise<void>(resolve => {
+    cam.pan(target.x, target.y, 300, 'Sine.easeInOut', false, (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+      if (progress === 1) resolve();
+    });
+  });
 
   return async () => {
     const as = scene as unknown as AirportScene;
@@ -92,10 +95,11 @@ export async function playTicketCounter(scene: Phaser.Scene): Promise<void> {
   const restore = await focusCamera(scene, 8, 15);
   await showDialogAsync(["Welcome to Witchy Airlines! Let's get you booked for Maui."]);
 
-  // Departure board overlay — positioned relative to camera viewport
+  // Departure board overlay — positioned at camera viewport center
   const cam = scene.cameras.main;
-  const cx = cam.scrollX + cam.width / (2 * cam.zoom);
-  const cy = cam.scrollY + cam.height / (2 * cam.zoom);
+  const center = cam.getWorldPoint(cam.width / 2, cam.height / 2);
+  const cx = center.x;
+  const cy = center.y;
 
   const board = tempSprite(scene, cx, cy - 20, 'prop-departure-board', 100);
   board.setScale(0.5);

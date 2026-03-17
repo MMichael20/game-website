@@ -14,6 +14,12 @@ export const AIRPORT_INTERIOR_LAYOUT: InteriorLayout = {
     { tileX: 1, tileY: 2, width: 11, height: 4, floorType: 'wood' },
   ],
   decorations: [
+    // Station number signs — guide players through the check-in flow
+    { type: 'airport-sign-1', tileX: 8, tileY: 14 },
+    { type: 'airport-sign-2', tileX: 14, tileY: 14 },
+    { type: 'airport-sign-3', tileX: 18, tileY: 11 },
+    { type: 'airport-sign-4', tileX: 20, tileY: 9 },
+    { type: 'airport-sign-5', tileX: 24, tileY: 2 },
     // CHECK-IN (y=14-17)
     { type: 'airport-counter', tileX: 8, tileY: 15 },
     { type: 'airport-counter', tileX: 14, tileY: 15 },
