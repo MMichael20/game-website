@@ -48,6 +48,24 @@ export abstract class InteriorScene extends Phaser.Scene {
       this.add.image(pos.x, pos.y, `interior-${deco.type}`).setDepth(5);
     });
 
+    // 2b. Render exit door
+    if (layout.exitDoorStyle) {
+      const textureKey = `exit-door-${layout.exitDoorStyle}`;
+      const exit = layout.exit;
+      const doorY = exit.tileY + exit.height - 1;
+
+      if (layout.exitDoorStyle === 'glass') {
+        for (let dx = 0; dx < exit.width; dx++) {
+          const pos = tileToWorld(exit.tileX + dx, doorY);
+          this.add.image(pos.x, pos.y, textureKey).setDepth(4);
+        }
+      } else {
+        const centerX = exit.tileX + Math.floor(exit.width / 2);
+        const pos = tileToWorld(centerX, doorY);
+        this.add.image(pos.x, pos.y, textureKey).setDepth(4);
+      }
+    }
+
     // 3. Player & Partner at entrance
     const spawnPos = tileToWorld(layout.entrance.tileX, layout.entrance.tileY);
     const walkCheck = createInteriorWalkCheck(layout);

@@ -45,6 +45,7 @@ const AIRBNB_LAYOUT: InteriorLayout = {
   ],
   entrance: { tileX: 10, tileY: 10 },
   exit: { tileX: 10, tileY: 11, width: 2, height: 1, promptText: 'Tap to go out' },
+  exitDoorStyle: 'beach',
 };
 
 export class MauiHotelScene extends InteriorScene {

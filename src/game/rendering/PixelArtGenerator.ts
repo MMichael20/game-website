@@ -2747,6 +2747,102 @@ export function generateSky(scene: Phaser.Scene): void {
   canvas.refresh();
 }
 
+// ── exit door textures ──────────────────────────────────────────────────
+
+function generateExitDoorTextures(scene: Phaser.Scene): void {
+  // Wooden door (32x32) — brown with 2 recessed panels, brass handle
+  {
+    const canvas = scene.textures.createCanvas('exit-door-wooden', 32, 32);
+    if (!canvas) return;
+    const ctx = canvas.context;
+    // Door frame
+    rect(ctx, 4, 0, 24, 32, '#5a3a1a');
+    // Door body
+    rect(ctx, 6, 2, 20, 28, '#8B5E3C');
+    // Top panel (recessed)
+    rect(ctx, 9, 4, 14, 10, '#7a4e2c');
+    rect(ctx, 10, 5, 12, 8, '#6d4425');
+    // Bottom panel (recessed)
+    rect(ctx, 9, 17, 14, 10, '#7a4e2c');
+    rect(ctx, 10, 18, 12, 8, '#6d4425');
+    // Brass handle
+    rect(ctx, 22, 15, 2, 4, '#d4a843');
+    rect(ctx, 22, 16, 2, 2, '#c49933');
+    // Highlight edge (left)
+    rect(ctx, 6, 2, 1, 28, '#9d7050');
+    canvas.refresh();
+  }
+
+  // Glass door (32x32) — chrome frame, pale blue glass, EXIT indicator
+  {
+    const canvas = scene.textures.createCanvas('exit-door-glass', 32, 32);
+    if (!canvas) return;
+    const ctx = canvas.context;
+    // Chrome frame
+    rect(ctx, 2, 0, 28, 32, '#c0c0c0');
+    // Glass panes (left and right of center divider)
+    rect(ctx, 4, 2, 11, 26, '#b8d8f0');
+    rect(ctx, 17, 2, 11, 26, '#b8d8f0');
+    // Glass shine
+    rect(ctx, 5, 3, 2, 20, '#d0eaff');
+    rect(ctx, 18, 3, 2, 20, '#d0eaff');
+    // Center divider
+    rect(ctx, 15, 0, 2, 32, '#c0c0c0');
+    // Handle bars
+    rect(ctx, 12, 14, 1, 6, '#a0a0a0');
+    rect(ctx, 19, 14, 1, 6, '#a0a0a0');
+    // EXIT text at top
+    rect(ctx, 10, 1, 12, 5, '#cc2222');
+    // E
+    rect(ctx, 11, 2, 1, 3, '#fff');
+    rect(ctx, 12, 2, 1, 1, '#fff');
+    rect(ctx, 12, 3, 1, 1, '#fff');
+    rect(ctx, 12, 4, 1, 1, '#fff');
+    // X
+    px(ctx, 14, 2, '#fff'); px(ctx, 16, 2, '#fff');
+    px(ctx, 15, 3, '#fff');
+    px(ctx, 14, 4, '#fff'); px(ctx, 16, 4, '#fff');
+    // I
+    rect(ctx, 18, 2, 1, 3, '#fff');
+    // T
+    rect(ctx, 19, 2, 3, 1, '#fff');
+    rect(ctx, 20, 3, 1, 2, '#fff');
+    // Frame bottom
+    rect(ctx, 2, 29, 28, 3, '#a8a8a8');
+    canvas.refresh();
+  }
+
+  // Beach door (32x32) — bleached wood, single panel, arched window at top
+  {
+    const canvas = scene.textures.createCanvas('exit-door-beach', 32, 32);
+    if (!canvas) return;
+    const ctx = canvas.context;
+    // Frame
+    rect(ctx, 4, 0, 24, 32, '#c8b89a');
+    // Door body — light bleached wood
+    rect(ctx, 6, 2, 20, 28, '#e8dcc8');
+    // Wood grain lines
+    rect(ctx, 10, 2, 1, 28, '#d8ccb0');
+    rect(ctx, 16, 2, 1, 28, '#d8ccb0');
+    rect(ctx, 22, 2, 1, 28, '#d8ccb0');
+    // Arched window at top
+    rect(ctx, 10, 4, 12, 8, '#87CEEB');
+    // Arch (round the top corners)
+    px(ctx, 10, 4, '#e8dcc8'); px(ctx, 21, 4, '#e8dcc8');
+    px(ctx, 10, 5, '#e8dcc8'); px(ctx, 21, 5, '#e8dcc8');
+    // Window shine
+    rect(ctx, 11, 5, 2, 5, '#a8ddf8');
+    // Window frame
+    rect(ctx, 10, 3, 12, 1, '#c8b89a');
+    rect(ctx, 15, 4, 1, 8, '#c8b89a');
+    rect(ctx, 10, 8, 12, 1, '#c8b89a');
+    // Handle
+    rect(ctx, 21, 16, 2, 3, '#8B7355');
+    rect(ctx, 21, 17, 2, 1, '#7a6348');
+    canvas.refresh();
+  }
+}
+
 // ── master generator ─────────────────────────────────────────────────────
 
 export function generateAllTextures(scene: Phaser.Scene): void {
@@ -2763,4 +2859,5 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generateSky(scene);
   generateAirportTextures(scene);
   generateMauiTextures(scene);
+  generateExitDoorTextures(scene);
 }

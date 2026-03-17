@@ -69,5 +69,6 @@ export const AIRPORT_INTERIOR_LAYOUT: InteriorLayout = {
   ],
   entrance: { tileX: 18, tileY: 18 },
   exit: { tileX: 17, tileY: 18, width: 3, height: 2, promptText: 'Exit Airport' },
+  exitDoorStyle: 'glass',
   cameraZoom: 2.0,
 };

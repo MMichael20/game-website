@@ -33,6 +33,7 @@ export interface InteriorLayout {
   decorations: InteriorDecoration[];
   entrance: { tileX: number; tileY: number };
   exit: ExitZone;
+  exitDoorStyle?: 'wooden' | 'glass' | 'beach';
   cameraZoom?: number;
   forwardExit?: ExitZone;
   nextScene?: string;
@@ -130,6 +131,7 @@ export const MICHAELS_HOUSE_LAYOUT: InteriorLayout = {
     height: 2,
     promptText: 'Tap to go out',
   },
+  exitDoorStyle: 'wooden',
 };
 
 // ── Hadar's House layout (20×16, 3 rooms) ──────────────────────────────
@@ -175,6 +177,7 @@ export const HADARS_HOUSE_LAYOUT: InteriorLayout = {
     height: 2,
     promptText: 'Tap to go out',
   },
+  exitDoorStyle: 'wooden',
 };
 
 export function createInteriorWalkCheck(layout: InteriorLayout) {
