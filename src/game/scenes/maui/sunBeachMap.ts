@@ -75,7 +75,7 @@ export const SUNBEACH_NPCS: NPCDef[] = [
     id: 'nature-guide-npc', tileX: 5, tileY: 4, behavior: 'idle',
     texture: 'npc-nature-guide', interactable: true, onInteract: 'dialog',
     facingDirection: 'down',
-    interactionData: { lines: ['Welcome to Sun Beach!', 'This is a protected nesting area for green sea turtles.', 'Please enjoy from a respectful distance.'] },
+    interactionData: { lines: ['Welcome to Paia Beach!', 'This is a protected nesting area for green sea turtles.', 'Please enjoy from a respectful distance.'] },
   },
   {
     id: 'tourist-camera-npc', tileX: 24, tileY: 7, behavior: 'idle',

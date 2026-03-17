@@ -125,7 +125,7 @@ export class DrivingScene extends Phaser.Scene {
           },
         },
         {
-          label: 'Sun Beach',
+          label: 'Paia Beach',
           onClick: () => {
             uiManager.hideDialog();
             this.cameras.main.fadeOut(500, 0, 0, 0);

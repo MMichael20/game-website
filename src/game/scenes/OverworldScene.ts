@@ -51,9 +51,13 @@ export abstract class OverworldScene extends Phaser.Scene {
   protected onBack(): void { /* no-op by default */ }
 
   init(data?: { returnFromInterior?: boolean; returnX?: number; returnY?: number }): void {
-    if (data?.returnFromInterior && data.returnX != null && data.returnY != null) {
-      this.returnFromInteriorData = { returnX: data.returnX, returnY: data.returnY };
+    if (data?.returnFromInterior) {
       this.shouldFadeIn = true;
+      if (data.returnX != null && data.returnY != null) {
+        this.returnFromInteriorData = { returnX: data.returnX, returnY: data.returnY };
+      } else {
+        this.returnFromInteriorData = null;
+      }
     } else {
       this.returnFromInteriorData = null;
       this.shouldFadeIn = false;

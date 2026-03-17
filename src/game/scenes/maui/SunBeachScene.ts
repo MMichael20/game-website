@@ -139,11 +139,11 @@ export class SunBeachScene extends OverworldScene {
   }
 
   shutdown(): void {
-    if (this.playerOnBeach) {
+    if (this.playerOnBeach && this.player?.sprite?.scene) {
       this.player.restoreTexture(this);
       this.playerOnBeach = false;
     }
-    if (this.partnerOnBeach) {
+    if (this.partnerOnBeach && this.partner?.sprite?.scene) {
       this.partner.restoreTexture(this);
       this.partnerOnBeach = false;
     }

@@ -1865,6 +1865,18 @@ function generateHouseNPCTextures(scene: Phaser.Scene): void {
     px(ctx, 33, 24, '#00FF00');
     c.refresh();
   }
+
+  // npc-hidden-tile — barely visible floor scratch mark (fast travel easter egg)
+  {
+    const c = scene.textures.createCanvas('npc-hidden-tile', 16, 16);
+    if (!c) return;
+    const ctx = c.context;
+    // Faint scratch marks on the floor tile
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(3, 7, 10, 1);
+    ctx.fillRect(5, 9, 6, 1);
+    c.refresh();
+  }
 }
 
 // ── Hadar's House NPC textures ──────────────────────────────────────────

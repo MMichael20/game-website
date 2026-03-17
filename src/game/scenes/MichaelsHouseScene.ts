@@ -74,6 +74,13 @@ const HOUSE_NPCS: NPCDef[] = [
     texture: 'npc-house-baby', interactable: false,
     facingDirection: 'left',
   },
+  // Bathroom — hidden fast travel spot (far corner, barely visible tile mark)
+  {
+    id: 'house-fast-travel', tileX: 28, tileY: 9, behavior: 'idle',
+    texture: 'npc-hidden-tile', interactable: true, onInteract: 'dialog',
+    facingDirection: 'up',
+    interactionData: { lines: ['...'] },
+  },
 ];
 
 export class MichaelsHouseScene extends InteriorScene {
@@ -97,7 +104,49 @@ export class MichaelsHouseScene extends InteriorScene {
       if (npc.onInteract === 'dialog' && npc.interactionData?.lines) {
         this.inputSystem.freeze();
 
-        if (npc.id === 'house-bigsis') {
+        if (npc.id === 'house-fast-travel') {
+          const destinations: { label: string; scene: string; data?: Record<string, unknown> }[] = [
+            { label: 'Home Town', scene: 'WorldScene', data: { returnFromInterior: true, returnX: 496, returnY: 208 } },
+            { label: 'Airport', scene: 'AirportInteriorScene', data: { returnX: 496, returnY: 208 } },
+            { label: 'Maui', scene: 'MauiOverworldScene', data: { returnFromInterior: true } },
+            { label: 'Airbnb Compound', scene: 'AirbnbCompoundScene', data: { returnFromInterior: true } },
+            { label: 'Driving Hub', scene: 'DrivingScene' },
+            { label: 'Paia Beach', scene: 'SunBeachScene', data: { returnFromInterior: true } },
+            { label: 'Road to Hana', scene: 'HanaDrivingScene', data: { resumeSegment: 0 } },
+          ];
+          uiManager.showDialog({
+            title: 'Fast Travel',
+            message: 'Where do you want to go?',
+            buttons: [
+              ...destinations.map((dest) => ({
+                label: dest.label,
+                onClick: () => {
+                  uiManager.hideDialog();
+                  this.inputSystem.unfreeze();
+                  this.npcSystem.onDialogueEnd(npc.id);
+                  const cam = this.cameras.main;
+                  this.tweens.add({
+                    targets: cam,
+                    alpha: 0,
+                    duration: 300,
+                    ease: 'Linear',
+                    onComplete: () => {
+                      this.scene.start(dest.scene, dest.data ?? {});
+                    },
+                  });
+                },
+              })),
+              {
+                label: 'Cancel',
+                onClick: () => {
+                  uiManager.hideDialog();
+                  this.inputSystem.unfreeze();
+                  this.npcSystem.onDialogueEnd(npc.id);
+                },
+              },
+            ],
+          });
+        } else if (npc.id === 'house-bigsis') {
           // Trigger Chase the Baby mini-game
           uiManager.showNPCDialog(
             ['תחזיקו שנייה את רומי'],
