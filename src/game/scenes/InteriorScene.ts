@@ -68,7 +68,7 @@ export abstract class InteriorScene extends Phaser.Scene {
 
     // 3. Player & Partner at entrance
     const spawnPos = tileToWorld(layout.entrance.tileX, layout.entrance.tileY);
-    const walkCheck = createInteriorWalkCheck(layout);
+    const walkCheck = this.getWalkCheck(layout);
     this.player = new Player(this, spawnPos.x, spawnPos.y, state.outfits.player, walkCheck);
     this.partner = new Partner(this, spawnPos.x, spawnPos.y, state.outfits.partner);
 
@@ -78,7 +78,7 @@ export abstract class InteriorScene extends Phaser.Scene {
 
     // 5. Camera
     const cam = this.cameras.main;
-    cam.setZoom(getDeviceZoom());
+    cam.setZoom(layout.cameraZoom ? Math.min(layout.cameraZoom, getDeviceZoom()) : getDeviceZoom());
     cam.startFollow(this.player.sprite, true, 0.1, 0.1);
     cam.setBounds(0, 0, mapPxW, mapPxH);
 
@@ -196,7 +196,7 @@ export abstract class InteriorScene extends Phaser.Scene {
     }
   }
 
-  private buildInteriorTileMap(layout: InteriorLayout, mapPxW: number, mapPxH: number): void {
+  protected buildInteriorTileMap(layout: InteriorLayout, mapPxW: number, mapPxH: number): void {
     const rt = this.add.renderTexture(0, 0, mapPxW, mapPxH);
     rt.setOrigin(0, 0);
     rt.setDepth(-50);
@@ -208,10 +208,13 @@ export abstract class InteriorScene extends Phaser.Scene {
       tile_floor: InteriorTileType.TileFloor,
     };
 
-    // First pass: draw walls everywhere
+    // First pass: draw walls everywhere (skip window tiles)
+    const windowSet = new Set(
+      (layout.windowTiles ?? []).map(t => `${t.tileX},${t.tileY}`)
+    );
     for (let y = 0; y < layout.heightInTiles; y++) {
       for (let x = 0; x < layout.widthInTiles; x++) {
-        if (layout.wallGrid[y][x]) {
+        if (layout.wallGrid[y][x] && !windowSet.has(`${x},${y}`)) {
           rt.drawFrame('interior-terrain', InteriorTileType.Wall, x * TILE_SIZE, y * TILE_SIZE);
         }
       }
@@ -273,6 +276,10 @@ export abstract class InteriorScene extends Phaser.Scene {
       },
       onClose: () => uiManager.hideDialog(),
     });
+  }
+
+  protected getWalkCheck(layout: InteriorLayout): (tileX: number, tileY: number) => boolean {
+    return createInteriorWalkCheck(layout);
   }
 
   protected onInteractPressed(): boolean {

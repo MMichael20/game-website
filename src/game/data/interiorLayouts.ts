@@ -38,6 +38,7 @@ export interface InteriorLayout {
   forwardExit?: ExitZone;
   nextScene?: string;
   previousScene?: string;
+  windowTiles?: { tileX: number; tileY: number }[];
 }
 
 interface RoomRect {
