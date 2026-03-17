@@ -39,6 +39,8 @@ const STATION_NPC_DEFS = [
   { texture: 'npc-security-guard', tileX: 30, tileY: 18 },    // Security lane 1
   { texture: 'npc-security-guard', tileX: 34, tileY: 18 },    // Security lane 2 (decorative)
   { texture: 'npc-gate-agent', tileX: 76, tileY: 10 },        // Boarding gate
+  { texture: 'npc-gate-agent', tileX: 68, tileY: 8 },         // Gate 2 (coming soon)
+  { texture: 'npc-gate-agent', tileX: 64, tileY: 8 },         // Gate 3 (coming soon)
 ];
 
 // ── Dialog NPCs (via NPCSystem) ─────────────────────────────────────────
@@ -70,9 +72,27 @@ const DIALOG_NPCS: NPCDef[] = [
   // Zone 6: Terminal
   { id: 'walking-pax-2', tileX: 65, tileY: 20, behavior: 'walk', texture: 'npc-traveler-2',
     walkPath: [{ x: 65, y: 20 }, { x: 72, y: 20 }] },
+  // More passengers in check-in area
+  { id: 'sitting-pax-3', tileX: 7, tileY: 36, behavior: 'sit', texture: 'npc-traveler' },
+  { id: 'standing-pax-1', tileX: 10, tileY: 18, behavior: 'idle', texture: 'npc-traveler-2' },
+  // Passport zone passengers
+  { id: 'passport-waiter-1', tileX: 21, tileY: 24, behavior: 'idle', texture: 'npc-traveler' },
+  { id: 'passport-waiter-2', tileX: 23, tileY: 26, behavior: 'sit', texture: 'npc-traveler-2' },
+  // Security zone passengers
+  { id: 'security-queue-1', tileX: 31, tileY: 22, behavior: 'idle', texture: 'npc-traveler' },
+  { id: 'security-queue-2', tileX: 33, tileY: 22, behavior: 'idle', texture: 'npc-traveler-2' },
+  // Terminal corridor walkers
+  { id: 'corridor-walker-1', tileX: 66, tileY: 15, behavior: 'walk', texture: 'npc-traveler',
+    walkPath: [{ x: 66, y: 15 }, { x: 72, y: 15 }] },
   // Zone 7: Gate
   { id: 'gate-pax-1', tileX: 75, tileY: 22, behavior: 'sit', texture: 'npc-traveler' },
   { id: 'gate-pax-2', tileX: 77, tileY: 26, behavior: 'sit', texture: 'npc-traveler-2' },
+  // Gate area — more waiting passengers
+  { id: 'gate-pax-3', tileX: 75, tileY: 18, behavior: 'sit', texture: 'npc-traveler' },
+  { id: 'gate-pax-4', tileX: 77, tileY: 22, behavior: 'sit', texture: 'npc-traveler-2' },
+  // Coming soon gate passengers
+  { id: 'gate2-pax-1', tileX: 67, tileY: 12, behavior: 'sit', texture: 'npc-traveler' },
+  { id: 'gate3-pax-1', tileX: 65, tileY: 12, behavior: 'sit', texture: 'npc-traveler-2' },
 ];
 
 // ── Interior signs ───────────────────────────────────────────────────────
@@ -84,6 +104,8 @@ const INTERIOR_SIGNS: SignDef[] = [
   { id: 'sign-food-court', tileX: 58, tileY: 3, texture: 'sign-food-court', tooltipText: 'Food Court' },
   { id: 'sign-gates', tileX: 66, tileY: 3, texture: 'sign-gates', tooltipText: 'Gates \u2192' },
   { id: 'sign-gate-maui', tileX: 76, tileY: 3, texture: 'sign-gate-number', tooltipText: 'Gate 1 \u2014 Maui' },
+  { id: 'sign-gate-2', tileX: 68, tileY: 5, texture: 'sign-gate-number', tooltipText: 'Gate 2 \u2014 Coming Soon' },
+  { id: 'sign-gate-3', tileX: 64, tileY: 5, texture: 'sign-gate-number', tooltipText: 'Gate 3 \u2014 Coming Soon' },
 ];
 
 export class AirportInteriorScene extends InteriorScene {

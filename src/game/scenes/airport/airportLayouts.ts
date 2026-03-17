@@ -226,8 +226,17 @@ export const AIRPORT_INTERIOR_LAYOUT: InteriorLayout = {
     { tileX: 68, tileY: 18, type: 'airport-moving-walkway' },
     { tileX: 69, tileY: 18, type: 'airport-moving-walkway' },
     { tileX: 70, tileY: 18, type: 'airport-moving-walkway' },
-    // Departures board
-    { tileX: 68, tileY: 3, type: 'airport-departures-board' },
+    // Gate signs (terminal corridor zone)
+    { tileX: 68, tileY: 5, type: 'airport-departures-board' },  // Gate 2 area
+    { tileX: 64, tileY: 5, type: 'airport-departures-board' },  // Gate 3 area
+    // Gate desks for coming-soon gates
+    { tileX: 68, tileY: 8, type: 'airport-gate-desk' },   // Gate 2 desk
+    { tileX: 64, tileY: 8, type: 'airport-gate-desk' },   // Gate 3 desk
+    // More benches near gates
+    { tileX: 67, tileY: 12, type: 'airport-bench' },
+    { tileX: 69, tileY: 12, type: 'airport-bench' },
+    { tileX: 64, tileY: 12, type: 'airport-bench' },
+    { tileX: 66, tileY: 12, type: 'airport-bench' },
     // Benches
     { tileX: 65, tileY: 10, type: 'airport-bench' },
     { tileX: 69, tileY: 10, type: 'airport-bench' },
