@@ -119,6 +119,14 @@ export class AirportInteriorScene extends InteriorScene {
   private blockedDoorways = new Set<string>();
   private barrierSprites: (Phaser.GameObjects.Image | null)[] = [];
 
+  // Tarmac background
+  private tarmacRT: Phaser.GameObjects.RenderTexture | null = null;
+  private tarmacSprites: Phaser.GameObjects.GameObject[] = [];
+  private tarmacTweens: Phaser.Tweens.Tween[] = [];
+  private windowFrames: Phaser.GameObjects.Image[] = [];
+  private glassTints: Phaser.GameObjects.Rectangle[] = [];
+  private takeoffTimer: Phaser.Time.TimerEvent | null = null;
+
   constructor() {
     super({ key: 'AirportInteriorScene' });
   }
@@ -182,6 +190,168 @@ export class AirportInteriorScene extends InteriorScene {
 
     // Show first station indicator
     this.updateStationIndicator();
+
+    // ── Tarmac animated background ──────────────────────────────────
+    this.createTarmacBackground();
+    this.createTarmacAnimations();
+    this.createWindowFrames();
+  }
+
+  private createTarmacBackground(): void {
+    const tarmacW = this.layout.widthInTiles * TILE_SIZE;  // 2560
+    const tarmacH = 10 * TILE_SIZE;                         // 320 (rows 0-9)
+
+    this.tarmacRT = this.add.renderTexture(0, 0, tarmacW, tarmacH);
+    this.tarmacRT.setOrigin(0, 0);
+    this.tarmacRT.setDepth(-49);
+
+    // Sky gradient (top 40%)
+    const skyH = Math.floor(tarmacH * 0.4);
+    for (let y = 0; y < skyH; y++) {
+      const t = y / skyH;
+      const r = Math.round(135 + t * 40);
+      const g = Math.round(206 + t * 18);
+      const b = Math.round(235 + t * 10);
+      const color = (r << 16) | (g << 8) | b;
+      const line = this.add.rectangle(tarmacW / 2, y + 0.5, tarmacW, 1, color).setOrigin(0.5, 0.5);
+      this.tarmacRT.draw(line);
+      line.destroy();
+    }
+
+    // Tarmac surface (bottom 60%)
+    const tarmacRect = this.add.rectangle(tarmacW / 2, skyH + (tarmacH - skyH) / 2, tarmacW, tarmacH - skyH, 0x555555).setOrigin(0.5, 0.5);
+    this.tarmacRT.draw(tarmacRect);
+    tarmacRect.destroy();
+
+    // Grass strip at horizon
+    const grassRect = this.add.rectangle(tarmacW / 2, skyH + 4, tarmacW, 12, 0x2D5016).setOrigin(0.5, 0.5);
+    this.tarmacRT.draw(grassRect);
+    grassRect.destroy();
+
+    // Runway center line (white dashes)
+    for (let x = 0; x < tarmacW; x += 40) {
+      const dash = this.add.rectangle(x + 10, skyH + 72, 20, 3, 0xFFFFFF).setOrigin(0, 0.5);
+      this.tarmacRT.draw(dash);
+      dash.destroy();
+    }
+
+    // Taxiway lines (yellow)
+    const taxiLine1 = this.add.rectangle(tarmacW / 2, skyH + 40, tarmacW, 2, 0xFFD700).setOrigin(0.5, 0.5);
+    this.tarmacRT.draw(taxiLine1);
+    taxiLine1.destroy();
+    const taxiLine2 = this.add.rectangle(tarmacW / 2, skyH + 110, tarmacW, 2, 0xFFD700).setOrigin(0.5, 0.5);
+    this.tarmacRT.draw(taxiLine2);
+    taxiLine2.destroy();
+  }
+
+  private createTarmacAnimations(): void {
+    const addSprite = (x: number, y: number, texture: string, depth: number, scaleX = 1, scaleY = 1) => {
+      const s = this.add.image(x, y, texture).setDepth(depth).setScale(scaleX, scaleY);
+      this.tarmacSprites.push(s);
+      return s;
+    };
+    const addTween = (config: Phaser.Types.Tweens.TweenBuilderConfig) => {
+      const t = this.tweens.add(config);
+      this.tarmacTweens.push(t);
+      return t;
+    };
+
+    // ── A. Taxiing planes ──
+    const taxi1 = addSprite(-140, 180, 'airplane-exterior', -48);
+    taxi1.setFlipX(true);
+    addTween({ targets: taxi1, x: 2700, duration: 30000, ease: 'Linear', repeat: -1, repeatDelay: 8000 });
+
+    const taxi2 = addSprite(2700, 220, 'airplane-exterior', -48);
+    addTween({ targets: taxi2, x: -140, duration: 35000, ease: 'Linear', repeat: -1, repeatDelay: 15000 });
+
+    // ── B. Parked plane at gate ──
+    addSprite(2350, 160, 'airplane-exterior', -48, 1.5, 1.5);
+    const beacon = addSprite(2380, 145, 'tarmac-blink-light', -48);
+    addTween({ targets: beacon, alpha: 0, duration: 600, yoyo: true, repeat: -1 });
+    const leftTip = addSprite(2330, 170, 'tarmac-blink-light', -48);
+    leftTip.setTint(0xFF0000);
+    addTween({ targets: leftTip, alpha: 0, duration: 1000, yoyo: true, repeat: -1 });
+    const rightTip = addSprite(2430, 170, 'tarmac-blink-light', -48);
+    rightTip.setTint(0x00FF00);
+    addTween({ targets: rightTip, alpha: 0, duration: 1000, yoyo: true, repeat: -1, delay: 500 });
+
+    // ── C. Takeoff sequence (every 60s) ──
+    this.takeoffTimer = this.time.addEvent({
+      delay: 60000,
+      loop: true,
+      callback: () => {
+        const plane = this.add.image(2600, 200, 'airplane-exterior').setDepth(-48).setScale(1.2);
+        this.tweens.add({
+          targets: plane, x: 600, duration: 3500, ease: 'Quad.easeIn',
+          onComplete: () => {
+            this.tweens.add({
+              targets: plane, y: 40, scaleX: 0.5, scaleY: 0.5, alpha: 0,
+              duration: 2000, ease: 'Sine.easeIn',
+              onComplete: () => plane.destroy(),
+            });
+          },
+        });
+      },
+    });
+
+    // ── D. Luggage cart train ──
+    const cart = addSprite(-60, 250, 'tarmac-luggage-cart', -47);
+    addTween({ targets: cart, x: 2700, duration: 40000, ease: 'Linear', repeat: -1, repeatDelay: 5000 });
+
+    // ── E. Fuel truck ──
+    const fuel = addSprite(800, 260, 'tarmac-fuel-truck', -47);
+    addTween({ targets: fuel, x: 2300, duration: 15000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', repeatDelay: 8000 });
+
+    // ── F. Airport workers ──
+    const worker1 = addSprite(500, 270, 'tarmac-worker', -47);
+    addTween({ targets: worker1, x: 900, duration: 8000, yoyo: true, repeat: -1, ease: 'Linear' });
+    const worker2 = addSprite(1600, 280, 'tarmac-worker', -47);
+    addTween({ targets: worker2, x: 2000, duration: 10000, yoyo: true, repeat: -1, ease: 'Linear', delay: 3000 });
+
+    // ── G. Ground crew with wands ──
+    addSprite(2300, 190, 'tarmac-ground-crew', -47);
+    addSprite(2320, 200, 'tarmac-ground-crew', -47);
+    const wand1 = addSprite(2294, 190, 'tarmac-wand', -47);
+    wand1.rotation = -0.5;
+    addTween({ targets: wand1, rotation: 0.5, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const wand2 = addSprite(2314, 200, 'tarmac-wand', -47);
+    wand2.rotation = 0.5;
+    addTween({ targets: wand2, rotation: -0.5, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 400 });
+
+    // ── H. Runway lights ──
+    const lightXPositions = [200, 500, 800, 1100, 1400, 1700, 2000, 2300];
+    lightXPositions.forEach((lx, i) => {
+      const light = addSprite(lx, 200, 'tarmac-runway-light', -47);
+      light.setAlpha(0.3);
+      addTween({ targets: light, alpha: 1, duration: 800, yoyo: true, repeat: -1, delay: i * 100 });
+    });
+
+    // ── I. Distant landing plane ──
+    const distant = addSprite(2700, 40, 'airplane-exterior', -48, 0.4, 0.4);
+    addTween({ targets: distant, x: -100, y: 80, duration: 45000, ease: 'Linear', repeat: -1, repeatDelay: 20000 });
+
+    // ── J. Control tower (static) ──
+    addSprite(100, 60, 'tarmac-control-tower', -48);
+
+    // ── K. Windsock ──
+    const sock = addSprite(350, 50, 'tarmac-windsock', -47);
+    sock.rotation = -0.2;
+    addTween({ targets: sock, rotation: 0.2, duration: 2500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  private createWindowFrames(): void {
+    const windowXPositions = [2, 5, 8, 11, 14, 19, 22, 25, 29, 32, 35, 39, 42, 45, 48, 51, 55, 58, 61, 65, 67, 69, 71, 75, 77];
+    windowXPositions.forEach(tx => {
+      // Glass tint
+      const tint = this.add.rectangle(tx * TILE_SIZE + TILE_SIZE / 2, 160, TILE_SIZE, 320, 0xAADDFF, 0.05)
+        .setOrigin(0.5, 0.5).setDepth(-44);
+      this.glassTints.push(tint);
+
+      // Window frame (transparent panes show tarmac through)
+      const frame = this.add.image(tx * TILE_SIZE, 0, 'interior-airport-window-tall')
+        .setOrigin(0, 0).setDepth(-40);
+      this.windowFrames.push(frame);
+    });
   }
 
   private updateStationIndicator(): void {
@@ -298,6 +468,22 @@ export class AirportInteriorScene extends InteriorScene {
   }
 
   shutdown(): void {
+    // Cleanup tarmac
+    this.tarmacTweens.forEach(t => { t.stop(); t.destroy(); });
+    this.tarmacTweens = [];
+    this.takeoffTimer?.destroy();
+    this.takeoffTimer = null;
+    this.tarmacSprites.forEach(s => {
+      if (s && 'destroy' in s) (s as Phaser.GameObjects.Image).destroy();
+    });
+    this.tarmacSprites = [];
+    this.windowFrames.forEach(f => f.destroy());
+    this.windowFrames = [];
+    this.glassTints.forEach(t => t.destroy());
+    this.glassTints = [];
+    this.tarmacRT?.destroy();
+    this.tarmacRT = null;
+
     super.shutdown();
     this.npcSystem?.destroy();
     this.signTooltip?.destroy();
