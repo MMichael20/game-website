@@ -38,7 +38,7 @@ export class MauiOverworldScene extends OverworldScene {
 
   getLabelMap(): Record<string, string> {
     return {
-      maui_hotel: 'Airbnb',
+      maui_hotel: 'Hotel',
       maui_airbnb: 'Airbnb Compound',
       maui_surfing: 'Surf Spot',
       maui_taxi: 'Taxi',

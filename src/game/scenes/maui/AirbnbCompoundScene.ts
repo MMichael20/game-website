@@ -29,6 +29,8 @@ export class AirbnbCompoundScene extends OverworldScene {
 
   init(data?: any): void {
     super.init(data);
+    this.playerInWater = false;
+    this.partnerInWater = false;
     if (data?.returnX != null && data?.returnY != null && !data?.returnFromInterior) {
       this.returnPos = { returnX: data.returnX, returnY: data.returnY };
     } else {
@@ -128,8 +130,8 @@ export class AirbnbCompoundScene extends OverworldScene {
     if (zone.id === 'compound_exit') {
       this.fadeToScene('MauiOverworldScene', {
         returnFromInterior: true,
-        returnX: tileToWorld(37, 5).x,
-        returnY: tileToWorld(37, 5).y,
+        returnX: tileToWorld(37, 7).x,
+        returnY: tileToWorld(37, 7).y,
       });
     } else if (zone.id === 'compound_tennis') {
       uiManager.hideHUD();
