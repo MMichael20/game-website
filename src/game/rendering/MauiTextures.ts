@@ -111,7 +111,7 @@ function drawNPCBase(ctx: Ctx, opts: {
 // ── Terrain spritesheet ─────────────────────────────────────────────────
 
 function generateMauiTerrain(scene: Phaser.Scene): void {
-  const c = scene.textures.createCanvas('maui-terrain', 480, 32);
+  const c = scene.textures.createCanvas('maui-terrain', 512, 32);
   if (!c) return;
   const ctx = c.context;
 
@@ -377,6 +377,20 @@ function generateMauiTerrain(scene: Phaser.Scene): void {
     }
   }
 
+  // Index 15 — BlackSand
+  {
+    const ox = 480;
+    const rng = seededRandom(1600);
+    rect(ctx, ox, 0, 32, 32, '#3a3a3a');
+    for (let y = 0; y < 32; y++) {
+      for (let x = 0; x < 32; x++) {
+        const r = rng();
+        if (r < 0.15) px(ctx, ox + x, y, '#2a2a2a');
+        else if (r < 0.25) px(ctx, ox + x, y, '#4a4a4a');
+      }
+    }
+  }
+
   c.refresh();
 
   // Register frames for tile rendering
@@ -396,6 +410,7 @@ function generateMauiTerrain(scene: Phaser.Scene): void {
   texture.add(12, 0, 384, 0, 32, 32);  // Asphalt
   texture.add(13, 0, 416, 0, 32, 32);  // HedgeWall
   texture.add(14, 0, 448, 0, 32, 32);  // PoolEdge
+  texture.add(15, 0, 480, 0, 32, 32);  // BlackSand
 }
 
 // ── NPC textures ────────────────────────────────────────────────────────

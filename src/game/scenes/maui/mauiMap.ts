@@ -21,6 +21,7 @@ export const enum MauiTileType {
   Asphalt = 12,
   HedgeWall = 13,
   PoolEdge = 14,
+  BlackSand = 15,
 }
 
 // 45×30 tile grid — row-major: mauiTileGrid[y][x]
