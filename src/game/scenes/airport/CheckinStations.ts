@@ -171,14 +171,22 @@ export async function playLuggageCheckin(scene: Phaser.Scene): Promise<void> {
   await tweenAsync(scene, { targets: tag, alpha: 1, scale: 1, y: beltPos.y, duration: 200, ease: 'Bounce.easeOut' });
   await delayAsync(scene, 300);
 
-  // Suitcase rolls away down the belt
+  // Other suitcases already on belt join the conveyor
+  const otherCase1 = tempSprite(scene, beltPos.x - 20, beltPos.y, 'prop-suitcase', 19);
+  otherCase1.setAlpha(0.7).setScale(0.8).setTint(0x8888ff);  // Blue tint
+  const otherCase2 = tempSprite(scene, beltPos.x - 40, beltPos.y, 'prop-suitcase', 19);
+  otherCase2.setAlpha(0.7).setScale(0.9).setTint(0xff8888);  // Red tint
+
+  // Suitcase rolls away down the belt with the other cases
   await tweenAsync(scene, {
-    targets: [suitcase, tag],
+    targets: [suitcase, tag, otherCase1, otherCase2],
     x: beltPos.x - 200, alpha: 0,
     duration: 800, ease: 'Sine.easeIn',
   });
   suitcase.destroy();
   tag.destroy();
+  otherCase1.destroy();
+  otherCase2.destroy();
 
   // Remove suitcase textures from player and partner
   as.player.restoreTexture(scene);
