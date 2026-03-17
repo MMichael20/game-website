@@ -9,13 +9,17 @@ export class TennisScene extends Phaser.Scene {
   private sweetSpot!: Phaser.GameObjects.Rectangle;
   private gameOver = false;
   private returnScene = 'MauiOverworldScene';
+  private returnX?: number;
+  private returnY?: number;
 
   constructor() {
     super({ key: 'TennisScene' });
   }
 
-  init(data: { returnScene?: string }): void {
+  init(data: { returnScene?: string; returnX?: number; returnY?: number }): void {
     this.returnScene = data.returnScene ?? 'MauiOverworldScene';
+    this.returnX = data.returnX;
+    this.returnY = data.returnY;
     this.score = 0;
     this.ballSpeed = 2000;
     this.gameOver = false;
@@ -156,7 +160,10 @@ export class TennisScene extends Phaser.Scene {
         label: 'Back to Maui',
         onClick: () => {
           uiManager.hideDialog();
-          this.scene.start(this.returnScene);
+          this.scene.start(this.returnScene, {
+            returnX: this.returnX,
+            returnY: this.returnY,
+          });
         },
       }],
     });
