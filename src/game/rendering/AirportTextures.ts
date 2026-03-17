@@ -1947,6 +1947,469 @@ function generateStationSignTextures(scene: Phaser.Scene): void {
   }
 }
 
+// ── Ben Gurion airport textures ──────────────────────────────────────────
+
+function generateBenGurionTextures(scene: Phaser.Scene): void {
+
+  // ── Interior Decorations (32×32) ─────────────────────────────────────
+
+  // interior-airport-duty-free-counter: glass-topped display counter
+  {
+    const c = scene.textures.createCanvas('interior-airport-duty-free-counter', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Wood base
+    rect(ctx, 0, 12, 32, 20, '#A0824A');
+    rect(ctx, 0, 12, 32, 1, lighten('#A0824A', 0.2));
+    // Front panel detail
+    rect(ctx, 2, 15, 28, 15, darken('#A0824A', 0.15));
+    // Glass top surface
+    ctx.fillStyle = 'rgba(135,206,235,0.6)';
+    ctx.fillRect(0, 8, 32, 5);
+    rect(ctx, 0, 8, 32, 1, lighten('#87CEEB', 0.3));
+    // Small colored items visible inside counter
+    rect(ctx, 4, 10, 3, 2, '#CC4444');   // red item
+    rect(ctx, 10, 10, 3, 2, '#FFD700');  // gold item
+    rect(ctx, 17, 10, 3, 2, '#4488CC'); // blue item
+    rect(ctx, 24, 10, 3, 2, '#CC4444'); // red item
+    c.refresh();
+  }
+
+  // interior-airport-duty-free-shelf: tall shelf with bottles/boxes
+  {
+    const c = scene.textures.createCanvas('interior-airport-duty-free-shelf', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Brown frame
+    rect(ctx, 0, 0, 3, 32, '#8B6914');
+    rect(ctx, 29, 0, 3, 32, '#8B6914');
+    rect(ctx, 0, 0, 32, 2, '#8B6914');
+    // Shelf levels
+    rect(ctx, 3, 10, 26, 2, darken('#8B6914', 0.1));
+    rect(ctx, 3, 20, 26, 2, darken('#8B6914', 0.1));
+    rect(ctx, 3, 30, 26, 2, darken('#8B6914', 0.1));
+    // Items on top shelf (y=2 to y=10)
+    rect(ctx, 5, 3, 4, 7, '#CC2222');   // red box
+    rect(ctx, 11, 4, 3, 6, '#FFD700');  // gold bottle
+    rect(ctx, 16, 3, 4, 7, '#2244AA'); // blue box
+    rect(ctx, 23, 3, 3, 7, '#CC8822'); // amber
+    // Items on middle shelf (y=12 to y=20)
+    rect(ctx, 5, 13, 3, 7, '#FFD700');
+    rect(ctx, 11, 13, 4, 7, '#CC2222');
+    rect(ctx, 18, 13, 3, 7, '#2244AA');
+    rect(ctx, 24, 14, 3, 6, '#996633');
+    // Items on bottom shelf (y=22 to y=30)
+    rect(ctx, 5, 23, 4, 7, '#2244AA');
+    rect(ctx, 12, 23, 3, 7, '#CC2222');
+    rect(ctx, 18, 24, 4, 6, '#FFD700');
+    c.refresh();
+  }
+
+  // interior-airport-perfume-display: small display stand with bottles
+  {
+    const c = scene.textures.createCanvas('interior-airport-perfume-display', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // White base/stand
+    rect(ctx, 4, 22, 24, 10, '#E8E8E8');
+    rect(ctx, 4, 22, 24, 1, lighten('#E8E8E8', 0.2));
+    rect(ctx, 8, 18, 16, 5, '#E8E8E8');
+    // 3 perfume bottles (circle bodies with tiny necks)
+    // Pink bottle
+    ctx.fillStyle = '#F080A0';
+    ctx.beginPath();
+    ctx.arc(9, 14, 4, 0, Math.PI * 2);
+    ctx.fill();
+    rect(ctx, 8, 8, 3, 4, '#F080A0');  // neck
+    rect(ctx, 7, 7, 5, 2, '#C86080'); // cap
+    // Gold bottle
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(16, 13, 4, 0, Math.PI * 2);
+    ctx.fill();
+    rect(ctx, 15, 7, 3, 4, '#FFD700');
+    rect(ctx, 14, 6, 5, 2, '#C8A800');
+    // Blue bottle
+    ctx.fillStyle = '#4488CC';
+    ctx.beginPath();
+    ctx.arc(23, 14, 4, 0, Math.PI * 2);
+    ctx.fill();
+    rect(ctx, 22, 8, 3, 4, '#4488CC');
+    rect(ctx, 21, 7, 5, 2, '#224488');
+    c.refresh();
+  }
+
+  // interior-airport-liquor-display: shelf with tall bottles
+  {
+    const c = scene.textures.createCanvas('interior-airport-liquor-display', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Dark wood shelf
+    rect(ctx, 0, 0, 32, 32, '#5C3A1E');
+    rect(ctx, 0, 28, 32, 4, darken('#5C3A1E', 0.2));
+    rect(ctx, 0, 28, 32, 1, lighten('#5C3A1E', 0.1));
+    // Back wall slightly lighter
+    rect(ctx, 2, 2, 28, 26, '#6B4A2E');
+    // Bottle 1: amber/whisky
+    rect(ctx, 3, 6, 5, 22, '#C87020');
+    rect(ctx, 4, 4, 3, 3, '#C87020');
+    rect(ctx, 3, 6, 5, 2, lighten('#C87020', 0.2));
+    // Bottle 2: green/gin
+    rect(ctx, 10, 8, 5, 20, '#406020');
+    rect(ctx, 11, 6, 3, 3, '#406020');
+    rect(ctx, 10, 8, 5, 2, lighten('#406020', 0.2));
+    // Bottle 3: clear/vodka
+    rect(ctx, 17, 6, 5, 22, '#CCDDEE');
+    rect(ctx, 18, 4, 3, 3, '#CCDDEE');
+    rect(ctx, 17, 6, 5, 1, lighten('#CCDDEE', 0.2));
+    // Bottle 4: amber/cognac (slightly taller)
+    rect(ctx, 24, 4, 5, 24, '#8B4010');
+    rect(ctx, 25, 2, 3, 3, '#8B4010');
+    rect(ctx, 24, 4, 5, 2, lighten('#8B4010', 0.2));
+    c.refresh();
+  }
+
+  // interior-airport-cash-register: small register with screen and keypad
+  {
+    const c = scene.textures.createCanvas('interior-airport-cash-register', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Gray base body
+    rect(ctx, 4, 14, 24, 18, '#888888');
+    rect(ctx, 4, 14, 24, 1, lighten('#888888', 0.2));
+    // Screen
+    rect(ctx, 8, 6, 18, 10, '#333333');
+    rect(ctx, 9, 7, 16, 8, '#1A2A1A');
+    // Screen text (green digits)
+    rect(ctx, 10, 9, 10, 2, '#00CC44');
+    // Keypad dots (3×3 grid)
+    for (let kx = 0; kx < 3; kx++) {
+      for (let ky = 0; ky < 3; ky++) {
+        rect(ctx, 8 + kx * 5, 18 + ky * 4, 3, 3, '#555555');
+      }
+    }
+    // Cash drawer
+    rect(ctx, 6, 26, 20, 4, '#777777');
+    rect(ctx, 6, 26, 20, 1, lighten('#777777', 0.15));
+    rect(ctx, 14, 27, 4, 2, darken('#777777', 0.1));
+    c.refresh();
+  }
+
+  // interior-airport-food-court-table: round table top-down view
+  {
+    const c = scene.textures.createCanvas('interior-airport-food-court-table', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Shadow beneath
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath();
+    ctx.arc(16, 18, 12, 0, Math.PI * 2);
+    ctx.fill();
+    // Table top (brown circle)
+    ctx.fillStyle = '#A0824A';
+    ctx.beginPath();
+    ctx.arc(16, 16, 12, 0, Math.PI * 2);
+    ctx.fill();
+    // Lighter center
+    ctx.fillStyle = lighten('#A0824A', 0.25);
+    ctx.beginPath();
+    ctx.arc(16, 15, 7, 0, Math.PI * 2);
+    ctx.fill();
+    // Table edge highlight
+    ctx.strokeStyle = lighten('#A0824A', 0.15);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(16, 16, 12, Math.PI * 1.3, Math.PI * 1.8);
+    ctx.stroke();
+    c.refresh();
+  }
+
+  // interior-airport-moving-walkway: gray conveyor with directional arrows
+  {
+    const c = scene.textures.createCanvas('interior-airport-moving-walkway', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Gray conveyor body
+    rect(ctx, 0, 8, 32, 16, '#888888');
+    // Side rails
+    rect(ctx, 0, 7, 32, 2, '#AAAAAA');
+    rect(ctx, 0, 23, 32, 2, '#AAAAAA');
+    // Belt segments
+    for (let x = 0; x < 32; x += 6) {
+      rect(ctx, x, 10, 4, 12, '#7A7A7A');
+    }
+    // White directional arrow (pointing right) — x=10, y=12
+    // Arrow shaft
+    rect(ctx, 8, 15, 10, 2, '#FFFFFF');
+    // Arrow head (triangle pointing right)
+    px(ctx, 18, 13, '#FFFFFF');
+    px(ctx, 19, 14, '#FFFFFF');
+    px(ctx, 20, 15, '#FFFFFF');
+    px(ctx, 20, 16, '#FFFFFF');
+    px(ctx, 19, 17, '#FFFFFF');
+    px(ctx, 18, 18, '#FFFFFF');
+    c.refresh();
+  }
+
+  // interior-airport-doorway-barrier: retractable red belt barrier
+  {
+    const c = scene.textures.createCanvas('interior-airport-doorway-barrier', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Left silver post
+    rect(ctx, 3, 6, 4, 26, '#AAAAAA');
+    rect(ctx, 2, 4, 6, 4, '#BBBBBB');
+    rect(ctx, 2, 4, 6, 1, lighten('#BBBBBB', 0.2));
+    // Right silver post
+    rect(ctx, 25, 6, 4, 26, '#AAAAAA');
+    rect(ctx, 24, 4, 6, 4, '#BBBBBB');
+    rect(ctx, 24, 4, 6, 1, lighten('#BBBBBB', 0.2));
+    // Red retractable belt
+    rect(ctx, 7, 14, 18, 3, '#CC3333');
+    rect(ctx, 7, 14, 18, 1, lighten('#CC3333', 0.2));
+    // Belt sag at center
+    px(ctx, 15, 16, '#AA2222');
+    px(ctx, 16, 16, '#AA2222');
+    px(ctx, 15, 17, '#AA2222');
+    px(ctx, 16, 17, '#AA2222');
+    // Belt attachment hooks
+    rect(ctx, 6, 14, 2, 3, '#888888');
+    rect(ctx, 24, 14, 2, 3, '#888888');
+    c.refresh();
+  }
+
+  // ── Tarmac Elements ──────────────────────────────────────────────────
+
+  // tarmac-plane-parked (64×32): side-view pixel-art parked plane
+  {
+    const c = scene.textures.createCanvas('tarmac-plane-parked', 64, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // White fuselage (main body)
+    rect(ctx, 8, 10, 48, 12, '#F0F0F2');
+    // Nose cone
+    rect(ctx, 56, 11, 6, 10, '#E8E8EA');
+    px(ctx, 62, 12, '#DDDDDF'); px(ctx, 62, 19, '#DDDDDF');
+    px(ctx, 63, 13, '#CCCCCE'); px(ctx, 63, 14, '#CCCCCE');
+    px(ctx, 63, 17, '#CCCCCE'); px(ctx, 63, 18, '#CCCCCE');
+    // Blue tail fin
+    ctx.fillStyle = '#2244AA';
+    ctx.beginPath();
+    ctx.moveTo(8, 10);
+    ctx.lineTo(2, 2);
+    ctx.lineTo(16, 2);
+    ctx.lineTo(16, 10);
+    ctx.closePath();
+    ctx.fill();
+    // Tail highlight
+    rect(ctx, 6, 4, 6, 2, '#3355BB');
+    // Gray wings (top-positioned, behind fuselage visually)
+    rect(ctx, 22, 18, 20, 6, '#AAAAAA');
+    rect(ctx, 22, 22, 22, 2, '#999999');
+    // Small horizontal stabilizer at tail
+    rect(ctx, 8, 20, 8, 4, '#AAAAAA');
+    // Window row
+    for (let x = 20; x <= 52; x += 5) {
+      rect(ctx, x, 12, 3, 3, '#87CEEB');
+    }
+    // Blue stripe along fuselage
+    rect(ctx, 10, 21, 46, 2, '#2244AA');
+    // Wheels
+    rect(ctx, 20, 28, 5, 4, '#555555');
+    rect(ctx, 36, 28, 5, 4, '#555555');
+    c.refresh();
+  }
+
+  // tarmac-tow-vehicle (32×16): yellow ground vehicle
+  {
+    const c = scene.textures.createCanvas('tarmac-tow-vehicle', 32, 16);
+    if (!c) return;
+    const ctx = c.context;
+    // Yellow vehicle body
+    rect(ctx, 2, 3, 26, 9, '#FFD700');
+    rect(ctx, 2, 3, 26, 1, lighten('#FFD700', 0.2));
+    // Cab section
+    rect(ctx, 18, 1, 10, 6, '#E8C000');
+    // Windshield
+    rect(ctx, 19, 2, 8, 4, '#AADDFF');
+    // Wheels
+    rect(ctx, 4, 12, 5, 4, '#333333');
+    rect(ctx, 22, 12, 5, 4, '#333333');
+    // Wheel highlights
+    px(ctx, 6, 13, '#555555');
+    px(ctx, 24, 13, '#555555');
+    // Tow arm
+    rect(ctx, 0, 7, 4, 3, '#CCAA00');
+    // Safety stripes on body
+    for (let x = 4; x < 18; x += 4) {
+      rect(ctx, x, 4, 2, 8, darken('#FFD700', 0.1));
+    }
+    c.refresh();
+  }
+
+  // tarmac-plane-takeoff (48×24): plane angled upward ~20°
+  {
+    const c = scene.textures.createCanvas('tarmac-plane-takeoff', 48, 24);
+    if (!c) return;
+    const ctx = c.context;
+    // Draw angled plane using transform
+    ctx.save();
+    ctx.translate(4, 20);
+    ctx.rotate(-0.35); // ~20 degrees up
+    // White fuselage
+    rect(ctx, 0, -4, 38, 9, '#F0F0F2');
+    // Nose
+    rect(ctx, 38, -3, 5, 7, '#E8E8EA');
+    px(ctx, 43, -2, '#DDDDDF'); px(ctx, 43, 4, '#DDDDDF');
+    // Blue tail fin
+    ctx.fillStyle = '#2244AA';
+    ctx.beginPath();
+    ctx.moveTo(0, -4);
+    ctx.lineTo(-4, -12);
+    ctx.lineTo(8, -12);
+    ctx.lineTo(8, -4);
+    ctx.closePath();
+    ctx.fill();
+    // Wings
+    rect(ctx, 14, 2, 14, 4, '#AAAAAA');
+    // Windows
+    for (let x = 12; x <= 34; x += 5) {
+      rect(ctx, x, -2, 3, 2, '#87CEEB');
+    }
+    // Blue stripe
+    rect(ctx, 2, 3, 36, 2, '#2244AA');
+    ctx.restore();
+    c.refresh();
+  }
+
+  // ── Signs (32×16) ────────────────────────────────────────────────────
+
+  // sign-duty-free: blue bg with simplified "DF" text
+  {
+    const c = scene.textures.createCanvas('sign-duty-free', 32, 16);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 32, 16, '#2C3E50');
+    rect(ctx, 0, 0, 32, 1, lighten('#2C3E50', 0.15));
+    // "D" letter (left)
+    rect(ctx, 3, 3, 1, 10, '#FFFFFF');
+    rect(ctx, 3, 3, 4, 1, '#FFFFFF');
+    rect(ctx, 3, 12, 4, 1, '#FFFFFF');
+    rect(ctx, 7, 5, 1, 6, '#FFFFFF');
+    // "F" letter (right)
+    rect(ctx, 11, 3, 1, 10, '#FFFFFF');
+    rect(ctx, 11, 3, 5, 1, '#FFFFFF');
+    rect(ctx, 11, 7, 4, 1, '#FFFFFF');
+    // "FREE" abbreviated — short lines
+    rect(ctx, 19, 5, 10, 1, '#FFFFFF');
+    rect(ctx, 19, 8, 8, 1, '#FFFFFF');
+    rect(ctx, 19, 11, 10, 1, '#FFFFFF');
+    c.refresh();
+  }
+
+  // sign-passport: dark blue with "P" passport icon
+  {
+    const c = scene.textures.createCanvas('sign-passport', 32, 16);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 32, 16, '#1A237E');
+    rect(ctx, 0, 0, 32, 1, lighten('#1A237E', 0.15));
+    // Passport book icon (simplified rectangle)
+    rect(ctx, 8, 3, 10, 10, '#FFFFFF');
+    rect(ctx, 9, 4, 8, 8, '#1A237E');
+    // Gold emblem dot on passport
+    rect(ctx, 11, 6, 4, 4, '#C8A84E');
+    rect(ctx, 12, 5, 2, 6, '#C8A84E');
+    // "PASSPORT" abbreviated text lines
+    rect(ctx, 21, 5, 9, 1, '#FFFFFF');
+    rect(ctx, 21, 8, 7, 1, '#FFFFFF');
+    rect(ctx, 21, 11, 9, 1, '#FFFFFF');
+    c.refresh();
+  }
+
+  // sign-food-court: orange-brown with utensil icon
+  {
+    const c = scene.textures.createCanvas('sign-food-court', 32, 16);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 32, 16, '#8B4513');
+    rect(ctx, 0, 0, 32, 1, lighten('#8B4513', 0.15));
+    // Fork icon (left)
+    rect(ctx, 6, 2, 1, 12, '#FFFFFF');
+    px(ctx, 5, 3, '#FFFFFF'); px(ctx, 5, 4, '#FFFFFF');
+    px(ctx, 7, 3, '#FFFFFF'); px(ctx, 7, 4, '#FFFFFF');
+    px(ctx, 5, 6, '#FFFFFF'); px(ctx, 7, 6, '#FFFFFF');
+    // Knife icon (right of fork)
+    rect(ctx, 10, 2, 1, 12, '#FFFFFF');
+    rect(ctx, 11, 2, 1, 5, '#FFFFFF');
+    // "FOOD" abbreviated
+    rect(ctx, 15, 4, 14, 1, '#FFFFFF');
+    rect(ctx, 15, 7, 12, 1, '#FFFFFF');
+    rect(ctx, 15, 10, 14, 1, '#FFFFFF');
+    c.refresh();
+  }
+
+  // sign-gates: blue with "GATES" text and arrow
+  {
+    const c = scene.textures.createCanvas('sign-gates', 32, 16);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 32, 16, '#2C3E50');
+    rect(ctx, 0, 0, 32, 1, lighten('#2C3E50', 0.15));
+    // "G" letter
+    rect(ctx, 2, 4, 1, 8, '#FFFFFF');
+    rect(ctx, 2, 4, 4, 1, '#FFFFFF');
+    rect(ctx, 2, 11, 4, 1, '#FFFFFF');
+    rect(ctx, 5, 8, 1, 4, '#FFFFFF');
+    rect(ctx, 3, 8, 3, 1, '#FFFFFF');
+    // "T" letter
+    rect(ctx, 8, 4, 5, 1, '#FFFFFF');
+    rect(ctx, 10, 5, 1, 7, '#FFFFFF');
+    // Arrow pointing right
+    rect(ctx, 16, 7, 10, 2, '#FFFFFF');
+    px(ctx, 26, 5, '#FFFFFF');
+    px(ctx, 27, 6, '#FFFFFF');
+    px(ctx, 28, 7, '#FFFFFF');
+    px(ctx, 28, 8, '#FFFFFF');
+    px(ctx, 27, 9, '#FFFFFF');
+    px(ctx, 26, 10, '#FFFFFF');
+    c.refresh();
+  }
+
+  // ── NPC: duty-free clerk (48×48) ─────────────────────────────────────
+
+  // npc-duty-free-clerk: clerk with blue vest, white shirt, dark pants, name badge
+  {
+    const c = scene.textures.createCanvas('npc-duty-free-clerk', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#D2A679',
+      hair: '#3B2314',
+      top: '#FFFFFF',   // white shirt base
+      pants: '#333333',
+      shoes: '#222222',
+      detail: (dCtx) => {
+        // Blue vest panels over white shirt
+        rect(dCtx, 14, 19, 6, 16, '#2C3E50');
+        rect(dCtx, 28, 19, 6, 16, '#2C3E50');
+        rect(dCtx, 14, 19, 20, 2, '#2C3E50');
+        // Vest collar
+        rect(dCtx, 20, 18, 8, 2, '#2C3E50');
+        // Vest buttons
+        px(dCtx, 24, 23, darken('#2C3E50', 0.3));
+        px(dCtx, 24, 27, darken('#2C3E50', 0.3));
+        px(dCtx, 24, 31, darken('#2C3E50', 0.3));
+        // White name badge on chest (left vest panel area)
+        rect(dCtx, 22, 22, 5, 3, '#FFFFFF');
+        // Badge text line
+        rect(dCtx, 23, 23, 3, 1, '#333333');
+      },
+    });
+    c.refresh();
+  }
+}
+
 export function generateAirportTextures(scene: Phaser.Scene): void {
   generateNPCTextures(scene);
   generateBuildingTexture(scene);
@@ -1958,4 +2421,5 @@ export function generateAirportTextures(scene: Phaser.Scene): void {
   generateExteriorDecoTextures(scene);
   generateCheckinPropTextures(scene);
   generateStationSignTextures(scene);
+  generateBenGurionTextures(scene);
 }
