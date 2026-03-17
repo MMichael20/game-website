@@ -4,6 +4,7 @@
 import { generateAirportTextures } from './AirportTextures';
 import { generateMauiTextures } from './MauiTextures';
 import { generateAirbnbCompoundTextures } from './AirbnbCompoundTextures';
+import { generateDrivingTextures } from './DrivingTextures';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -2861,5 +2862,6 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generateAirportTextures(scene);
   generateMauiTextures(scene);
   generateAirbnbCompoundTextures(scene);
+  generateDrivingTextures(scene);
   generateExitDoorTextures(scene);
 }
