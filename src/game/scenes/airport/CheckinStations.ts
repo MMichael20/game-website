@@ -256,6 +256,18 @@ export async function playSecurityScreening(scene: Phaser.Scene): Promise<void> 
   const detectorPos = tileToWorld(30, 18);
   const playerPos = as.player.getPosition();
 
+  // Another passenger's bin goes through first (busy airport feel)
+  const otherBin = tempSprite(scene, conveyorPos.x + 30, conveyorPos.y, 'prop-security-bin', 19);
+  otherBin.setAlpha(0.7).setTint(0xcccccc);
+  await tweenAsync(scene, { targets: otherBin, alpha: 0.7, duration: 200 });
+  await tweenAsync(scene, {
+    targets: otherBin,
+    x: conveyorPos.x - TILE_SIZE * 2, alpha: 0,
+    duration: 800, ease: 'Linear',
+  });
+  otherBin.destroy();
+  await delayAsync(scene, 200);
+
   // Bin appears on conveyor
   const bin = tempSprite(scene, conveyorPos.x + 20, conveyorPos.y, 'prop-security-bin', 20);
   await tweenAsync(scene, { targets: bin, alpha: 1, duration: 300 });
