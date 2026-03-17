@@ -41,7 +41,7 @@ export class MauiOverworldScene extends OverworldScene {
       maui_hotel: 'Hotel',
       maui_airbnb: 'Airbnb Compound',
       maui_surfing: 'Surf Spot',
-      maui_taxi: 'Taxi',
+      maui_taxi: 'Car',
     };
   }
 
@@ -166,21 +166,8 @@ export class MauiOverworldScene extends OverworldScene {
         uiManager.hideNPCDialog();
       });
     } else if (zone.id === 'maui_taxi') {
-      uiManager.showNPCDialog(
-        ['Ready to head to the airport?', 'Hang loose! Enjoy your flight home!'],
-        () => {
-          uiManager.hideNPCDialog();
-          uiManager.hideHUD();
-          uiManager.hideInteractionPrompt();
-          const cam = this.cameras.main;
-          this.tweens.add({
-            targets: cam, alpha: 0, duration: 500, ease: 'Linear',
-            onComplete: () => {
-              this.scene.start('AirplaneCutscene', { destination: 'home' });
-            },
-          });
-        },
-      );
+      const pos = this.player.getPosition();
+      this.fadeToScene('DrivingScene', { returnX: pos.x, returnY: pos.y });
     }
   }
 

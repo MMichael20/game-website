@@ -205,6 +205,6 @@ export const MAUI_CHECKPOINT_ZONES: CheckpointZone[] = [
     centerX: tileToWorld(40, 10).x,
     centerY: tileToWorld(40, 10).y,
     radius: 48,
-    promptText: 'Tap to take Taxi to Airport',
+    promptText: 'Get in Car',
   },
 ];
