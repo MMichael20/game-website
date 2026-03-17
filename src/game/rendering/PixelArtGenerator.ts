@@ -6,6 +6,7 @@ import { generateMauiTextures } from './MauiTextures';
 import { generateAirbnbCompoundTextures } from './AirbnbCompoundTextures';
 import { generateDrivingTextures } from './DrivingTextures';
 import { generateHanaTextures } from './HanaTextures';
+import { generateSunBeachTextures } from './SunBeachTextures';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -2865,5 +2866,6 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generateAirbnbCompoundTextures(scene);
   generateDrivingTextures(scene);
   generateHanaTextures(scene);
+  generateSunBeachTextures(scene);
   generateExitDoorTextures(scene);
 }
