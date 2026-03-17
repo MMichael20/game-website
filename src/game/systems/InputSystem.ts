@@ -179,6 +179,7 @@ export class InputSystem {
   }
 
   isBackPressed(): boolean {
+    if (this.frozen) return false;
     return this.escKey?.isDown || false;
   }
 

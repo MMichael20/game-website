@@ -218,6 +218,28 @@ function generateNPCTextures(scene: Phaser.Scene): void {
     });
     c.refresh();
   }
+
+  // npc-passport-officer: dark uniform, stern look
+  {
+    const c = scene.textures.createCanvas('npc-passport-officer', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#D4A574',
+      hair: '#222222',
+      top: '#2C3E50',
+      pants: '#1A1A2E',
+      shoes: '#111111',
+      detail: (dCtx) => {
+        // Badge
+        rect(dCtx, 16, 22, 4, 4, '#C8A84E');
+        // Shoulder marks
+        rect(dCtx, 14, 19, 3, 1, '#C8A84E');
+        rect(dCtx, 31, 19, 3, 1, '#C8A84E');
+      },
+    });
+    c.refresh();
+  }
 }
 
 // ── Building ─────────────────────────────────────────────────────────────
@@ -1633,6 +1655,264 @@ function generateExteriorDecoTextures(scene: Phaser.Scene): void {
   }
 }
 
+// ── Check-in prop textures ───────────────────────────────────────────────
+
+function generateCheckinPropTextures(scene: Phaser.Scene): void {
+  // prop-boarding-pass (48x24) — white card with barcode lines
+  {
+    const c = scene.textures.createCanvas('prop-boarding-pass', 48, 24);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 48, 24, '#FFFFFF');
+    rect(ctx, 0, 0, 48, 1, '#CCCCCC');
+    rect(ctx, 0, 23, 48, 1, '#CCCCCC');
+    rect(ctx, 0, 0, 1, 24, '#CCCCCC');
+    rect(ctx, 47, 0, 1, 24, '#CCCCCC');
+    // Header bar
+    rect(ctx, 2, 2, 44, 5, '#2255AA');
+    // "BOARDING PASS" text (tiny dots)
+    for (let x = 6; x < 42; x += 3) {
+      rect(ctx, x, 3, 2, 3, '#FFFFFF');
+    }
+    // Destination text line
+    rect(ctx, 4, 9, 20, 2, '#333333');
+    // Seat text line
+    rect(ctx, 4, 13, 12, 2, '#333333');
+    // Barcode
+    for (let x = 28; x < 46; x += 2) {
+      rect(ctx, x, 9, 1, 12, '#000000');
+    }
+    // Dashed tear line
+    for (let x = 25; x < 26; x++) {
+      for (let y = 2; y < 22; y += 3) {
+        px(ctx, x, y, '#AAAAAA');
+      }
+    }
+    c.refresh();
+  }
+
+  // prop-passport (24x32) — dark blue booklet with gold emblem
+  {
+    const c = scene.textures.createCanvas('prop-passport', 24, 32);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 24, 32, '#1A3A6A');
+    rect(ctx, 0, 0, 24, 1, lighten('#1A3A6A'));
+    rect(ctx, 0, 31, 24, 1, darken('#1A3A6A'));
+    // Gold emblem (circle)
+    rect(ctx, 9, 10, 6, 6, '#C8A84E');
+    rect(ctx, 10, 9, 4, 8, '#C8A84E');
+    // Text lines
+    rect(ctx, 6, 20, 12, 1, '#C8A84E');
+    rect(ctx, 8, 23, 8, 1, '#C8A84E');
+    // Spine
+    rect(ctx, 0, 0, 2, 32, darken('#1A3A6A', 0.15));
+    c.refresh();
+  }
+
+  // prop-stamp (24x24) — red circular stamp
+  {
+    const c = scene.textures.createCanvas('prop-stamp', 24, 24);
+    if (!c) return;
+    const ctx = c.context;
+    ctx.strokeStyle = '#CC3333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(12, 12, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    // Inner text lines
+    rect(ctx, 7, 9, 10, 1, '#CC3333');
+    rect(ctx, 8, 12, 8, 1, '#CC3333');
+    rect(ctx, 7, 15, 10, 1, '#CC3333');
+    c.refresh();
+  }
+
+  // prop-suitcase (24x20) — small suitcase for luggage animation
+  {
+    const c = scene.textures.createCanvas('prop-suitcase', 24, 20);
+    if (!c) return;
+    const ctx = c.context;
+    // Body
+    rect(ctx, 2, 4, 20, 14, '#8B4513');
+    rect(ctx, 2, 4, 20, 2, lighten('#8B4513', 0.2));
+    // Handle
+    rect(ctx, 9, 1, 6, 4, '#555555');
+    rect(ctx, 10, 0, 4, 2, '#555555');
+    // Clasp
+    rect(ctx, 10, 10, 4, 2, '#C8A84E');
+    // Wheels
+    rect(ctx, 5, 18, 3, 2, '#333333');
+    rect(ctx, 16, 18, 3, 2, '#333333');
+    c.refresh();
+  }
+
+  // prop-luggage-tag (16x10) — small white tag with barcode
+  {
+    const c = scene.textures.createCanvas('prop-luggage-tag', 16, 10);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 16, 10, '#FFFFFF');
+    rect(ctx, 0, 0, 16, 1, '#DDDDDD');
+    rect(ctx, 0, 9, 16, 1, '#DDDDDD');
+    // Barcode
+    for (let x = 2; x < 14; x += 2) {
+      rect(ctx, x, 3, 1, 5, '#000000');
+    }
+    // String hole
+    rect(ctx, 1, 1, 2, 2, '#AAAAAA');
+    c.refresh();
+  }
+
+  // prop-scale-display (32x16) — digital weight readout
+  {
+    const c = scene.textures.createCanvas('prop-scale-display', 32, 16);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 32, 16, '#222222');
+    rect(ctx, 1, 1, 30, 14, '#111111');
+    // Green digits "18.5"
+    rect(ctx, 4, 4, 4, 8, '#00FF66');
+    rect(ctx, 10, 4, 4, 8, '#00FF66');
+    rect(ctx, 15, 10, 2, 2, '#00FF66'); // decimal
+    rect(ctx, 18, 4, 4, 8, '#00FF66');
+    // "kg" text
+    rect(ctx, 24, 6, 3, 1, '#00FF66');
+    rect(ctx, 24, 9, 3, 1, '#00FF66');
+    c.refresh();
+  }
+
+  // prop-security-bin (32x12) — grey tray
+  {
+    const c = scene.textures.createCanvas('prop-security-bin', 32, 12);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 2, 32, 10, '#888888');
+    rect(ctx, 1, 0, 30, 3, '#999999');
+    rect(ctx, 2, 3, 28, 8, '#777777');
+    rect(ctx, 1, 0, 30, 1, lighten('#999999'));
+    c.refresh();
+  }
+
+  // prop-small-items (24x8) — phone + keys + wallet cluster
+  {
+    const c = scene.textures.createCanvas('prop-small-items', 24, 8);
+    if (!c) return;
+    const ctx = c.context;
+    // Phone
+    rect(ctx, 1, 1, 5, 7, '#222222');
+    rect(ctx, 2, 2, 3, 4, '#4488CC');
+    // Keys
+    rect(ctx, 9, 2, 3, 3, '#CCAA44');
+    rect(ctx, 10, 5, 1, 2, '#CCAA44');
+    rect(ctx, 12, 4, 2, 1, '#CCAA44');
+    // Wallet
+    rect(ctx, 16, 1, 7, 6, '#664422');
+    rect(ctx, 16, 1, 7, 1, lighten('#664422'));
+    c.refresh();
+  }
+
+  // prop-scanner-line (32x2) — thin red scanning line
+  {
+    const c = scene.textures.createCanvas('prop-scanner-line', 32, 2);
+    if (!c) return;
+    const ctx = c.context;
+    rect(ctx, 0, 0, 32, 2, '#FF3333');
+    rect(ctx, 0, 0, 32, 1, '#FF6666');
+    c.refresh();
+  }
+
+  // prop-checkmark (16x16) — green checkmark
+  {
+    const c = scene.textures.createCanvas('prop-checkmark', 16, 16);
+    if (!c) return;
+    const ctx = c.context;
+    ctx.strokeStyle = '#33CC33';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(2, 8);
+    ctx.lineTo(6, 13);
+    ctx.lineTo(14, 3);
+    ctx.stroke();
+    c.refresh();
+  }
+
+  // prop-departure-board (128x96) — flip-board overlay with destinations
+  {
+    const c = scene.textures.createCanvas('prop-departure-board', 128, 96);
+    if (!c) return;
+    const ctx = c.context;
+    // Board background
+    rect(ctx, 0, 0, 128, 96, '#1A1A1A');
+    rect(ctx, 0, 0, 128, 2, '#444444');
+    rect(ctx, 0, 94, 128, 2, '#444444');
+    // Title bar
+    rect(ctx, 0, 0, 128, 16, '#333333');
+    // "DEPARTURES" text dots
+    for (let x = 20; x < 108; x += 4) {
+      rect(ctx, x, 5, 3, 6, '#FFAA00');
+    }
+    // Row 1: MAUI — highlighted
+    rect(ctx, 4, 20, 120, 18, '#2A3A2A');
+    rect(ctx, 8, 24, 40, 2, '#FFAA00'); // destination
+    rect(ctx, 60, 24, 20, 2, '#FFAA00'); // time
+    rect(ctx, 88, 24, 32, 2, '#33CC33'); // status: ON TIME
+    rect(ctx, 8, 29, 30, 2, '#FFAA00'); // flight number
+    // Row 2: PARIS — greyed
+    rect(ctx, 4, 42, 120, 18, '#222222');
+    rect(ctx, 8, 46, 40, 2, '#555555');
+    rect(ctx, 60, 46, 20, 2, '#555555');
+    rect(ctx, 88, 46, 32, 2, '#555555'); // COMING SOON
+    // Row 3: TOKYO — greyed
+    rect(ctx, 4, 64, 120, 18, '#222222');
+    rect(ctx, 8, 68, 40, 2, '#555555');
+    rect(ctx, 60, 68, 20, 2, '#555555');
+    rect(ctx, 88, 68, 32, 2, '#555555');
+    c.refresh();
+  }
+
+  // interior-airport-passport-desk (32x32) — small desk for passport control
+  {
+    const c = scene.textures.createCanvas('interior-airport-passport-desk', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Desk body
+    rect(ctx, 0, 12, 32, 20, '#5C4033');
+    rect(ctx, 0, 10, 32, 4, '#6B4F3A');
+    rect(ctx, 0, 10, 32, 1, lighten('#6B4F3A', 0.2));
+    // Small computer/screen on desk
+    rect(ctx, 20, 4, 8, 7, '#333333');
+    rect(ctx, 21, 5, 6, 5, '#4488AA');
+    rect(ctx, 23, 11, 4, 1, '#333333');
+    // Stamp pad
+    rect(ctx, 4, 6, 6, 4, '#222222');
+    rect(ctx, 5, 7, 4, 2, '#881111');
+    c.refresh();
+  }
+
+  // interior-airport-luggage-belt (32x32) — check-in luggage conveyor
+  {
+    const c = scene.textures.createCanvas('interior-airport-luggage-belt', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Belt base
+    rect(ctx, 0, 14, 32, 12, '#444444');
+    // Silver rails
+    rect(ctx, 0, 13, 32, 2, '#AAAAAA');
+    rect(ctx, 0, 25, 32, 2, '#AAAAAA');
+    // Rollers
+    for (let x = 3; x < 30; x += 4) {
+      rect(ctx, x, 16, 2, 8, '#555555');
+    }
+    // Scale platform on top
+    rect(ctx, 4, 8, 24, 6, '#666666');
+    rect(ctx, 4, 8, 24, 1, lighten('#666666', 0.2));
+    // Legs
+    rect(ctx, 2, 27, 3, 5, '#777777');
+    rect(ctx, 27, 27, 3, 5, '#777777');
+    c.refresh();
+  }
+}
+
 // ── Main export ──────────────────────────────────────────────────────────
 
 export function generateAirportTextures(scene: Phaser.Scene): void {
@@ -1644,4 +1924,5 @@ export function generateAirportTextures(scene: Phaser.Scene): void {
   generateBoardingTextures(scene);
   generateAirplaneTaxiingTexture(scene);
   generateExteriorDecoTextures(scene);
+  generateCheckinPropTextures(scene);
 }

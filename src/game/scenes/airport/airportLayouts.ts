@@ -29,6 +29,9 @@ export const AIRPORT_INTERIOR_LAYOUT: InteriorLayout = {
     { type: 'airport-plant', tileX: 32, tileY: 14 },
     { type: 'airport-bench', tileX: 4, tileY: 16 },
     { type: 'airport-bench', tileX: 32, tileY: 16 },
+    { type: 'airport-luggage-belt', tileX: 14, tileY: 16 },
+    // PASSPORT CONTROL (y=12-13 corridor)
+    { type: 'airport-passport-desk', tileX: 18, tileY: 12 },
     // SECURITY (y=8-11)
     { type: 'airport-metal-detector', tileX: 12, tileY: 10 },
     { type: 'airport-metal-detector', tileX: 24, tileY: 10 },
