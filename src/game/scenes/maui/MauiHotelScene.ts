@@ -7,7 +7,7 @@ import { saveCurrentScene } from '../../systems/SaveSystem';
 const AIRBNB_ROOMS = [
   { x: 0, y: 0, w: 11, h: 8 },   // Kitchen (left-top)
   { x: 10, y: 0, w: 10, h: 8 },   // Bathroom (right-top)
-  { x: 0, y: 7, w: 20, h: 5 },    // Bedroom (full-width bottom)
+  { x: 0, y: 7, w: 20, h: 6 },    // Bedroom (full-width bottom, includes exit row 11)
 ];
 
 const AIRBNB_DOORWAYS = [
