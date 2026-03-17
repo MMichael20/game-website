@@ -105,10 +105,6 @@ export class AirportInteriorScene extends InteriorScene {
   private blockedDoorways = new Set<string>();
   private barrierSprites: (Phaser.GameObjects.Image | null)[] = [];
 
-  // Tarmac
-  private tarmacSprites: Phaser.GameObjects.GameObject[] = [];
-  private tarmacTimer: Phaser.Time.TimerEvent | null = null;
-
   constructor() {
     super({ key: 'AirportInteriorScene' });
   }
@@ -146,47 +142,6 @@ export class AirportInteriorScene extends InteriorScene {
       const centerPos = tileToWorld(pos.x, 18);
       const barrier = this.add.image(centerPos.x + TILE_SIZE / 2, centerPos.y, 'interior-airport-doorway-barrier').setDepth(10);
       this.barrierSprites.push(barrier);
-    });
-
-    // ── Tarmac background behind top wall ─────────────────────────────
-    const mapPxW = 80 * TILE_SIZE;
-    const tarmacBg = this.add.rectangle(mapPxW / 2, 2 * TILE_SIZE, mapPxW, 4 * TILE_SIZE, 0x555555);
-    tarmacBg.setDepth(-60);
-    this.tarmacSprites.push(tarmacBg);
-
-    // Runway dashes on tarmac
-    for (let x = 0; x < mapPxW; x += 64) {
-      const dash = this.add.rectangle(x + 16, 2 * TILE_SIZE, 24, 3, 0xffffff, 0.6);
-      dash.setDepth(-59);
-      this.tarmacSprites.push(dash);
-    }
-
-    // Parked planes (static)
-    const planePositions = [10, 45, 70];
-    planePositions.forEach(tileX => {
-      const plane = this.add.image(tileX * TILE_SIZE, 1 * TILE_SIZE, 'tarmac-plane-parked').setDepth(-45);
-      this.tarmacSprites.push(plane);
-    });
-
-    // Tow vehicle (loops left to right)
-    const tow = this.add.image(-32, 2.5 * TILE_SIZE, 'tarmac-tow-vehicle').setDepth(-45);
-    this.tarmacSprites.push(tow);
-    this.tweens.add({
-      targets: tow, x: mapPxW + 32, duration: 15000, ease: 'Linear',
-      repeat: -1, onRepeat: () => { tow.x = -32; },
-    });
-
-    // Periodic takeoff plane
-    this.tarmacTimer = this.time.addEvent({
-      delay: 25000, loop: true,
-      callback: () => {
-        const plane = this.add.image(mapPxW, TILE_SIZE, 'tarmac-plane-takeoff').setDepth(-45);
-        this.tweens.add({
-          targets: plane, x: -200, y: -50, scaleX: 1.5, scaleY: 1.5,
-          duration: 8000, ease: 'Sine.easeIn',
-          onComplete: () => plane.destroy(),
-        });
-      },
     });
 
     // ── Create station NPC sprites (static images) ────────────────────
@@ -340,14 +295,5 @@ export class AirportInteriorScene extends InteriorScene {
     this.barrierSprites.forEach(s => s?.destroy());
     this.barrierSprites = [];
 
-    // Cleanup tarmac sprites
-    this.tarmacSprites.forEach(s => s.destroy());
-    this.tarmacSprites = [];
-
-    // Cleanup tarmac timer
-    if (this.tarmacTimer) {
-      this.tarmacTimer.destroy();
-      this.tarmacTimer = null;
-    }
   }
 }

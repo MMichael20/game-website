@@ -466,12 +466,26 @@ function generateInteriorTextures(scene: Phaser.Scene): void {
     const ctx = c.context;
     // Frame
     rect(ctx, 0, 0, 32, 32, '#999999');
-    // Glass
+    // Glass — sky blue upper portion
     rect(ctx, 2, 2, 28, 28, '#AADDFF');
-    // Mullion cross
+    // Tarmac strip across lower 40% of glass area (y=18 to y=30, within glass 2..30)
+    rect(ctx, 2, 18, 28, 12, '#666666');
+    // Subtle tarmac highlight
+    rect(ctx, 2, 18, 28, 1, '#888888');
+    // Yellow dashed center line on tarmac
+    rect(ctx, 4,  21, 5, 2, '#FFDD00');
+    rect(ctx, 13, 21, 5, 2, '#FFDD00');
+    rect(ctx, 22, 21, 5, 2, '#FFDD00');
+    // Tiny white plane silhouette — body
+    rect(ctx, 8, 14, 10, 3, '#FFFFFF');
+    // Tail fin
+    rect(ctx, 16, 11, 3, 3, '#FFFFFF');
+    // Wing
+    rect(ctx, 9, 17, 8, 2, '#FFFFFF');
+    // Mullion cross (drawn on top so frame stays crisp)
     rect(ctx, 14, 2, 4, 28, '#999999');
     rect(ctx, 2, 14, 28, 4, '#999999');
-    // Highlight on glass
+    // Highlight on glass (upper-left pane)
     rect(ctx, 4, 4, 3, 6, lighten('#AADDFF', 0.3));
     rect(ctx, 20, 4, 3, 6, lighten('#AADDFF', 0.3));
     c.refresh();
