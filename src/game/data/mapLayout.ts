@@ -65,8 +65,7 @@ export const walkGrid: boolean[][] = Array.from({ length: MAP_HEIGHT }, (_, y) =
     if (x >= 24 && x <= 26 && y >= 3 && y <= 5) return false;
     // Terminal building footprint (new airport zone)
     if (x >= 14 && x <= 25 && y >= 29 && y <= 31) return false;
-    // Tarmac + runway — all blocked (rows 32-37)
-    if (x >= 5 && x <= 34 && y >= 32 && y <= 37) return false;
+    // Tarmac + runway — walkable (players can explore the airfield)
     // Everything else is walkable
     return true;
   });
