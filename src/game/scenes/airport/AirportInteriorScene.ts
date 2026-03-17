@@ -29,83 +29,75 @@ const DOORWAY_POSITIONS = [
 
 // ── Station NPCs — static sprites rendered at their posts ───────────────
 const STATION_NPC_DEFS = [
-  { texture: 'npc-ticket-agent', tileX: 4, tileY: 15 },      // Counter 1
-  { texture: 'npc-ticket-agent', tileX: 8, tileY: 15 },       // Counter 2 (decorative)
-  { texture: 'npc-ticket-agent', tileX: 12, tileY: 15 },      // Counter 3 (luggage station)
-  { texture: 'npc-ticket-agent', tileX: 4, tileY: 22 },       // Counter 4 (decorative)
-  { texture: 'npc-passport-officer', tileX: 22, tileY: 18 },  // Passport (active)
-  { texture: 'npc-passport-officer', tileX: 20, tileY: 18 },  // Passport (decorative)
-  { texture: 'npc-passport-officer', tileX: 24, tileY: 18 },  // Passport (decorative)
-  { texture: 'npc-security-guard', tileX: 30, tileY: 18 },    // Security lane 1
-  { texture: 'npc-security-guard', tileX: 34, tileY: 18 },    // Security lane 2 (decorative)
-  { texture: 'npc-gate-agent', tileX: 76, tileY: 10 },        // Boarding gate
-  { texture: 'npc-gate-agent', tileX: 68, tileY: 8 },         // Gate 2 (coming soon)
-  { texture: 'npc-gate-agent', tileX: 64, tileY: 8 },         // Gate 3 (coming soon)
+  { texture: 'npc-ticket-agent', tileX: 4, tileY: 13 },       // Counter 1
+  { texture: 'npc-ticket-agent', tileX: 8, tileY: 13 },       // Counter 2 (decorative)
+  { texture: 'npc-ticket-agent', tileX: 12, tileY: 13 },      // Counter 3 (luggage station)
+  // Counter 4 removed — no space in shorter layout
+  { texture: 'npc-passport-officer', tileX: 22, tileY: 16 },  // Passport (active)
+  { texture: 'npc-passport-officer', tileX: 20, tileY: 16 },  // Passport (decorative)
+  { texture: 'npc-passport-officer', tileX: 24, tileY: 16 },  // Passport (decorative)
+  { texture: 'npc-security-guard', tileX: 30, tileY: 16 },    // Security lane 1
+  { texture: 'npc-security-guard', tileX: 34, tileY: 16 },    // Security lane 2 (decorative)
+  { texture: 'npc-gate-agent', tileX: 76, tileY: 12 },        // Boarding gate
+  { texture: 'npc-gate-agent', tileX: 68, tileY: 12 },        // Gate 2 (coming soon)
+  { texture: 'npc-gate-agent', tileX: 64, tileY: 12 },        // Gate 3 (coming soon)
 ];
 
 // ── Dialog NPCs (via NPCSystem) ─────────────────────────────────────────
 const DIALOG_NPCS: NPCDef[] = [
-  // Zone 1
-  { id: 'sitting-pax-1', tileX: 3, tileY: 30, behavior: 'sit', texture: 'npc-traveler' },
-  { id: 'sitting-pax-2', tileX: 12, tileY: 33, behavior: 'sit', texture: 'npc-traveler-2' },
-  { id: 'walking-pax-1', tileX: 10, tileY: 25, behavior: 'walk', texture: 'npc-traveler',
-    walkPath: [{ x: 10, y: 25 }, { x: 10, y: 10 }] },
+  // Zone 1: walking passenger
+  { id: 'walking-pax-1', tileX: 10, tileY: 19, behavior: 'walk', texture: 'npc-traveler',
+    walkPath: [{ x: 10, y: 19 }, { x: 10, y: 12 }] },
   // Zone 4: Duty Free
-  { id: 'duty-free-clerk', tileX: 45, tileY: 10, behavior: 'idle',
+  { id: 'duty-free-clerk', tileX: 45, tileY: 12, behavior: 'idle',
     texture: 'npc-duty-free-clerk', interactable: true, onInteract: 'dialog',
     interactionData: { lines: [
       'Welcome to Ben Gurion Duty Free!',
       'We have the finest perfumes, chocolates, and Dead Sea cosmetics.',
       'Take your time browsing!',
     ] } },
-  { id: 'shopping-pax-1', tileX: 42, tileY: 20, behavior: 'idle', texture: 'npc-traveler' },
-  { id: 'shopping-pax-2', tileX: 48, tileY: 25, behavior: 'idle', texture: 'npc-traveler-2' },
+  { id: 'shopping-pax-1', tileX: 42, tileY: 17, behavior: 'idle', texture: 'npc-traveler' },
   // Zone 5: Food Court
-  { id: 'food-chef', tileX: 56, tileY: 8, behavior: 'idle',
+  { id: 'food-chef', tileX: 56, tileY: 12, behavior: 'idle',
     texture: 'npc-cafe-worker', interactable: true, onInteract: 'dialog',
     interactionData: { lines: [
       'Welcome to Terminal Cafe!',
       'Try our shakshuka or grab a coffee for the gate.',
     ] } },
-  { id: 'eating-pax-1', tileX: 56, tileY: 17, behavior: 'sit', texture: 'npc-traveler' },
-  { id: 'eating-pax-2', tileX: 60, tileY: 23, behavior: 'sit', texture: 'npc-traveler-2' },
+  { id: 'eating-pax-1', tileX: 56, tileY: 15, behavior: 'sit', texture: 'npc-traveler' },
   // Zone 6: Terminal
-  { id: 'walking-pax-2', tileX: 65, tileY: 20, behavior: 'walk', texture: 'npc-traveler-2',
-    walkPath: [{ x: 65, y: 20 }, { x: 72, y: 20 }] },
-  // More passengers in check-in area
-  { id: 'sitting-pax-3', tileX: 7, tileY: 36, behavior: 'sit', texture: 'npc-traveler' },
-  { id: 'standing-pax-1', tileX: 10, tileY: 18, behavior: 'idle', texture: 'npc-traveler-2' },
-  // Passport zone passengers
-  { id: 'passport-waiter-1', tileX: 21, tileY: 24, behavior: 'idle', texture: 'npc-traveler' },
-  { id: 'passport-waiter-2', tileX: 23, tileY: 26, behavior: 'sit', texture: 'npc-traveler-2' },
-  // Security zone passengers
-  { id: 'security-queue-1', tileX: 31, tileY: 22, behavior: 'idle', texture: 'npc-traveler' },
-  { id: 'security-queue-2', tileX: 33, tileY: 22, behavior: 'idle', texture: 'npc-traveler-2' },
-  // Terminal corridor walkers
+  { id: 'walking-pax-2', tileX: 65, tileY: 18, behavior: 'walk', texture: 'npc-traveler-2',
+    walkPath: [{ x: 65, y: 18 }, { x: 72, y: 18 }] },
+  // More passengers
+  { id: 'standing-pax-1', tileX: 10, tileY: 16, behavior: 'idle', texture: 'npc-traveler-2' },
+  // Passport zone
+  { id: 'passport-waiter-1', tileX: 21, tileY: 18, behavior: 'idle', texture: 'npc-traveler' },
+  // Security zone
+  { id: 'security-queue-1', tileX: 31, tileY: 18, behavior: 'idle', texture: 'npc-traveler' },
+  { id: 'security-queue-2', tileX: 33, tileY: 18, behavior: 'idle', texture: 'npc-traveler-2' },
+  // Terminal corridor walker
   { id: 'corridor-walker-1', tileX: 66, tileY: 15, behavior: 'walk', texture: 'npc-traveler',
     walkPath: [{ x: 66, y: 15 }, { x: 72, y: 15 }] },
-  // Zone 7: Gate
-  { id: 'gate-pax-1', tileX: 75, tileY: 22, behavior: 'sit', texture: 'npc-traveler' },
-  { id: 'gate-pax-2', tileX: 77, tileY: 26, behavior: 'sit', texture: 'npc-traveler-2' },
-  // Gate area — more waiting passengers
-  { id: 'gate-pax-3', tileX: 75, tileY: 18, behavior: 'sit', texture: 'npc-traveler' },
-  { id: 'gate-pax-4', tileX: 77, tileY: 22, behavior: 'sit', texture: 'npc-traveler-2' },
+  // Gate area
+  { id: 'gate-pax-1', tileX: 75, tileY: 18, behavior: 'sit', texture: 'npc-traveler' },
+  { id: 'gate-pax-3', tileX: 75, tileY: 16, behavior: 'sit', texture: 'npc-traveler' },
+  { id: 'gate-pax-4', tileX: 77, tileY: 18, behavior: 'sit', texture: 'npc-traveler-2' },
   // Coming soon gate passengers
-  { id: 'gate2-pax-1', tileX: 67, tileY: 12, behavior: 'sit', texture: 'npc-traveler' },
-  { id: 'gate3-pax-1', tileX: 65, tileY: 12, behavior: 'sit', texture: 'npc-traveler-2' },
+  { id: 'gate2-pax-1', tileX: 67, tileY: 14, behavior: 'sit', texture: 'npc-traveler' },
+  { id: 'gate3-pax-1', tileX: 65, tileY: 14, behavior: 'sit', texture: 'npc-traveler-2' },
 ];
 
 // ── Interior signs ───────────────────────────────────────────────────────
 const INTERIOR_SIGNS: SignDef[] = [
-  { id: 'sign-departures', tileX: 9, tileY: 2, texture: 'sign-departures', tooltipText: 'Departures' },
-  { id: 'sign-passport', tileX: 22, tileY: 3, texture: 'sign-passport', tooltipText: 'Passport Control' },
-  { id: 'sign-security', tileX: 32, tileY: 3, texture: 'sign-security', tooltipText: 'Security Screening' },
-  { id: 'sign-duty-free', tileX: 45, tileY: 3, texture: 'sign-duty-free', tooltipText: 'Duty Free' },
-  { id: 'sign-food-court', tileX: 58, tileY: 3, texture: 'sign-food-court', tooltipText: 'Food Court' },
-  { id: 'sign-gates', tileX: 66, tileY: 3, texture: 'sign-gates', tooltipText: 'Gates \u2192' },
-  { id: 'sign-gate-maui', tileX: 76, tileY: 3, texture: 'sign-gate-number', tooltipText: 'Gate 1 \u2014 Maui' },
-  { id: 'sign-gate-2', tileX: 68, tileY: 5, texture: 'sign-gate-number', tooltipText: 'Gate 2 \u2014 Coming Soon' },
-  { id: 'sign-gate-3', tileX: 64, tileY: 5, texture: 'sign-gate-number', tooltipText: 'Gate 3 \u2014 Coming Soon' },
+  { id: 'sign-departures', tileX: 9, tileY: 11, texture: 'sign-departures', tooltipText: 'Departures' },
+  { id: 'sign-passport', tileX: 22, tileY: 11, texture: 'sign-passport', tooltipText: 'Passport Control' },
+  { id: 'sign-security', tileX: 32, tileY: 11, texture: 'sign-security', tooltipText: 'Security Screening' },
+  { id: 'sign-duty-free', tileX: 45, tileY: 11, texture: 'sign-duty-free', tooltipText: 'Duty Free' },
+  { id: 'sign-food-court', tileX: 58, tileY: 11, texture: 'sign-food-court', tooltipText: 'Food Court' },
+  { id: 'sign-gates', tileX: 66, tileY: 11, texture: 'sign-gates', tooltipText: 'Gates \u2192' },
+  { id: 'sign-gate-maui', tileX: 76, tileY: 11, texture: 'sign-gate-number', tooltipText: 'Gate 1 \u2014 Maui' },
+  { id: 'sign-gate-2', tileX: 68, tileY: 11, texture: 'sign-gate-number', tooltipText: 'Gate 2 \u2014 Coming Soon' },
+  { id: 'sign-gate-3', tileX: 64, tileY: 11, texture: 'sign-gate-number', tooltipText: 'Gate 3 \u2014 Coming Soon' },
 ];
 
 export class AirportInteriorScene extends InteriorScene {
@@ -156,12 +148,12 @@ export class AirportInteriorScene extends InteriorScene {
     this.blockedDoorways.clear();
     this.barrierSprites = [];
     DOORWAY_POSITIONS.forEach(pos => {
-      for (let y = 16; y <= 20; y++) {
+      for (let y = 14; y <= 18; y++) {
         this.blockedDoorways.add(`${pos.x},${y}`);
         this.blockedDoorways.add(`${pos.x + 1},${y}`);
       }
       // Barrier decoration sprite at center of doorway
-      const centerPos = tileToWorld(pos.x, 18);
+      const centerPos = tileToWorld(pos.x, 16);
       const barrier = this.add.image(centerPos.x + TILE_SIZE / 2, centerPos.y, 'interior-airport-doorway-barrier').setDepth(10);
       this.barrierSprites.push(barrier);
     });
@@ -218,7 +210,7 @@ export class AirportInteriorScene extends InteriorScene {
 
   private unlockDoorway(index: number): void {
     const pos = DOORWAY_POSITIONS[index];
-    for (let y = 16; y <= 20; y++) {
+    for (let y = 14; y <= 18; y++) {
       this.blockedDoorways.delete(`${pos.x},${y}`);
       this.blockedDoorways.delete(`${pos.x + 1},${y}`);
     }
