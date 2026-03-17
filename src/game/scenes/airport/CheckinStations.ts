@@ -27,14 +27,14 @@ interface AirportScene extends Phaser.Scene {
   partner: Partner;
 }
 
-// Stations in order — trigger tiles are one tile below each NPC/desk
-// Layout flows bottom-to-top: check-in (y=14-17) → passport (y=12-13) → security (y=8-11) → gate (y=2-5)
+// Stations in order — trigger tiles for the 80x40 layout
+// Layout flows left-to-right: check-in → passport → security → duty free/food/terminal → gate
 export const STATIONS: StationDef[] = [
-  { id: 'ticket-counter', triggerTileX: 8, triggerTileY: 16 },
-  { id: 'luggage-checkin', triggerTileX: 14, triggerTileY: 17 },
-  { id: 'passport-control', triggerTileX: 18, triggerTileY: 13 },
-  { id: 'security-screening', triggerTileX: 18, triggerTileY: 11 },
-  { id: 'boarding-gate', triggerTileX: 24, triggerTileY: 5 },
+  { id: 'ticket-counter',     triggerTileX: 6,  triggerTileY: 16 },
+  { id: 'luggage-checkin',    triggerTileX: 14, triggerTileY: 16 },
+  { id: 'passport-control',   triggerTileX: 22, triggerTileY: 20 },
+  { id: 'security-screening', triggerTileX: 32, triggerTileY: 20 },
+  { id: 'boarding-gate',      triggerTileX: 76, triggerTileY: 20 },
 ];
 
 /** Create a temporary sprite at given position, starts invisible */
@@ -92,7 +92,7 @@ async function focusCamera(
 // ── Station 1: Ticket Counter ───────────────────────────────────────────
 
 export async function playTicketCounter(scene: Phaser.Scene): Promise<void> {
-  const restore = await focusCamera(scene, 8, 15);
+  const restore = await focusCamera(scene, 6, 15);
   await showDialogAsync(["Welcome to Witchy Airlines! Let's get you booked for Maui."]);
 
   // Departure board overlay — positioned at camera viewport center
@@ -117,7 +117,7 @@ export async function playTicketCounter(scene: Phaser.Scene): Promise<void> {
   board.destroy();
 
   // Boarding pass slides across counter from agent to player
-  const counterPos = tileToWorld(8, 15);
+  const counterPos = tileToWorld(6, 15);
   const pass = tempSprite(scene, counterPos.x + 20, counterPos.y, 'prop-boarding-pass', 20);
   pass.setAlpha(1).setScale(0.5);
   await tweenAsync(scene, { targets: pass, x: counterPos.x - 10, duration: 400, ease: 'Sine.easeOut' });
@@ -139,9 +139,9 @@ export async function playTicketCounter(scene: Phaser.Scene): Promise<void> {
 
 export async function playLuggageCheckin(scene: Phaser.Scene): Promise<void> {
   const as = scene as unknown as AirportScene;
-  const restore = await focusCamera(scene, 14, 16);
+  const restore = await focusCamera(scene, 12, 16);
   await showDialogAsync(["Place your luggage on the belt, we'll take care of it!"]);
-  const beltPos = tileToWorld(14, 16);
+  const beltPos = tileToWorld(12, 16);
   const playerPos = as.player.getPosition();
 
   // Suitcase slides from player to belt
@@ -191,9 +191,9 @@ export async function playLuggageCheckin(scene: Phaser.Scene): Promise<void> {
 
 export async function playPassportControl(scene: Phaser.Scene): Promise<void> {
   const as = scene as unknown as AirportScene;
-  const restore = await focusCamera(scene, 18, 12);
+  const restore = await focusCamera(scene, 22, 18);
   await showDialogAsync(['Passport please... everything looks good!']);
-  const deskPos = tileToWorld(18, 12);
+  const deskPos = tileToWorld(22, 18);
   const playerPos = as.player.getPosition();
 
   // Passport slides from player to officer
@@ -241,11 +241,11 @@ export async function playPassportControl(scene: Phaser.Scene): Promise<void> {
 
 export async function playSecurityScreening(scene: Phaser.Scene): Promise<void> {
   const as = scene as unknown as AirportScene;
-  // Focus on the right-side security lane (detector at 24,10, conveyor at 26,9)
-  const restore = await focusCamera(scene, 24, 10, 0.2);
+  // Focus on the security lane (detector at 32,18, conveyor at 33,17)
+  const restore = await focusCamera(scene, 32, 18, 0.2);
   await showDialogAsync(['Please place your items in the bin and step through.']);
-  const conveyorPos = tileToWorld(26, 9);
-  const detectorPos = tileToWorld(24, 10);
+  const conveyorPos = tileToWorld(33, 17);
+  const detectorPos = tileToWorld(32, 18);
   const playerPos = as.player.getPosition();
 
   // Bin appears on conveyor
@@ -309,9 +309,9 @@ export async function playSecurityScreening(scene: Phaser.Scene): Promise<void> 
 
 export async function playBoardingGate(scene: Phaser.Scene): Promise<void> {
   const as = scene as unknown as AirportScene;
-  const restore = await focusCamera(scene, 24, 4);
+  const restore = await focusCamera(scene, 76, 10);
   await showDialogAsync(['Welcome aboard! Have a wonderful flight to Maui!']);
-  const gatePos = tileToWorld(24, 3);  // gate desk decoration position
+  const gatePos = tileToWorld(76, 10);  // gate desk decoration position
   const playerPos = as.player.getPosition();
 
   // Boarding pass slides to agent
