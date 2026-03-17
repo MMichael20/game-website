@@ -1,0 +1,172 @@
+/* Minimap overlay styles */
+
+.minimap-backdrop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.minimap-backdrop--visible {
+  opacity: 1;
+}
+
+.minimap-panel {
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #d4a574;
+  border-radius: 8px;
+  padding: 12px;
+  max-width: 360px;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.minimap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.minimap-title {
+  font-family: 'Press Start 2P', monospace;
+  color: #d4a574;
+  font-size: clamp(0.6rem, 2vw, 0.85rem);
+}
+
+.minimap-close {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.minimap-close:hover {
+  background: rgba(255, 70, 70, 0.6);
+}
+
+.minimap-canvas-wrap {
+  position: relative;
+  line-height: 0;
+}
+
+.minimap-canvas {
+  image-rendering: pixelated;
+  border-radius: 4px;
+  display: block;
+}
+
+.minimap-player-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e8836b;
+  border: 1px solid #fff;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: minimap-blink 800ms ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes minimap-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.minimap-legend {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.5rem, 1.5vw, 0.7rem);
+  color: #ccc;
+}
+
+.legend-item--visited::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d4a574;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.legend-item--unvisited::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid #7b5ea7;
+  margin-right: 4px;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+/* HUD map button */
+.hud__map-btn {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  right: 60px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  z-index: 5;
+}
+
+.hud__map-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Phone overrides */
+@media (max-width: 480px) {
+  .minimap-panel {
+    max-width: 90vw;
+    padding: 8px;
+  }
+
+  .hud__map-btn {
+    right: 56px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Landscape phone */
+@media (max-height: 440px) and (orientation: landscape) {
+  .minimap-panel {
+    max-height: 85vh;
+    padding: 8px;
+  }
+}

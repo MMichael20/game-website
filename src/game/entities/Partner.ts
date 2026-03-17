@@ -7,6 +7,7 @@ const SNAP_DISTANCE = 6;
 
 export class Partner {
   public sprite: Phaser.Physics.Arcade.Sprite;
+  public speedMultiplier = 1.0;
   private currentOutfit = 0;
   private positionHistory: Array<{ x: number; y: number }> = [];
   private historySize = 15;
@@ -66,7 +67,7 @@ export class Partner {
     }
 
     // Lerp with deceleration curve
-    const lerpFactor = dist < 20 ? LERP_SPEED * 0.5 : LERP_SPEED;
+    const lerpFactor = (dist < 20 ? LERP_SPEED * 0.5 : LERP_SPEED) * this.speedMultiplier;
     const moveX = dx * lerpFactor * 60; // approximate velocity
     const moveY = dy * lerpFactor * 60;
 

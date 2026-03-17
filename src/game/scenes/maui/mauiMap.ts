@@ -79,6 +79,12 @@ export function isMauiWalkable(tileX: number, tileY: number): boolean {
   return mauiWalkGrid[tileY][tileX];
 }
 
+/** Get the tile type at a given position */
+export function getMauiTileType(tileX: number, tileY: number): number {
+  if (tileX < 0 || tileX >= MAUI_WIDTH || tileY < 0 || tileY >= MAUI_HEIGHT) return -1;
+  return mauiTileGrid[tileY][tileX];
+}
+
 export const MAUI_DECORATIONS = [
   // Airbnb area
   { type: 'maui-jacuzzi', tileX: 34, tileY: 3 },

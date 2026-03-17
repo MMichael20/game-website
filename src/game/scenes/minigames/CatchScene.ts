@@ -63,6 +63,9 @@ export class CatchScene extends Phaser.Scene {
       title: 'Catch!',
       score: 0,
       timer: GAME_DURATION,
+      onExit: () => {
+        this.endGame();
+      },
     });
 
     // Spawn timer

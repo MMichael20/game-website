@@ -44,6 +44,9 @@ export class MatchScene extends Phaser.Scene {
       title: 'Memory Match!',
       score: 0,
       progress: `0/${this.pairs.length}`,
+      onExit: () => {
+        this.endGame();
+      },
     });
 
     // Build card deck: each pair gets 2 cards

@@ -8,6 +8,7 @@ export type WalkCheck = (tileX: number, tileY: number) => boolean;
 
 export class Player {
   public sprite: Phaser.Physics.Arcade.Sprite;
+  public speedMultiplier = 1.0;
   private currentOutfit = 0;
   private facing: 'down' | 'left' | 'right' | 'up' = 'down';
   private walkCheck: WalkCheck;
@@ -48,8 +49,9 @@ export class Player {
   }
 
   update(direction: { x: number; y: number }): void {
-    const vx = direction.x * SPEED;
-    const vy = direction.y * SPEED;
+    const speed = SPEED * this.speedMultiplier;
+    const vx = direction.x * speed;
+    const vy = direction.y * speed;
 
     // Collision check against walkability grid
     const nextX = this.sprite.x + vx * (1 / 60);

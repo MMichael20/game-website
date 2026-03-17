@@ -12,6 +12,7 @@ export interface MinigameOverlayConfig {
   timer?: number;
   maxScore?: number;
   progress?: string; // e.g. "2/5"
+  onExit?: () => void;
 }
 
 export interface SettingsConfig {
@@ -36,6 +37,7 @@ class UIManager {
   private dialogContainer!: HTMLElement;
   private menuContainer!: HTMLElement;
   private settingsHandler: (() => void) | null = null;
+  private minimapHandler: (() => void) | null = null;
 
   init(container: HTMLElement): void {
     this.container = container;
@@ -73,16 +75,24 @@ class UIManager {
     const hudEl = document.createElement('div');
     hudEl.className = 'hud';
     hudEl.innerHTML = `
+      <button class="hud__map-btn" title="Map">\uD83D\uDDFA</button>
       <button class="hud__settings-btn" title="Settings">\u2699</button>
     `;
     hudEl.querySelector('.hud__settings-btn')?.addEventListener('click', () => {
       this.settingsHandler?.();
+    });
+    hudEl.querySelector('.hud__map-btn')?.addEventListener('click', () => {
+      if (!this.isDialogActive()) this.minimapHandler?.();
     });
     this.hud.appendChild(hudEl);
   }
 
   setSettingsHandler(handler: () => void): void {
     this.settingsHandler = handler;
+  }
+
+  setMinimapHandler(handler: (() => void) | null): void {
+    this.minimapHandler = handler;
   }
 
   hideHUD(): void {
@@ -135,6 +145,10 @@ class UIManager {
     this.dialogContainer.innerHTML = '';
   }
 
+  isDialogActive(): boolean {
+    return this.dialogContainer.children.length > 0;
+  }
+
   // --- Mini-game Overlay ---
   showMinigameOverlay(config: MinigameOverlayConfig): void {
     this.hideMinigameOverlay();
@@ -145,12 +159,16 @@ class UIManager {
       <div class="minigame-overlay__header">
         <span class="minigame-overlay__title">${config.title}</span>
         ${config.progress ? `<span class="minigame-overlay__progress">${config.progress}</span>` : ''}
+        ${config.onExit ? '<button class="btn btn--icon minigame-overlay__exit" title="Exit game">\u2715</button>' : ''}
       </div>
       <div class="minigame-overlay__stats">
         ${config.score !== undefined ? `<span class="minigame-overlay__score">Score: <strong>${config.score}</strong></span>` : ''}
         ${config.timer !== undefined ? `<span class="minigame-overlay__timer">Time: <strong>${config.timer}s</strong></span>` : ''}
       </div>
     `;
+    if (config.onExit) {
+      overlay.querySelector('.minigame-overlay__exit')?.addEventListener('click', config.onExit);
+    }
     this.hud.appendChild(overlay);
   }
 

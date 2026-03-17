@@ -10,6 +10,7 @@ export class InputSystem {
   private interactKey!: Phaser.Input.Keyboard.Key;
   private escKey!: Phaser.Input.Keyboard.Key;
   private spaceKey!: Phaser.Input.Keyboard.Key;
+  private mapKey!: Phaser.Input.Keyboard.Key;
 
   // Freeze state — when frozen, all input returns neutral/false
   private frozen = false;
@@ -42,6 +43,7 @@ export class InputSystem {
       this.interactKey = scene.input.keyboard.addKey('E');
       this.spaceKey = scene.input.keyboard.addKey('SPACE');
       this.escKey = scene.input.keyboard.addKey('ESC');
+      this.mapKey = scene.input.keyboard.addKey('M');
     }
   }
 
@@ -181,6 +183,11 @@ export class InputSystem {
   isBackPressed(): boolean {
     if (this.frozen) return false;
     return this.escKey?.isDown || false;
+  }
+
+  isMapPressed(): boolean {
+    if (this.frozen) return false;
+    return this.mapKey?.isDown || false;
   }
 
   update(): void {

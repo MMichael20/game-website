@@ -53,6 +53,17 @@ export class WorldScene extends OverworldScene {
     };
   }
 
+  getLabelMap(): Record<string, string> {
+    return {
+      restaurant: 'Restaurant',
+      park: 'Park',
+      cinema: 'Cinema',
+      michaels_house: "Michael's",
+      hadars_house: "Hadar's",
+      airport: 'Airport',
+    };
+  }
+
   onCreateExtras(): void {
     // 1. Sky
     this.skyRenderer = new SkyRenderer();
@@ -199,7 +210,8 @@ export class WorldScene extends OverworldScene {
     // Departing plane: taxi south then accelerate east off-screen
     const departingPlane = this.add.image(departX, apronY, 'airplane-taxiing')
       .setDepth(-6)
-      .setAlpha(0);
+      .setAlpha(0)
+      .setScale(2);
 
     const startDeparture = () => {
       departingPlane.setPosition(departX, apronY).setAlpha(1);
@@ -226,7 +238,8 @@ export class WorldScene extends OverworldScene {
     const arrivingPlane = this.add.image(offScreenLeft, runwayY, 'airplane-taxiing')
       .setDepth(-6)
       .setAlpha(0)
-      .setFlipX(true);
+      .setFlipX(true)
+      .setScale(2);
 
     const startArrival = () => {
       arrivingPlane.setPosition(offScreenLeft, runwayY).setAlpha(1).setFlipX(true);

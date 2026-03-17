@@ -27,6 +27,30 @@
   font-size: clamp(0.6rem, 2vw, 1rem);
 }
 
+.minigame-overlay__exit {
+  pointer-events: auto;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: background 0.2s;
+  margin-left: 8px;
+  padding: 0;
+}
+
+.minigame-overlay__exit:hover {
+  background: rgba(255, 70, 70, 0.6);
+}
+
 .minigame-overlay__progress {
   font-family: 'Inter', sans-serif;
   font-size: clamp(0.5rem, 1.5vw, 0.75rem);

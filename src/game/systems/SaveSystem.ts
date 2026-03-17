@@ -106,6 +106,10 @@ export function clearGameState(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+export function getVisitedCheckpoints(): string[] {
+  return loadGameState().visitedCheckpoints;
+}
+
 export function markCheckpointVisited(id: string): void {
   const state = loadGameState();
   if (!state.visitedCheckpoints.includes(id)) {

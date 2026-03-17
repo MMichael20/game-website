@@ -29,6 +29,10 @@ export class QuizScene extends Phaser.Scene {
       title: 'Quiz Time!',
       score: 0,
       progress: `1/${this.questions.length}`,
+      onExit: () => {
+        uiManager.hideQuizQuestion();
+        this.endGame();
+      },
     });
 
     this.showQuestion();

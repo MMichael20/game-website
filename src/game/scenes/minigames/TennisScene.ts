@@ -56,7 +56,13 @@ export class TennisScene extends Phaser.Scene {
     this.ball = this.add.circle(width * 0.75, height / 2, 8, 0xccff00);
 
     // Score overlay
-    uiManager.showMinigameOverlay({ title: 'Tennis Rally', score: 0 });
+    uiManager.showMinigameOverlay({
+      title: 'Tennis Rally',
+      score: 0,
+      onExit: () => {
+        this.endGame();
+      },
+    });
 
     // Start first ball
     this.launchBall();

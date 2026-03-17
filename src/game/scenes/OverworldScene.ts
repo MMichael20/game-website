@@ -8,6 +8,7 @@ import { InputSystem } from '../systems/InputSystem';
 import { NPCSystem } from '../systems/NPCSystem';
 import { loadGameState, clearGameState } from '../systems/SaveSystem';
 import { uiManager } from '../../ui/UIManager';
+import { MinimapRenderer } from '../../ui/MinimapRenderer';
 
 export interface OverworldConfig {
   mapWidth: number;
@@ -30,7 +31,9 @@ export abstract class OverworldScene extends Phaser.Scene {
   protected activeZone: CheckpointZone | null = null;
   protected interactCooldown = 0;
   protected backCooldown = 0;
+  protected mapCooldown = 0;
   protected cachedConfig!: OverworldConfig;
+  protected minimap!: MinimapRenderer;
 
   private returnFromInteriorData: { returnX: number; returnY: number } | null = null;
   private shouldFadeIn = false;
@@ -39,6 +42,7 @@ export abstract class OverworldScene extends Phaser.Scene {
   abstract getConfig(): OverworldConfig;
   abstract onEnterCheckpoint(zone: CheckpointZone): void;
   abstract onCreateExtras(): void;
+  abstract getLabelMap(): Record<string, string>;
 
   // --- Optional hooks subclasses can override ---
   protected onShowHUD(): void {
@@ -106,10 +110,14 @@ export abstract class OverworldScene extends Phaser.Scene {
     uiManager.setSettingsHandler(() => this.openSettings());
     this.onShowHUD();
 
-    // 9. Register shutdown handler for proper cleanup
+    // 9. Minimap
+    this.minimap = new MinimapRenderer(this, config, this.getLabelMap(), () => this.player.getPosition());
+    uiManager.setMinimapHandler(() => this.minimap.toggle());
+
+    // 10. Register shutdown handler for proper cleanup
     this.events.on('shutdown', this.shutdown, this);
 
-    // 10. Resize handler (debounced for mobile orientation changes)
+    // 11. Resize handler (debounced for mobile orientation changes)
     let resizeTimeout: number | undefined;
     this.scale.on('resize', () => {
       clearTimeout(resizeTimeout);
@@ -118,7 +126,7 @@ export abstract class OverworldScene extends Phaser.Scene {
       }, 100);
     });
 
-    // 10. Fade-in from interior transition
+    // 12. Fade-in from interior transition
     if (this.shouldFadeIn) {
       const cam2 = this.cameras.main;
       cam2.setAlpha(0);
@@ -138,6 +146,7 @@ export abstract class OverworldScene extends Phaser.Scene {
     // Cooldown timers
     if (this.interactCooldown > 0) this.interactCooldown -= delta;
     if (this.backCooldown > 0) this.backCooldown -= delta;
+    if (this.mapCooldown > 0) this.mapCooldown -= delta;
 
     // 1. Input
     this.inputSystem.update();
@@ -184,10 +193,20 @@ export abstract class OverworldScene extends Phaser.Scene {
       }
     }
 
-    // 7. Back/ESC press
+    // 7. Map toggle (M key) — suppress when dialog/settings is open
+    if (this.inputSystem.isMapPressed() && this.mapCooldown <= 0 && !uiManager.isDialogActive()) {
+      this.mapCooldown = 300;
+      this.minimap.toggle();
+    }
+
+    // 8. Back/ESC press — close minimap first, then scene-level back
     if (this.inputSystem.isBackPressed() && this.backCooldown <= 0) {
       this.backCooldown = 500;
-      this.onBack();
+      if (this.minimap.isOpen) {
+        this.minimap.close();
+      } else {
+        this.onBack();
+      }
     }
   }
 
@@ -283,6 +302,8 @@ export abstract class OverworldScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.minimap?.destroy();
+    uiManager.setMinimapHandler(null);
     this.inputSystem?.destroy();
     this.npcSystem?.destroy();
     uiManager.hideHUD();

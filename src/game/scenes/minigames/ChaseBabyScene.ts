@@ -161,6 +161,9 @@ export class ChaseBabyScene extends Phaser.Scene {
       score: 0,
       timer: CHASE_DURATION,
       progress: `Catches: 0/${CATCHES_NEEDED}`,
+      onExit: () => {
+        this.endGame('lose');
+      },
     });
 
     // Countdown timer
