@@ -21,6 +21,14 @@ import { SunBeachScene } from './game/scenes/maui/SunBeachScene';
 import { TennisScene } from './game/scenes/minigames/TennisScene';
 import { ChaseBabyScene } from './game/scenes/minigames/ChaseBabyScene';
 import { TurtleRescueScene } from './game/scenes/minigames/TurtleRescueScene';
+import { BudapestAirportScene } from './game/scenes/budapest/BudapestAirportScene';
+import { BudapestBusRideScene } from './game/scenes/budapest/BudapestBusRideScene';
+import { BudapestOverworldScene } from './game/scenes/budapest/BudapestOverworldScene';
+import { JewishQuarterScene } from './game/scenes/budapest/JewishQuarterScene';
+import { RuinBarScene } from './game/scenes/budapest/RuinBarScene';
+import { BudapestEyeScene } from './game/scenes/budapest/BudapestEyeScene';
+import { BudapestAirbnbScene } from './game/scenes/budapest/BudapestAirbnbScene';
+import { BudapestTransportScene } from './game/scenes/budapest/BudapestTransportScene';
 import { GAME_WIDTH, GAME_HEIGHT } from './utils/constants';
 
 // Initialize UI layer before Phaser
@@ -50,7 +58,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     touch: { capture: true },
   },
-  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, HadarsHouseScene, AirportInteriorScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, AirbnbCompoundScene, DrivingScene, HanaPulloverScene, HanaDrivingScene, SunBeachScene, QuizScene, CatchScene, MatchScene, TennisScene, ChaseBabyScene, TurtleRescueScene],
+  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, HadarsHouseScene, AirportInteriorScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, AirbnbCompoundScene, DrivingScene, HanaPulloverScene, HanaDrivingScene, SunBeachScene, QuizScene, CatchScene, MatchScene, TennisScene, ChaseBabyScene, TurtleRescueScene, BudapestAirportScene, BudapestBusRideScene, BudapestOverworldScene, JewishQuarterScene, RuinBarScene, BudapestEyeScene, BudapestAirbnbScene, BudapestTransportScene],
 };
 
 new Phaser.Game(config);
