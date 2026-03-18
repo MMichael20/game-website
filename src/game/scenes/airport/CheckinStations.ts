@@ -34,7 +34,7 @@ export const STATIONS: StationDef[] = [
   { id: 'luggage-checkin',    triggerTileX: 13, triggerTileY: 14 },  // Agent at (12,13), right of belt
   { id: 'passport-control',   triggerTileX: 22, triggerTileY: 17 },  // Agent at (22,16)
   { id: 'security-screening', triggerTileX: 30, triggerTileY: 17 },  // Agent at (30,16)
-  { id: 'boarding-gate',      triggerTileX: 76, triggerTileY: 13 },  // Agent at (76,12)
+  // No boarding gate station — player walks to Gate 1 (Maui) or Gate 2 (Budapest) freely after security
 ];
 
 /** Create a temporary sprite at given position, starts invisible */
@@ -93,7 +93,7 @@ async function focusCamera(
 
 export async function playTicketCounter(scene: Phaser.Scene): Promise<void> {
   const restore = await focusCamera(scene, 4, 13);
-  await showDialogAsync(["Welcome to Witchy Airlines! Let's get you booked for Maui."]);
+  await showDialogAsync(["Welcome to Witchy Airlines! Let's get you checked in."]);
 
   // Departure board overlay — positioned at camera viewport center
   const cam = scene.cameras.main;
@@ -106,10 +106,12 @@ export async function playTicketCounter(scene: Phaser.Scene): Promise<void> {
   await tweenAsync(scene, { targets: board, alpha: 1, scale: 1, duration: 400, ease: 'Back.easeOut' });
   await delayAsync(scene, 1200);
 
-  // Highlight Maui row — flash effect
-  const highlight = scene.add.rectangle(cx, cy - 32, 120, 18, 0x33CC33, 0.3).setDepth(101);
-  await tweenAsync(scene, { targets: highlight, alpha: 0.6, duration: 200, yoyo: true, repeat: 1 });
-  highlight.destroy();
+  // Highlight flight rows — flash effect
+  const highlight1 = scene.add.rectangle(cx, cy - 32, 120, 18, 0x33CC33, 0.3).setDepth(101);
+  const highlight2 = scene.add.rectangle(cx, cy - 14, 120, 18, 0x33CC33, 0.3).setDepth(101);
+  await tweenAsync(scene, { targets: [highlight1, highlight2], alpha: 0.6, duration: 200, yoyo: true, repeat: 1 });
+  highlight1.destroy();
+  highlight2.destroy();
   await delayAsync(scene, 400);
 
   // Board fades out

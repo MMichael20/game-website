@@ -14,7 +14,6 @@ import {
   playLuggageCheckin,
   playPassportControl,
   playSecurityScreening,
-  playBoardingGate,
 } from './CheckinStations';
 
 // ── Doorway definitions ─────────────────────────────────────────────────
@@ -403,7 +402,6 @@ export class AirportInteriorScene extends InteriorScene {
       playLuggageCheckin,
       playPassportControl,
       playSecurityScreening,
-      playBoardingGate,
     ];
 
     await sequences[stationIndex](this);
@@ -426,8 +424,35 @@ export class AirportInteriorScene extends InteriorScene {
       this.unlockDoorway(3);
       this.unlockDoorway(4);
       this.unlockDoorway(5);
+      // Show gate choice hint and add pulsing indicators at both gates
+      this.showGateIndicators();
+      uiManager.showNPCDialog([
+        'Security cleared! Head to your gate:',
+        'Gate 1 — Maui  |  Gate 2 — Budapest',
+      ], () => { uiManager.hideNPCDialog(); });
     }
 
+  }
+
+  private gateIndicators: Phaser.GameObjects.Rectangle[] = [];
+
+  private showGateIndicators(): void {
+    // Pulsing yellow indicators at Gate 1 and Gate 2
+    const gates = [
+      { tileX: 76, tileY: 12 },  // Gate 1 — Maui
+      { tileX: 68, tileY: 12 },  // Gate 2 — Budapest
+    ];
+    gates.forEach(g => {
+      const pos = tileToWorld(g.tileX, g.tileY);
+      const indicator = this.add.rectangle(
+        pos.x, pos.y, TILE_SIZE - 4, TILE_SIZE - 4, 0xFFDD44, 0.3,
+      ).setDepth(1);
+      this.tweens.add({
+        targets: indicator, alpha: 0.6, duration: 800,
+        yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+      this.gateIndicators.push(indicator);
+    });
   }
 
   private startBoarding(destination: 'maui' | 'budapest'): void {
@@ -502,6 +527,10 @@ export class AirportInteriorScene extends InteriorScene {
     // Cleanup barrier sprites
     this.barrierSprites.forEach(s => s?.destroy());
     this.barrierSprites = [];
+
+    // Cleanup gate indicators
+    this.gateIndicators.forEach(i => i.destroy());
+    this.gateIndicators = [];
 
   }
 }
