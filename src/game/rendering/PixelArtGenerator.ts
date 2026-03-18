@@ -7,6 +7,7 @@ import { generateAirbnbCompoundTextures } from './AirbnbCompoundTextures';
 import { generateDrivingTextures } from './DrivingTextures';
 import { generateHanaTextures } from './HanaTextures';
 import { generateSunBeachTextures } from './SunBeachTextures';
+import { generateBudapestTextures } from './BudapestTextures';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -2867,5 +2868,6 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generateDrivingTextures(scene);
   generateHanaTextures(scene);
   generateSunBeachTextures(scene);
+  generateBudapestTextures(scene);
   generateExitDoorTextures(scene);
 }
