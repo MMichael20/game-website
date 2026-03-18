@@ -96,7 +96,7 @@ const INTERIOR_SIGNS: SignDef[] = [
   { id: 'sign-food-court', tileX: 58, tileY: 11, texture: 'sign-food-court', tooltipText: 'Food Court' },
   { id: 'sign-gates', tileX: 66, tileY: 11, texture: 'sign-gates', tooltipText: 'Gates \u2192' },
   { id: 'sign-gate-maui', tileX: 76, tileY: 11, texture: 'sign-gate-number', tooltipText: 'Gate 1 \u2014 Maui' },
-  { id: 'sign-gate-2', tileX: 68, tileY: 11, texture: 'sign-gate-number', tooltipText: 'Gate 2 \u2014 Coming Soon' },
+  { id: 'sign-gate-2', tileX: 68, tileY: 11, texture: 'sign-gate-number', tooltipText: 'Gate 2 \u2014 Budapest' },
   { id: 'sign-gate-3', tileX: 64, tileY: 11, texture: 'sign-gate-number', tooltipText: 'Gate 3 \u2014 Coming Soon' },
 ];
 
@@ -428,13 +428,9 @@ export class AirportInteriorScene extends InteriorScene {
       this.unlockDoorway(5);
     }
 
-    // After final station, trigger boarding
-    if (this.currentStation >= STATIONS.length) {
-      this.startBoarding();
-    }
   }
 
-  private startBoarding(): void {
+  private startBoarding(destination: 'maui' | 'budapest'): void {
     if (this.boardingTriggered) return;
     this.boardingTriggered = true;
 
@@ -446,7 +442,7 @@ export class AirportInteriorScene extends InteriorScene {
       duration: 500,
       ease: 'Linear',
       onComplete: () => {
-        this.scene.start('AirplaneCutscene', { destination: 'maui' });
+        this.scene.start('AirplaneCutscene', { destination });
       },
     });
   }
@@ -463,6 +459,18 @@ export class AirportInteriorScene extends InteriorScene {
       const nextStation = STATIONS[this.currentStation];
       if (playerTile.x === nextStation.triggerTileX && playerTile.y === nextStation.triggerTileY) {
         this.runStation(this.currentStation);
+      }
+    }
+
+    // Gate boarding — only after all stations are complete
+    if (!this.sequenceActive && this.currentStation >= STATIONS.length && !this.boardingTriggered) {
+      // Gate 1 — Maui (tile 76, 12)
+      if (playerTile.x >= 75 && playerTile.x <= 77 && playerTile.y >= 11 && playerTile.y <= 13) {
+        this.startBoarding('maui');
+      }
+      // Gate 2 — Budapest (tile 68, 12)
+      if (playerTile.x >= 67 && playerTile.x <= 69 && playerTile.y >= 11 && playerTile.y <= 13) {
+        this.startBoarding('budapest');
       }
     }
   }

@@ -9,13 +9,13 @@ import { generateCutsceneSeatedSprites } from '../../rendering/AirportTextures';
 const BOARDING_MS = 10000;
 
 export class AirplaneCutscene extends Phaser.Scene {
-  private destination: 'maui' | 'home' = 'maui';
+  private destination: 'maui' | 'budapest' | 'home' = 'maui';
 
   constructor() {
     super('AirplaneCutscene');
   }
 
-  init(data: { destination: 'maui' | 'home' }) {
+  init(data: { destination: 'maui' | 'budapest' | 'home' }) {
     this.destination = data?.destination ?? 'maui';
   }
 
@@ -518,12 +518,20 @@ export class AirplaneCutscene extends Phaser.Scene {
   }
 
   private transitionToDestination() {
-    if (this.destination === 'maui') {
-      saveCurrentScene('MauiOverworldScene');
-      this.scene.start('MauiOverworldScene');
-    } else {
-      saveCurrentScene('WorldScene');
-      this.scene.start('WorldScene');
+    switch (this.destination) {
+      case 'maui':
+        saveCurrentScene('MauiOverworldScene');
+        this.scene.start('MauiOverworldScene');
+        break;
+      case 'budapest':
+        saveCurrentScene('BudapestAirportScene');
+        this.scene.start('BudapestAirportScene');
+        break;
+      case 'home':
+      default:
+        saveCurrentScene('WorldScene');
+        this.scene.start('WorldScene');
+        break;
     }
   }
 }
