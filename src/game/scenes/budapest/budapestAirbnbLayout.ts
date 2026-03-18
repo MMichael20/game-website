@@ -36,9 +36,9 @@ export const BUDAPEST_AIRBNB_LAYOUT: InteriorLayout = {
     { tileX: 3, tileY: 8, type: 'bed' },
     { tileX: 6, tileY: 8, type: 'wardrobe' },
   ],
-  entrance: { tileX: 8, tileY: 10 },
+  entrance: { tileX: 5, tileY: 8 },
   exit: {
-    tileX: 7, tileY: 11, width: 3, height: 1,
+    tileX: 3, tileY: 9, width: 4, height: 1,
     promptText: 'Leave Apartment',
   },
   exitDoorStyle: 'wooden',

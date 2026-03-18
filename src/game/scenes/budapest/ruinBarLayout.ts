@@ -37,9 +37,9 @@ export const RUIN_BAR_LAYOUT: InteriorLayout = {
     { tileX: 16, tileY: 12, type: 'bp-graffiti' },
     { tileX: 4, tileY: 12, type: 'bp-neon-sign' },
   ],
-  entrance: { tileX: 10, tileY: 14 },
+  entrance: { tileX: 7, tileY: 11 },
   exit: {
-    tileX: 9, tileY: 15, width: 3, height: 1,
+    tileX: 5, tileY: 12, width: 5, height: 1,
     promptText: 'Leave Szimpla Kert',
   },
   exitDoorStyle: 'wooden',
