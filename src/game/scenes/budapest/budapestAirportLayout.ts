@@ -29,7 +29,7 @@ export const BUDAPEST_AIRPORT_LAYOUT: InteriorLayout = {
   ],
   entrance: { tileX: 20, tileY: 5 },
   exit: {
-    tileX: 15, tileY: 15, width: 10, height: 1,
+    tileX: 15, tileY: 14, width: 10, height: 1,
     promptText: 'Take Bus 100E to the city',
   },
   exitDoorStyle: 'glass',
