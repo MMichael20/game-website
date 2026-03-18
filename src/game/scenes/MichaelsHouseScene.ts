@@ -113,6 +113,8 @@ export class MichaelsHouseScene extends InteriorScene {
             { label: 'Driving Hub', scene: 'DrivingScene' },
             { label: 'Paia Beach', scene: 'SunBeachScene', data: { returnFromInterior: true } },
             { label: 'Road to Hana', scene: 'HanaDrivingScene', data: { resumeSegment: 0 } },
+            { label: 'Budapest', scene: 'BudapestOverworldScene', data: { returnFromInterior: true } },
+            { label: 'Jewish Quarter', scene: 'JewishQuarterScene', data: { returnFromInterior: true } },
           ];
           uiManager.showDialog({
             title: 'Fast Travel',
