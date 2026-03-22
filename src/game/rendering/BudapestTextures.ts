@@ -5830,6 +5830,7 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
   // Curry bowl (32×32)
   {
     const c = scene.textures.createCanvas('curry-bowl', 32, 32);
+    if (!c) return;
     const ctx = c.context;
     // Bowl
     rect(ctx, 6, 14, 20, 10, '#D2691E');
@@ -5855,6 +5856,7 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
   // Cover / dome (32×32)
   {
     const c = scene.textures.createCanvas('curry-cover', 32, 32);
+    if (!c) return;
     const ctx = c.context;
     // Dome body (silver cloche)
     rect(ctx, 6, 12, 20, 14, '#C0C0C0');
@@ -5878,6 +5880,7 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
   // Indian waiter NPC (48×48)
   {
     const c = scene.textures.createCanvas('npc-indian-waiter', 48, 48);
+    if (!c) return;
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#C68642',
