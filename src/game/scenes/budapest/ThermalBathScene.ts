@@ -65,7 +65,7 @@ export class ThermalBathScene extends Phaser.Scene {
       columns.push(col);
     }
 
-    // ── Couple walking in — outfit-aware sprite, NOT colored rectangles ──
+    // ── Couple walking in — outfit-aware sprite ──
     const coupleY = floorY - 10;
     const coupleWalking = this.add.image(-30, coupleY, 'bp-couple-walking')
       .setScale(2.0).setOrigin(0.5, 1).setDepth(10);
@@ -93,6 +93,46 @@ export class ThermalBathScene extends Phaser.Scene {
       });
     };
 
+    // ── Bubble effect helper ──
+    const spawnBubble = (bx: number, by: number, depth: number = 11) => {
+      const r = 2 + Math.random() * 3;
+      const bubble = this.add.circle(
+        bx + (Math.random() - 0.5) * 40, by,
+        r, 0xAAEEFF
+      ).setAlpha(0.5).setDepth(depth);
+      // Bubble has a subtle outline look
+      const outline = this.add.circle(
+        bubble.x, bubble.y, r + 0.5, 0xFFFFFF
+      ).setAlpha(0.2).setDepth(depth - 1);
+      this.tweens.add({
+        targets: [bubble, outline],
+        y: by - 20 - Math.random() * 30,
+        x: bubble.x + (Math.random() - 0.5) * 16,
+        alpha: 0,
+        duration: 1200 + Math.random() * 800,
+        onComplete: () => { bubble.destroy(); outline.destroy(); },
+      });
+    };
+
+    // ── Splash droplet helper ──
+    const spawnSplash = (sx: number, sy: number, count: number, depth: number = 16) => {
+      for (let i = 0; i < count; i++) {
+        const drop = this.add.circle(sx, sy, 1.5 + Math.random(), 0x5ECFEF)
+          .setAlpha(0.8).setDepth(depth);
+        const angle = Math.random() * Math.PI;
+        const dist = 20 + Math.random() * 40;
+        this.tweens.add({
+          targets: drop,
+          x: sx + Math.cos(angle) * dist * (Math.random() > 0.5 ? 1 : -1),
+          y: sy - Math.sin(angle) * dist,
+          alpha: 0,
+          duration: 500 + Math.random() * 400,
+          ease: 'Quad.easeOut',
+          onComplete: () => drop.destroy(),
+        });
+      }
+    };
+
     // ════════════════════════════════════════════════════════
     // PHASE 1: Entrance (0–5s)
     // ════════════════════════════════════════════════════════
@@ -108,7 +148,7 @@ export class ThermalBathScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     });
 
-    // Early entrance steam — ambient wisps (STORED to fix memory leak)
+    // Early entrance steam — ambient wisps
     const entranceSteamEvent = this.time.addEvent({
       delay: 800, loop: true,
       callback: () => spawnSteam(w * 0.5, h * 0.6, 6),
@@ -120,11 +160,11 @@ export class ThermalBathScene extends Phaser.Scene {
     });
 
     // ════════════════════════════════════════════════════════
-    // PHASE 2: The Pool (5–14s)
+    // PHASE 2: Getting In the Pool (5–12s)
     // ════════════════════════════════════════════════════════
 
     this.time.delayedCall(5000, () => {
-      // FIX MEMORY LEAK: destroy entrance steam event
+      // Destroy entrance steam event
       entranceSteamEvent.destroy();
 
       // Kill walking breathing before switching sprites
@@ -161,7 +201,7 @@ export class ThermalBathScene extends Phaser.Scene {
         });
       }
 
-      // Couple sprite at pool edge — bp-couple-pool at 2.0 scale, center of attention
+      // Couple sprite at pool edge
       const poolCoupleY = poolY + poolH / 2 - 8;
       const couplePool = this.add.image(poolX, poolCoupleY, 'bp-couple-pool')
         .setScale(2.0).setAlpha(0).setDepth(15);
@@ -189,13 +229,19 @@ export class ThermalBathScene extends Phaser.Scene {
       }
 
       // Steam rising from pool — continuous
-      const poolSteamEvent = this.time.addEvent({
+      let poolSteamEvent = this.time.addEvent({
         delay: 600, loop: true,
         callback: () => spawnSteam(poolX + (Math.random() - 0.5) * poolW, poolY - poolH / 2),
       });
 
+      // Bubbles rising from pool
+      const bubbleEvent = this.time.addEvent({
+        delay: 400, loop: true,
+        callback: () => spawnBubble(poolX + (Math.random() - 0.5) * poolW * 0.6, poolY + poolH * 0.2),
+      });
+
       // Light reflections — sparkles on water
-      const sparkleEvent = this.time.addEvent({
+      let sparkleEvent = this.time.addEvent({
         delay: 900, loop: true,
         callback: () => {
           const sparkle = this.add.circle(
@@ -211,18 +257,130 @@ export class ThermalBathScene extends Phaser.Scene {
         },
       });
 
-      // Dialogue at 8s and 11s
-      this.time.delayedCall(3000, () => {
+      // Dialogue — getting in
+      this.time.delayedCall(2000, () => {
         showDialogue(this, 'The water is SO warm...', 'partner');
       });
-      this.time.delayedCall(6000, () => {
+      this.time.delayedCall(4500, () => {
         showDialogue(this, 'I could stay here forever.', 'player');
       });
 
       // ════════════════════════════════════════════════════════
-      // PHASE 3: Relaxation (14–22s) — from scene start, so 9s from phase 2
+      // PHASE 3: Splashing & Playing (12–18s) — from scene start, 7s from phase 2
       // ════════════════════════════════════════════════════════
-      this.time.delayedCall(9000, () => {
+
+      this.time.delayedCall(7000, () => {
+        // Playful splash! Couple bounces and water flies
+        showDialogue(this, 'Splash fight!', 'partner', { duration: 1500 });
+
+        // First splash — couple bobs down then up
+        this.tweens.add({
+          targets: couplePool,
+          y: poolCoupleY + 8,
+          duration: 200,
+          ease: 'Quad.easeIn',
+          yoyo: true,
+          onYoyo: () => {
+            spawnSplash(poolX - 20, poolCoupleY, 12);
+            // Pool ripple wave
+            const wave = this.add.rectangle(poolX - 20, poolY, poolW * 0.3, 6, 0x5ECFEF)
+              .setAlpha(0.4).setDepth(10);
+            this.tweens.add({
+              targets: wave, scaleX: 2, alpha: 0, duration: 800,
+              onComplete: () => wave.destroy(),
+            });
+          },
+        });
+
+        // Second splash after 1.5s
+        this.time.delayedCall(1500, () => {
+          showDialogue(this, 'Hey! No fair!', 'player', { duration: 1500 });
+
+          this.tweens.add({
+            targets: couplePool,
+            y: poolCoupleY + 6,
+            duration: 200,
+            ease: 'Quad.easeIn',
+            yoyo: true,
+            onYoyo: () => {
+              spawnSplash(poolX + 20, poolCoupleY, 12);
+              const wave = this.add.rectangle(poolX + 20, poolY, poolW * 0.3, 6, 0x5ECFEF)
+                .setAlpha(0.4).setDepth(10);
+              this.tweens.add({
+                targets: wave, scaleX: 2, alpha: 0, duration: 800,
+                onComplete: () => wave.destroy(),
+              });
+            },
+          });
+        });
+
+        // Big double splash at 3s
+        this.time.delayedCall(3000, () => {
+          // Both splash simultaneously
+          this.tweens.add({
+            targets: couplePool,
+            y: poolCoupleY + 12,
+            duration: 250,
+            ease: 'Quad.easeIn',
+            yoyo: true,
+            onYoyo: () => {
+              spawnSplash(poolX, poolCoupleY, 20);
+              // Big wave from both sides
+              for (const offset of [-30, 30]) {
+                const wave = this.add.rectangle(poolX + offset, poolY, poolW * 0.4, 8, 0x5ECFEF)
+                  .setAlpha(0.5).setDepth(10);
+                this.tweens.add({
+                  targets: wave, scaleX: 2.5, alpha: 0, duration: 1000,
+                  onComplete: () => wave.destroy(),
+                });
+              }
+            },
+          });
+
+          showDialogue(this, 'Hahahaha!!', 'partner', { duration: 1500 });
+        });
+
+        // Couple dips underwater briefly at 4.5s
+        this.time.delayedCall(4500, () => {
+          // Dip below water line
+          this.tweens.add({
+            targets: couplePool,
+            y: poolCoupleY + 25,
+            alpha: 0.4,
+            duration: 600,
+            ease: 'Sine.easeIn',
+            onComplete: () => {
+              // Burst of bubbles while underwater
+              for (let i = 0; i < 8; i++) {
+                this.time.delayedCall(i * 100, () => {
+                  spawnBubble(poolX + (Math.random() - 0.5) * 30, poolCoupleY);
+                });
+              }
+
+              // Come back up after a beat
+              this.time.delayedCall(800, () => {
+                this.tweens.add({
+                  targets: couplePool,
+                  y: poolCoupleY,
+                  alpha: 1,
+                  duration: 400,
+                  ease: 'Back.easeOut',
+                  onComplete: () => {
+                    spawnSplash(poolX, poolCoupleY - 5, 10);
+                  },
+                });
+
+                showDialogue(this, "Ahh that's refreshing!", 'player', { duration: 2000 });
+              });
+            },
+          });
+        });
+      });
+
+      // ════════════════════════════════════════════════════════
+      // PHASE 4: Relaxation (18–27s) — 13s from phase 2 start
+      // ════════════════════════════════════════════════════════
+      this.time.delayedCall(13000, () => {
         // Texture swap to relaxed pose (eyes closed, blissful)
         couplePool.setTexture('bp-couple-pool-relaxed');
 
@@ -236,6 +394,9 @@ export class ThermalBathScene extends Phaser.Scene {
         // Sleeping Z's — blissful dozing
         addSleepingZ(this, couplePool, 3, 55);
 
+        // Heart particles — romantic closeness
+        addHeartParticles(this, poolX, poolCoupleY - 40, 4, 55);
+
         // Subtle camera zoom
         this.tweens.add({
           targets: this.cameras.main,
@@ -246,7 +407,7 @@ export class ThermalBathScene extends Phaser.Scene {
 
         // Steam intensifies — destroy old event, create faster one
         poolSteamEvent.destroy();
-        this.time.addEvent({
+        poolSteamEvent = this.time.addEvent({
           delay: 400, loop: true,
           callback: () => spawnSteam(poolX + (Math.random() - 0.5) * poolW, poolY - poolH / 2),
         });
@@ -260,7 +421,7 @@ export class ThermalBathScene extends Phaser.Scene {
 
         // Golden sparkles on water — destroy old, create faster
         sparkleEvent.destroy();
-        this.time.addEvent({
+        sparkleEvent = this.time.addEvent({
           delay: 500, loop: true,
           callback: () => {
             const s = this.add.circle(
@@ -270,6 +431,13 @@ export class ThermalBathScene extends Phaser.Scene {
             ).setAlpha(0).setDepth(12);
             this.tweens.add({ targets: s, alpha: 0.7, yoyo: true, duration: 800, onComplete: () => s.destroy() });
           },
+        });
+
+        // Bubbles slow down — relaxed pace
+        bubbleEvent.destroy();
+        this.time.addEvent({
+          delay: 800, loop: true,
+          callback: () => spawnBubble(poolX + (Math.random() - 0.5) * poolW * 0.4, poolY + poolH * 0.2),
         });
 
         // Golden light stars
@@ -289,24 +457,27 @@ export class ThermalBathScene extends Phaser.Scene {
           },
         });
 
-        // Dialogue at 16s, 18s, 20s, 21s (offsets from 14s)
-        this.time.delayedCall(2000, () => {
+        // Dialogue — intimate conversation
+        this.time.delayedCall(1000, () => {
+          showDialogue(this, 'Okay... truce. Come here.', 'partner');
+        });
+        this.time.delayedCall(3000, () => {
           showDialogue(this, 'This is hundreds of years old, you know.', 'player');
         });
-        this.time.delayedCall(4000, () => {
+        this.time.delayedCall(5000, () => {
           showDialogue(this, 'Mmm... the Romans knew what they were doing.', 'partner');
         });
-        this.time.delayedCall(6000, () => {
+        this.time.delayedCall(7000, () => {
           showDialogue(this, 'Actually, it was the Ottomans--', 'player');
         });
-        this.time.delayedCall(7000, () => {
+        this.time.delayedCall(8000, () => {
           showDialogue(this, 'Shhh. Just relax.', 'partner');
         });
 
         // ════════════════════════════════════════════════════════
-        // PHASE 4: Exit (22–25s) — 8s from phase 3 start
+        // PHASE 5: Exit (27–31s) — 9s from phase 4 start
         // ════════════════════════════════════════════════════════
-        this.time.delayedCall(8000, () => {
+        this.time.delayedCall(9000, () => {
           // Kill all active character animations
           activeAnims.forEach(a => a.kill());
 

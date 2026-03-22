@@ -70,6 +70,68 @@ export class DanubeCruiseScene extends Phaser.Scene {
       });
     }
 
+    // ── Rain system ──────────────────────────────────────────────────
+    let rainEvent: Phaser.Time.TimerEvent | null = null;
+    let rainIntensity = 0; // 0 = no rain, increases over time
+
+    const spawnRaindrop = () => {
+      const rx = Math.random() * w;
+      const ry = -5;
+      // Raindrop — thin line falling at an angle
+      const drop = this.add.rectangle(rx, ry, 1, 6 + Math.random() * 4, 0x8899CC)
+        .setAlpha(0.3 + Math.random() * 0.3).setDepth(45);
+      // Slight wind angle
+      const windOffset = 15 + Math.random() * 10;
+      const fallDuration = 400 + Math.random() * 300;
+      this.tweens.add({
+        targets: drop,
+        x: rx + windOffset,
+        y: h + 10,
+        duration: fallDuration,
+        ease: 'Linear',
+        onComplete: () => drop.destroy(),
+      });
+
+      // Splash when hitting water
+      if (rx > 0 && rx < w) {
+        this.time.delayedCall(fallDuration * ((waterY + 10) / (h + 15)), () => {
+          const splashX = rx + windOffset * ((waterY + 10) / (h + 15));
+          if (splashX > 0 && splashX < w) {
+            const splash = this.add.circle(splashX, waterY + 2, 2, 0x6688BB)
+              .setAlpha(0.4).setDepth(4);
+            this.tweens.add({
+              targets: splash,
+              scaleX: 3, scaleY: 0.5, alpha: 0,
+              duration: 400,
+              onComplete: () => splash.destroy(),
+            });
+          }
+        });
+      }
+    };
+
+    const startRain = (dropsPerTick: number, interval: number) => {
+      if (rainEvent) rainEvent.destroy();
+      rainIntensity = dropsPerTick;
+      rainEvent = this.time.addEvent({
+        delay: interval,
+        loop: true,
+        callback: () => {
+          for (let i = 0; i < rainIntensity; i++) {
+            spawnRaindrop();
+          }
+        },
+      });
+    };
+
+    const stopRain = () => {
+      if (rainEvent) {
+        rainEvent.destroy();
+        rainEvent = null;
+      }
+      rainIntensity = 0;
+    };
+
     // ── Phase 1: Boarding (0-4s) ─────────────────────────────────────
 
     // Stone dock on the right side
@@ -167,7 +229,7 @@ export class DanubeCruiseScene extends Phaser.Scene {
       });
     });
 
-    // ── Phase 3: Under the Bridges (8-16s) ───────────────────────────
+    // ── Phase 3: Under the Bridges + Rain Begins (8-16s) ────────────
 
     this.time.delayedCall(8000, () => {
       // Couple leans forward slightly (excitement) — tilt angle
@@ -252,6 +314,35 @@ export class DanubeCruiseScene extends Phaser.Scene {
           yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 2000 + i * 200,
         });
       }
+
+      // ── RAIN STARTS — light drizzle first ──
+      this.time.delayedCall(2000, () => {
+        startRain(1, 120); // Light drizzle
+
+        // Grey cloud overlay creeping in
+        const cloudOverlay = this.add.rectangle(w / 2, waterY * 0.3, w, waterY * 0.6, 0x334455)
+          .setDepth(1).setAlpha(0);
+        this.tweens.add({
+          targets: cloudOverlay, alpha: 0.15, duration: 3000, ease: 'Sine.easeIn',
+        });
+
+        showDialogue(this, 'Wait... is that rain?', 'partner', { duration: 2000 });
+      });
+
+      // Rain intensifies
+      this.time.delayedCall(5000, () => {
+        startRain(2, 80); // Medium rain
+        showDialogue(this, "It is! It's raining!", 'player', { duration: 2000 });
+      });
+
+      // Stars start to dim as clouds roll in
+      this.time.delayedCall(4000, () => {
+        stars.forEach(star => {
+          this.tweens.add({
+            targets: star, alpha: 0.05, duration: 3000, ease: 'Sine.easeIn',
+          });
+        });
+      });
     });
 
     // Phase 3 dialogue at 12s
@@ -259,11 +350,21 @@ export class DanubeCruiseScene extends Phaser.Scene {
       showDialogue(this, 'The city looks so different from the water.', 'partner');
     });
 
-    // ── Phase 4: City of Lights (16-24s) — THE ROMANTIC PEAK ─────────
+    // ── Phase 4: City of Lights + Heavy Rain (16-24s) ───────────────
 
     this.time.delayedCall(16000, () => {
       // Kill phase 1-3 breathing/sway, start fresh for the romantic peak
       killAll();
+
+      // Rain intensifies to heavy
+      startRain(4, 60);
+
+      // Darker rain overlay
+      const rainOverlay = this.add.rectangle(w / 2, h / 2, w, h, 0x223344)
+        .setDepth(44).setAlpha(0);
+      this.tweens.add({
+        targets: rainOverlay, alpha: 0.12, duration: 2000,
+      });
 
       // Scale up to 2.0 — the big romantic close-up
       this.tweens.add({
@@ -320,7 +421,7 @@ export class DanubeCruiseScene extends Phaser.Scene {
         yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
       });
 
-      // Golden sparkle particles floating up from the water
+      // Golden sparkle particles floating up from the water (rain hitting lights)
       for (let i = 0; i < 20; i++) {
         this.time.delayedCall(i * 350, () => {
           const px = w * 0.15 + Math.random() * w * 0.7;
@@ -336,21 +437,21 @@ export class DanubeCruiseScene extends Phaser.Scene {
       }
     });
 
-    // Phase 4 dialogue sequence
-    this.time.delayedCall(18000, () => {
+    // Phase 4 dialogue sequence — rain-themed romance
+    this.time.delayedCall(17000, () => {
+      showDialogue(this, "It's pouring now...", 'partner', { duration: 1800 });
+    });
+    this.time.delayedCall(19000, () => {
       showDialogue(this, "It's like the city is made of light.", 'partner', { duration: 1800 });
     });
-    this.time.delayedCall(20000, () => {
-      showDialogue(this, 'Just like you.', 'player', { duration: 1500 });
+    this.time.delayedCall(21000, () => {
+      showDialogue(this, 'Dancing in the rain with all those reflections...', 'player', { duration: 1800 });
     });
-    this.time.delayedCall(22000, () => {
-      showDialogue(this, '...That was so cheesy.', 'partner', { duration: 1200 });
-    });
-    this.time.delayedCall(23000, () => {
-      showDialogue(this, "You're smiling though.", 'player', { duration: 1500 });
+    this.time.delayedCall(22500, () => {
+      showDialogue(this, "I wouldn't want to be anywhere else.", 'partner', { duration: 1500 });
     });
 
-    // ── Phase 5: Return (24-30s) ─────────────────────────────────────
+    // ── Phase 5: Return + Rain eases (24-30s) ──────────────────────
 
     this.time.delayedCall(24000, () => {
       // Keep cozy texture, gentle settle — scale eases back slightly
@@ -365,7 +466,28 @@ export class DanubeCruiseScene extends Phaser.Scene {
         duration: 3000, ease: 'Sine.easeInOut',
       });
 
-      // Breathing continues (already running from phase 4)
+      // Rain eases to light drizzle then stops
+      startRain(2, 100);
+      this.time.delayedCall(2000, () => {
+        startRain(1, 150);
+      });
+      this.time.delayedCall(4000, () => {
+        stopRain();
+      });
+
+      // Stars peek back through clouds
+      this.time.delayedCall(3000, () => {
+        for (let i = 0; i < 15; i++) {
+          const s = this.add.circle(
+            Math.random() * w, Math.random() * waterY * 0.85,
+            1 + Math.random() * 0.5, 0xffffff,
+          ).setDepth(1).setAlpha(0);
+          this.tweens.add({
+            targets: s, alpha: 0.4 + Math.random() * 0.4,
+            duration: 1500, delay: i * 150,
+          });
+        }
+      });
 
       // Boat flips — heading back
       boat.setFlipX(true);
@@ -386,32 +508,23 @@ export class DanubeCruiseScene extends Phaser.Scene {
       this.tweens.add({
         targets: coolOverlay, alpha: 0.1, duration: 3000, ease: 'Sine.easeIn',
       });
-
-      // Stars multiply — additional dots tween in
-      for (let i = 0; i < 15; i++) {
-        const s = this.add.circle(
-          Math.random() * w, Math.random() * waterY * 0.85,
-          1 + Math.random() * 0.5, 0xffffff,
-        ).setDepth(1).setAlpha(0);
-        this.tweens.add({
-          targets: s, alpha: 0.4 + Math.random() * 0.4,
-          duration: 1500, delay: i * 150,
-        });
-      }
     });
 
     // Phase 5 dialogue
-    this.time.delayedCall(27000, () => {
+    this.time.delayedCall(26000, () => {
+      showDialogue(this, 'The rain stopped...', 'player', { duration: 1500 });
+    });
+    this.time.delayedCall(27500, () => {
       showDialogue(this, 'Best night ever.', 'partner', { duration: 2000 });
     });
 
-    // Letterbox bars slide away at 28s
-    this.time.delayedCall(28000, () => {
+    // Letterbox bars slide away at 29s
+    this.time.delayedCall(29000, () => {
       removeLetterbox(this, bars);
     });
 
-    // Fade to black at 29s, transition at completion
-    this.time.delayedCall(29000, () => {
+    // Fade to black at 30s, transition at completion
+    this.time.delayedCall(30000, () => {
       this.cameras.main.fadeOut(1000, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
         this.scene.start('BudapestOverworldScene', { returnFromInterior: true });
