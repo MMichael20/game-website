@@ -525,4 +525,5 @@ export const BUDAPEST_BUILDINGS = [
   { name: 'citadella', tileX: 2, tileY: 0, tileW: 4, tileH: 3 },
   { name: 'opera-house', tileX: 46, tileY: 22, tileW: 4, tileH: 3 },
   { name: 'gellert-baths', tileX: 5, tileY: 36, tileW: 6, tileH: 3 },
+  { name: 'bp-indian-restaurant', tileX: 16, tileY: 26, tileW: 5, tileH: 3 },
 ];

@@ -5902,6 +5902,88 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
     });
     c.refresh();
   }
+
+  // building-bp-indian-restaurant — 128×96, Indian restaurant exterior
+  {
+    const c = scene.textures.createCanvas('building-bp-indian-restaurant', 128, 96);
+    if (!c) return;
+    const ctx = c.context;
+    const wall = '#D4A050'; // warm saffron/ochre wall
+    const trim = '#8B1A1A'; // deep red trim (Indian aesthetic)
+
+    // Main building
+    rect(ctx, 4, 12, 120, 78, wall);
+    // Roof with decorative scalloped edge
+    rect(ctx, 2, 8, 124, 6, trim);
+    for (let i = 0; i < 15; i++) {
+      circle(ctx, 6 + i * 8, 14, 3, trim);
+    }
+
+    // Ground floor
+    rect(ctx, 10, 54, 108, 36, darken(wall, 0.06));
+
+    // Large front windows with arch tops
+    rect(ctx, 14, 58, 30, 20, '#8ABACC');
+    rect(ctx, 19, 55, 20, 3, '#8ABACC'); // arch
+    rect(ctx, 84, 58, 30, 20, '#8ABACC');
+    rect(ctx, 89, 55, 20, 3, '#8ABACC'); // arch
+
+    // Door — ornate
+    rect(ctx, 52, 56, 24, 34, trim);
+    rect(ctx, 54, 58, 20, 32, '#3A2A1A');
+    rect(ctx, 54, 58, 20, 1, '#FFD700'); // gold trim
+    px(ctx, 72, 74, '#FFD700'); // door handle
+
+    // Awning — saffron and green stripes (Indian flag colors)
+    for (let x = 10; x < 118; x++) {
+      const seg = Math.floor((x - 10) / 8) % 3;
+      const color = seg === 0 ? '#FF9933' : seg === 1 ? '#FFFFFF' : '#138808';
+      rect(ctx, x, 52, 1, 4, color);
+    }
+
+    // "CURRY" sign in gold
+    // C
+    rect(ctx, 30, 42, 6, 8, '#FFD700');
+    rect(ctx, 32, 44, 4, 4, wall);
+    // U
+    rect(ctx, 38, 42, 2, 8, '#FFD700');
+    rect(ctx, 42, 42, 2, 8, '#FFD700');
+    rect(ctx, 38, 48, 6, 2, '#FFD700');
+    // R
+    rect(ctx, 46, 42, 6, 8, '#FFD700');
+    rect(ctx, 48, 44, 2, 2, wall);
+    rect(ctx, 50, 46, 2, 4, '#FFD700');
+    // R
+    rect(ctx, 54, 42, 6, 8, '#FFD700');
+    rect(ctx, 56, 44, 2, 2, wall);
+    rect(ctx, 58, 46, 2, 4, '#FFD700');
+    // Y
+    rect(ctx, 62, 42, 2, 4, '#FFD700');
+    rect(ctx, 66, 42, 2, 4, '#FFD700');
+    rect(ctx, 63, 46, 4, 4, '#FFD700');
+
+    // Decorative paisley/mandala dots on facade
+    const dotColor = '#FFD700';
+    circle(ctx, 20, 30, 2, dotColor);
+    circle(ctx, 64, 30, 2, dotColor);
+    circle(ctx, 108, 30, 2, dotColor);
+    circle(ctx, 42, 28, 1, dotColor);
+    circle(ctx, 86, 28, 1, dotColor);
+
+    // Upper floor windows with arched tops
+    for (let col = 0; col < 4; col++) {
+      const wx = 16 + col * 28;
+      rect(ctx, wx, 18, 12, 14, '#7A8A9A');
+      rect(ctx, wx + 2, 16, 8, 3, '#7A8A9A'); // arch
+    }
+
+    // Small dome/cupola on roof center
+    rect(ctx, 56, 2, 16, 8, trim);
+    circle(ctx, 64, 2, 6, trim);
+    circle(ctx, 64, 0, 2, '#FFD700'); // gold finial
+
+    c.refresh();
+  }
 }
 
 export function generateBudapestTextures(scene: Phaser.Scene): void {
