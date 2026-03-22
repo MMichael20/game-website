@@ -148,22 +148,12 @@ export class AirportInteriorScene extends InteriorScene {
     this.player.setTemporaryTexture('player-suitcase', this);
     this.partner.setTemporaryTexture('partner-suitcase', this);
     this.boardingTriggered = false;
-    this.currentStation = 0;
+    this.currentStation = STATIONS.length; // Skip all stations — airport is open
     this.sequenceActive = false;
 
-    // ── Block all doorways initially ──────────────────────────────────
+    // ── All doorways open — no barriers ───────────────────────────────
     this.blockedDoorways.clear();
     this.barrierSprites = [];
-    DOORWAY_POSITIONS.forEach(pos => {
-      for (let y = 14; y <= 18; y++) {
-        this.blockedDoorways.add(`${pos.x},${y}`);
-        this.blockedDoorways.add(`${pos.x + 1},${y}`);
-      }
-      // Barrier decoration sprite at center of doorway
-      const centerPos = tileToWorld(pos.x, 16);
-      const barrier = this.add.image(centerPos.x + TILE_SIZE / 2, centerPos.y, 'interior-airport-doorway-barrier').setDepth(10);
-      this.barrierSprites.push(barrier);
-    });
 
     // ── Create station NPC sprites (static images) ────────────────────
     this.stationNPCSprites = STATION_NPC_DEFS.map(def => {
@@ -187,8 +177,8 @@ export class AirportInteriorScene extends InteriorScene {
       });
     };
 
-    // Show first station indicator
-    this.updateStationIndicator();
+    // Show gate indicators (airport is open, all stations skipped)
+    this.showGateIndicators();
 
     // ── Tarmac animated background ──────────────────────────────────
     this.createTarmacBackground();
