@@ -336,8 +336,8 @@ export const BUDAPEST_CHECKPOINT_ZONES: CheckpointZone[] = [
   },
   {
     id: 'bp_indian_restaurant',
-    centerX: tileToWorld(18, 32).x,
-    centerY: tileToWorld(18, 32).y,
+    centerX: tileToWorld(18, 28).x,
+    centerY: tileToWorld(18, 28).y,
     radius: 48,
     promptText: 'Enter Indian Restaurant',
   },
