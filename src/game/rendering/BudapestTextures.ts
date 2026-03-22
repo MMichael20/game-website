@@ -5824,6 +5824,83 @@ export function generateBudapestCoupleSprites(
 // ── MAIN EXPORT ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 
+// ── Indian restaurant mini-game textures ──────────────────────────────────
+
+function generateCurryHuntTextures(scene: Phaser.Scene): void {
+  // Curry bowl (32×32)
+  {
+    const c = scene.textures.createCanvas('curry-bowl', 32, 32);
+    const ctx = c.context;
+    // Bowl
+    rect(ctx, 6, 14, 20, 10, '#D2691E');
+    rect(ctx, 8, 12, 16, 4, '#CD853F');
+    // Curry filling
+    rect(ctx, 9, 14, 14, 6, '#DAA520');
+    rect(ctx, 10, 15, 12, 4, '#FF8C00');
+    // Rice on the side
+    rect(ctx, 20, 16, 4, 3, '#FFFFF0');
+    rect(ctx, 21, 17, 3, 2, '#FAFAD2');
+    // Steam wisps
+    rect(ctx, 13, 10, 2, 3, 'rgba(255,255,255,0.5)');
+    rect(ctx, 17, 8, 2, 4, 'rgba(255,255,255,0.4)');
+    rect(ctx, 15, 9, 1, 3, 'rgba(255,255,255,0.3)');
+    // Bowl rim
+    rect(ctx, 5, 13, 22, 1, '#8B4513');
+    rect(ctx, 6, 24, 20, 2, '#8B4513');
+    // Bowl base
+    rect(ctx, 10, 24, 12, 2, '#A0522D');
+    c.refresh();
+  }
+
+  // Cover / dome (32×32)
+  {
+    const c = scene.textures.createCanvas('curry-cover', 32, 32);
+    const ctx = c.context;
+    // Dome body (silver cloche)
+    rect(ctx, 6, 12, 20, 14, '#C0C0C0');
+    rect(ctx, 8, 8, 16, 6, '#D3D3D3');
+    rect(ctx, 10, 6, 12, 4, '#DCDCDC');
+    rect(ctx, 12, 4, 8, 3, '#E8E8E8');
+    // Knob on top
+    rect(ctx, 14, 2, 4, 3, '#FFD700');
+    rect(ctx, 15, 1, 2, 2, '#DAA520');
+    // Base rim
+    rect(ctx, 4, 26, 24, 2, '#A9A9A9');
+    rect(ctx, 5, 25, 22, 1, '#B8B8B8');
+    // Highlight (shine)
+    rect(ctx, 10, 8, 2, 8, 'rgba(255,255,255,0.4)');
+    rect(ctx, 11, 10, 1, 5, 'rgba(255,255,255,0.3)');
+    // Shadow on right side
+    rect(ctx, 22, 12, 3, 12, 'rgba(0,0,0,0.15)');
+    c.refresh();
+  }
+
+  // Indian waiter NPC (48×48)
+  {
+    const c = scene.textures.createCanvas('npc-indian-waiter', 48, 48);
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#C68642',
+      hair: '#1a1a1a',
+      top: '#FFFFFF',     // white chef coat
+      pants: '#2F2F2F',
+      shoes: '#1a1a1a',
+      detail: (dCtx: Ctx) => {
+        // Chef hat / toque
+        rect(dCtx, 17, 0, 14, 5, '#FFFFFF');
+        rect(dCtx, 19, -2, 10, 3, '#FFFFFF');
+        // Apron
+        rect(dCtx, 16, 28, 16, 8, '#F5F5F5');
+        rect(dCtx, 18, 28, 12, 1, '#DDD');
+        // Mustache
+        rect(dCtx, 19, 15, 4, 1, '#1a1a1a');
+        rect(dCtx, 25, 15, 4, 1, '#1a1a1a');
+      },
+    });
+    c.refresh();
+  }
+}
+
 export function generateBudapestTextures(scene: Phaser.Scene): void {
   generateBudapestTerrain(scene);
   generateBudapestNPCs(scene);
@@ -5831,4 +5908,5 @@ export function generateBudapestTextures(scene: Phaser.Scene): void {
   generateBudapestBuildings(scene);
   generateBudapestDecorations(scene);
   generateBudapestCutsceneSprites(scene);
+  generateCurryHuntTextures(scene);
 }
