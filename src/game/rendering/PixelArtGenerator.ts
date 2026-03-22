@@ -432,16 +432,60 @@ function drawBookshelf(ctx: Ctx): void {
   }
 }
 
+function drawCoffeeTable(ctx: Ctx): void {
+  // Low rectangular coffee table
+  rect(ctx, 4, 12, 24, 12, '#a08050');
+  rect(ctx, 5, 13, 22, 10, '#b09060');
+  rect(ctx, 5, 13, 22, 1, '#c0a070');
+  // Legs
+  rect(ctx, 5, 24, 2, 4, '#806030');
+  rect(ctx, 25, 24, 2, 4, '#806030');
+  // Magazine on top
+  rect(ctx, 10, 15, 8, 5, '#dd4444');
+  rect(ctx, 11, 16, 6, 3, '#ee6666');
+}
+
+function drawFridge(ctx: Ctx): void {
+  // Tall fridge body
+  rect(ctx, 4, 0, 24, 30, '#e0e0e0');
+  rect(ctx, 5, 1, 22, 28, '#f0f0f0');
+  // Door split
+  rect(ctx, 4, 14, 24, 1, '#ccc');
+  // Handle
+  rect(ctx, 24, 4, 2, 8, '#aaa');
+  rect(ctx, 24, 18, 2, 8, '#aaa');
+  // Logo/badge
+  rect(ctx, 13, 2, 6, 2, '#4488cc');
+}
+
+function drawWardrobe(ctx: Ctx): void {
+  // Tall wardrobe
+  rect(ctx, 2, 0, 28, 30, '#6a4a2a');
+  rect(ctx, 3, 1, 26, 28, '#7a5a3a');
+  // Double doors
+  rect(ctx, 15, 1, 1, 28, '#5a3a1a');
+  // Handles
+  rect(ctx, 13, 14, 2, 3, '#c0a020');
+  rect(ctx, 17, 14, 2, 3, '#c0a020');
+  // Top molding
+  rect(ctx, 2, 0, 28, 2, '#5a3a1a');
+  // Bottom base
+  rect(ctx, 4, 28, 24, 2, '#5a3a1a');
+}
+
 export function generateInteriorFurniture(scene: Phaser.Scene): void {
   const drawFns: Record<string, (ctx: Ctx) => void> = {
     bed: drawBed,
     couch: drawCouch,
     table: drawInteriorTable,
+    'coffee-table': drawCoffeeTable,
     stove: drawStove,
     sink: drawSink,
     toilet: drawToilet,
     desk: drawDesk,
     bookshelf: drawBookshelf,
+    fridge: drawFridge,
+    wardrobe: drawWardrobe,
   };
 
   for (const [name, draw] of Object.entries(drawFns)) {
