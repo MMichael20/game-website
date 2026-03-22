@@ -41,6 +41,7 @@ export class BudapestOverworldScene extends OverworldScene {
       bp_tram_stop_south: 'Tram Stop',
       bp_restaurant_1: 'Goulash House',
       bp_restaurant_2: 'Chimney Cake',
+      bp_indian_restaurant: 'Indian Restaurant',
       bp_parliament: 'Parliament',
       bp_chain_bridge: 'Chain Bridge',
       bp_fishermans_bastion: 'Fisherman\'s Bastion',
@@ -560,6 +561,22 @@ export class BudapestOverworldScene extends OverworldScene {
         uiManager.showNPCDialog(
           ['Budapest\'s best chimney cake shop!', 'Cinnamon, chocolate, or walnut?', 'Fresh off the spit — enjoy!'],
           () => { uiManager.hideNPCDialog(); this.inputSystem.unfreeze(); },
+        );
+        break;
+
+      case 'bp_indian_restaurant':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          [
+            'Welcome to Curry Palace!',
+            'Our waiter has hidden the curry bowl...',
+            'Can you find it?',
+          ],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('CurryHuntScene', { checkpointId: 'bp_indian_restaurant' });
+          },
         );
         break;
 
