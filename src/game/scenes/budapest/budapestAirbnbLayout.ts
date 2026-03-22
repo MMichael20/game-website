@@ -11,9 +11,10 @@ const rooms = [
 ];
 
 const doorways = [
-  { x: 8, y: 3, width: 2, height: 1 },
-  { x: 5, y: 7, width: 2, height: 1 },
-  { x: 10, y: 6, width: 1, height: 1 },
+  { x: 8, y: 3, width: 2, height: 1 },   // Living room → Kitchen
+  { x: 5, y: 7, width: 2, height: 1 },   // Living room → Bedroom
+  { x: 8, y: 8, width: 2, height: 1 },   // Bedroom → Bathroom (hallway)
+  { x: 10, y: 5, width: 1, height: 3 },  // Kitchen → Bathroom (vertical passage)
 ];
 
 export const BUDAPEST_AIRBNB_LAYOUT: InteriorLayout = {
@@ -25,6 +26,8 @@ export const BUDAPEST_AIRBNB_LAYOUT: InteriorLayout = {
     { tileX: 2, tileY: 2, width: 6, height: 5, floorType: 'wood' },
     { tileX: 10, tileY: 2, width: 4, height: 4, floorType: 'tile_floor' },
     { tileX: 2, tileY: 7, width: 6, height: 4, floorType: 'carpet' },
+    { tileX: 8, tileY: 8, width: 2, height: 1, floorType: 'wood' },      // Hallway to bathroom
+    { tileX: 10, tileY: 5, width: 1, height: 3, floorType: 'tile_floor' }, // Vertical passage
     { tileX: 10, tileY: 7, width: 4, height: 4, floorType: 'tile_floor' },
   ],
   decorations: [
