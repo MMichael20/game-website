@@ -29,6 +29,8 @@ import { RuinBarScene } from './game/scenes/budapest/RuinBarScene';
 import { BudapestEyeScene } from './game/scenes/budapest/BudapestEyeScene';
 import { BudapestAirbnbScene } from './game/scenes/budapest/BudapestAirbnbScene';
 import { BudapestTransportScene } from './game/scenes/budapest/BudapestTransportScene';
+import { DanubeCruiseScene } from './game/scenes/budapest/DanubeCruiseScene';
+import { ThermalBathScene } from './game/scenes/budapest/ThermalBathScene';
 import { GAME_WIDTH, GAME_HEIGHT } from './utils/constants';
 
 // Initialize UI layer before Phaser
@@ -58,7 +60,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     touch: { capture: true },
   },
-  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, HadarsHouseScene, AirportInteriorScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, AirbnbCompoundScene, DrivingScene, HanaPulloverScene, HanaDrivingScene, SunBeachScene, QuizScene, CatchScene, MatchScene, TennisScene, ChaseBabyScene, TurtleRescueScene, BudapestAirportScene, BudapestBusRideScene, BudapestOverworldScene, JewishQuarterScene, RuinBarScene, BudapestEyeScene, BudapestAirbnbScene, BudapestTransportScene],
+  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, HadarsHouseScene, AirportInteriorScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, AirbnbCompoundScene, DrivingScene, HanaPulloverScene, HanaDrivingScene, SunBeachScene, QuizScene, CatchScene, MatchScene, TennisScene, ChaseBabyScene, TurtleRescueScene, BudapestAirportScene, BudapestBusRideScene, BudapestOverworldScene, JewishQuarterScene, RuinBarScene, BudapestEyeScene, BudapestAirbnbScene, BudapestTransportScene, DanubeCruiseScene, ThermalBathScene],
 };
 
 new Phaser.Game(config);

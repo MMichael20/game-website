@@ -5,6 +5,7 @@ import { NPCSystem } from '../../systems/NPCSystem';
 import { NPCDef } from '../../data/mapLayout';
 import { uiManager } from '../../../ui/UIManager';
 import { saveCurrentScene } from '../../systems/SaveSystem';
+import { TILE_SIZE } from '../../../utils/constants';
 
 const RUIN_BAR_NPCS: NPCDef[] = [
   {
@@ -47,6 +48,98 @@ export class RuinBarScene extends InteriorScene {
         this.npcSystem.onDialogueEnd(npc.id);
       });
     };
+
+    this.addRuinBarAmbiance();
+  }
+
+  private addRuinBarAmbiance(): void {
+    const layout = this.getLayout();
+    const tileToPixel = (tx: number, ty: number) => ({
+      x: tx * TILE_SIZE + TILE_SIZE / 2,
+      y: ty * TILE_SIZE + TILE_SIZE / 2,
+    });
+
+    // Neon sign color-cycling glow (near top-right of bar)
+    const neonPos = tileToPixel(17, 3);
+    const neonGlow = this.add.circle(neonPos.x, neonPos.y, 16, 0xFF44AA)
+      .setAlpha(0.2).setDepth(-1);
+    const neonColors = [0xFF44AA, 0x4488FF, 0xAA44FF];
+    let neonIdx = 0;
+    this.time.addEvent({
+      delay: 2000,
+      loop: true,
+      callback: () => {
+        neonIdx = (neonIdx + 1) % neonColors.length;
+        neonGlow.fillColor = neonColors[neonIdx];
+        this.tweens.add({
+          targets: neonGlow,
+          alpha: { from: 0.15, to: 0.3 },
+          duration: 800,
+          yoyo: true,
+        });
+      },
+    });
+
+    // Dance floor colored light overlay (dance area ~x=4-10, y=9-13)
+    const dancePos = tileToPixel(7, 11);
+    const danceLight = this.add.rectangle(dancePos.x, dancePos.y, 6 * TILE_SIZE, 4 * TILE_SIZE, 0xFF4488)
+      .setAlpha(0.08).setDepth(-2);
+    const danceColors = [0xFF4488, 0x4488FF, 0x44FF88, 0xFFAA44, 0xAA44FF];
+    let danceIdx = 0;
+    this.time.addEvent({
+      delay: 3000,
+      loop: true,
+      callback: () => {
+        danceIdx = (danceIdx + 1) % danceColors.length;
+        danceLight.fillColor = danceColors[danceIdx];
+      },
+    });
+
+    // Music notes from dance area
+    this.time.addEvent({
+      delay: 1500,
+      loop: true,
+      callback: () => {
+        const notePos = tileToPixel(7 + Math.floor(Math.random() * 4), 10);
+        const note = this.add.image(notePos.x, notePos.y, 'deco-bp-music-note')
+          .setDepth(5).setAlpha(0.6);
+        this.tweens.add({
+          targets: note,
+          y: notePos.y - 25,
+          x: notePos.x + (Math.random() - 0.5) * 20,
+          alpha: 0,
+          duration: 2000,
+          onComplete: () => note.destroy(),
+        });
+      },
+    });
+
+    // Ambient chatter bubbles above sitting NPCs
+    const chatterTexts = ['...', 'ha!', '!!!', '?!', '~'];
+    this.time.addEvent({
+      delay: 3000,
+      loop: true,
+      callback: () => {
+        const sitters = RUIN_BAR_NPCS.filter(n => n.behavior === 'sit' || n.behavior === 'idle');
+        const pick = sitters[Math.floor(Math.random() * sitters.length)];
+        const chatPos = tileToPixel(pick.tileX, pick.tileY);
+        const chat = this.add.text(chatPos.x, chatPos.y - 20, chatterTexts[Math.floor(Math.random() * chatterTexts.length)], {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: '6px',
+          color: '#AAAAAA',
+        }).setOrigin(0.5).setDepth(5).setAlpha(0);
+
+        this.tweens.add({
+          targets: chat,
+          alpha: 0.6,
+          y: chatPos.y - 28,
+          duration: 600,
+          yoyo: true,
+          hold: 800,
+          onComplete: () => chat.destroy(),
+        });
+      },
+    });
   }
 
   // CRITICAL: Override to return to JewishQuarterScene, not WorldScene

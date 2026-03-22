@@ -127,6 +127,35 @@ export class WorldScene extends OverworldScene {
       return;
     }
 
+    if (zone.id === 'fast_travel') {
+      this.inputSystem.freeze();
+      const destinations = [
+        { label: 'Airport', scene: 'AirportInteriorScene', data: { returnX: pos.x, returnY: pos.y } },
+        { label: 'Maui', scene: 'MauiOverworldScene', data: { returnFromInterior: true } },
+        { label: 'Budapest', scene: 'BudapestOverworldScene', data: { returnFromInterior: true } },
+        { label: 'Jewish Quarter', scene: 'JewishQuarterScene', data: { returnFromInterior: true } },
+      ];
+      uiManager.showDialog({
+        title: 'Fast Travel',
+        message: 'Where do you want to go?',
+        buttons: [
+          ...destinations.map(dest => ({
+            label: dest.label,
+            onClick: () => {
+              uiManager.hideDialog();
+              this.inputSystem.unfreeze();
+              this.cameras.main.fadeOut(300, 0, 0, 0);
+              this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start(dest.scene, dest.data ?? {});
+              });
+            },
+          })),
+          { label: 'Cancel', onClick: () => { uiManager.hideDialog(); this.inputSystem.unfreeze(); } },
+        ],
+      });
+      return;
+    }
+
     // Existing mini-game logic
     markCheckpointVisited(zone.id);
     const checkpoint = CHECKPOINTS.find(cp => cp.id === zone.id);

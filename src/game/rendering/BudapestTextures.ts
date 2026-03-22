@@ -113,7 +113,7 @@ function drawNPCBase(ctx: Ctx, opts: {
 // ══════════════════════════════════════════════════════════════════════════
 
 function generateBudapestTerrain(scene: Phaser.Scene): void {
-  const c = scene.textures.createCanvas('budapest-terrain', 320, 32);
+  const c = scene.textures.createCanvas('budapest-terrain', 352, 32);
   if (!c) return;
   const ctx = c.context;
 
@@ -373,6 +373,39 @@ function generateBudapestTerrain(scene: Phaser.Scene): void {
       const x = Math.floor(rng() * 30) + 1;
       const y = Math.floor(rng() * 30) + 1;
       px(ctx, ox + x, y, lighten('#6A6050', 0.15));
+    }
+  }
+
+  // Frame 10: WaterShallow — lighter blue with foam, visible riverbed stones, gentle ripples
+  {
+    const ox = 320;
+    const rng = seededRandom(6000);
+    rect(ctx, ox, 0, 32, 32, '#2A5A8A');
+    // Lighter ripple pattern
+    for (let y = 0; y < 32; y += 3) {
+      for (let x = 0; x < 32; x++) {
+        if (rng() < 0.15) px(ctx, ox + x, y, lighten('#2A5A8A', 0.12));
+      }
+    }
+    // Subtle wave lines
+    for (let x = 0; x < 32; x++) {
+      const wy = 8 + Math.floor(Math.sin(x * 0.4) * 1.5);
+      px(ctx, ox + x, wy, lighten('#2A5A8A', 0.08));
+      const wy2 = 20 + Math.floor(Math.sin(x * 0.3 + 1) * 1.5);
+      px(ctx, ox + x, wy2, lighten('#2A5A8A', 0.08));
+    }
+    // Foam/edge pattern along top edge (y=0-2)
+    for (let x = 0; x < 32; x++) {
+      if (rng() < 0.4) px(ctx, ox + x, 0, '#FFFFFF');
+      if (rng() < 0.3) px(ctx, ox + x, 1, '#EEEEFF');
+      if (rng() < 0.2) px(ctx, ox + x, 2, '#DDDDEE');
+    }
+    // Visible riverbed stones — semi-visible gray-brown dots
+    for (let i = 0; i < 12; i++) {
+      const x = Math.floor(rng() * 30) + 1;
+      const y = 8 + Math.floor(rng() * 22);
+      px(ctx, ox + x, y, '#7A6A5A');
+      if (rng() > 0.5) px(ctx, ox + x + 1, y, '#7A6A5A');
     }
   }
 
@@ -917,6 +950,73 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
     });
     c.refresh();
   }
+
+  // npc-bp-hiker — olive green top, khaki pants, walking stick, hat
+  {
+    const c = scene.textures.createCanvas('npc-bp-hiker', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#D4A574', hair: '#5A3A1A', top: '#556B2F', pants: '#8B7355',
+      shoes: '#4A3A2A',
+      detail: (ctx) => {
+        // Wide-brim hiking hat
+        rect(ctx, 14, 2, 20, 3, '#6A5A3A');
+        rect(ctx, 17, 0, 14, 3, '#6A5A3A');
+        // Walking stick — thin brown rect from right hand down
+        rect(ctx, 37, 34, 2, 12, '#6A4A2A');
+        rect(ctx, 37, 33, 2, 1, '#8A6A4A');
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-bp-fisherman — blue-gray top, gray hair, fishing rod
+  {
+    const c = scene.textures.createCanvas('npc-bp-fisherman', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#C8A882', hair: '#888888', top: '#4A6A7A', pants: '#5A5A5A',
+      shoes: '#3A3A3A',
+      detail: (ctx) => {
+        // Fishing rod — thin line extending from right hand diagonally up-right
+        for (let i = 0; i < 15; i++) {
+          px(ctx, 37 + Math.floor(i * 0.4), 34 - i, '#5A3A1A');
+        }
+        // Rod tip
+        px(ctx, 43, 20, '#8A6A4A');
+        // Fishing line from tip down
+        for (let y = 20; y < 34; y++) {
+          px(ctx, 44, y, '#CCCCCC');
+        }
+        // Bucket at feet
+        rect(ctx, 10, 40, 5, 4, '#4A6A8A');
+        rect(ctx, 10, 40, 5, 1, darken('#4A6A8A', 0.15));
+      },
+    });
+    c.refresh();
+  }
+
+  // npc-bp-bath-goer — white top, blue shorts, towel over shoulder
+  {
+    const c = scene.textures.createCanvas('npc-bp-bath-goer', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    drawNPCBase(ctx, {
+      skin: '#E8C8A0', hair: '#AA6622', top: '#FFFFFF', pants: '#4488AA',
+      shoes: '#5A5A5A',
+      detail: (ctx) => {
+        // Towel draped over left arm/shoulder
+        rect(ctx, 8, 22, 6, 2, '#FFFFFF');
+        rect(ctx, 7, 24, 4, 10, '#FFFFFF');
+        // Towel stripe
+        rect(ctx, 7, 28, 4, 1, '#4488AA');
+        rect(ctx, 7, 31, 4, 1, '#4488AA');
+      },
+    });
+    c.refresh();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1031,6 +1131,60 @@ function generateBudapestVehicles(scene: Phaser.Scene): void {
   drawCar('budapest-car-red', '#AA3A3A');
   drawCar('budapest-car-white', '#DDDDDD');
   drawCar('budapest-car-gray', '#7A7A7A');
+
+  // budapest-river-boat — 48×16, white river boat with windows and Hungarian flag
+  {
+    const c = scene.textures.createCanvas('budapest-river-boat', 48, 16);
+    if (!c) return;
+    const ctx = c.context;
+    // White hull with curved bottom
+    rect(ctx, 4, 6, 40, 8, '#F0F0F0');
+    rect(ctx, 6, 4, 36, 4, '#F0F0F0');
+    // Bow curve
+    rect(ctx, 2, 8, 3, 4, '#F0F0F0');
+    // Stern
+    rect(ctx, 44, 8, 2, 4, '#E0E0E0');
+    // Blue windows — 3 small rectangles
+    rect(ctx, 12, 7, 5, 3, '#6AAACE');
+    rect(ctx, 20, 7, 5, 3, '#6AAACE');
+    rect(ctx, 28, 7, 5, 3, '#6AAACE');
+    // Red chimney near back
+    rect(ctx, 38, 2, 3, 4, '#CC3333');
+    rect(ctx, 37, 2, 5, 1, darken('#CC3333', 0.1));
+    // Hungarian flag at top (red-white-green, 4×3)
+    rect(ctx, 40, 0, 4, 1, '#CE2939');
+    rect(ctx, 40, 1, 4, 1, '#FFFFFF');
+    rect(ctx, 40, 2, 4, 1, '#477050');
+    // Flagpole
+    rect(ctx, 39, 0, 1, 4, '#5A5A5A');
+    // Waterline
+    rect(ctx, 4, 13, 40, 1, '#4A7AAA');
+    c.refresh();
+  }
+
+  // budapest-barge — 64×12, dark cargo barge
+  {
+    const c = scene.textures.createCanvas('budapest-barge', 64, 12);
+    if (!c) return;
+    const ctx = c.context;
+    // Dark hull
+    rect(ctx, 2, 6, 60, 5, '#3A3A4A');
+    rect(ctx, 4, 4, 56, 3, '#3A3A4A');
+    // Bow taper
+    rect(ctx, 0, 7, 3, 3, '#3A3A4A');
+    // Flat deck
+    rect(ctx, 4, 3, 56, 2, '#5A5A5A');
+    // Cargo containers (blue, red, green, each ~12×6)
+    rect(ctx, 8, 0, 12, 4, '#3A6AAA');
+    rect(ctx, 8, 0, 12, 1, darken('#3A6AAA', 0.15));
+    rect(ctx, 24, 0, 12, 4, '#AA3A3A');
+    rect(ctx, 24, 0, 12, 1, darken('#AA3A3A', 0.15));
+    rect(ctx, 40, 0, 12, 4, '#3A8A3A');
+    rect(ctx, 40, 0, 12, 1, darken('#3A8A3A', 0.15));
+    // Waterline
+    rect(ctx, 2, 10, 60, 1, '#4A7AAA');
+    c.refresh();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1095,6 +1249,22 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
       rect(ctx, x, 28, 4, 3, roof);
     }
 
+    // Hungarian flag at dome peak (red-white-green, 6×2)
+    rect(ctx, 126, -4, 6, 1, '#CE2939');
+    rect(ctx, 126, -3, 6, 1, '#FFFFFF');
+    rect(ctx, 126, -2, 6, 1, '#477050');
+    // Flagpole
+    rect(ctx, 125, -5, 1, 5, '#5A5A5A');
+
+    // Row of tiny arches below dome (3px tall semicircles)
+    for (let ax = 112; ax < 144; ax += 5) {
+      rect(ctx, ax, 36, 4, 1, dark);
+      rect(ctx, ax, 34, 1, 3, dark);
+      rect(ctx, ax + 3, 34, 1, 3, dark);
+      px(ctx, ax + 1, 33, dark);
+      px(ctx, ax + 2, 33, dark);
+    }
+
     c.refresh();
   }
 
@@ -1150,6 +1320,14 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     // Staircase detail (left side)
     for (let i = 0; i < 6; i++) {
       rect(ctx, 20 - i * 2, 70 + i * 3, 10 + i * 2, 2, shade);
+    }
+
+    // Tiny cross at each turret tip (2px '+' shape)
+    for (const tx of turretX) {
+      px(ctx, tx, 0, dark);
+      px(ctx, tx, 1, dark);
+      px(ctx, tx - 1, 1, dark);
+      px(ctx, tx + 1, 1, dark);
     }
 
     c.refresh();
@@ -1533,6 +1711,10 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     // Ground platform
     rect(ctx, 20, 92, 56, 4, '#6A6A6A');
 
+    // Ground glow — semi-transparent yellow circle at base
+    circle(ctx, 48, 92, 20, 'rgba(255,238,136,0.12)');
+    circle(ctx, 48, 92, 14, 'rgba(255,238,136,0.08)');
+
     c.refresh();
   }
 
@@ -1856,6 +2038,187 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 172, 2, 12, 18, frame);
     rect(ctx, 170, 2, 16, 4, lighten(glass, 0.2));
     rect(ctx, 174, 6, 8, 8, lighten(glass, 0.15));
+
+    c.refresh();
+  }
+
+  // building-citadella — 128×64, star-shaped fortress on Gellért Hill
+  {
+    const c = scene.textures.createCanvas('building-citadella', 128, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const wall = '#7A7A6A';
+    const dark = darken(wall, 0.15);
+
+    // Main fortress body (star approximation with angular bastions)
+    rect(ctx, 20, 16, 88, 40, wall);
+    // Angular bastions (protruding rectangles at corners)
+    rect(ctx, 10, 24, 16, 24, wall);
+    rect(ctx, 102, 24, 16, 24, wall);
+    rect(ctx, 40, 8, 20, 14, wall);
+    rect(ctx, 68, 8, 20, 14, wall);
+    rect(ctx, 40, 50, 20, 12, wall);
+    rect(ctx, 68, 50, 20, 12, wall);
+
+    // Wall outlines / darker edges
+    rect(ctx, 20, 16, 88, 2, dark);
+    rect(ctx, 20, 54, 88, 2, dark);
+    rect(ctx, 20, 16, 2, 40, dark);
+    rect(ctx, 106, 16, 2, 40, dark);
+
+    // Bastion edges
+    rect(ctx, 10, 24, 16, 2, dark);
+    rect(ctx, 102, 24, 16, 2, dark);
+    rect(ctx, 40, 8, 20, 2, dark);
+    rect(ctx, 68, 8, 20, 2, dark);
+
+    // Lookout platform — horizontal line near top with balustrade bumps
+    rect(ctx, 30, 20, 68, 1, dark);
+    for (let x = 32; x < 96; x += 4) {
+      rect(ctx, x, 18, 2, 3, dark);
+    }
+
+    // Hungarian flag at center top (red-white-green, 6×4)
+    rect(ctx, 61, 4, 6, 1, '#CE2939');
+    rect(ctx, 61, 5, 6, 2, '#FFFFFF');
+    rect(ctx, 61, 7, 6, 1, '#477050');
+    // Flagpole
+    rect(ctx, 60, 2, 1, 6, '#5A5A5A');
+
+    // Interior courtyard suggestion
+    rect(ctx, 40, 28, 48, 20, darken(wall, 0.06));
+
+    // Foundation
+    rect(ctx, 8, 58, 112, 6, dark);
+
+    c.refresh();
+  }
+
+  // building-opera-house — 128×64, classical facade with columns and pediment
+  {
+    const c = scene.textures.createCanvas('building-opera-house', 128, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const stone = '#C8B890';
+    const dark = darken(stone, 0.15);
+
+    // Main building body
+    rect(ctx, 4, 18, 120, 42, stone);
+    // Dark foundation
+    rect(ctx, 2, 58, 124, 6, darken(stone, 0.25));
+
+    // Pediment — triangle at top (multiple horizontal rects getting narrower)
+    rect(ctx, 20, 14, 88, 2, dark);
+    rect(ctx, 26, 12, 76, 2, dark);
+    rect(ctx, 32, 10, 64, 2, dark);
+    rect(ctx, 38, 8, 52, 2, dark);
+    rect(ctx, 44, 6, 40, 2, dark);
+    rect(ctx, 50, 4, 28, 2, dark);
+    rect(ctx, 56, 2, 16, 2, dark);
+    rect(ctx, 62, 0, 4, 2, darken(dark, 0.1));
+
+    // 4 columns (vertical rectangles)
+    const colX = [28, 48, 76, 96];
+    for (const cx of colX) {
+      rect(ctx, cx, 16, 5, 42, stone);
+      rect(ctx, cx, 16, 5, 2, lighten(stone, 0.1));
+      rect(ctx, cx, 56, 5, 2, lighten(stone, 0.1));
+      // Column fluting (subtle darker lines)
+      rect(ctx, cx + 1, 18, 1, 38, darken(stone, 0.06));
+      rect(ctx, cx + 3, 18, 1, 38, darken(stone, 0.06));
+    }
+
+    // Arched entrance at center — dark rectangle with circle above
+    rect(ctx, 54, 38, 20, 22, '#3A2A1A');
+    circle(ctx, 64, 38, 10, '#3A2A1A');
+
+    // Red awning above entrance
+    rect(ctx, 52, 34, 24, 3, '#AA3333');
+
+    // Balcony — horizontal line at mid-height with vertical bars
+    rect(ctx, 10, 30, 108, 1, dark);
+    for (let x = 12; x < 116; x += 3) {
+      rect(ctx, x, 30, 1, 3, dark);
+    }
+
+    // Upper windows
+    for (let col = 0; col < 6; col++) {
+      rect(ctx, 12 + col * 18, 20, 8, 8, '#6A7A8A');
+    }
+
+    // Lower windows
+    for (let col = 0; col < 4; col++) {
+      rect(ctx, 8 + col * 12, 42, 6, 8, '#6A7A8A');
+      rect(ctx, 84 + col * 12, 42, 6, 8, '#6A7A8A');
+    }
+
+    // Decorative horizontal band
+    rect(ctx, 4, 18, 120, 1, dark);
+
+    c.refresh();
+  }
+
+  // building-gellert-baths — 192×96, art nouveau thermal baths
+  {
+    const c = scene.textures.createCanvas('building-gellert-baths', 192, 96);
+    if (!c) return;
+    const ctx = c.context;
+    const stone = '#D4C8A0';
+    const dark = darken(stone, 0.12);
+    const accent = '#4A8AAA';
+
+    // Main facade
+    rect(ctx, 8, 24, 176, 66, stone);
+    // Foundation
+    rect(ctx, 6, 88, 180, 8, darken(stone, 0.2));
+
+    // Central dome
+    circle(ctx, 96, 16, 16, darken(stone, 0.15));
+    rect(ctx, 84, 16, 24, 10, stone);
+    // Dome highlight
+    circle(ctx, 96, 14, 12, darken(stone, 0.1));
+    // Dome tip
+    rect(ctx, 95, 0, 2, 6, dark);
+
+    // Two side wings — wider rectangles
+    rect(ctx, 8, 30, 60, 58, stone);
+    rect(ctx, 124, 30, 60, 58, stone);
+
+    // Large windows in each wing (3 per wing)
+    for (let i = 0; i < 3; i++) {
+      // Left wing windows
+      rect(ctx, 14 + i * 18, 40, 12, 16, '#6A7A8A');
+      rect(ctx, 14 + i * 18, 40, 12, 1, dark);
+      // Right wing windows
+      rect(ctx, 130 + i * 18, 40, 12, 16, '#6A7A8A');
+      rect(ctx, 130 + i * 18, 40, 12, 1, dark);
+    }
+
+    // Central section windows
+    for (let i = 0; i < 3; i++) {
+      rect(ctx, 76 + i * 14, 34, 8, 12, '#6A7A8A');
+    }
+
+    // Arched entrance — pool-blue accent
+    rect(ctx, 80, 62, 32, 28, accent);
+    circle(ctx, 96, 62, 16, accent);
+    // Inner entrance
+    rect(ctx, 84, 66, 24, 24, darken(accent, 0.15));
+
+    // Decorative horizontal bands
+    rect(ctx, 8, 24, 176, 2, dark);
+    rect(ctx, 8, 58, 176, 1, dark);
+    rect(ctx, 8, 78, 176, 1, dark);
+
+    // Art nouveau decorative curves on facade
+    for (let x = 12; x < 72; x += 2) {
+      const y = 26 + Math.floor(Math.sin(x * 0.2) * 1.5);
+      px(ctx, x, y, dark);
+    }
+    for (let x = 124; x < 180; x += 2) {
+      const y = 26 + Math.floor(Math.sin(x * 0.2) * 1.5);
+      px(ctx, x, y, dark);
+    }
 
     c.refresh();
   }
@@ -2691,6 +3054,725 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
 
     c.refresh();
   }
+
+  // deco-bp-liberty-bridge-pillar — 32×48, green iron art nouveau pillar
+  {
+    const c = scene.textures.createCanvas('deco-bp-liberty-bridge-pillar', 32, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const iron = '#2A6A3A';
+    const dark = darken(iron, 0.15);
+
+    // Main pillar body
+    rect(ctx, 10, 8, 12, 36, iron);
+    // Wider base
+    rect(ctx, 6, 40, 20, 8, dark);
+    rect(ctx, 8, 38, 16, 4, iron);
+    // Art nouveau arch shape at top
+    rect(ctx, 6, 4, 20, 6, iron);
+    rect(ctx, 8, 2, 16, 4, iron);
+    circle(ctx, 16, 6, 6, lighten(iron, 0.08));
+    rect(ctx, 12, 0, 8, 4, iron);
+    // Cross-bracing pattern (X of thin lines)
+    for (let i = 0; i < 20; i++) {
+      px(ctx, 11 + Math.floor(i * 0.5), 12 + i, dark);
+      px(ctx, 21 - Math.floor(i * 0.5), 12 + i, dark);
+    }
+    // Decorative rivets
+    for (let y = 14; y < 38; y += 6) {
+      px(ctx, 10, y, lighten(iron, 0.2));
+      px(ctx, 21, y, lighten(iron, 0.2));
+    }
+
+    c.refresh();
+  }
+
+  // deco-bp-margaret-bridge-pillar — 32×48, light gray stone pillar
+  {
+    const c = scene.textures.createCanvas('deco-bp-margaret-bridge-pillar', 32, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const stone = '#AAAAAA';
+    const dark = darken(stone, 0.12);
+
+    // Main body — wider at base, narrowing upward
+    rect(ctx, 8, 8, 16, 32, stone);
+    rect(ctx, 6, 28, 20, 16, stone);
+    rect(ctx, 4, 40, 24, 8, dark);
+    // Cap at top — wider section
+    rect(ctx, 6, 4, 20, 6, dark);
+    rect(ctx, 8, 2, 16, 4, stone);
+    rect(ctx, 10, 0, 12, 4, darken(dark, 0.1));
+    // Stone block lines
+    for (let y = 10; y < 40; y += 5) {
+      rect(ctx, 8, y, 16, 1, darken(stone, 0.08));
+    }
+    // Subtle highlights
+    rect(ctx, 14, 6, 4, 2, lighten(stone, 0.1));
+
+    c.refresh();
+  }
+
+  // deco-bp-music-note — 8×8, black eighth note
+  {
+    const c = scene.textures.createCanvas('deco-bp-music-note', 8, 8);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Note head circle at (3,5) radius 2
+    circle(ctx, 3, 5, 2, '#1A1A1A');
+    // Stem going up (1px line from (5,2) to (5,5))
+    rect(ctx, 5, 1, 1, 5, '#1A1A1A');
+    // Flag at top — small line
+    px(ctx, 6, 1, '#1A1A1A');
+    px(ctx, 7, 2, '#1A1A1A');
+    px(ctx, 6, 2, '#1A1A1A');
+
+    c.refresh();
+  }
+
+  // deco-bp-couple-bench — 32×32, two figures sitting on a bench
+  {
+    const c = scene.textures.createCanvas('deco-bp-couple-bench', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Bench — brown rectangle
+    rect(ctx, 4, 20, 24, 3, '#7A5A3A');
+    // Bench legs
+    rect(ctx, 6, 23, 2, 6, '#5A4A3A');
+    rect(ctx, 24, 23, 2, 6, '#5A4A3A');
+    // Bench back
+    rect(ctx, 4, 14, 24, 2, '#7A5A3A');
+    rect(ctx, 6, 16, 2, 4, '#5A4A3A');
+    rect(ctx, 24, 16, 2, 4, '#5A4A3A');
+
+    // Left figure — blue shirt
+    rect(ctx, 8, 10, 5, 4, '#E8C8A0'); // head
+    rect(ctx, 8, 14, 5, 6, '#4488FF'); // body
+    rect(ctx, 7, 8, 3, 3, '#5A3A20'); // hair
+    px(ctx, 10, 11, '#334'); // eye
+
+    // Right figure — pink shirt
+    rect(ctx, 19, 10, 5, 4, '#E8C8A0'); // head
+    rect(ctx, 19, 14, 5, 6, '#FF6688'); // body
+    rect(ctx, 18, 8, 3, 3, '#8A5A2A'); // hair
+    px(ctx, 21, 11, '#334'); // eye
+
+    // Shadow
+    rect(ctx, 6, 28, 20, 2, 'rgba(0,0,0,0.1)');
+
+    c.refresh();
+  }
+
+  // deco-bp-heart — 8×8, tiny pixel heart
+  {
+    const c = scene.textures.createCanvas('deco-bp-heart', 8, 8);
+    if (!c) return;
+    const ctx = c.context;
+    const red = '#FF4466';
+
+    // Classic heart shape: two bumps at top, point at bottom
+    // Row 1 (y=1): two circles
+    px(ctx, 1, 1, red); px(ctx, 2, 1, red);
+    px(ctx, 5, 1, red); px(ctx, 6, 1, red);
+    // Row 2 (y=2): wider
+    px(ctx, 0, 2, red); px(ctx, 1, 2, red); px(ctx, 2, 2, red); px(ctx, 3, 2, red);
+    px(ctx, 4, 2, red); px(ctx, 5, 2, red); px(ctx, 6, 2, red); px(ctx, 7, 2, red);
+    // Row 3 (y=3): full width
+    for (let x = 0; x < 8; x++) px(ctx, x, 3, red);
+    // Row 4 (y=4): narrowing
+    for (let x = 1; x < 7; x++) px(ctx, x, 4, red);
+    // Row 5 (y=5):
+    for (let x = 2; x < 6; x++) px(ctx, x, 5, red);
+    // Row 6 (y=6):
+    px(ctx, 3, 6, red); px(ctx, 4, 6, red);
+    // Row 7 (y=7): point
+    px(ctx, 3, 7, red);
+
+    c.refresh();
+  }
+
+  // ── DEPTH-LAYERED CITY TEXTURES (urban canyon effect) ─────────────────
+
+  // Foreground building strip — apartment building top, viewed from above
+  {
+    const c = scene.textures.createCanvas('bp-fg-building-top-1', 96, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const roofBeige = '#C8B8A0';
+    const corniceColor = '#A09080';
+    const chimneyGray = '#5A5A5A';
+    const antennaGray = '#4A4A4A';
+    const wallShadow = '#7A7A7A';
+    const wallMid = '#9A9A9A';
+    const wallLight = '#BABABA';
+    const windowBlue = '#AABBCC';
+
+    // Rooftop surface
+    rect(ctx, 0, 0, 96, 40, roofBeige);
+    // Rooftop texture — scattered patches for tar/tiles
+    const rng = seededRandom(5001);
+    for (let i = 0; i < 30; i++) {
+      const tx = Math.floor(rng() * 90);
+      const ty = Math.floor(rng() * 36);
+      const shade = rng() > 0.5 ? darken(roofBeige, 0.08) : lighten(roofBeige, 0.08);
+      rect(ctx, tx, ty, 3, 3, shade);
+    }
+    // Chimney stacks
+    rect(ctx, 14, 8, 6, 6, chimneyGray);
+    rect(ctx, 52, 12, 6, 6, chimneyGray);
+    rect(ctx, 78, 6, 6, 6, chimneyGray);
+    // TV antennas extending from chimneys
+    rect(ctx, 16, 0, 2, 10, antennaGray);
+    rect(ctx, 54, 4, 2, 10, antennaGray);
+    rect(ctx, 80, 0, 2, 8, antennaGray);
+    // Antenna crossbars
+    rect(ctx, 14, 2, 6, 1, antennaGray);
+    rect(ctx, 52, 6, 6, 1, antennaGray);
+    // Rooftop edge / cornice band
+    rect(ctx, 0, 40, 96, 4, corniceColor);
+    // Bracket details on cornice
+    for (let bx = 4; bx < 92; bx += 8) {
+      rect(ctx, bx, 40, 2, 4, darken(corniceColor, 0.15));
+    }
+    // Overhanging facade — progressively thinner strips
+    rect(ctx, 0, 44, 96, 8, wallShadow);
+    rect(ctx, 8, 52, 80, 8, wallMid);
+    rect(ctx, 16, 60, 64, 4, wallLight);
+    // Balcony railing at y=44
+    rect(ctx, 4, 44, 88, 1, antennaGray);
+    for (let bx = 8; bx < 90; bx += 6) {
+      rect(ctx, bx, 44, 1, 4, antennaGray);
+    }
+    // Window tops visible from above
+    rect(ctx, 16, 46, 6, 4, windowBlue);
+    rect(ctx, 44, 46, 6, 4, windowBlue);
+    rect(ctx, 72, 46, 6, 4, windowBlue);
+
+    c.refresh();
+  }
+
+  // Foreground building strip — ornate Pest-side building
+  {
+    const c = scene.textures.createCanvas('bp-fg-building-top-2', 96, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const creamFacade = '#D8D0C0';
+    const corniceColor = '#B0A090';
+    const wallShadow = '#7A7A7A';
+    const wallMid = '#9A9A9A';
+    const wallLight = '#BABABA';
+
+    // Roof surface
+    rect(ctx, 0, 0, 96, 40, creamFacade);
+    // Roof texture patches
+    const rng = seededRandom(5002);
+    for (let i = 0; i < 25; i++) {
+      const tx = Math.floor(rng() * 90);
+      const ty = Math.floor(rng() * 36);
+      rect(ctx, tx, ty, 3, 2, darken(creamFacade, 0.06));
+    }
+    // Dormer windows — small triangular shapes
+    for (let dx = 16; dx < 80; dx += 28) {
+      // Triangle roof of dormer
+      for (let row = 0; row < 5; row++) {
+        rect(ctx, dx + row, 14 - row, 8 - row * 2, 1, '#6A5A4A');
+      }
+      // Dormer window pane
+      rect(ctx, dx + 2, 15, 4, 5, '#88AACC');
+    }
+    // Decorative balustrade at rooftop edge
+    rect(ctx, 0, 38, 96, 2, corniceColor);
+    // Dentil pattern on cornice
+    for (let bx = 2; bx < 94; bx += 4) {
+      rect(ctx, bx, 36, 2, 2, darken(corniceColor, 0.2));
+    }
+    rect(ctx, 0, 40, 96, 4, corniceColor);
+    // Small balustrade posts
+    for (let bx = 4; bx < 92; bx += 6) {
+      rect(ctx, bx, 34, 2, 4, darken(corniceColor, 0.12));
+    }
+    // Overhanging facade
+    rect(ctx, 0, 44, 96, 8, wallShadow);
+    rect(ctx, 8, 52, 80, 8, wallMid);
+    rect(ctx, 16, 60, 64, 4, wallLight);
+    // Flower boxes on balcony
+    rect(ctx, 20, 45, 12, 3, '#5A4A3A');
+    rect(ctx, 60, 45, 12, 3, '#5A4A3A');
+    // Flower dots
+    px(ctx, 22, 45, '#CC4444'); px(ctx, 24, 45, '#FF88AA'); px(ctx, 26, 45, '#CC4444');
+    px(ctx, 28, 45, '#FF88AA'); px(ctx, 30, 45, '#CC4444');
+    px(ctx, 62, 45, '#FF88AA'); px(ctx, 64, 45, '#CC4444'); px(ctx, 66, 45, '#FF88AA');
+    px(ctx, 68, 45, '#CC4444'); px(ctx, 70, 45, '#FF88AA');
+
+    c.refresh();
+  }
+
+  // Foreground building strip — Art nouveau style
+  {
+    const c = scene.textures.createCanvas('bp-fg-building-top-3', 96, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const roofPink = '#D8A8A0';
+    const patina = '#6AAA6A';
+    const ironGray = '#4A4A4A';
+    const wallShadow = '#7A7A7A';
+    const wallMid = '#9A9A9A';
+    const wallLight = '#BABABA';
+    const windowBlue = '#AABBCC';
+
+    // Pastel pink/coral roof
+    rect(ctx, 0, 0, 96, 40, roofPink);
+    // Roof texture
+    const rng = seededRandom(5003);
+    for (let i = 0; i < 20; i++) {
+      const tx = Math.floor(rng() * 88);
+      const ty = Math.floor(rng() * 34);
+      rect(ctx, tx, ty, 4, 3, darken(roofPink, 0.05));
+    }
+    // Green patina copper fixtures on roof
+    circle(ctx, 20, 10, 4, patina);
+    circle(ctx, 75, 14, 3, patina);
+    rect(ctx, 45, 6, 8, 4, patina);
+    // Curved/organic cornice — circles for rounded elements
+    for (let cx = 6; cx < 92; cx += 10) {
+      circle(ctx, cx, 40, 3, darken(roofPink, 0.2));
+    }
+    rect(ctx, 0, 38, 96, 2, darken(roofPink, 0.15));
+    // Iron railing patterns (cross-hatch)
+    for (let bx = 4; bx < 92; bx += 5) {
+      rect(ctx, bx, 42, 1, 4, ironGray);
+    }
+    rect(ctx, 2, 42, 92, 1, ironGray);
+    rect(ctx, 2, 45, 92, 1, ironGray);
+    // Overhanging facade
+    rect(ctx, 0, 44, 96, 8, wallShadow);
+    rect(ctx, 8, 52, 80, 8, wallMid);
+    rect(ctx, 16, 60, 64, 4, wallLight);
+    // Arched window tops — more windows visible
+    for (let wx = 10; wx < 86; wx += 16) {
+      rect(ctx, wx, 46, 6, 4, windowBlue);
+      // Arch top
+      circle(ctx, wx + 3, 46, 3, windowBlue);
+    }
+
+    c.refresh();
+  }
+
+  // Foreground building strip — modern/commercial building
+  {
+    const c = scene.textures.createCanvas('bp-fg-building-top-4', 96, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const roofGray = '#888888';
+    const acGray = '#777777';
+    const wallShadow = '#6A6A6A';
+    const wallMid = '#8A8A8A';
+    const wallLight = '#AAAAAA';
+    const glassBlue = '#88AACC';
+
+    // Flat gray roof
+    rect(ctx, 0, 0, 96, 44, roofGray);
+    // Roof surface variation
+    const rng = seededRandom(5004);
+    for (let i = 0; i < 15; i++) {
+      const tx = Math.floor(rng() * 88);
+      const ty = Math.floor(rng() * 38);
+      rect(ctx, tx, ty, 4, 4, darken(roofGray, 0.06));
+    }
+    // AC units on rooftop
+    rect(ctx, 10, 8, 14, 10, acGray);
+    rect(ctx, 11, 9, 12, 8, darken(acGray, 0.1));
+    circle(ctx, 17, 13, 3, '#666666');  // fan
+    rect(ctx, 60, 14, 14, 10, acGray);
+    rect(ctx, 61, 15, 12, 8, darken(acGray, 0.1));
+    circle(ctx, 67, 19, 3, '#666666');  // fan
+    rect(ctx, 36, 4, 10, 8, acGray);
+    circle(ctx, 41, 8, 3, '#666666');   // fan
+    // Clean modern roof edge — no ornate details
+    rect(ctx, 0, 42, 96, 2, darken(roofGray, 0.2));
+    // Overhanging facade — slightly taller
+    rect(ctx, 0, 44, 96, 8, wallShadow);
+    rect(ctx, 6, 52, 84, 8, wallMid);
+    rect(ctx, 14, 60, 68, 4, wallLight);
+    // Glass-like window reflections — larger than residential
+    rect(ctx, 12, 46, 10, 6, glassBlue);
+    rect(ctx, 32, 46, 10, 6, glassBlue);
+    rect(ctx, 52, 46, 10, 6, glassBlue);
+    rect(ctx, 72, 46, 10, 6, glassBlue);
+
+    c.refresh();
+  }
+
+  // Foreground vertical strip — rotated for vertical streets (left/right sides)
+  {
+    const c = scene.textures.createCanvas('bp-fg-building-side-1', 64, 96);
+    if (!c) return;
+    const ctx = c.context;
+    const roofBeige = '#C8B8A0';
+    const corniceColor = '#A09080';
+    const chimneyGray = '#5A5A5A';
+    const antennaGray = '#4A4A4A';
+    const wallShadow = '#7A7A7A';
+    const wallMid = '#9A9A9A';
+    const wallLight = '#BABABA';
+    const windowBlue = '#AABBCC';
+
+    // Rooftop surface (left portion)
+    rect(ctx, 0, 0, 40, 96, roofBeige);
+    // Roof texture patches
+    const rng = seededRandom(5005);
+    for (let i = 0; i < 25; i++) {
+      const tx = Math.floor(rng() * 36);
+      const ty = Math.floor(rng() * 90);
+      const shade = rng() > 0.5 ? darken(roofBeige, 0.08) : lighten(roofBeige, 0.08);
+      rect(ctx, tx, ty, 3, 3, shade);
+    }
+    // Chimney stacks
+    rect(ctx, 8, 14, 6, 6, chimneyGray);
+    rect(ctx, 22, 50, 6, 6, chimneyGray);
+    rect(ctx, 10, 78, 6, 6, chimneyGray);
+    // Antennas
+    rect(ctx, 10, 8, 2, 8, antennaGray);
+    rect(ctx, 24, 44, 2, 8, antennaGray);
+    // Cornice (vertical band at x=40)
+    rect(ctx, 38, 0, 4, 96, corniceColor);
+    for (let by = 4; by < 92; by += 8) {
+      rect(ctx, 38, by, 4, 2, darken(corniceColor, 0.15));
+    }
+    // Overhanging facade — bands going right
+    rect(ctx, 42, 0, 8, 96, wallShadow);
+    rect(ctx, 50, 8, 8, 80, wallMid);
+    rect(ctx, 58, 16, 6, 64, wallLight);
+    // Balcony railing vertical
+    rect(ctx, 42, 4, 1, 88, antennaGray);
+    for (let by = 8; by < 90; by += 6) {
+      rect(ctx, 42, by, 4, 1, antennaGray);
+    }
+    // Window tops
+    rect(ctx, 44, 20, 4, 6, windowBlue);
+    rect(ctx, 44, 46, 4, 6, windowBlue);
+    rect(ctx, 44, 72, 4, 6, windowBlue);
+
+    c.refresh();
+  }
+
+  // Foreground vertical strip — ornate variant for vertical streets
+  {
+    const c = scene.textures.createCanvas('bp-fg-building-side-2', 64, 96);
+    if (!c) return;
+    const ctx = c.context;
+    const creamFacade = '#D8D0C0';
+    const corniceColor = '#B0A090';
+    const wallShadow = '#7A7A7A';
+    const wallMid = '#9A9A9A';
+    const wallLight = '#BABABA';
+
+    // Roof surface (left portion)
+    rect(ctx, 0, 0, 40, 96, creamFacade);
+    // Roof texture
+    const rng = seededRandom(5006);
+    for (let i = 0; i < 20; i++) {
+      const tx = Math.floor(rng() * 36);
+      const ty = Math.floor(rng() * 90);
+      rect(ctx, tx, ty, 3, 2, darken(creamFacade, 0.06));
+    }
+    // Dormer windows (rotated — vertical orientation)
+    for (let dy = 16; dy < 80; dy += 28) {
+      for (let col = 0; col < 5; col++) {
+        rect(ctx, 18 - col, dy + col, 1, 8 - col * 2, '#6A5A4A');
+      }
+      rect(ctx, 19, dy + 2, 5, 4, '#88AACC');
+    }
+    // Balustrade / dentil cornice (vertical)
+    rect(ctx, 36, 0, 2, 96, corniceColor);
+    for (let by = 2; by < 94; by += 4) {
+      rect(ctx, 34, by, 2, 2, darken(corniceColor, 0.2));
+    }
+    rect(ctx, 38, 0, 4, 96, corniceColor);
+    for (let by = 4; by < 92; by += 6) {
+      rect(ctx, 32, by, 2, 4, darken(corniceColor, 0.12));
+    }
+    // Overhanging facade
+    rect(ctx, 42, 0, 8, 96, wallShadow);
+    rect(ctx, 50, 8, 8, 80, wallMid);
+    rect(ctx, 58, 16, 6, 64, wallLight);
+    // Flower boxes
+    rect(ctx, 43, 24, 3, 12, '#5A4A3A');
+    rect(ctx, 43, 62, 3, 12, '#5A4A3A');
+    px(ctx, 43, 26, '#CC4444'); px(ctx, 43, 28, '#FF88AA'); px(ctx, 43, 30, '#CC4444');
+    px(ctx, 43, 64, '#FF88AA'); px(ctx, 43, 66, '#CC4444'); px(ctx, 43, 68, '#FF88AA');
+
+    c.refresh();
+  }
+
+  // Background cityscape — wide distant city silhouette
+  {
+    const c = scene.textures.createCanvas('bp-bg-city-distant', 640, 128);
+    if (!c) return;
+    const ctx = c.context;
+    const rng = seededRandom(7777);
+    const skyDark = '#5A6A7A';
+    const skyMid = '#6A7A8A';
+    const hazeLight = '#8A9AAA';
+
+    // Haze gradient background — lighter at bottom
+    rect(ctx, 0, 0, 640, 40, skyDark);
+    rect(ctx, 0, 40, 640, 40, skyMid);
+    rect(ctx, 0, 80, 640, 48, hazeLight);
+
+    // 18 building outlines at varying heights
+    const buildings: { x: number; w: number; h: number }[] = [];
+    for (let i = 0; i < 18; i++) {
+      const bx = Math.floor(rng() * 600);
+      const bw = 16 + Math.floor(rng() * 24);
+      const bh = 40 + Math.floor(rng() * 60);
+      buildings.push({ x: bx, w: bw, h: bh });
+      const shade = rng() > 0.5 ? skyDark : darken(skyMid, 0.1);
+      rect(ctx, bx, 128 - bh, bw, bh, shade);
+      // Subtle edge highlight
+      rect(ctx, bx, 128 - bh, 1, bh, lighten(shade, 0.08));
+    }
+    // Church domes
+    circle(ctx, 120, 52, 12, darken(skyMid, 0.15));
+    circle(ctx, 120, 50, 10, skyMid);
+    circle(ctx, 420, 58, 10, darken(skyMid, 0.15));
+    circle(ctx, 420, 56, 8, skyMid);
+    // Spires
+    for (let sy = 0; sy < 18; sy++) {
+      rect(ctx, 200 + sy, 30 + sy, 3 - Math.floor(sy / 8), 1, darken(skyDark, 0.1));
+    }
+    for (let sy = 0; sy < 14; sy++) {
+      rect(ctx, 500 + sy, 40 + sy, 2 - Math.floor(sy / 8), 1, darken(skyDark, 0.1));
+    }
+    // Scattered lit windows — tiny yellow dots
+    for (let i = 0; i < 20; i++) {
+      const wx = Math.floor(rng() * 620);
+      const wy = 60 + Math.floor(rng() * 60);
+      px(ctx, wx, wy, '#CCAA44');
+    }
+
+    c.refresh();
+  }
+
+  // Background cityscape — mid-distance buildings, slightly more detailed
+  {
+    const c = scene.textures.createCanvas('bp-bg-city-mid', 480, 160);
+    if (!c) return;
+    const ctx = c.context;
+    const rng = seededRandom(7778);
+    const bgWarm = '#7A8A8A';
+    const bgLight = '#8A9A9A';
+
+    // Background fill
+    rect(ctx, 0, 0, 480, 160, lighten(bgWarm, 0.1));
+
+    // 12 buildings
+    for (let i = 0; i < 12; i++) {
+      const bx = Math.floor(rng() * 440);
+      const bw = 24 + Math.floor(rng() * 30);
+      const bh = 50 + Math.floor(rng() * 70);
+      const shade = rng() > 0.5 ? bgWarm : bgLight;
+      rect(ctx, bx, 160 - bh, bw, bh, shade);
+      // Window grid (3x4 per building)
+      for (let wy = 0; wy < 4; wy++) {
+        for (let wx = 0; wx < 3; wx++) {
+          const winX = bx + 4 + wx * Math.floor((bw - 8) / 3);
+          const winY = (160 - bh) + 6 + wy * Math.floor((bh - 12) / 4);
+          const lit = rng() > 0.5;
+          rect(ctx, winX, winY, 4, 3, lit ? '#CCAA44' : darken(shade, 0.1));
+        }
+      }
+      // Rooftop details: chimneys
+      if (rng() > 0.4) {
+        rect(ctx, bx + Math.floor(bw / 3), 160 - bh - 6, 4, 6, darken(shade, 0.2));
+      }
+      // Water tanks on some roofs
+      if (rng() > 0.7) {
+        rect(ctx, bx + Math.floor(bw * 0.6), 160 - bh - 5, 6, 5, darken(shade, 0.15));
+        circle(ctx, bx + Math.floor(bw * 0.6) + 3, 160 - bh - 5, 3, darken(shade, 0.2));
+      }
+    }
+    // Trees between buildings
+    for (let i = 0; i < 6; i++) {
+      const tx = 20 + Math.floor(rng() * 430);
+      circle(ctx, tx, 148, 6, '#3A5A3A');
+      circle(ctx, tx, 146, 5, '#4A6A4A');
+    }
+
+    c.refresh();
+  }
+
+  // Street-level — red/white striped cafe awning
+  {
+    const c = scene.textures.createCanvas('bp-street-awning-1', 48, 24);
+    if (!c) return;
+    const ctx = c.context;
+    const red = '#CC3333';
+    const white = '#EEEEEE';
+
+    // Support pole on left edge
+    rect(ctx, 0, 0, 2, 24, '#4A4A4A');
+    // Triangular awning: wide at left, narrowing to right
+    for (let x = 2; x < 48; x++) {
+      const height = Math.floor(20 * (1 - (x - 2) / 46));
+      if (height <= 0) break;
+      const stripeColor = (Math.floor(x / 6) % 2 === 0) ? red : white;
+      rect(ctx, x, 0, 1, height, stripeColor);
+    }
+    // Shadow underneath at bottom
+    for (let x = 2; x < 46; x++) {
+      const height = Math.floor(20 * (1 - (x - 2) / 46));
+      if (height <= 1) break;
+      rect(ctx, x, height - 1, 1, 1, darken(red, 0.3));
+    }
+
+    c.refresh();
+  }
+
+  // Street-level — green solid awning with scalloped edge
+  {
+    const c = scene.textures.createCanvas('bp-street-awning-2', 48, 24);
+    if (!c) return;
+    const ctx = c.context;
+    const green = '#336644';
+
+    // Support pole
+    rect(ctx, 0, 0, 2, 24, '#4A4A4A');
+    // Triangular solid green awning
+    for (let x = 2; x < 48; x++) {
+      const height = Math.floor(20 * (1 - (x - 2) / 46));
+      if (height <= 0) break;
+      rect(ctx, x, 0, 1, height, green);
+    }
+    // Scalloped bottom edge — semicircle cutouts
+    for (let sx = 4; sx < 40; sx += 8) {
+      const h = Math.floor(20 * (1 - (sx - 2) / 46));
+      if (h > 2) {
+        circle(ctx, sx + 4, h, 3, lighten(green, 0.15));
+      }
+    }
+    // Gold text-like marks suggesting shop name
+    rect(ctx, 8, 4, 16, 2, '#CCAA44');
+    rect(ctx, 10, 7, 12, 1, '#CCAA44');
+
+    c.refresh();
+  }
+
+  // Street-level — wrought iron shop sign (coffee)
+  {
+    const c = scene.textures.createCanvas('bp-hanging-sign-1', 24, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const iron = '#4A4A4A';
+    const wood = '#6A4A2A';
+    const cream = '#E8D8C0';
+
+    // Iron bracket at top (L-shaped)
+    rect(ctx, 0, 0, 4, 10, iron);
+    rect(ctx, 0, 0, 12, 4, iron);
+    // Chain links connecting bracket to sign
+    rect(ctx, 10, 4, 2, 2, iron);
+    rect(ctx, 10, 8, 2, 2, iron);
+    // Hanging sign board
+    rect(ctx, 2, 12, 20, 16, wood);
+    rect(ctx, 3, 13, 18, 14, darken(wood, 0.05));
+    // Coffee cup icon on sign
+    circle(ctx, 12, 20, 4, cream);
+    // Cup handle
+    rect(ctx, 16, 18, 2, 1, cream);
+    rect(ctx, 17, 18, 1, 3, cream);
+    rect(ctx, 16, 20, 2, 1, cream);
+
+    c.refresh();
+  }
+
+  // Street-level — bakery sign
+  {
+    const c = scene.textures.createCanvas('bp-hanging-sign-2', 24, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const iron = '#4A4A4A';
+    const signCream = '#E8D8B0';
+    const brown = '#8A6A3A';
+
+    // Iron bracket at top (L-shaped)
+    rect(ctx, 0, 0, 4, 10, iron);
+    rect(ctx, 0, 0, 12, 4, iron);
+    // Chain links
+    rect(ctx, 10, 4, 2, 2, iron);
+    rect(ctx, 10, 8, 2, 2, iron);
+    // Sign board
+    rect(ctx, 2, 12, 20, 16, signCream);
+    rect(ctx, 3, 13, 18, 14, darken(signCream, 0.03));
+    // Pretzel/bread icon — circular shape in brown
+    circle(ctx, 12, 20, 4, brown);
+    circle(ctx, 12, 20, 2, signCream);  // hole in pretzel
+    // Small dots for texture
+    px(ctx, 9, 18, darken(brown, 0.1));
+    px(ctx, 15, 18, darken(brown, 0.1));
+
+    c.refresh();
+  }
+
+  // Street-level — ornate iron balcony extending over street
+  {
+    const c = scene.textures.createCanvas('bp-balcony-overhang-1', 64, 20);
+    if (!c) return;
+    const ctx = c.context;
+    const iron = '#4A4A4A';
+    const stone = '#9A9A9A';
+
+    // Floor of balcony (stone rectangle behind railing)
+    rect(ctx, 4, 4, 56, 10, stone);
+    // Iron railing — horizontal bars
+    rect(ctx, 2, 2, 60, 1, iron);
+    rect(ctx, 2, 14, 60, 1, iron);
+    // Vertical balusters
+    for (let bx = 4; bx < 62; bx += 4) {
+      rect(ctx, bx, 2, 1, 12, iron);
+    }
+    // Decorative scrollwork at corners
+    px(ctx, 3, 3, iron); px(ctx, 4, 4, iron);
+    px(ctx, 59, 3, iron); px(ctx, 58, 4, iron);
+    px(ctx, 3, 13, iron); px(ctx, 4, 12, iron);
+    px(ctx, 59, 13, iron); px(ctx, 58, 12, iron);
+    // Flower box at center
+    rect(ctx, 24, 6, 16, 4, '#5A4A3A');
+    // Flower dots
+    px(ctx, 26, 6, '#CC4444'); px(ctx, 29, 6, '#FF88AA'); px(ctx, 32, 6, '#CC4444');
+    px(ctx, 35, 6, '#FF88AA'); px(ctx, 38, 6, '#CC4444');
+    // Cast shadow below
+    rect(ctx, 2, 16, 60, 2, darken(iron, 0.3));
+
+    c.refresh();
+  }
+
+  // Street-level — simpler modern balcony
+  {
+    const c = scene.textures.createCanvas('bp-balcony-overhang-2', 64, 20);
+    if (!c) return;
+    const ctx = c.context;
+    const glass = '#88AACC';
+    const metal = '#4A4A4A';
+
+    // Metal frame
+    rect(ctx, 2, 2, 60, 14, metal);
+    // Glass panels — 4 panels separated by thin metal bars
+    rect(ctx, 4, 4, 12, 10, glass);
+    rect(ctx, 18, 4, 12, 10, glass);
+    rect(ctx, 32, 4, 12, 10, glass);
+    rect(ctx, 46, 4, 12, 10, glass);
+    // Metal dividers between panels
+    rect(ctx, 16, 2, 2, 14, metal);
+    rect(ctx, 30, 2, 2, 14, metal);
+    rect(ctx, 44, 2, 2, 14, metal);
+    // Smaller shadow
+    rect(ctx, 4, 17, 56, 1, darken(metal, 0.2));
+
+    c.refresh();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -3002,6 +4084,1737 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
 
     // Drainpipe
     rect(ctx, 44, 14, 2, 78, '#6A6A6A');
+
+    c.refresh();
+  }
+
+  // bp-cutscene-bus-couple — 64×48, two figures sitting side by side
+  {
+    const c = scene.textures.createCanvas('bp-cutscene-bus-couple', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const skin = '#E8C8A0';
+
+    // Seat/bench below them
+    rect(ctx, 12, 34, 40, 10, '#3A3A4A');
+    rect(ctx, 12, 34, 40, 2, '#4A4A5A');
+
+    // Left figure — blue top
+    rect(ctx, 18, 14, 10, 12, skin); // head
+    rect(ctx, 17, 10, 8, 5, '#5A3A20'); // hair
+    rect(ctx, 16, 24, 12, 12, '#4488FF'); // body
+    rect(ctx, 14, 28, 4, 8, '#4488FF'); // left arm
+    px(ctx, 21, 17, '#334'); // eye
+    px(ctx, 24, 17, '#334');
+    rect(ctx, 20, 21, 4, 1, '#C88'); // mouth
+
+    // Right figure — pink top, leaning slightly left
+    rect(ctx, 34, 13, 10, 12, skin); // head
+    rect(ctx, 33, 9, 8, 5, '#8A5A2A'); // hair
+    rect(ctx, 33, 23, 12, 12, '#FF6688'); // body
+    rect(ctx, 45, 27, 4, 8, '#FF6688'); // right arm
+    px(ctx, 37, 16, '#334'); // eye
+    px(ctx, 40, 16, '#334');
+    rect(ctx, 36, 20, 4, 1, '#C88'); // mouth
+
+    // Hands together in middle
+    rect(ctx, 28, 30, 5, 3, skin);
+
+    c.refresh();
+  }
+
+  // bp-bus-building-pastel-1 through bp-bus-building-pastel-4
+  {
+    const pastelColors = [
+      { key: 'bp-bus-building-pastel-1', color: '#E8B0B0' },
+      { key: 'bp-bus-building-pastel-2', color: '#E8D888' },
+      { key: 'bp-bus-building-pastel-3', color: '#D4B888' },
+      { key: 'bp-bus-building-pastel-4', color: '#A8D8A8' },
+    ];
+    for (const { key, color } of pastelColors) {
+      const c = scene.textures.createCanvas(key, 64, 96);
+      if (!c) continue;
+      const ctx = c.context;
+      const dark = darken(color, 0.12);
+      const rng = seededRandom(key.charCodeAt(key.length - 1) * 100);
+
+      // Main facade
+      rect(ctx, 2, 4, 60, 88, color);
+      // Roof
+      rect(ctx, 0, 0, 64, 6, dark);
+
+      // Windows in grid (3 cols × 5 rows) with ornate frames
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 3; col++) {
+          const wx = 8 + col * 18;
+          const wy = 10 + row * 16;
+          // 1px border (darker shade) frame
+          rect(ctx, wx - 1, wy - 1, 12, 12, dark);
+          rect(ctx, wx, wy, 10, 10, '#7A8A9A');
+          // Some lit
+          if (rng() > 0.5) {
+            rect(ctx, wx + 1, wy + 1, 8, 8, '#FFEE88');
+          }
+        }
+      }
+
+      // Small balcony lines below some windows
+      for (let row = 1; row < 5; row += 2) {
+        for (let col = 0; col < 3; col++) {
+          const bx = 8 + col * 18;
+          const by = 10 + row * 16 + 10;
+          rect(ctx, bx - 1, by, 12, 1, '#5A5A5A');
+        }
+      }
+
+      // Flower boxes: tiny colored dots below bottom windows
+      for (let col = 0; col < 3; col++) {
+        const fx = 8 + col * 18;
+        const fy = 10 + 4 * 16 + 10;
+        rect(ctx, fx, fy + 1, 8, 2, '#5A4A3A');
+        px(ctx, fx + 1, fy, '#FF4444');
+        px(ctx, fx + 3, fy, '#DD77AA');
+        px(ctx, fx + 5, fy, '#FFDD44');
+        px(ctx, fx + 7, fy, '#FF4444');
+      }
+
+      // Entrance
+      rect(ctx, 24, 80, 16, 16, '#4A3A2A');
+
+      c.refresh();
+    }
+  }
+
+  // bp-bus-countryside — 128×96, rolling green hills with houses
+  {
+    const c = scene.textures.createCanvas('bp-bus-countryside', 128, 96);
+    if (!c) return;
+    const ctx = c.context;
+    const rng = seededRandom(8400);
+
+    // Sky
+    rect(ctx, 0, 0, 128, 40, '#88BBDD');
+
+    // Background green hills
+    rect(ctx, 0, 36, 128, 60, '#6A9A4E');
+    // Rolling hill shapes using different greens
+    for (let x = 0; x < 128; x++) {
+      const h1 = Math.floor(10 * Math.sin(x * 0.04) + 8);
+      rect(ctx, x, 30 + h1, 1, 8, '#5A8A3E');
+    }
+    for (let x = 0; x < 128; x++) {
+      const h2 = Math.floor(6 * Math.sin(x * 0.06 + 2) + 4);
+      rect(ctx, x, 44 + h2, 1, 6, '#7AAA5E');
+    }
+
+    // Scattered houses (small colored rectangles with triangle roofs)
+    // House 1
+    rect(ctx, 20, 50, 12, 10, '#D4B888');
+    rect(ctx, 22, 46, 8, 5, '#8A5A3A'); // roof
+    rect(ctx, 24, 54, 4, 6, '#5A4A3A'); // door
+    // House 2
+    rect(ctx, 60, 44, 10, 8, '#E8B0B0');
+    rect(ctx, 62, 40, 6, 5, '#8A5A3A');
+    // House 3
+    rect(ctx, 100, 52, 10, 8, '#A8D8A8');
+    rect(ctx, 102, 48, 6, 5, '#8A5A3A');
+
+    // Small church steeple (tall thin rect with cross at top)
+    rect(ctx, 82, 30, 6, 24, '#C8B898');
+    rect(ctx, 84, 20, 2, 12, '#8A7A6A');
+    // Cross
+    px(ctx, 85, 18, '#5A5A5A');
+    px(ctx, 84, 19, '#5A5A5A');
+    px(ctx, 85, 19, '#5A5A5A');
+    px(ctx, 86, 19, '#5A5A5A');
+    px(ctx, 85, 20, '#5A5A5A');
+
+    // Ground detail
+    for (let i = 0; i < 30; i++) {
+      const x = Math.floor(rng() * 128);
+      const y = 60 + Math.floor(rng() * 30);
+      px(ctx, x, y, rng() > 0.5 ? darken('#6A9A4E', 0.08) : lighten('#6A9A4E', 0.08));
+    }
+
+    c.refresh();
+  }
+
+  // bp-bus-danube-flash — 128×64, blue water with dark building edges
+  {
+    const c = scene.textures.createCanvas('bp-bus-danube-flash', 128, 64);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Dark sky
+    rect(ctx, 0, 0, 128, 20, '#1A1A2A');
+    // Blue water strip in center
+    rect(ctx, 0, 20, 128, 24, '#2255AA');
+    // Darker water below
+    rect(ctx, 0, 44, 128, 20, '#1A3A6A');
+
+    // Dark building edges on left and right
+    rect(ctx, 0, 0, 20, 44, '#2A2A3A');
+    rect(ctx, 108, 0, 20, 44, '#2A2A3A');
+    // Building windows
+    for (let y = 4; y < 40; y += 6) {
+      px(ctx, 6, y, '#FFEE88');
+      px(ctx, 7, y, '#FFEE88');
+      px(ctx, 14, y, '#FFEE88');
+      px(ctx, 15, y, '#FFEE88');
+      px(ctx, 112, y, '#FFEE88');
+      px(ctx, 113, y, '#FFEE88');
+      px(ctx, 120, y, '#FFEE88');
+      px(ctx, 121, y, '#FFEE88');
+    }
+
+    // Light reflections on water (white dots)
+    const rng = seededRandom(8500);
+    for (let i = 0; i < 20; i++) {
+      const x = 20 + Math.floor(rng() * 88);
+      const y = 22 + Math.floor(rng() * 18);
+      px(ctx, x, y, '#FFFFFF');
+      if (rng() > 0.5) px(ctx, x + 1, y, '#CCDDFF');
+    }
+
+    c.refresh();
+  }
+
+  // bp-cutscene-couple-walking — 48×48, two figures side by side hand-in-hand
+  {
+    const c = scene.textures.createCanvas('bp-cutscene-couple-walking', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const skin = '#E8C8A0';
+
+    // Shadow
+    rect(ctx, 8, 42, 32, 4, 'rgba(0,0,0,0.12)');
+
+    // Left figure — blue outfit
+    // Head
+    rect(ctx, 11, 8, 8, 8, skin);
+    rect(ctx, 10, 6, 6, 4, '#5A3A20'); // hair
+    px(ctx, 14, 11, '#334'); // eye
+    px(ctx, 16, 11, '#334');
+    // Body
+    rect(ctx, 10, 16, 10, 12, '#4488FF');
+    // Arms
+    rect(ctx, 7, 18, 3, 8, '#4488FF');
+    // Legs
+    rect(ctx, 10, 28, 4, 10, '#3A3A5A');
+    rect(ctx, 16, 28, 4, 10, '#3A3A5A');
+    // Shoes
+    rect(ctx, 10, 38, 4, 2, '#3A2A1A');
+    rect(ctx, 16, 38, 4, 2, '#3A2A1A');
+    // Hand
+    rect(ctx, 7, 26, 3, 2, skin);
+
+    // Right figure — pink outfit
+    // Head
+    rect(ctx, 29, 8, 8, 8, skin);
+    rect(ctx, 28, 6, 6, 4, '#8A5A2A'); // hair
+    px(ctx, 32, 11, '#334'); // eye
+    px(ctx, 34, 11, '#334');
+    // Body
+    rect(ctx, 28, 16, 10, 12, '#FF6688');
+    // Arms
+    rect(ctx, 38, 18, 3, 8, '#FF6688');
+    // Legs
+    rect(ctx, 28, 28, 4, 10, '#4A4A5A');
+    rect(ctx, 34, 28, 4, 10, '#4A4A5A');
+    // Shoes
+    rect(ctx, 28, 38, 4, 2, '#3A2A1A');
+    rect(ctx, 34, 38, 4, 2, '#3A2A1A');
+    // Hand
+    rect(ctx, 38, 26, 3, 2, skin);
+
+    // Connecting "hand" pixel in skin color between them
+    rect(ctx, 20, 26, 8, 2, skin);
+
+    c.refresh();
+  }
+
+  // bp-eye-cabin-couple — 16×16, cabin with two tiny colored dots in window
+  {
+    const c = scene.textures.createCanvas('bp-eye-cabin-couple', 16, 16);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Hanger arm
+    rect(ctx, 7, 0, 2, 4, '#7A7A8A');
+    // Cabin body
+    rect(ctx, 2, 4, 12, 10, '#4A8ACA');
+    // Roof
+    rect(ctx, 1, 3, 14, 2, '#5A5A6A');
+    // Window
+    rect(ctx, 4, 6, 8, 4, lighten('#4A8ACA', 0.25));
+    // Window frame
+    rect(ctx, 4, 6, 8, 1, '#5A5A6A');
+    rect(ctx, 8, 6, 1, 4, '#5A5A6A');
+    // Two tiny colored dots (couple) in window
+    px(ctx, 6, 8, '#4488FF'); // blue (left figure)
+    px(ctx, 10, 8, '#FF6688'); // pink (right figure)
+    // Floor
+    rect(ctx, 2, 13, 12, 1, darken('#4A8ACA', 0.15));
+    // Bottom trim
+    rect(ctx, 3, 14, 10, 1, '#5A5A6A');
+
+    c.refresh();
+  }
+
+  // bp-eye-sun-disc — 32×32, warm orange-gold circle with glow
+  {
+    const c = scene.textures.createCanvas('bp-eye-sun-disc', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Outer glow (lowest density)
+    circle(ctx, 16, 16, 16, 'rgba(255,102,68,0.1)');
+    // Mid glow
+    circle(ctx, 16, 16, 14, 'rgba(255,136,68,0.15)');
+    // Inner glow
+    circle(ctx, 16, 16, 12, 'rgba(255,170,68,0.2)');
+    // Center solid circle
+    circle(ctx, 16, 16, 10, '#FFAA44');
+    // Bright core
+    circle(ctx, 16, 16, 6, '#FFCC66');
+
+    c.refresh();
+  }
+
+  // bp-cutscene-couple-close — 64×48, upper body view of couple
+  {
+    const c = scene.textures.createCanvas('bp-cutscene-couple-close', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+    const skin = '#E8C8A0';
+
+    // Left figure — blue top, dark hair
+    // Body/shoulders
+    rect(ctx, 8, 24, 20, 20, '#4488FF');
+    // Neck
+    rect(ctx, 15, 20, 6, 6, skin);
+    // Head
+    rect(ctx, 12, 6, 12, 14, skin);
+    // Hair (dark)
+    rect(ctx, 11, 3, 14, 6, '#3A2A18');
+    rect(ctx, 11, 6, 2, 6, '#3A2A18');
+    rect(ctx, 23, 6, 2, 6, '#3A2A18');
+    // Eyes
+    rect(ctx, 15, 12, 2, 2, '#fff');
+    rect(ctx, 20, 12, 2, 2, '#fff');
+    px(ctx, 15, 12, '#334');
+    px(ctx, 20, 12, '#334');
+    // Mouth
+    rect(ctx, 16, 17, 4, 1, '#C88');
+    // Left arm
+    rect(ctx, 4, 28, 6, 14, '#4488FF');
+
+    // Right figure — pink top, lighter brown hair
+    // Body/shoulders (touching left figure)
+    rect(ctx, 32, 24, 20, 20, '#FF6688');
+    // Neck
+    rect(ctx, 39, 20, 6, 6, skin);
+    // Head
+    rect(ctx, 36, 6, 12, 14, skin);
+    // Hair (lighter brown)
+    rect(ctx, 35, 3, 14, 6, '#8A5A2A');
+    rect(ctx, 35, 6, 2, 6, '#8A5A2A');
+    rect(ctx, 47, 6, 2, 6, '#8A5A2A');
+    // Longer hair strands
+    rect(ctx, 34, 8, 2, 10, '#8A5A2A');
+    rect(ctx, 48, 8, 2, 10, '#8A5A2A');
+    // Eyes
+    rect(ctx, 39, 12, 2, 2, '#fff');
+    rect(ctx, 44, 12, 2, 2, '#fff');
+    px(ctx, 39, 12, '#334');
+    px(ctx, 44, 12, '#334');
+    // Mouth
+    rect(ctx, 40, 17, 4, 1, '#C88');
+    // Right arm
+    rect(ctx, 52, 28, 6, 14, '#FF6688');
+
+    c.refresh();
+  }
+
+  // bp-cruise-boat — 200×60, elongated white cruise boat
+  {
+    const c = scene.textures.createCanvas('bp-cruise-boat', 200, 60);
+    if (!c) return;
+    const ctx = c.context;
+
+    // White hull
+    rect(ctx, 8, 24, 184, 24, '#F0F0F0');
+    // Bow taper
+    rect(ctx, 2, 28, 8, 16, '#F0F0F0');
+    rect(ctx, 0, 30, 4, 12, '#E8E8E8');
+    // Stern
+    rect(ctx, 190, 28, 8, 16, '#E8E8E8');
+
+    // Upper deck
+    rect(ctx, 20, 14, 160, 12, '#F0F0F0');
+    rect(ctx, 18, 12, 164, 3, '#E0E0E0');
+
+    // Railing on upper deck (thin line with vertical bumps)
+    rect(ctx, 20, 12, 160, 1, '#8A8A8A');
+    for (let x = 22; x < 178; x += 4) {
+      rect(ctx, x, 10, 1, 3, '#8A8A8A');
+    }
+
+    // Row of blue windows along middle
+    for (let i = 0; i < 16; i++) {
+      rect(ctx, 16 + i * 11, 28, 7, 5, '#6AAACE');
+    }
+
+    // Red chimney near back
+    rect(ctx, 168, 6, 6, 8, '#CC3333');
+    rect(ctx, 166, 6, 10, 2, darken('#CC3333', 0.1));
+
+    // Hungarian flag at stern
+    rect(ctx, 192, 18, 6, 2, '#CE2939');
+    rect(ctx, 192, 20, 6, 2, '#FFFFFF');
+    rect(ctx, 192, 22, 6, 2, '#477050');
+    rect(ctx, 191, 16, 1, 8, '#5A5A5A'); // flagpole
+
+    // Wake/foam line at water level (white dots at bottom edge)
+    const rng = seededRandom(8600);
+    for (let x = 4; x < 194; x++) {
+      if (rng() < 0.4) px(ctx, x, 48, '#FFFFFF');
+      if (rng() < 0.3) px(ctx, x, 49, '#EEEEFF');
+    }
+
+    // Waterline
+    rect(ctx, 4, 47, 190, 1, '#4A7AAA');
+
+    c.refresh();
+  }
+
+  // bp-cruise-parliament-lit — 256×120, night parliament with lit windows
+  {
+    const c = scene.textures.createCanvas('bp-cruise-parliament-lit', 256, 120);
+    if (!c) return;
+    const ctx = c.context;
+    const base = '#D4C8B0';
+    const dark = darken(base, 0.15);
+    const roof = darken(base, 0.25);
+
+    // Main body
+    rect(ctx, 10, 40, 236, 70, base);
+    // Foundation
+    rect(ctx, 8, 105, 240, 15, dark);
+
+    // Central dome
+    circle(ctx, 128, 28, 20, roof);
+    rect(ctx, 114, 28, 28, 22, base);
+    circle(ctx, 128, 26, 16, lighten(roof, 0.1));
+    rect(ctx, 127, 4, 2, 10, dark);
+
+    // Side spires
+    const spirePositions = [30, 60, 90, 166, 196, 226];
+    for (const sx of spirePositions) {
+      rect(ctx, sx - 2, 26, 4, 16, base);
+      rect(ctx, sx - 1, 16, 2, 12, dark);
+      px(ctx, sx, 14, dark);
+    }
+
+    // Windows — ALL LIT (yellow)
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 20; col++) {
+        const wx = 16 + col * 12;
+        const wy = 48 + row * 14;
+        rect(ctx, wx, wy, 4, 7, '#FFEE88');
+        // Window frame
+        rect(ctx, wx - 1, wy - 1, 6, 1, dark);
+        rect(ctx, wx - 1, wy + 7, 6, 1, dark);
+      }
+    }
+
+    // Decorative bands
+    rect(ctx, 10, 40, 236, 2, dark);
+    rect(ctx, 10, 65, 236, 1, dark);
+    rect(ctx, 10, 85, 236, 1, dark);
+
+    // Central entrance arch
+    rect(ctx, 120, 82, 16, 28, '#4A3A2A');
+    circle(ctx, 128, 82, 8, dark);
+
+    // Roofline battlements
+    for (let x = 10; x < 246; x += 6) {
+      rect(ctx, x, 38, 4, 3, roof);
+    }
+
+    // Warm glow at bottom
+    rect(ctx, 8, 108, 240, 12, 'rgba(255,170,68,0.15)');
+
+    c.refresh();
+  }
+
+  // bp-cruise-castle-lit — 200×80, castle on hill with lit windows
+  {
+    const c = scene.textures.createCanvas('bp-cruise-castle-lit', 200, 80);
+    if (!c) return;
+    const ctx = c.context;
+    const wall = '#9A8A70';
+    const dark = darken(wall, 0.15);
+
+    // Green hill beneath
+    for (let x = 0; x < 200; x++) {
+      const hillH = Math.floor(16 + 8 * Math.sin(x * 0.02));
+      rect(ctx, x, 80 - hillH, 1, hillH, '#4A6A3A');
+    }
+
+    // Castle body
+    rect(ctx, 30, 20, 140, 40, wall);
+    // Roof
+    rect(ctx, 28, 16, 144, 5, '#5A6A5A');
+
+    // Central dome
+    circle(ctx, 100, 14, 10, '#6A8A6A');
+    rect(ctx, 94, 14, 12, 8, wall);
+    rect(ctx, 99, 4, 2, 6, dark);
+
+    // Lit windows
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 12; col++) {
+        const wx = 36 + col * 11;
+        const wy = 26 + row * 14;
+        rect(ctx, wx, wy, 4, 6, '#FFEE88');
+      }
+    }
+
+    // Corner towers
+    for (const tx of [30, 170]) {
+      rect(ctx, tx - 3, 12, 6, 48, dark);
+      rect(ctx, tx - 2, 8, 4, 6, '#5A6A5A');
+    }
+
+    // Floodlight glow at building base
+    rect(ctx, 28, 54, 144, 10, 'rgba(255,238,200,0.12)');
+
+    c.refresh();
+  }
+
+  // bp-cruise-bridge-overhead — 400×40, Chain Bridge from below
+  {
+    const c = scene.textures.createCanvas('bp-cruise-bridge-overhead', 400, 40);
+    if (!c) return;
+    const ctx = c.context;
+    const metal = '#5A5A6A';
+    const dark = darken(metal, 0.15);
+
+    // Support columns on left and right
+    rect(ctx, 10, 0, 16, 40, metal);
+    rect(ctx, 374, 0, 16, 40, metal);
+    // Column detail
+    rect(ctx, 10, 0, 16, 2, dark);
+    rect(ctx, 374, 0, 16, 2, dark);
+
+    // Wide catenary curves (arching lines from left to right)
+    for (let x = 26; x < 374; x++) {
+      const mid = 200;
+      const catenary = Math.floor(16 * Math.pow((x - mid) / 174, 2));
+      px(ctx, x, 4 + catenary, metal);
+      px(ctx, x, 5 + catenary, metal);
+      // Second cable
+      px(ctx, x, 8 + catenary, metal);
+    }
+
+    // Chain detail — small zigzag/diamond pattern along curves
+    for (let x = 40; x < 360; x += 6) {
+      const mid = 200;
+      const catenary = Math.floor(16 * Math.pow((x - mid) / 174, 2));
+      const y = 6 + catenary;
+      px(ctx, x, y - 1, dark);
+      px(ctx, x + 1, y, dark);
+      px(ctx, x + 2, y - 1, dark);
+      px(ctx, x + 3, y, dark);
+    }
+
+    // Roadway deck at bottom
+    rect(ctx, 20, 32, 360, 4, darken(metal, 0.1));
+    // Vertical hangers from cable to deck
+    for (let x = 40; x < 370; x += 12) {
+      const mid = 200;
+      const catenary = Math.floor(16 * Math.pow((x - mid) / 174, 2));
+      rect(ctx, x, 5 + catenary, 1, 27 - catenary, dark);
+    }
+
+    // Railing
+    rect(ctx, 20, 30, 360, 1, metal);
+    rect(ctx, 20, 36, 360, 1, metal);
+
+    c.refresh();
+  }
+
+  // bp-bath-columns — 32×96, ornate column with capital and base
+  {
+    const c = scene.textures.createCanvas('bp-bath-columns', 32, 96);
+    if (!c) return;
+    const ctx = c.context;
+    const stone = '#D4C8A0';
+    const dark = darken(stone, 0.12);
+
+    // Capital at top — wider section with decorative detail
+    rect(ctx, 4, 2, 24, 8, dark);
+    rect(ctx, 6, 0, 20, 4, stone);
+    // Capital decorative detail (small rectangles)
+    rect(ctx, 8, 4, 4, 2, lighten(stone, 0.1));
+    rect(ctx, 14, 4, 4, 2, lighten(stone, 0.1));
+    rect(ctx, 20, 4, 4, 2, lighten(stone, 0.1));
+
+    // Column shaft
+    rect(ctx, 8, 10, 16, 74, stone);
+
+    // Fluting — vertical darker lines along shaft
+    rect(ctx, 10, 12, 1, 70, darken(stone, 0.06));
+    rect(ctx, 13, 12, 1, 70, darken(stone, 0.06));
+    rect(ctx, 16, 12, 1, 70, darken(stone, 0.06));
+    rect(ctx, 19, 12, 1, 70, darken(stone, 0.06));
+    rect(ctx, 22, 12, 1, 70, darken(stone, 0.06));
+
+    // Base at bottom — wider section
+    rect(ctx, 4, 84, 24, 8, dark);
+    rect(ctx, 6, 82, 20, 4, stone);
+    rect(ctx, 2, 90, 28, 6, darken(dark, 0.08));
+
+    c.refresh();
+  }
+
+  // bp-cutscene-couple-pool — 64×32, couple at pool edge
+  {
+    const c = scene.textures.createCanvas('bp-cutscene-couple-pool', 64, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const skin = '#E8C8A0';
+
+    // Water at bottom
+    rect(ctx, 0, 20, 64, 12, '#2A8A9A');
+    // Water highlights
+    const rng = seededRandom(8700);
+    for (let i = 0; i < 15; i++) {
+      px(ctx, Math.floor(rng() * 64), 22 + Math.floor(rng() * 8), lighten('#2A8A9A', 0.2));
+    }
+
+    // Pool edge
+    rect(ctx, 0, 18, 64, 3, '#AAAAAA');
+
+    // Left figure — sitting, shoulders visible
+    rect(ctx, 18, 6, 8, 8, skin); // head
+    rect(ctx, 17, 4, 6, 4, '#5A3A20'); // hair
+    rect(ctx, 16, 12, 10, 8, '#4488FF'); // body
+    px(ctx, 21, 9, '#334'); // eye
+
+    // Right figure — sitting, head leaning toward left
+    rect(ctx, 36, 5, 8, 8, skin); // head
+    rect(ctx, 35, 3, 6, 4, '#8A5A2A'); // hair
+    rect(ctx, 34, 11, 10, 8, '#FF6688'); // body
+    px(ctx, 39, 8, '#334'); // eye
+
+    // Heads close together
+    rect(ctx, 26, 8, 10, 2, skin); // shoulders touching suggestion
+
+    c.refresh();
+  }
+
+  // bp-bath-mosaic — 32×32, geometric tile pattern
+  {
+    const c = scene.textures.createCanvas('bp-bath-mosaic', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+    const colors = ['#C8A060', '#E8D8B0', '#C87848'];
+    const grout = '#5A4A3A';
+
+    // Grid of 4×4 tiles (8×8 each) in alternating pattern
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 4; col++) {
+        const colorIdx = (row + col) % 3;
+        const tx = col * 8;
+        const ty = row * 8;
+        // Grout lines (draw background first)
+        rect(ctx, tx, ty, 8, 8, grout);
+        // Tile
+        rect(ctx, tx + 1, ty + 1, 6, 6, colors[colorIdx]);
+      }
+    }
+
+    // Subtle tile variation
+    const rng = seededRandom(8800);
+    for (let i = 0; i < 10; i++) {
+      const x = Math.floor(rng() * 30) + 1;
+      const y = Math.floor(rng() * 30) + 1;
+      px(ctx, x, y, rng() > 0.5 ? lighten('#C8A060', 0.1) : darken('#E8D8B0', 0.08));
+    }
+
+    c.refresh();
+  }
+
+  // ── Budapest Eye POV: cabin window frame ──
+  {
+    const c = scene.textures.createCanvas('bp-eye-pov-frame', 800, 600);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Draw the dark metallic frame border
+    const frameColor = '#3A3A4A';
+    // Top border
+    rect(ctx, 0, 0, 800, 50, frameColor);
+    // Bottom border
+    rect(ctx, 0, 500, 800, 100, frameColor);
+    // Left border
+    rect(ctx, 0, 0, 60, 600, frameColor);
+    // Right border
+    rect(ctx, 740, 0, 60, 600, frameColor);
+
+    // Inner corner bevels (diagonal cuts at each inner corner)
+    const bevelSize = 5;
+    for (let i = 0; i < bevelSize; i++) {
+      // Top-left inner corner
+      rect(ctx, 60 + i, 50 + i, 1, 1, frameColor);
+      for (let j = 0; j <= i; j++) {
+        px(ctx, 60 + j, 50 + (bevelSize - 1 - i) + j, frameColor);
+      }
+      // Top-right inner corner
+      for (let j = 0; j <= i; j++) {
+        px(ctx, 740 - 1 - j, 50 + (bevelSize - 1 - i) + j, frameColor);
+      }
+      // Bottom-left inner corner
+      for (let j = 0; j <= i; j++) {
+        px(ctx, 60 + j, 500 - 1 - (bevelSize - 1 - i) - j + bevelSize, frameColor);
+      }
+      // Bottom-right inner corner
+      for (let j = 0; j <= i; j++) {
+        px(ctx, 740 - 1 - j, 500 - 1 - (bevelSize - 1 - i) - j + bevelSize, frameColor);
+      }
+    }
+    // Simpler bevel: fill small triangular areas at inner corners
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 5 - i; j++) {
+        px(ctx, 60 + i, 50 + j, frameColor);       // top-left
+        px(ctx, 739 - i, 50 + j, frameColor);       // top-right
+        px(ctx, 60 + i, 499 - j, frameColor);       // bottom-left
+        px(ctx, 739 - i, 499 - j, frameColor);       // bottom-right
+      }
+    }
+
+    // Metal rivets along frame edges
+    const rivetColor = '#5A5A6A';
+    // Top edge rivets
+    for (let x = 40; x < 800; x += 40) {
+      circle(ctx, x, 25, 4, rivetColor);
+    }
+    // Bottom edge rivets
+    for (let x = 40; x < 800; x += 40) {
+      circle(ctx, x, 575, 4, rivetColor);
+    }
+    // Left edge rivets
+    for (let y = 60; y < 500; y += 40) {
+      circle(ctx, 30, y, 4, rivetColor);
+    }
+    // Right edge rivets
+    for (let y = 60; y < 500; y += 40) {
+      circle(ctx, 770, y, 4, rivetColor);
+    }
+
+    // Window mullion — thin vertical bar splitting view into two panes
+    rect(ctx, 399, 50, 3, 450, '#4A4A5A');
+
+    // Glass reflection lines (very subtle white diagonal streaks)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 1;
+    // Reflection line 1
+    ctx.beginPath();
+    ctx.moveTo(100, 60);
+    ctx.lineTo(250, 500);
+    ctx.stroke();
+    // Reflection line 2
+    ctx.beginPath();
+    ctx.moveTo(550, 70);
+    ctx.lineTo(700, 480);
+    ctx.stroke();
+    // Additional subtle reflection
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.beginPath();
+    ctx.moveTo(150, 60);
+    ctx.lineTo(300, 500);
+    ctx.stroke();
+
+    // Bottom railing detail
+    // Horizontal railing bar at y=510
+    rect(ctx, 0, 510, 800, 4, '#5A5A6A');
+    // Dashboard below railing
+    rect(ctx, 0, 514, 800, 86, '#4A4A52');
+    // Screws on railing bar
+    const screwPositions = [100, 300, 500, 700];
+    for (const sx of screwPositions) {
+      circle(ctx, sx, 512, 2, '#6A6A7A');
+    }
+    // Dashboard surface texture — subtle horizontal lines
+    for (let y = 520; y < 600; y += 6) {
+      rect(ctx, 5, y, 790, 1, darken('#4A4A52', 0.05));
+    }
+
+    c.refresh();
+  }
+
+  // ── Budapest Eye POV: couple seen from behind ──
+  {
+    const c = scene.textures.createCanvas('bp-eye-pov-couple', 240, 140);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Railing bar at bottom
+    rect(ctx, 0, 120, 240, 6, '#5A5A6A');
+    // Railing surface
+    rect(ctx, 0, 126, 240, 14, darken('#5A5A6A', 0.1));
+
+    // Shadow beneath figures on railing
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillRect(60, 118, 120, 4);
+
+    // ── LEFT FIGURE (player — slightly taller) ──
+    const lx = 95; // center x
+    const ly = 35; // head center y
+
+    // Back/torso — blue shirt
+    rect(ctx, lx - 14, ly + 22, 28, 30, '#4488CC');
+    // Shirt shading
+    rect(ctx, lx - 14, ly + 22, 5, 30, darken('#4488CC', 0.1));
+    rect(ctx, lx + 9, ly + 22, 5, 30, darken('#4488CC', 0.08));
+    // Shirt collar detail
+    rect(ctx, lx - 4, ly + 16, 8, 3, darken('#4488CC', 0.15));
+
+    // Shoulders — sloping
+    for (let i = 0; i < 8; i++) {
+      rect(ctx, lx - 15 - i, ly + 16 + i, 3, 2, '#4488CC');
+      rect(ctx, lx + 12 + i, ly + 16 + i, 3, 2, '#4488CC');
+    }
+
+    // Left arm (player's left, our right) — resting on railing
+    rect(ctx, lx + 14, ly + 30, 8, 40, '#4488CC');
+    rect(ctx, lx + 14, ly + 68, 8, 6, '#4488CC');
+    // Hand (skin)
+    rect(ctx, lx + 14, ly + 74, 8, 6, '#D4A574');
+
+    // Right arm extending toward partner
+    rect(ctx, lx - 14, ly + 30, 8, 35, '#4488CC');
+    // Forearm angling toward center
+    for (let i = 0; i < 15; i++) {
+      rect(ctx, lx - 14 + i, ly + 65 + Math.floor(i / 3), 3, 4, '#4488CC');
+    }
+    // Hand reaching toward partner
+    rect(ctx, lx + 2, ly + 72, 8, 5, '#D4A574');
+
+    // Neck
+    rect(ctx, lx - 3, ly + 10, 6, 6, '#D4A574');
+
+    // Head — dark brown hair, oval shape
+    for (let dy = -8; dy <= 8; dy++) {
+      const halfW = Math.floor(7 * Math.sqrt(1 - (dy * dy) / 64));
+      rect(ctx, lx - halfW, ly + dy, halfW * 2, 1, '#3A2A1A');
+    }
+    // Hair highlight
+    for (let dy = -6; dy <= -2; dy++) {
+      const halfW = Math.floor(5 * Math.sqrt(1 - (dy * dy) / 36));
+      if (halfW > 0) {
+        px(ctx, lx - halfW + 2, ly + dy, lighten('#3A2A1A', 0.15));
+        px(ctx, lx - halfW + 3, ly + dy, lighten('#3A2A1A', 0.1));
+      }
+    }
+
+    // ── RIGHT FIGURE (partner — slightly shorter) ──
+    const rx = 145;
+    const ry = 40; // slightly lower (shorter)
+
+    // Back/torso — pink/coral top
+    rect(ctx, rx - 12, ry + 20, 24, 28, '#E87080');
+    // Top shading
+    rect(ctx, rx - 12, ry + 20, 4, 28, darken('#E87080', 0.1));
+    rect(ctx, rx + 8, ry + 20, 4, 28, darken('#E87080', 0.08));
+
+    // Shoulders — sloping
+    for (let i = 0; i < 7; i++) {
+      rect(ctx, rx - 13 - i, ry + 14 + i, 3, 2, '#E87080');
+      rect(ctx, rx + 10 + i, ry + 14 + i, 3, 2, '#E87080');
+    }
+
+    // Right arm (partner's right, our left) — extending toward player
+    rect(ctx, rx - 12, ry + 28, 8, 30, '#E87080');
+    // Forearm angling toward center
+    for (let i = 0; i < 15; i++) {
+      rect(ctx, rx - 12 - i, ry + 58 + Math.floor(i / 3), 3, 4, '#E87080');
+    }
+    // Hand reaching
+    rect(ctx, rx - 28, ry + 66, 8, 5, '#E8C8A0');
+
+    // Left arm (partner's left, our right) — on railing
+    rect(ctx, rx + 10, ry + 28, 8, 38, '#E87080');
+    rect(ctx, rx + 10, ry + 64, 8, 6, '#E8C8A0');
+
+    // Neck
+    rect(ctx, rx - 2, ry + 8, 5, 5, '#E8C8A0');
+
+    // Head — lighter brown hair, slightly tilted toward player (offset top by 2px)
+    for (let dy = -7; dy <= 7; dy++) {
+      const halfW = Math.floor(6.5 * Math.sqrt(1 - (dy * dy) / 49));
+      // Tilt: shift x by -2 at top, 0 at bottom
+      const tiltOffset = Math.round(-2 * (1 - (dy + 7) / 14));
+      rect(ctx, rx - halfW + tiltOffset, ry + dy, halfW * 2, 1, '#8A5A2A');
+    }
+    // Longer hair on sides (4px below head)
+    rect(ctx, rx - 7, ry + 7, 3, 4, '#8A5A2A');
+    rect(ctx, rx + 4, ry + 7, 3, 4, '#8A5A2A');
+    // Hair highlight
+    for (let dy = -5; dy <= -1; dy++) {
+      px(ctx, rx - 3, ry + dy, lighten('#8A5A2A', 0.15));
+      px(ctx, rx - 2, ry + dy, lighten('#8A5A2A', 0.1));
+    }
+
+    // ── HANDS MEETING in the middle ──
+    // Their hands touch on the railing
+    rect(ctx, lx + 4, ly + 73, 8, 4, '#D4A574');
+    rect(ctx, rx - 26, ry + 67, 8, 4, '#E8C8A0');
+    // Connection — blended skin color between hands
+    const midX = Math.floor((lx + 6 + rx - 24) / 2);
+    const midY = Math.floor((ly + 74 + ry + 68) / 2);
+    rect(ctx, midX - 2, midY - 1, 8, 4, '#DEB890');
+
+    c.refresh();
+  }
+
+  // ── Budapest Eye POV: panoramic cityscape ──
+  {
+    const c = scene.textures.createCanvas('bp-eye-pov-cityscape', 1200, 400);
+    if (!c) return;
+    const ctx = c.context;
+    const rng = seededRandom(9000);
+
+    // ── Sky gradient (twilight) ──
+    for (let y = 0; y < 200; y++) {
+      const t = y / 200;
+      const r = Math.round(60 + t * 80);
+      const g = Math.round(80 + t * 60);
+      const b = Math.round(140 - t * 30);
+      rect(ctx, 0, y, 1200, 1, `rgb(${r},${g},${b})`);
+    }
+
+    // ── LEFT SECTION (x=0-300): Buda Hills ──
+    // Rolling green hills
+    for (let x = 0; x < 320; x++) {
+      const hillHeight = 220 + Math.sin(x * 0.015) * 30 + Math.sin(x * 0.04) * 15;
+      const hColor = x < 200 ? '#4A7A3A' : '#4D7D3D';
+      rect(ctx, x, Math.floor(hillHeight), 1, 400 - Math.floor(hillHeight), hColor);
+      // Lighter hill tops
+      rect(ctx, x, Math.floor(hillHeight), 1, 3, '#5A8A4A');
+    }
+
+    // Gellert Hill with Citadella silhouette
+    for (let x = 80; x < 200; x++) {
+      const dist = Math.abs(x - 140);
+      const peakH = 160 - (dist * dist) / 80;
+      if (peakH > 0) {
+        rect(ctx, x, Math.floor(400 - peakH - 140), 1, Math.floor(peakH), '#3A5A2A');
+      }
+    }
+    // Citadella fortress on top
+    rect(ctx, 125, 110, 30, 10, '#2A4A1A');
+    rect(ctx, 130, 104, 20, 6, '#2A4A1A');
+    rect(ctx, 137, 98, 6, 6, '#2A4A1A');
+    // Citadella flag
+    rect(ctx, 140, 90, 1, 8, '#4A4A4A');
+    rect(ctx, 141, 91, 4, 3, '#CC3333');
+
+    // Trees on hills
+    for (let i = 0; i < 40; i++) {
+      const tx = Math.floor(rng() * 300);
+      const baseY = 220 + Math.sin(tx * 0.015) * 30 + Math.sin(tx * 0.04) * 15;
+      const ty = Math.floor(baseY) - Math.floor(rng() * 15) - 5;
+      const tr = 3 + Math.floor(rng() * 4);
+      circle(ctx, tx, ty, tr, rng() > 0.5 ? '#3A6A2A' : '#4A7838');
+    }
+
+    // Gellert Baths at base of hill
+    rect(ctx, 50, 280, 60, 25, '#C8B890');
+    rect(ctx, 55, 275, 50, 5, '#B8A880');
+    // Art nouveau facade details
+    for (let wx = 58; wx < 105; wx += 10) {
+      rect(ctx, wx, 285, 5, 8, '#8A7A6A');
+    }
+    circle(ctx, 80, 275, 8, '#B8A880');
+
+    // ── LEFT-CENTER (x=200-500): Buda Castle ──
+    // Castle hill
+    for (let x = 200; x < 480; x++) {
+      const dist = Math.abs(x - 340);
+      const hillH = Math.max(0, 100 - (dist * dist) / 400);
+      rect(ctx, x, Math.floor(200 - hillH), 1, Math.floor(hillH) + 200, '#5A7A4A');
+    }
+
+    // Buda Castle main building
+    rect(ctx, 270, 130, 140, 60, '#C8B890');
+    // Castle wings
+    rect(ctx, 260, 140, 10, 50, '#B8A880');
+    rect(ctx, 410, 140, 10, 50, '#B8A880');
+    // Castle dome
+    for (let dx = -18; dx <= 18; dx++) {
+      const domeH = Math.floor(18 * Math.sqrt(1 - (dx * dx) / (18 * 18)));
+      rect(ctx, 340 + dx, 130 - domeH, 1, domeH, '#7A9A7A');
+    }
+    // Dome lantern
+    rect(ctx, 337, 108, 6, 6, '#8AAA8A');
+    rect(ctx, 339, 103, 2, 5, '#6A8A6A');
+    // Castle windows (grid)
+    for (let wy = 0; wy < 4; wy++) {
+      for (let wx = 0; wx < 12; wx++) {
+        rect(ctx, 278 + wx * 11, 138 + wy * 12, 5, 7, '#8A7A6A');
+      }
+    }
+    // Terraced gardens below
+    for (let i = 0; i < 4; i++) {
+      rect(ctx, 280 + i * 5, 190 + i * 8, 120 - i * 10, 3, '#5A8A4A');
+    }
+
+    // Fisherman's Bastion — white turrets
+    const bastionX = 420;
+    for (let t = 0; t < 5; t++) {
+      const tx = bastionX + t * 14;
+      rect(ctx, tx, 145, 8, 30, '#EEEEEE');
+      // Conical roof
+      for (let i = 0; i < 8; i++) {
+        rect(ctx, tx + Math.floor(i / 2), 145 - i, 8 - i, 1, '#DDDDDD');
+      }
+    }
+
+    // ── CENTER (x=400-700): Bridges ──
+    // Chain Bridge
+    const cbLeft = 440;
+    const cbRight = 540;
+    // Stone towers
+    rect(ctx, cbLeft, 240, 20, 50, '#8A8A7A');
+    rect(ctx, cbRight, 240, 20, 50, '#8A8A7A');
+    // Tower tops
+    rect(ctx, cbLeft - 2, 235, 24, 5, '#7A7A6A');
+    rect(ctx, cbRight - 2, 235, 24, 5, '#7A7A6A');
+    // Bridge deck
+    rect(ctx, cbLeft + 10, 280, cbRight - cbLeft, 4, '#7A7A6A');
+    // Catenary chains (parabolic arc)
+    for (let x = cbLeft + 10; x < cbRight + 10; x++) {
+      const t = (x - cbLeft - 10) / (cbRight - cbLeft);
+      const sag = 20 * (4 * t * (1 - t)); // parabola
+      const chainY = 250 - Math.floor(sag) + 20;
+      px(ctx, x, chainY, '#6A6A5A');
+      px(ctx, x, chainY + 1, '#6A6A5A');
+      // Vertical suspenders every 10px
+      if ((x - cbLeft) % 10 === 0) {
+        for (let sy = chainY; sy < 280; sy++) {
+          px(ctx, x, sy, '#8A8A7A');
+        }
+      }
+    }
+
+    // Liberty Bridge (green iron, to the left)
+    rect(ctx, 350, 285, 80, 3, '#2A6A3A');
+    // Arched structure
+    for (let i = 0; i < 80; i += 20) {
+      for (let a = 0; a < 15; a++) {
+        const ax = 350 + i + 10;
+        const ay = 285 - Math.floor(Math.sqrt(Math.max(0, 100 - (a - 10) * (a - 10))));
+        px(ctx, ax + a - 7, ay, '#2A6A3A');
+      }
+    }
+
+    // Margaret Bridge (stone arches, to the right)
+    rect(ctx, 580, 285, 90, 3, '#9A8A7A');
+    for (let i = 0; i < 3; i++) {
+      for (let a = 0; a < 25; a++) {
+        const ax = 590 + i * 28 + a;
+        const ay = 285 - Math.floor(8 * Math.sin((a / 25) * Math.PI));
+        px(ctx, ax, ay, '#8A7A6A');
+      }
+    }
+
+    // ── RIGHT-CENTER (x=600-900): Parliament ──
+    const parlX = 640;
+    const parlY = 150;
+    // Main facade
+    rect(ctx, parlX, parlY + 20, 200, 80, '#D4C8B0');
+    // Foundation / riverside
+    rect(ctx, parlX - 5, parlY + 100, 210, 15, darken('#D4C8B0', 0.15));
+    // Riverside stairs
+    for (let s = 0; s < 4; s++) {
+      rect(ctx, parlX + 20 + s * 45, parlY + 100, 30, 3 + s * 3, darken('#D4C8B0', 0.1 + s * 0.03));
+    }
+    // Central dome
+    for (let dx = -28; dx <= 28; dx++) {
+      const domeH = Math.floor(28 * Math.sqrt(1 - (dx * dx) / (28 * 28)));
+      rect(ctx, parlX + 100 + dx, parlY + 20 - domeH, 1, domeH, '#C8BCA0');
+    }
+    // Dome spire
+    rect(ctx, parlX + 99, parlY - 20, 2, 12, '#B0A490');
+    rect(ctx, parlX + 98, parlY - 8, 4, 2, '#B0A490');
+    // Two side spires
+    rect(ctx, parlX + 40, parlY + 5, 3, 15, '#C0B498');
+    rect(ctx, parlX + 160, parlY + 5, 3, 15, '#C0B498');
+    // Gothic arches row
+    for (let i = 0; i < 8; i++) {
+      const ax = parlX + 15 + i * 24;
+      rect(ctx, ax, parlY + 25, 16, 12, darken('#D4C8B0', 0.08));
+      // Pointed arch top
+      for (let p = 0; p < 5; p++) {
+        rect(ctx, ax + p + 3, parlY + 24 - Math.floor(p / 2), 16 - p * 2 - 6, 1, darken('#D4C8B0', 0.08));
+      }
+    }
+    // Windows grid (5 rows x 15 cols)
+    for (let wy = 0; wy < 5; wy++) {
+      for (let wx = 0; wx < 15; wx++) {
+        const winX = parlX + 8 + wx * 13;
+        const winY = parlY + 40 + wy * 11;
+        rect(ctx, winX, winY, 4, 6, '#8A7A6A');
+        // Some windows lit
+        if (rng() > 0.6) {
+          rect(ctx, winX, winY, 4, 6, '#FFEE88');
+        }
+      }
+    }
+
+    // ── RIGHT SECTION (x=800-1200): Pest skyline ──
+    // St. Stephen's Basilica dome
+    const bsX = 950;
+    const bsY = 180;
+    rect(ctx, bsX - 25, bsY, 50, 50, '#C0B4A0');
+    for (let dx = -22; dx <= 22; dx++) {
+      const dh = Math.floor(22 * Math.sqrt(1 - (dx * dx) / (22 * 22)));
+      rect(ctx, bsX + dx, bsY - dh, 1, dh, '#B0A490');
+    }
+    // Basilica cross
+    rect(ctx, bsX - 1, bsY - 28, 2, 8, '#8A8A7A');
+    rect(ctx, bsX - 4, bsY - 24, 8, 2, '#8A8A7A');
+    // Basilica columns
+    for (let i = 0; i < 4; i++) {
+      rect(ctx, bsX - 18 + i * 12, bsY + 5, 3, 40, darken('#C0B4A0', 0.1));
+    }
+
+    // Mix of buildings across Pest skyline
+    const pestBuildings = [
+      { x: 810, w: 35, h: 100, color: '#B0A89A' },
+      { x: 850, w: 28, h: 70, color: '#A0988A' },
+      { x: 885, w: 40, h: 120, color: '#C8B890' },
+      { x: 930, w: 20, h: 60, color: '#9A8A7A' },
+      { x: 980, w: 45, h: 90, color: '#B8A890' },
+      { x: 1030, w: 30, h: 110, color: '#A09888' },
+      { x: 1065, w: 38, h: 75, color: '#C0B098' },
+      { x: 1110, w: 35, h: 95, color: '#B0A490' },
+      { x: 1150, w: 45, h: 80, color: '#A89888' },
+    ];
+    for (const b of pestBuildings) {
+      const by = 290 - b.h;
+      rect(ctx, b.x, by, b.w, b.h, b.color);
+      // Roof variation
+      if (rng() > 0.5) {
+        // Peaked roof
+        for (let p = 0; p < 8; p++) {
+          rect(ctx, b.x + p, by - p, b.w - p * 2, 1, darken(b.color, 0.1));
+        }
+      }
+      // Windows
+      const winCols = Math.floor(b.w / 8);
+      const winRows = Math.floor(b.h / 14);
+      for (let wy = 0; wy < winRows; wy++) {
+        for (let wx = 0; wx < winCols; wx++) {
+          const winX = b.x + 4 + wx * 8;
+          const winY = by + 6 + wy * 14;
+          const lit = rng() > 0.55;
+          rect(ctx, winX, winY, 4, 6, lit ? '#FFEE88' : '#6A7A8A');
+        }
+      }
+      // Chimneys
+      if (rng() > 0.4) {
+        rect(ctx, b.x + Math.floor(b.w / 3), by - 8, 3, 8, darken(b.color, 0.2));
+      }
+      // Antenna on some
+      if (rng() > 0.7) {
+        rect(ctx, b.x + Math.floor(b.w / 2), by - 15, 1, 15, '#5A5A5A');
+      }
+    }
+
+    // Andrassy Avenue ornate facades (rightmost area)
+    for (let i = 0; i < 3; i++) {
+      const ax = 1060 + i * 50;
+      const ah = 60 + Math.floor(rng() * 40);
+      const ay = 290 - ah;
+      rect(ctx, ax, ay, 40, ah, '#C8B898');
+      // Ornate cornice
+      rect(ctx, ax - 2, ay, 44, 3, lighten('#C8B898', 0.1));
+      // Balconies
+      for (let by = 0; by < 3; by++) {
+        rect(ctx, ax + 3, ay + 15 + by * 16, 34, 2, '#A09080');
+      }
+    }
+
+    // Ground / riverbank line
+    rect(ctx, 0, 290, 1200, 3, '#5A7A4A');
+    // Water hint (Danube area)
+    for (let x = 350; x < 670; x++) {
+      const waterY = 295 + Math.floor(Math.sin(x * 0.08) * 2);
+      rect(ctx, x, waterY, 1, 105, '#3A5A7A');
+      if (rng() > 0.8) {
+        px(ctx, x, waterY + Math.floor(rng() * 20), lighten('#3A5A7A', 0.15));
+      }
+    }
+
+    c.refresh();
+  }
+
+  // ── Budapest Eye POV: near buildings (parallax layer) ──
+  {
+    const c = scene.textures.createCanvas('bp-eye-pov-buildings-near', 1000, 300);
+    if (!c) return;
+    const ctx = c.context;
+    const rng = seededRandom(9001);
+
+    const buildings = [
+      { x: 10, w: 90, h: 180, color: '#E8B0B0' },
+      { x: 110, w: 80, h: 140, color: '#E8D888' },
+      { x: 200, w: 100, h: 200, color: '#D4B888' },
+      { x: 310, w: 85, h: 120, color: '#E0C8A0' },
+      { x: 405, w: 95, h: 170, color: '#E8B0B0' },
+      { x: 510, w: 75, h: 90, color: '#DABE90' },
+      { x: 595, w: 110, h: 195, color: '#E8D888' },
+      { x: 715, w: 80, h: 130, color: '#D4B888' },
+      { x: 805, w: 95, h: 160, color: '#E0C8A0' },
+      { x: 910, w: 80, h: 110, color: '#E8B0B0' },
+    ];
+
+    for (const b of buildings) {
+      const by = 300 - b.h;
+
+      // Main building body
+      rect(ctx, b.x, by, b.w, b.h, b.color);
+
+      // Building edge shading
+      rect(ctx, b.x, by, 3, b.h, darken(b.color, 0.08));
+      rect(ctx, b.x + b.w - 3, by, 3, b.h, darken(b.color, 0.06));
+
+      // Roof line / cornice
+      rect(ctx, b.x - 2, by, b.w + 4, 4, darken(b.color, 0.12));
+      rect(ctx, b.x - 1, by - 2, b.w + 2, 2, darken(b.color, 0.15));
+
+      // Windows (4 cols x 6 rows, each 8x10px)
+      const winCols = Math.min(4, Math.floor((b.w - 16) / 18));
+      const winRows = Math.min(6, Math.floor((b.h - 20) / 22));
+      const winStartX = b.x + Math.floor((b.w - winCols * 18) / 2);
+      for (let wy = 0; wy < winRows; wy++) {
+        for (let wx = 0; wx < winCols; wx++) {
+          const winX = winStartX + wx * 18;
+          const winY = by + 14 + wy * 22;
+          const lit = rng() > 0.45;
+          // Window frame
+          rect(ctx, winX - 1, winY - 1, 10, 12, darken(b.color, 0.1));
+          // Window pane
+          rect(ctx, winX, winY, 8, 10, lit ? '#FFEE88' : '#6A7A8A');
+          // Window divider
+          rect(ctx, winX + 3, winY, 1, 10, darken(b.color, 0.05));
+          rect(ctx, winX, winY + 4, 8, 1, darken(b.color, 0.05));
+        }
+      }
+
+      // Balconies with railings and flower boxes
+      for (let wy = 0; wy < winRows; wy++) {
+        if (rng() > 0.5) {
+          const balY = by + 14 + wy * 22 + 10;
+          const balX = winStartX - 2;
+          const balW = winCols * 18 + 2;
+          // Balcony ledge
+          rect(ctx, balX, balY, balW, 3, darken(b.color, 0.15));
+          // Railing bars
+          for (let rb = 0; rb < Math.floor(balW / 5); rb++) {
+            rect(ctx, balX + 2 + rb * 5, balY + 3, 1, 5, '#6A6A6A');
+          }
+          // Bottom rail
+          rect(ctx, balX, balY + 7, balW, 1, '#6A6A6A');
+          // Flower boxes on some balconies
+          if (rng() > 0.4) {
+            const fbx = balX + Math.floor(rng() * (balW - 12));
+            rect(ctx, fbx, balY - 3, 10, 3, '#6A5A4A');
+            // Flowers — tiny colored dots
+            const flowerColors = ['#FF4444', '#FF88AA', '#AA44CC', '#FF6644'];
+            for (let f = 0; f < 5; f++) {
+              px(ctx, fbx + 1 + Math.floor(rng() * 8), balY - 4 - Math.floor(rng() * 3),
+                flowerColors[Math.floor(rng() * flowerColors.length)]);
+            }
+          }
+        }
+      }
+
+      // Rooftop details
+      // Chimney
+      if (rng() > 0.3) {
+        const chX = b.x + Math.floor(rng() * (b.w - 10)) + 5;
+        rect(ctx, chX, by - 12, 6, 12, darken(b.color, 0.25));
+        rect(ctx, chX - 1, by - 14, 8, 2, darken(b.color, 0.3));
+      }
+      // Satellite dish
+      if (rng() > 0.6) {
+        const sdX = b.x + b.w - 12;
+        circle(ctx, sdX, by - 3, 3, '#8A8A8A');
+        rect(ctx, sdX, by - 3, 1, 5, '#7A7A7A');
+      }
+      // AC unit
+      if (rng() > 0.5) {
+        const acX = b.x + b.w - 15 - Math.floor(rng() * 20);
+        const acY = by + 30 + Math.floor(rng() * 40);
+        rect(ctx, acX, acY, 10, 7, '#8A8A8A');
+        rect(ctx, acX + 1, acY + 1, 8, 2, '#6A6A6A');
+      }
+    }
+
+    // Gaps between buildings — darker background
+    for (const b of buildings) {
+      const gapX = b.x + b.w;
+      let hasNeighbor = false;
+      for (let ni = 0; ni < buildings.length; ni++) {
+        if (buildings[ni].x > gapX && buildings[ni].x < gapX + 20) {
+          hasNeighbor = true;
+          break;
+        }
+      }
+      if (!hasNeighbor) {
+        const gapW = 10 + Math.floor(rng() * 10);
+        rect(ctx, gapX, 150, gapW, 150, '#2A2A3A');
+      }
+    }
+
+    // Trees between buildings
+    for (let i = 0; i < 6; i++) {
+      const tx = 50 + Math.floor(rng() * 900);
+      const treeTop = 260 - Math.floor(rng() * 30);
+      // Trunk
+      rect(ctx, tx, treeTop + 10, 3, 30, '#5A4A2A');
+      // Foliage cluster
+      circle(ctx, tx + 1, treeTop, 7, '#3A7A2A');
+      circle(ctx, tx - 4, treeTop + 4, 5, '#4A8A3A');
+      circle(ctx, tx + 6, treeTop + 4, 5, '#3A7A2A');
+    }
+
+    c.refresh();
+  }
+
+  // ── Budapest Eye POV: cabin interior railing/ledge ──
+  {
+    const c = scene.textures.createCanvas('bp-eye-pov-railing', 800, 50);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Main railing bar at top
+    rect(ctx, 0, 5, 800, 6, '#5A5A6A');
+    // Railing highlight on top edge
+    rect(ctx, 0, 5, 800, 1, lighten('#5A5A6A', 0.15));
+
+    // Glass panel below railing — semi-transparent bluish
+    for (let y = 11; y < 30; y++) {
+      const opacity = 0.3 + Math.sin(y * 0.3) * 0.05;
+      ctx.fillStyle = `rgba(74, 106, 138, ${opacity})`;
+      ctx.fillRect(0, y, 800, 1);
+    }
+
+    // Ledge surface below glass
+    rect(ctx, 0, 30, 800, 20, '#4A4A52');
+
+    // Anti-slip texture on ledge surface — horizontal lines every 3px
+    for (let y = 31; y < 50; y += 3) {
+      rect(ctx, 0, y, 800, 1, darken('#4A4A52', 0.06));
+    }
+
+    // Informational plaque at center
+    rect(ctx, 350, 33, 100, 14, darken('#4A4A52', 0.2));
+    rect(ctx, 352, 35, 96, 10, darken('#4A4A52', 0.15));
+    // Tiny text-like marks on plaque
+    for (let tx = 355; tx < 445; tx += 4) {
+      const tw = 2 + Math.floor(Math.random() * 2);
+      rect(ctx, tx, 37, tw, 1, '#8A8A8A');
+      if (tx % 8 === 3) {
+        rect(ctx, tx, 40, tw + 1, 1, '#7A7A7A');
+      }
+    }
+
+    // Cup holders
+    circle(ctx, 200, 40, 3, '#6A6A7A');
+    circle(ctx, 200, 40, 2, darken('#6A6A7A', 0.15));
+    circle(ctx, 600, 40, 3, '#6A6A7A');
+    circle(ctx, 600, 40, 2, darken('#6A6A7A', 0.15));
+
+    // Bolts/screws at regular intervals along the railing
+    for (let bx = 30; bx < 800; bx += 60) {
+      circle(ctx, bx, 8, 2, '#6A6A7A');
+      // Screw slot mark
+      px(ctx, bx - 1, 8, darken('#6A6A7A', 0.2));
+      px(ctx, bx + 1, 8, darken('#6A6A7A', 0.2));
+    }
+
+    c.refresh();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── OUTFIT-AWARE CUTSCENE SPRITE GENERATOR ──────────────────────────────
+// Generates character sprites that match the player's outfit selection,
+// mirroring AirportTextures' generateCutsceneSeatedSprites approach.
+// ══════════════════════════════════════════════════════════════════════════
+
+interface OutfitColors {
+  shirt: string;
+  hair: string;
+  maleHair?: string;
+  skin: string;
+  hairStyle: string;
+  maleHairStyle?: string;
+}
+
+function drawCutsceneHead(
+  ctx: Ctx, hx: number, hy: number, hw: number, hh: number,
+  skin: string, hairColor: string, hairStyle: string,
+  isMale: boolean, eyeState: 'open' | 'closed' = 'open',
+): void {
+  // Head shape
+  rect(ctx, hx + 1, hy, hw - 2, hh, skin);
+  rect(ctx, hx, hy + 1, hw, hh - 2, skin);
+
+  if (isMale) {
+    // Stronger jaw for male
+    rect(ctx, hx - 1, hy + hh - 4, hw + 2, 4, skin);
+  }
+
+  // Forehead highlight
+  rect(ctx, hx + 2, hy + 1, hw - 4, 2, lighten(skin, 0.1));
+
+  // Eyes
+  const eyeY = hy + Math.floor(hh * 0.4);
+  const eyeW = Math.max(2, Math.floor(hw * 0.22));
+  const leftEyeX = hx + Math.floor(hw * 0.15);
+  const rightEyeX = hx + hw - Math.floor(hw * 0.15) - eyeW;
+
+  if (eyeState === 'open') {
+    rect(ctx, leftEyeX, eyeY, eyeW, Math.ceil(eyeW * 0.75), '#fff');
+    rect(ctx, rightEyeX, eyeY, eyeW, Math.ceil(eyeW * 0.75), '#fff');
+    px(ctx, leftEyeX + Math.floor(eyeW / 2), eyeY + Math.floor(eyeW * 0.25), '#334');
+    px(ctx, rightEyeX + Math.floor(eyeW / 2), eyeY + Math.floor(eyeW * 0.25), '#334');
+  } else {
+    // Closed eyes — horizontal lines
+    rect(ctx, leftEyeX, eyeY + 1, eyeW, 1, '#556');
+    rect(ctx, rightEyeX, eyeY + 1, eyeW, 1, '#556');
+  }
+
+  // Blush (female only or when relaxed)
+  if (!isMale) {
+    const blushAlpha = eyeState === 'closed' ? 0.35 : 0.25;
+    rect(ctx, leftEyeX - 1, eyeY + Math.ceil(eyeW * 0.75) + 1, eyeW + 1, 2,
+      `rgba(255,130,130,${blushAlpha})`);
+    rect(ctx, rightEyeX, eyeY + Math.ceil(eyeW * 0.75) + 1, eyeW + 1, 2,
+      `rgba(255,130,130,${blushAlpha})`);
+  }
+
+  // Mouth
+  const mouthY = hy + Math.floor(hh * 0.75);
+  const mouthW = Math.max(2, Math.floor(hw * 0.28));
+  rect(ctx, hx + Math.floor((hw - mouthW) / 2), mouthY, mouthW, 1, '#c88');
+
+  // Hair
+  const isLong = hairStyle === 'long' || hairStyle === 'ponytail';
+  // Top coverage
+  rect(ctx, hx - 1, hy - 3, hw + 2, 5, hairColor);
+  rect(ctx, hx + 1, hy - 4, hw - 2, 3, hairColor);
+  // Highlight
+  rect(ctx, hx + 2, hy - 3, hw - 4, 2, lighten(hairColor, 0.15));
+  // Bangs
+  rect(ctx, hx, hy + 1, Math.floor(hw * 0.25), 2, hairColor);
+  rect(ctx, hx + hw - Math.floor(hw * 0.25), hy + 1, Math.floor(hw * 0.25), 2, hairColor);
+
+  if (isLong && !isMale) {
+    // Long side curtains
+    rect(ctx, hx - 2, hy + 1, 3, hh, hairColor);
+    rect(ctx, hx + hw - 1, hy + 1, 3, hh, hairColor);
+    rect(ctx, hx - 3, hy + Math.floor(hh * 0.5), 3, Math.floor(hh * 0.6), hairColor);
+    rect(ctx, hx + hw, hy + Math.floor(hh * 0.5), 3, Math.floor(hh * 0.6), hairColor);
+  } else if (hairStyle === 'spiky') {
+    rect(ctx, hx + 1, hy - 6, 2, 2, hairColor);
+    rect(ctx, hx + 4, hy - 7, 3, 3, hairColor);
+    rect(ctx, hx + hw - 5, hy - 6, 3, 2, hairColor);
+  } else {
+    rect(ctx, hx - 1, hy + 1, 2, 3, hairColor);
+    rect(ctx, hx + hw - 1, hy + 1, 2, 3, hairColor);
+  }
+}
+
+export function generateBudapestCoupleSprites(
+  scene: Phaser.Scene,
+  playerOutfit: OutfitColors,
+  partnerOutfit: OutfitColors,
+): void {
+  // ── bp-couple-bus: side-by-side seated on bus — 64×48 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-bus', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Seat/bench
+    rect(ctx, 10, 34, 44, 10, '#3A3A4A');
+    rect(ctx, 10, 34, 44, 2, '#4A4A5A');
+
+    // Left figure (player) — female
+    const pSkin = playerOutfit.skin;
+    const pShirt = playerOutfit.shirt;
+    const pHair = playerOutfit.hair;
+    const pHairStyle = playerOutfit.hairStyle;
+
+    drawCutsceneHead(ctx, 16, 4, 12, 14, pSkin, pHair, pHairStyle, false);
+    // Neck
+    rect(ctx, 20, 18, 4, 3, pSkin);
+    // Body
+    rect(ctx, 14, 21, 14, 14, pShirt);
+    // Arm
+    rect(ctx, 12, 24, 4, 10, pShirt);
+    // Hand
+    rect(ctx, 12, 34, 3, 2, pSkin);
+
+    // Right figure (partner) — male
+    const mSkin = partnerOutfit.skin;
+    const mShirt = partnerOutfit.shirt;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+
+    drawCutsceneHead(ctx, 34, 3, 12, 14, mSkin, mHair, mHairStyle, true);
+    // Neck
+    rect(ctx, 38, 17, 4, 3, mSkin);
+    // Body
+    rect(ctx, 32, 20, 16, 14, mShirt);
+    // Arm
+    rect(ctx, 48, 24, 4, 10, mShirt);
+    // Hand
+    rect(ctx, 49, 34, 3, 2, mSkin);
+
+    // Hands together
+    rect(ctx, 27, 30, 6, 3, pSkin);
+
+    c.refresh();
+  }
+
+  // ── bp-couple-bus-cozy: leaning together on bus — 64×48 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-bus-cozy', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Seat
+    rect(ctx, 10, 34, 44, 10, '#3A3A4A');
+    rect(ctx, 10, 34, 44, 2, '#4A4A5A');
+
+    // Player (left) — tilted right (leaning on partner)
+    const pSkin = playerOutfit.skin;
+    const pShirt = playerOutfit.shirt;
+    const pHair = playerOutfit.hair;
+    const pHairStyle = playerOutfit.hairStyle;
+
+    // Body first (tilted)
+    rect(ctx, 16, 21, 14, 14, pShirt);
+    rect(ctx, 14, 24, 4, 10, pShirt);
+    // Neck (angled toward partner)
+    rect(ctx, 22, 17, 4, 4, pSkin);
+    // Head (shifted right and tilted — drawn offset)
+    drawCutsceneHead(ctx, 18, 2, 12, 14, pSkin, pHair, pHairStyle, false, 'closed');
+    // Hand on partner's arm
+    rect(ctx, 28, 28, 4, 3, pSkin);
+
+    // Partner (right) — slightly tilted left
+    const mSkin = partnerOutfit.skin;
+    const mShirt = partnerOutfit.shirt;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+
+    rect(ctx, 32, 20, 16, 14, mShirt);
+    rect(ctx, 48, 24, 4, 10, mShirt);
+    rect(ctx, 38, 16, 4, 4, mSkin);
+    drawCutsceneHead(ctx, 34, 2, 12, 14, mSkin, mHair, mHairStyle, true);
+    // Hand on player's shoulder
+    rect(ctx, 27, 24, 5, 3, mSkin);
+
+    c.refresh();
+  }
+
+  // ── bp-couple-close: upper body close-up — 64×48 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-close', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Player (left)
+    const pSkin = playerOutfit.skin;
+    const pShirt = playerOutfit.shirt;
+    const pHair = playerOutfit.hair;
+    const pHairStyle = playerOutfit.hairStyle;
+
+    // Body/shoulders
+    rect(ctx, 6, 24, 22, 22, pShirt);
+    // Neck
+    rect(ctx, 14, 19, 6, 6, pSkin);
+    // Head
+    drawCutsceneHead(ctx, 10, 2, 14, 16, pSkin, pHair, pHairStyle, false);
+    // Arm
+    rect(ctx, 2, 28, 6, 16, pShirt);
+
+    // Partner (right)
+    const mSkin = partnerOutfit.skin;
+    const mShirt = partnerOutfit.shirt;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+
+    // Body
+    rect(ctx, 34, 24, 22, 22, mShirt);
+    // Neck
+    rect(ctx, 42, 19, 6, 6, mSkin);
+    // Head
+    drawCutsceneHead(ctx, 38, 2, 14, 16, mSkin, mHair, mHairStyle, true);
+    // Arm
+    rect(ctx, 56, 28, 6, 16, mShirt);
+
+    c.refresh();
+  }
+
+  // ── bp-couple-close-cozy: close-up, leaning together — 64×48 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-close-cozy', 64, 48);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Player (left) — leaning right
+    const pSkin = playerOutfit.skin;
+    const pShirt = playerOutfit.shirt;
+    const pHair = playerOutfit.hair;
+    const pHairStyle = playerOutfit.hairStyle;
+
+    rect(ctx, 8, 24, 22, 22, pShirt);
+    rect(ctx, 17, 19, 6, 6, pSkin);
+    drawCutsceneHead(ctx, 13, 2, 14, 16, pSkin, pHair, pHairStyle, false, 'closed');
+    rect(ctx, 2, 28, 6, 16, pShirt);
+    // Hand reaching right
+    rect(ctx, 30, 32, 4, 3, pSkin);
+
+    // Partner (right) — leaning left
+    const mSkin = partnerOutfit.skin;
+    const mShirt = partnerOutfit.shirt;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+
+    rect(ctx, 32, 24, 22, 22, mShirt);
+    rect(ctx, 39, 19, 6, 6, mSkin);
+    drawCutsceneHead(ctx, 35, 3, 14, 16, mSkin, mHair, mHairStyle, true);
+    rect(ctx, 54, 28, 6, 16, mShirt);
+    // Hand on player's shoulder
+    rect(ctx, 28, 27, 5, 3, mSkin);
+
+    c.refresh();
+  }
+
+  // ── bp-couple-pool: in the thermal bath — 64×32 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-pool', 64, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Water at bottom
+    rect(ctx, 0, 20, 64, 12, '#2A8A9A');
+    const rng = seededRandom(8700);
+    for (let i = 0; i < 15; i++) {
+      px(ctx, Math.floor(rng() * 64), 22 + Math.floor(rng() * 8), lighten('#2A8A9A', 0.2));
+    }
+    // Pool edge
+    rect(ctx, 0, 18, 64, 3, '#AAAAAA');
+
+    // Player (left) — shoulders up
+    const pSkin = playerOutfit.skin;
+    const pShirt = playerOutfit.shirt;
+    const pHair = playerOutfit.hair;
+    const pHairStyle = playerOutfit.hairStyle;
+
+    drawCutsceneHead(ctx, 16, 2, 10, 10, pSkin, pHair, pHairStyle, false);
+    rect(ctx, 15, 12, 12, 8, pShirt);
+
+    // Partner (right)
+    const mSkin = partnerOutfit.skin;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+    const mShirt = partnerOutfit.shirt;
+
+    drawCutsceneHead(ctx, 36, 1, 10, 10, mSkin, mHair, mHairStyle, true);
+    rect(ctx, 35, 11, 12, 8, mShirt);
+
+    // Shoulders touching
+    rect(ctx, 27, 12, 8, 2, pSkin);
+
+    c.refresh();
+  }
+
+  // ── bp-couple-pool-relaxed: eyes closed, blissful — 64×32 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-pool-relaxed', 64, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    rect(ctx, 0, 20, 64, 12, '#2A8A9A');
+    const rng = seededRandom(8701);
+    for (let i = 0; i < 15; i++) {
+      px(ctx, Math.floor(rng() * 64), 22 + Math.floor(rng() * 8), lighten('#2A8A9A', 0.2));
+    }
+    rect(ctx, 0, 18, 64, 3, '#AAAAAA');
+
+    const pSkin = playerOutfit.skin;
+    const pShirt = playerOutfit.shirt;
+    drawCutsceneHead(ctx, 16, 2, 10, 10, pSkin, playerOutfit.hair, playerOutfit.hairStyle, false, 'closed');
+    rect(ctx, 15, 12, 12, 8, pShirt);
+
+    const mSkin = partnerOutfit.skin;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+    const mShirt = partnerOutfit.shirt;
+    drawCutsceneHead(ctx, 36, 1, 10, 10, mSkin, mHair, mHairStyle, true, 'closed');
+    rect(ctx, 35, 11, 12, 8, mShirt);
+
+    rect(ctx, 27, 12, 8, 2, pSkin);
+
+    c.refresh();
+  }
+
+  // ── bp-couple-walking: side by side — 48×48 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-walking', 48, 48);
+    if (!c) return;
+    const ctx = c.context;
+
+    const pSkin = playerOutfit.skin;
+    const pShirt = playerOutfit.shirt;
+    const pHair = playerOutfit.hair;
+
+    // Shadow
+    rect(ctx, 8, 42, 32, 4, 'rgba(0,0,0,0.12)');
+
+    // Player (left)
+    drawCutsceneHead(ctx, 6, 4, 10, 12, pSkin, pHair, playerOutfit.hairStyle, false);
+    rect(ctx, 7, 16, 4, 3, pSkin); // neck
+    rect(ctx, 4, 19, 12, 14, pShirt); // body
+    rect(ctx, 5, 33, 4, 10, '#444466'); // left leg
+    rect(ctx, 11, 33, 4, 10, '#444466'); // right leg
+
+    // Partner (right)
+    const mSkin = partnerOutfit.skin;
+    const mShirt = partnerOutfit.shirt;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+
+    drawCutsceneHead(ctx, 28, 2, 12, 12, mSkin, mHair,
+      partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle, true);
+    rect(ctx, 31, 14, 5, 3, mSkin); // neck
+    rect(ctx, 26, 17, 14, 16, mShirt); // body
+    rect(ctx, 28, 33, 4, 10, '#444466'); // left leg
+    rect(ctx, 34, 33, 4, 10, '#444466'); // right leg
+
+    // Hands together
+    rect(ctx, 16, 26, 10, 3, pSkin);
 
     c.refresh();
   }

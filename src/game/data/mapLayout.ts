@@ -87,6 +87,7 @@ export const CHECKPOINT_ZONES: CheckpointZone[] = [
   { id: 'michaels_house', centerX: 496, centerY: 208, radius: 72, promptText: 'Tap to go in' },
   { id: 'airport', centerX: 19 * 32 + 16, centerY: 29 * 32, radius: 56, promptText: 'Enter Airport' },
   { id: 'hadars_house', centerX: 816, centerY: 208, radius: 72, promptText: 'Tap to go in' },
+  { id: 'fast_travel', centerX: 22 * 32 + 16, centerY: 16 * 32 + 16, radius: 56, promptText: 'Fast Travel' },
 ];
 
 export interface DecorationDef {
