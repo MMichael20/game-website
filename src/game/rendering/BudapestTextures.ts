@@ -5818,6 +5818,101 @@ export function generateBudapestCoupleSprites(
 
     c.refresh();
   }
+
+  // ── bp-couple-shower: close-up in bathing suits under water — 64×64 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-shower', 64, 64);
+    if (!c) return;
+    const ctx = c.context;
+
+    const pSkin = playerOutfit.skin;
+    const pHair = playerOutfit.hair;
+    const pHairStyle = playerOutfit.hairStyle;
+    const mSkin = partnerOutfit.skin;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+
+    // Player (left, female) — bikini
+    drawCutsceneHead(ctx, 6, 2, 14, 16, pSkin, pHair, pHairStyle, false);
+    rect(ctx, 10, 18, 6, 3, pSkin);         // neck
+    rect(ctx, 4, 21, 8, 3, pSkin);          // shoulders left
+    rect(ctx, 14, 21, 6, 3, pSkin);         // shoulders right
+    rect(ctx, 4, 24, 16, 4, '#FF1493');     // bikini top
+    rect(ctx, 4, 28, 16, 12, pSkin);        // torso
+    rect(ctx, 6, 40, 12, 4, '#FF1493');     // bikini bottom
+    rect(ctx, 2, 24, 4, 14, pSkin);         // left arm
+    rect(ctx, 18, 24, 4, 14, pSkin);        // right arm
+    rect(ctx, 6, 44, 5, 14, pSkin);         // left leg
+    rect(ctx, 13, 44, 5, 14, pSkin);        // right leg
+
+    // Partner (right, male) — swim trunks
+    drawCutsceneHead(ctx, 32, 0, 16, 18, mSkin, mHair, mHairStyle, true);
+    rect(ctx, 38, 18, 6, 3, mSkin);         // neck
+    rect(ctx, 30, 21, 10, 3, mSkin);        // shoulders left
+    rect(ctx, 42, 21, 8, 3, mSkin);         // shoulders right
+    rect(ctx, 30, 24, 20, 16, mSkin);       // torso/chest
+    rect(ctx, 32, 40, 16, 6, '#003366');    // swim trunks
+    rect(ctx, 28, 24, 4, 16, mSkin);        // left arm
+    rect(ctx, 48, 24, 4, 16, mSkin);        // right arm
+    rect(ctx, 33, 46, 6, 14, mSkin);        // left leg
+    rect(ctx, 41, 46, 6, 14, mSkin);        // right leg
+
+    // Hands touching in middle
+    rect(ctx, 20, 32, 10, 3, pSkin);
+
+    // Wet hair shine highlights
+    rect(ctx, 8, 3, 2, 6, 'rgba(255,255,255,0.25)');
+    rect(ctx, 36, 1, 2, 7, 'rgba(255,255,255,0.25)');
+
+    c.refresh();
+  }
+
+  // ── bp-couple-shower-cozy: leaning together, eyes closed — 64×64 ──
+  {
+    const c = scene.textures.createCanvas('bp-couple-shower-cozy', 64, 64);
+    if (!c) return;
+    const ctx = c.context;
+
+    const pSkin = playerOutfit.skin;
+    const pHair = playerOutfit.hair;
+    const pHairStyle = playerOutfit.hairStyle;
+    const mSkin = partnerOutfit.skin;
+    const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+    const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+
+    // Player (left, female) — leaning right, eyes closed
+    drawCutsceneHead(ctx, 8, 4, 14, 16, pSkin, pHair, pHairStyle, false, 'closed');
+    rect(ctx, 12, 20, 6, 3, pSkin);
+    rect(ctx, 6, 23, 8, 3, pSkin);
+    rect(ctx, 16, 23, 6, 3, pSkin);
+    rect(ctx, 6, 26, 16, 4, '#FF1493');
+    rect(ctx, 6, 30, 16, 10, pSkin);
+    rect(ctx, 8, 40, 12, 4, '#FF1493');
+    rect(ctx, 4, 26, 4, 12, pSkin);
+    rect(ctx, 20, 26, 4, 12, pSkin);
+    rect(ctx, 8, 44, 5, 14, pSkin);
+    rect(ctx, 15, 44, 5, 14, pSkin);
+
+    // Partner (right, male) — leaning left, arm around player
+    drawCutsceneHead(ctx, 30, 2, 16, 18, mSkin, mHair, mHairStyle, true, 'closed');
+    rect(ctx, 36, 20, 6, 3, mSkin);
+    rect(ctx, 28, 23, 10, 3, mSkin);
+    rect(ctx, 40, 23, 8, 3, mSkin);
+    rect(ctx, 28, 26, 20, 14, mSkin);
+    rect(ctx, 30, 40, 16, 6, '#003366');
+    rect(ctx, 46, 26, 4, 14, mSkin);
+    rect(ctx, 31, 46, 6, 14, mSkin);
+    rect(ctx, 39, 46, 6, 14, mSkin);
+
+    // Partner's arm around player's shoulder
+    rect(ctx, 20, 26, 10, 3, mSkin);
+
+    // Wet hair shine
+    rect(ctx, 10, 5, 2, 6, 'rgba(255,255,255,0.3)');
+    rect(ctx, 34, 3, 2, 7, 'rgba(255,255,255,0.3)');
+
+    c.refresh();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -5986,6 +6081,41 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
   }
 }
 
+function generateMinigameTextures(scene: Phaser.Scene): void {
+  // Lángos plate (72×48)
+  {
+    const c = scene.textures.createCanvas('langos-plate', 72, 48);
+    if (!c) return;
+    const ctx = c.context;
+    // Plate
+    circle(ctx, 36, 28, 22, '#E8D8B0');
+    circle(ctx, 36, 28, 20, '#F5E6C8');
+    // Lángos dough
+    circle(ctx, 36, 26, 16, '#D4A040');
+    circle(ctx, 36, 26, 14, '#DAA520');
+    c.refresh();
+  }
+
+  // Topping sprites (28×28 each)
+  const toppings: Array<{ key: string; color: string; accent?: string }> = [
+    { key: 'langos-sour-cream', color: '#FFFDD0', accent: '#F5F5DC' },
+    { key: 'langos-cheese', color: '#FFD700', accent: '#DAA520' },
+    { key: 'langos-garlic', color: '#F5F5DC', accent: '#DDD' },
+    { key: 'langos-ketchup', color: '#CC2222', accent: '#AA1111' },
+    { key: 'langos-rock', color: '#888888', accent: '#666666' },
+    { key: 'langos-shoe', color: '#3A2A1A', accent: '#222' },
+  ];
+
+  toppings.forEach(t => {
+    const c = scene.textures.createCanvas(t.key, 28, 28);
+    if (!c) return;
+    const ctx = c.context;
+    circle(ctx, 14, 14, 10, t.color);
+    circle(ctx, 14, 12, 6, t.accent || t.color);
+    c.refresh();
+  });
+}
+
 export function generateBudapestTextures(scene: Phaser.Scene): void {
   generateBudapestTerrain(scene);
   generateBudapestNPCs(scene);
@@ -5994,4 +6124,5 @@ export function generateBudapestTextures(scene: Phaser.Scene): void {
   generateBudapestDecorations(scene);
   generateBudapestCutsceneSprites(scene);
   generateCurryHuntTextures(scene);
+  generateMinigameTextures(scene);
 }

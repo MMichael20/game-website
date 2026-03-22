@@ -413,6 +413,35 @@ export const BUDAPEST_CHECKPOINT_ZONES: CheckpointZone[] = [
     radius: 56,
     promptText: 'Fast Travel',
   },
+  // ── Mini-game checkpoints ──
+  {
+    id: 'bp_langos_stand',
+    centerX: tileToWorld(26, 28).x,
+    centerY: tileToWorld(26, 28).y,
+    radius: 48,
+    promptText: 'Lángos Stand',
+  },
+  {
+    id: 'bp_ruin_bar_quiz',
+    centerX: tileToWorld(52, 28).x,
+    centerY: tileToWorld(52, 28).y,
+    radius: 48,
+    promptText: 'Ruin Bar Trivia',
+  },
+  {
+    id: 'bp_tram_dash',
+    centerX: tileToWorld(40, 18).x,
+    centerY: tileToWorld(40, 18).y,
+    radius: 48,
+    promptText: 'Dash across!',
+  },
+  {
+    id: 'bp_spice_market',
+    centerX: tileToWorld(12, 28).x,
+    centerY: tileToWorld(12, 28).y,
+    radius: 48,
+    promptText: 'Spice Market',
+  },
 ];
 
 export const BUDAPEST_DECORATIONS = [

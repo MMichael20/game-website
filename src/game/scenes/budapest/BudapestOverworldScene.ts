@@ -42,6 +42,10 @@ export class BudapestOverworldScene extends OverworldScene {
       bp_restaurant_1: 'Goulash House',
       bp_restaurant_2: 'Chimney Cake',
       bp_indian_restaurant: 'Indian Restaurant',
+      bp_langos_stand: 'Lángos Stand',
+      bp_ruin_bar_quiz: 'Ruin Bar Trivia',
+      bp_tram_dash: 'Road Crossing',
+      bp_spice_market: 'Spice Market',
       bp_parliament: 'Parliament',
       bp_chain_bridge: 'Chain Bridge',
       bp_fishermans_bastion: 'Fisherman\'s Bastion',
@@ -576,6 +580,54 @@ export class BudapestOverworldScene extends OverworldScene {
             uiManager.hideNPCDialog();
             this.inputSystem.unfreeze();
             this.fadeToScene('CurryHuntScene', { checkpointId: 'bp_indian_restaurant' });
+          },
+        );
+        break;
+
+      case 'bp_langos_stand':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Fresh lángos! Hot from the oil!', 'Catch the toppings!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('LangosCatchScene', { checkpointId: 'bp_langos_stand' });
+          },
+        );
+        break;
+
+      case 'bp_ruin_bar_quiz':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Welcome to Szimpla Kert!', 'Think you know Budapest? Let\'s find out!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('RuinBarQuizScene', { checkpointId: 'bp_ruin_bar_quiz' });
+          },
+        );
+        break;
+
+      case 'bp_tram_dash':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Careful! Trams and cars everywhere!', 'Cross the road as many times as you can!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('TramDashScene', { checkpointId: 'bp_tram_dash' });
+          },
+        );
+        break;
+
+      case 'bp_spice_market':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Welcome to the Great Market Hall!', 'Match the Hungarian spices!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('PaprikaSortScene', { checkpointId: 'bp_spice_market' });
           },
         );
         break;
