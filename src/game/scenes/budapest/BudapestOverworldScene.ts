@@ -886,15 +886,6 @@ export class BudapestOverworldScene extends OverworldScene {
   update(time: number, delta: number): void {
     super.update(time, delta);
     this.waterSystem.update(this.player, this.partner);
-
-    // Proximity-based ambient audio: water louder near Danube (rows 10-14)
-    const playerPos = this.player.getPosition();
-    const playerTileY = Math.floor(playerPos.y / TILE_SIZE);
-    const waterCenterRow = 12;
-    const distFromWater = Math.abs(playerTileY - waterCenterRow);
-    // Ramp water volume: full at river (0.2), fades to 0.04 at 15+ tiles away
-    const waterGain = Math.max(0.04, 0.2 - distFromWater * 0.012);
-    audioManager.setProximityLayerGain('water_flow', waterGain);
   }
 
   shutdown(): void {

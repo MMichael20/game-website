@@ -284,15 +284,11 @@ class UIManager {
           <input type="range" class="audio-slider__input" data-vol="master" min="0" max="100" value="${Math.round(audio.masterVolume * 100)}">
         </div>
         <div class="audio-slider">
-          <span class="audio-slider__label">Music</span>
-          <input type="range" class="audio-slider__input" data-vol="music" min="0" max="100" value="${Math.round(audio.musicVolume * 100)}">
-        </div>
-        <div class="audio-slider">
           <span class="audio-slider__label">SFX</span>
           <input type="range" class="audio-slider__input" data-vol="sfx" min="0" max="100" value="${Math.round(audio.sfxVolume * 100)}">
         </div>
         <div class="audio-slider">
-          <span class="audio-slider__label">Ambient</span>
+          <span class="audio-slider__label">Birds</span>
           <input type="range" class="audio-slider__input" data-vol="ambient" min="0" max="100" value="${Math.round(audio.ambientVolume * 100)}">
         </div>
         <button class="btn btn--secondary settings-panel__mute-btn ${audio.muted ? 'settings-panel__mute-btn--muted' : ''}" data-action="mute">

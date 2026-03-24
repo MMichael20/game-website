@@ -521,135 +521,41 @@ export const MINIGAME_MUSIC_MAP: Record<string, string> = {
 
 export const SCENE_AMBIENT_PROFILES: Record<string, SceneAmbientProfile> = {
 
+  // Birds only on overworld maps — no music, no noise layers
   BudapestOverworldScene: {
     sceneKey: 'BudapestOverworldScene',
     layers: [
-      { type: 'water_flow', gain: 0.12, params: { filterFreq: 300, speed: 0.5 } },
-      { type: 'crowd_murmur', gain: 0.08, params: { density: 0.4 } },
-      { type: 'birds', gain: 0.06, params: { count: 2, interval: 5 } },
-      { type: 'wind_gentle', gain: 0.04, params: { speed: 0.3 } },
+      { type: 'birds', gain: 0.1, params: { count: 3, interval: 4 } },
     ],
-    reverbMix: 0.08,
-    reverbDecay: 1.5,
-  },
-
-  RuinBarScene: {
-    sceneKey: 'RuinBarScene',
-    layers: [
-      { type: 'bar_chatter', gain: 0.15, params: { density: 0.7 } },
-      { type: 'indoor_reverb', gain: 0.12, params: {} },
-    ],
-    reverbMix: 0.25,
-    reverbDecay: 2.0,
-  },
-
-  ThermalBathScene: {
-    sceneKey: 'ThermalBathScene',
-    layers: [
-      { type: 'water_lapping', gain: 0.18, params: { speed: 0.3 } },
-      { type: 'steam_hiss', gain: 0.08, params: { intensity: 0.5 } },
-      { type: 'indoor_reverb', gain: 0.15, params: {} },
-    ],
-    reverbMix: 0.35,
-    reverbDecay: 3.0,
-  },
-
-  DanubeCruiseScene: {
-    sceneKey: 'DanubeCruiseScene',
-    layers: [
-      { type: 'water_flow', gain: 0.2, params: { filterFreq: 250, speed: 0.7 } },
-      { type: 'water_lapping', gain: 0.12, params: { speed: 0.5 } },
-      { type: 'wind_gentle', gain: 0.08, params: { speed: 0.4 } },
-    ],
-    reverbMix: 0.12,
-    reverbDecay: 2.0,
+    reverbMix: 0,
+    reverbDecay: 0,
   },
 
   JewishQuarterScene: {
     sceneKey: 'JewishQuarterScene',
     layers: [
-      { type: 'crowd_murmur', gain: 0.12, params: { density: 0.6 } },
-      { type: 'birds', gain: 0.04, params: { count: 1, interval: 6 } },
+      { type: 'birds', gain: 0.08, params: { count: 2, interval: 5 } },
     ],
-    reverbMix: 0.1,
-    reverbDecay: 1.5,
-  },
-
-  BudapestEyeScene: {
-    sceneKey: 'BudapestEyeScene',
-    layers: [
-      { type: 'wind_gentle', gain: 0.1, params: { speed: 0.5 } },
-      { type: 'crowd_murmur', gain: 0.06, params: { density: 0.3 } },
-    ],
-    reverbMix: 0.05,
-    reverbDecay: 1.0,
-  },
-
-  BudapestBusRideScene: {
-    sceneKey: 'BudapestBusRideScene',
-    layers: [
-      { type: 'wind_gentle', gain: 0.12, params: { speed: 0.6 } },
-    ],
-    reverbMix: 0.05,
-    reverbDecay: 0.8,
-  },
-
-  BudapestAirbnbScene: {
-    sceneKey: 'BudapestAirbnbScene',
-    layers: [
-      { type: 'indoor_reverb', gain: 0.08, params: {} },
-    ],
-    reverbMix: 0.15,
-    reverbDecay: 1.5,
-  },
-
-  BudapestAirbnbLobbyScene: {
-    sceneKey: 'BudapestAirbnbLobbyScene',
-    layers: [
-      { type: 'indoor_reverb', gain: 0.1, params: {} },
-    ],
-    reverbMix: 0.15,
-    reverbDecay: 1.5,
+    reverbMix: 0,
+    reverbDecay: 0,
   },
 
   WorldScene: {
     sceneKey: 'WorldScene',
     layers: [
-      { type: 'birds', gain: 0.08, params: { count: 3, interval: 4 } },
-      { type: 'wind_gentle', gain: 0.05, params: { speed: 0.2 } },
+      { type: 'birds', gain: 0.1, params: { count: 3, interval: 4 } },
     ],
-    reverbMix: 0.05,
-    reverbDecay: 1.0,
+    reverbMix: 0,
+    reverbDecay: 0,
   },
 
   MauiOverworldScene: {
     sceneKey: 'MauiOverworldScene',
     layers: [
-      { type: 'water_lapping', gain: 0.15, params: { speed: 0.4 } },
-      { type: 'birds', gain: 0.1, params: { count: 3, interval: 3 } },
-      { type: 'wind_gentle', gain: 0.06, params: { speed: 0.3 } },
+      { type: 'birds', gain: 0.12, params: { count: 3, interval: 3 } },
     ],
-    reverbMix: 0.05,
-    reverbDecay: 1.0,
-  },
-
-  AirportInteriorScene: {
-    sceneKey: 'AirportInteriorScene',
-    layers: [
-      { type: 'crowd_murmur', gain: 0.1, params: { density: 0.5 } },
-      { type: 'indoor_reverb', gain: 0.12, params: {} },
-    ],
-    reverbMix: 0.2,
-    reverbDecay: 2.5,
-  },
-
-  AirplaneCutscene: {
-    sceneKey: 'AirplaneCutscene',
-    layers: [
-      { type: 'wind_gentle', gain: 0.15, params: { speed: 0.8 } },
-    ],
-    reverbMix: 0.1,
-    reverbDecay: 1.0,
+    reverbMix: 0,
+    reverbDecay: 0,
   },
 };
 

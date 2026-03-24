@@ -94,19 +94,9 @@ class AudioManager {
 
     this.currentSceneKey = sceneKey;
 
-    // Resolve music profile
-    const musicKey = MINIGAME_MUSIC_MAP[sceneKey] ?? sceneKey;
-    const musicProfile = SCENE_MUSIC_PROFILES[musicKey];
     const ambientProfile = SCENE_AMBIENT_PROFILES[sceneKey];
 
-    // Transition music
-    if (musicProfile && this.musicEngine) {
-      this.musicEngine.play(musicProfile, { duration: 2.0, curve: 'equal_power' });
-    } else if (this.musicEngine) {
-      this.musicEngine.stop(1.5);
-    }
-
-    // Transition ambient
+    // Transition ambient (birds only on overworlds — no music, no noise layers)
     if (ambientProfile && this.ambientEngine) {
       this.ambientEngine.setProfile(ambientProfile, 1.5);
     } else if (this.ambientEngine) {
@@ -174,11 +164,9 @@ class AudioManager {
     this.savePreferences();
 
     if (muted) {
-      this.musicEngine?.pause();
       this.ambientEngine?.stopAll(0.3);
     } else {
-      this.musicEngine?.resume();
-      // Re-enter current scene to restart ambient
+      // Re-enter current scene to restart birds
       if (this.currentSceneKey) {
         const key = this.currentSceneKey;
         this.currentSceneKey = null;
@@ -196,20 +184,17 @@ class AudioManager {
   // ─── Lifecycle ───────────────────────────────────────────────────
 
   stopAll(): void {
-    this.musicEngine?.stop(0.5);
     this.ambientEngine?.stopAll(0.5);
     this.currentSceneKey = null;
   }
 
   suspend(): void {
-    this.musicEngine?.pause();
     this.ambientEngine?.stopAll(0.3);
   }
 
   resume(): void {
     if (this.preferences.muted) return;
-    this.musicEngine?.resume();
-    // Re-enter scene for ambient
+    // Re-enter scene to restart birds
     if (this.currentSceneKey) {
       const key = this.currentSceneKey;
       this.currentSceneKey = null;
