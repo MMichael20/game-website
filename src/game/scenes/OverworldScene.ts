@@ -82,7 +82,7 @@ export abstract class OverworldScene extends Phaser.Scene {
 
     // 3. Player & Partner
     this.player = new Player(this, config.spawnX, config.spawnY, state.outfits.player, config.walkCheck);
-    this.partner = new Partner(this, config.spawnX, config.spawnY, state.outfits.partner);
+    this.partner = new Partner(this, config.spawnX + 32, config.spawnY, state.outfits.partner);
 
     if (this.returnFromInteriorData) {
       this.player.sprite.setPosition(this.returnFromInteriorData.returnX, this.returnFromInteriorData.returnY);
