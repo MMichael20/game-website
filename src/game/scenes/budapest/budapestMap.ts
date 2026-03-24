@@ -566,6 +566,62 @@ export const BUDAPEST_DECORATIONS = [
 
   // Flower beds near Gellert Hill
   { type: 'bp-flower-bed', tileX: 6, tileY: 8 },
+
+  // ── Additional atmosphere decorations ──
+
+  // Eastern residential area (near Airbnb & shops)
+  { type: 'bp-tree', tileX: 43, tileY: 28 },
+  { type: 'bp-tree-autumn', tileX: 38, tileY: 28 },
+  { type: 'bp-bench', tileX: 42, tileY: 30 },
+  { type: 'bp-lamp', tileX: 44, tileY: 28 },
+  { type: 'bp-flower-bed', tileX: 40, tileY: 28 },
+  { type: 'bp-bush', tileX: 46, tileY: 24 },
+
+  // Southern boulevard
+  { type: 'bp-tree', tileX: 10, tileY: 32 },
+  { type: 'bp-tree', tileX: 20, tileY: 32 },
+  { type: 'bp-tree-autumn', tileX: 30, tileY: 32 },
+  { type: 'bp-tree', tileX: 40, tileY: 32 },
+  { type: 'bp-lamp', tileX: 15, tileY: 32 },
+  { type: 'bp-lamp', tileX: 25, tileY: 32 },
+  { type: 'bp-lamp', tileX: 35, tileY: 32 },
+  { type: 'bp-bench', tileX: 18, tileY: 34 },
+  { type: 'bp-bench', tileX: 32, tileY: 34 },
+
+  // Parliament park area
+  { type: 'bp-tree', tileX: 16, tileY: 20 },
+  { type: 'bp-tree', tileX: 22, tileY: 20 },
+  { type: 'bp-bush', tileX: 20, tileY: 19 },
+  { type: 'bp-flower-bed', tileX: 18, tileY: 20 },
+  { type: 'bp-bench', tileX: 20, tileY: 21 },
+
+  // Jewish Quarter area — more café culture
+  { type: 'bp-cafe-table', tileX: 52, tileY: 24 },
+  { type: 'bp-cafe-table', tileX: 53, tileY: 25 },
+  { type: 'bp-lamp', tileX: 48, tileY: 24 },
+  { type: 'bp-tree-autumn', tileX: 54, tileY: 24 },
+  { type: 'bp-bush', tileX: 56, tileY: 26 },
+
+  // Far eastern area — greenery
+  { type: 'bp-tree', tileX: 58, tileY: 28 },
+  { type: 'bp-tree-autumn', tileX: 60, tileY: 26 },
+  { type: 'bp-bush', tileX: 62, tileY: 28 },
+  { type: 'bp-flower-bed', tileX: 60, tileY: 30 },
+  { type: 'bp-lamp', tileX: 60, tileY: 28 },
+
+  // Thermal baths park
+  { type: 'bp-tree', tileX: 4, tileY: 34 },
+  { type: 'bp-tree', tileX: 10, tileY: 36 },
+  { type: 'bp-flower-bed', tileX: 8, tileY: 34 },
+  { type: 'bp-bush', tileX: 12, tileY: 36 },
+  { type: 'bp-bench', tileX: 6, tileY: 38 },
+  { type: 'bp-lamp', tileX: 10, tileY: 38 },
+
+  // Gellert Hill surroundings
+  { type: 'bp-tree', tileX: 2, tileY: 6 },
+  { type: 'bp-tree', tileX: 8, tileY: 4 },
+  { type: 'bp-bush', tileX: 4, tileY: 4 },
+  { type: 'bp-flower-bed', tileX: 2, tileY: 8 },
 ];
 
 export const BUDAPEST_BUILDINGS = [
