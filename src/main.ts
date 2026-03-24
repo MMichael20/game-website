@@ -34,6 +34,7 @@ import { JewishQuarterScene } from './game/scenes/budapest/JewishQuarterScene';
 import { RuinBarScene } from './game/scenes/budapest/RuinBarScene';
 import { BudapestEyeScene } from './game/scenes/budapest/BudapestEyeScene';
 import { BudapestAirbnbScene } from './game/scenes/budapest/BudapestAirbnbScene';
+import { BudapestAirbnbLobbyScene } from './game/scenes/budapest/BudapestAirbnbLobbyScene';
 import { BudapestTransportScene } from './game/scenes/budapest/BudapestTransportScene';
 import { DanubeCruiseScene } from './game/scenes/budapest/DanubeCruiseScene';
 import { ThermalBathScene } from './game/scenes/budapest/ThermalBathScene';
@@ -66,7 +67,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     touch: { capture: true },
   },
-  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, HadarsHouseScene, AirportInteriorScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, AirbnbCompoundScene, DrivingScene, HanaPulloverScene, HanaDrivingScene, SunBeachScene, QuizScene, CatchScene, MatchScene, TennisScene, ChaseBabyScene, TurtleRescueScene, CurryHuntScene, LangosCatchScene, RuinBarQuizScene, TramDashScene, PaprikaSortScene, AirbnbShowerScene, BudapestAirportScene, BudapestBusRideScene, BudapestOverworldScene, JewishQuarterScene, RuinBarScene, BudapestEyeScene, BudapestAirbnbScene, BudapestTransportScene, DanubeCruiseScene, ThermalBathScene],
+  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, HadarsHouseScene, AirportInteriorScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, AirbnbCompoundScene, DrivingScene, HanaPulloverScene, HanaDrivingScene, SunBeachScene, QuizScene, CatchScene, MatchScene, TennisScene, ChaseBabyScene, TurtleRescueScene, CurryHuntScene, LangosCatchScene, RuinBarQuizScene, TramDashScene, PaprikaSortScene, AirbnbShowerScene, BudapestAirportScene, BudapestBusRideScene, BudapestOverworldScene, JewishQuarterScene, RuinBarScene, BudapestEyeScene, BudapestAirbnbLobbyScene, BudapestAirbnbScene, BudapestTransportScene, DanubeCruiseScene, ThermalBathScene],
 };
 
 new Phaser.Game(config);

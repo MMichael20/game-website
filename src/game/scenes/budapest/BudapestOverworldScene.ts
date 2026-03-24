@@ -532,7 +532,7 @@ export class BudapestOverworldScene extends OverworldScene {
         break;
 
       case 'bp_airbnb':
-        this.fadeToScene('BudapestAirbnbScene', { returnX: pos.x, returnY: pos.y });
+        this.fadeToScene('BudapestAirbnbLobbyScene', { returnX: pos.x, returnY: pos.y });
         break;
 
       case 'bp_jewish_quarter':

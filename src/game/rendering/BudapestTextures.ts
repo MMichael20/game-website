@@ -5916,6 +5916,897 @@ export function generateBudapestCoupleSprites(
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// ── AIRBNB INTERIORS ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+
+function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
+
+  // interior-reception-desk — 32×32, dark mahogany desk with gold trim and marble top
+  {
+    const c = scene.textures.createCanvas('interior-reception-desk', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Desk body — dark mahogany
+    rect(ctx, 4, 14, 24, 16, '#4A1E0A');
+    rect(ctx, 5, 15, 22, 14, '#5C2E14');
+
+    // Front panel detail
+    rect(ctx, 8, 18, 16, 8, '#4A1E0A');
+    rect(ctx, 9, 19, 14, 6, darken('#5C2E14', 0.1));
+
+    // Marble top surface
+    rect(ctx, 3, 12, 26, 3, '#F5F0E8');
+    rect(ctx, 5, 12, 4, 1, '#EDE8DF');
+    rect(ctx, 14, 13, 6, 1, '#EDE8DF');
+    rect(ctx, 22, 12, 3, 1, '#E8E3DA');
+
+    // Gold trim along top edge
+    rect(ctx, 3, 11, 26, 1, '#D4A843');
+    rect(ctx, 3, 14, 26, 1, '#C9A648');
+
+    // Desk legs
+    rect(ctx, 5, 28, 3, 4, '#4A1E0A');
+    rect(ctx, 24, 28, 3, 4, '#4A1E0A');
+
+    // Gold knobs
+    px(ctx, 16, 22, '#D4A843');
+    px(ctx, 15, 22, '#B8942E');
+
+    c.refresh();
+  }
+
+  // interior-luggage — 32×32, elegant stacked suitcases, burgundy/brown leather
+  {
+    const c = scene.textures.createCanvas('interior-luggage', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Bottom suitcase — brown leather
+    rect(ctx, 6, 18, 20, 12, '#6B3A1F');
+    rect(ctx, 7, 19, 18, 10, '#7A4528');
+    rect(ctx, 6, 23, 20, 1, '#5C2E14');
+    // Handle
+    rect(ctx, 14, 17, 4, 2, '#4A1E0A');
+    // Gold clasp
+    px(ctx, 16, 20, '#D4A843');
+    px(ctx, 15, 20, '#D4A843');
+    // Gold trim
+    rect(ctx, 6, 18, 20, 1, '#B8942E');
+
+    // Top suitcase — burgundy
+    rect(ctx, 8, 6, 16, 12, '#800020');
+    rect(ctx, 9, 7, 14, 10, '#9A1030');
+    rect(ctx, 8, 11, 16, 1, '#700018');
+    // Handle
+    rect(ctx, 14, 4, 4, 3, '#5C0018');
+    rect(ctx, 15, 4, 2, 1, '#D4A843');
+    // Gold clasps
+    px(ctx, 13, 8, '#D4A843');
+    px(ctx, 19, 8, '#D4A843');
+    // Gold trim
+    rect(ctx, 8, 6, 16, 1, '#B8942E');
+
+    c.refresh();
+  }
+
+  // interior-elevator — 32×32, brass/gold elevator doors with art deco pattern
+  {
+    const c = scene.textures.createCanvas('interior-elevator', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Wall surround
+    rect(ctx, 0, 0, 32, 32, '#3A3A3A');
+
+    // Elevator frame — brass
+    rect(ctx, 3, 2, 26, 28, '#B5A642');
+    rect(ctx, 4, 3, 24, 26, '#C9A648');
+
+    // Left door
+    rect(ctx, 5, 4, 10, 24, '#8A7A32');
+    rect(ctx, 6, 5, 8, 22, '#9A8A3A');
+
+    // Right door
+    rect(ctx, 17, 4, 10, 24, '#8A7A32');
+    rect(ctx, 18, 5, 8, 22, '#9A8A3A');
+
+    // Door gap
+    rect(ctx, 15, 4, 2, 24, '#1A1A1A');
+
+    // Art deco pattern — left door
+    rect(ctx, 8, 7, 4, 1, '#D4A843');
+    rect(ctx, 9, 8, 2, 4, '#D4A843');
+    rect(ctx, 8, 12, 4, 1, '#D4A843');
+    rect(ctx, 8, 16, 4, 1, '#D4A843');
+    rect(ctx, 9, 17, 2, 4, '#D4A843');
+    rect(ctx, 8, 21, 4, 1, '#D4A843');
+
+    // Art deco pattern — right door
+    rect(ctx, 20, 7, 4, 1, '#D4A843');
+    rect(ctx, 21, 8, 2, 4, '#D4A843');
+    rect(ctx, 20, 12, 4, 1, '#D4A843');
+    rect(ctx, 20, 16, 4, 1, '#D4A843');
+    rect(ctx, 21, 17, 2, 4, '#D4A843');
+    rect(ctx, 20, 21, 4, 1, '#D4A843');
+
+    // Floor indicator above
+    rect(ctx, 13, 1, 6, 2, '#1A1A1A');
+    px(ctx, 15, 1, '#D4A843');
+    px(ctx, 16, 1, '#D4A843');
+
+    c.refresh();
+  }
+
+  // interior-shower — 32×32, glass shower enclosure with chrome/gold fixtures, marble base
+  {
+    const c = scene.textures.createCanvas('interior-shower', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Marble base/floor
+    rect(ctx, 4, 26, 24, 6, '#F5F0E8');
+    rect(ctx, 6, 27, 5, 2, '#EDE8DF');
+    rect(ctx, 16, 28, 4, 1, '#E8E3DA');
+
+    // Back wall — marble
+    rect(ctx, 4, 2, 24, 24, '#EDE8DF');
+    rect(ctx, 5, 4, 8, 3, '#F5F0E8');
+    rect(ctx, 18, 8, 6, 2, '#F5F0E8');
+
+    // Glass panels (semi-transparent look)
+    rect(ctx, 4, 2, 1, 24, '#B8D4E8');
+    rect(ctx, 27, 2, 1, 24, '#B8D4E8');
+    rect(ctx, 4, 2, 24, 1, '#B8D4E8');
+
+    // Glass door frame
+    rect(ctx, 16, 2, 1, 24, '#A8C4D8');
+
+    // Shower head — gold
+    rect(ctx, 22, 3, 4, 2, '#D4A843');
+    rect(ctx, 23, 5, 2, 1, '#B8942E');
+    // Water drops
+    px(ctx, 22, 7, '#A8C4D8');
+    px(ctx, 24, 9, '#B8D4E8');
+    px(ctx, 23, 11, '#A8C4D8');
+    px(ctx, 25, 8, '#B8D4E8');
+
+    // Gold faucet handle
+    rect(ctx, 22, 14, 3, 2, '#D4A843');
+    px(ctx, 23, 13, '#C9A648');
+
+    // Drain
+    circle(ctx, 16, 29, 1, '#B8942E');
+
+    c.refresh();
+  }
+
+  // interior-chandelier — 32×32, crystal chandelier with gold frame and light glow
+  {
+    const c = scene.textures.createCanvas('interior-chandelier', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Glow effect (soft yellow backdrop)
+    circle(ctx, 16, 16, 12, 'rgba(255,248,220,0.3)');
+    circle(ctx, 16, 16, 8, 'rgba(255,240,200,0.4)');
+
+    // Ceiling mount — gold
+    rect(ctx, 14, 0, 4, 3, '#B8942E');
+
+    // Chain
+    rect(ctx, 15, 3, 2, 4, '#D4A843');
+
+    // Main body — gold frame
+    rect(ctx, 10, 7, 12, 3, '#D4A843');
+    rect(ctx, 12, 10, 8, 2, '#C9A648');
+
+    // Crystal drops — left arm
+    rect(ctx, 6, 9, 2, 1, '#D4A843');
+    rect(ctx, 8, 8, 2, 2, '#D4A843');
+    px(ctx, 6, 10, '#F0E8D0');
+    px(ctx, 7, 11, '#FFF8E7');
+    px(ctx, 6, 12, '#E8E0C8');
+    px(ctx, 7, 13, '#F0E8D0');
+
+    // Crystal drops — right arm
+    rect(ctx, 22, 9, 2, 1, '#D4A843');
+    rect(ctx, 22, 8, 2, 2, '#D4A843');
+    px(ctx, 24, 10, '#F0E8D0');
+    px(ctx, 23, 11, '#FFF8E7');
+    px(ctx, 24, 12, '#E8E0C8');
+    px(ctx, 23, 13, '#F0E8D0');
+
+    // Center crystal drops
+    px(ctx, 14, 12, '#FFF8E7');
+    px(ctx, 16, 13, '#F0E8D0');
+    px(ctx, 18, 12, '#FFF8E7');
+    px(ctx, 15, 14, '#E8E0C8');
+    px(ctx, 17, 14, '#E8E0C8');
+    px(ctx, 16, 15, '#FFF8E7');
+    px(ctx, 14, 15, '#F0E8D0');
+    px(ctx, 18, 15, '#F0E8D0');
+    px(ctx, 15, 17, '#FFF8E7');
+    px(ctx, 17, 17, '#FFF8E7');
+    px(ctx, 16, 18, '#F0E8D0');
+
+    // Light bulbs (warm glow)
+    px(ctx, 9, 10, '#FFFDE0');
+    px(ctx, 22, 10, '#FFFDE0');
+    px(ctx, 14, 11, '#FFFDE0');
+    px(ctx, 18, 11, '#FFFDE0');
+
+    c.refresh();
+  }
+
+  // interior-armchair — 32×32, plush velvet emerald armchair with gold legs
+  {
+    const c = scene.textures.createCanvas('interior-armchair', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Gold legs
+    rect(ctx, 7, 26, 2, 6, '#D4A843');
+    rect(ctx, 23, 26, 2, 6, '#D4A843');
+    rect(ctx, 8, 28, 2, 4, '#B8942E');
+    rect(ctx, 22, 28, 2, 4, '#B8942E');
+
+    // Seat cushion
+    rect(ctx, 6, 18, 20, 8, '#1B6B3A');
+    rect(ctx, 7, 19, 18, 6, lighten('#1B6B3A', 0.1));
+
+    // Back rest
+    rect(ctx, 8, 6, 16, 13, '#1B6B3A');
+    rect(ctx, 9, 7, 14, 11, lighten('#1B6B3A', 0.15));
+    rect(ctx, 10, 8, 12, 4, lighten('#1B6B3A', 0.05));
+
+    // Left armrest
+    rect(ctx, 3, 10, 4, 16, '#1B6B3A');
+    rect(ctx, 4, 11, 2, 14, darken('#1B6B3A', 0.1));
+
+    // Right armrest
+    rect(ctx, 25, 10, 4, 16, '#1B6B3A');
+    rect(ctx, 26, 11, 2, 14, darken('#1B6B3A', 0.1));
+
+    // Button tufting on back
+    px(ctx, 13, 9, '#0E5A2A');
+    px(ctx, 19, 9, '#0E5A2A');
+    px(ctx, 16, 11, '#0E5A2A');
+
+    // Gold trim on armrest tops
+    rect(ctx, 3, 10, 4, 1, '#D4A843');
+    rect(ctx, 25, 10, 4, 1, '#D4A843');
+
+    c.refresh();
+  }
+
+  // interior-plant-lux — 32×32, tall potted plant in gold/brass pot
+  {
+    const c = scene.textures.createCanvas('interior-plant-lux', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Gold/brass pot
+    rect(ctx, 10, 22, 12, 10, '#B5A642');
+    rect(ctx, 11, 23, 10, 8, '#C9A648');
+    rect(ctx, 9, 22, 14, 2, '#D4A843');
+    rect(ctx, 12, 30, 8, 2, '#B8942E');
+
+    // Pot rim highlight
+    rect(ctx, 9, 22, 14, 1, lighten('#D4A843', 0.2));
+
+    // Soil
+    rect(ctx, 11, 22, 10, 2, '#3E2B1A');
+
+    // Stem
+    rect(ctx, 15, 10, 2, 12, '#2D5A1E');
+
+    // Leaves — large tropical
+    rect(ctx, 10, 6, 6, 4, '#1B6B3A');
+    rect(ctx, 16, 4, 6, 4, '#1B6B3A');
+    rect(ctx, 8, 10, 5, 3, '#228B3A');
+    rect(ctx, 19, 8, 5, 3, '#228B3A');
+    rect(ctx, 12, 2, 4, 4, '#1B6B3A');
+    rect(ctx, 18, 6, 4, 3, lighten('#1B6B3A', 0.1));
+    rect(ctx, 6, 7, 4, 3, lighten('#228B3A', 0.1));
+
+    // Leaf veins
+    px(ctx, 13, 7, '#0E5A2A');
+    px(ctx, 18, 5, '#0E5A2A');
+    px(ctx, 10, 11, '#1A5C2A');
+    px(ctx, 21, 9, '#1A5C2A');
+
+    c.refresh();
+  }
+
+  // interior-painting — 32×32, ornate gold frame with landscape painting
+  {
+    const c = scene.textures.createCanvas('interior-painting', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Outer gold frame
+    rect(ctx, 2, 4, 28, 24, '#D4A843');
+    rect(ctx, 3, 5, 26, 22, '#C9A648');
+    rect(ctx, 4, 6, 24, 20, '#B8942E');
+
+    // Inner frame border
+    rect(ctx, 5, 7, 22, 18, '#D4A843');
+
+    // Canvas — landscape painting
+    rect(ctx, 6, 8, 20, 16, '#87CEEB'); // sky
+    rect(ctx, 6, 16, 20, 8, '#4A8C3F'); // grass/hills
+    rect(ctx, 6, 18, 20, 6, '#3A7A2F'); // foreground
+
+    // Rolling hills
+    circle(ctx, 12, 17, 4, '#5A9C4F');
+    circle(ctx, 22, 18, 3, '#4A8C3F');
+
+    // Sun
+    circle(ctx, 22, 10, 2, '#F5D061');
+
+    // Clouds
+    rect(ctx, 8, 9, 4, 2, '#FFFFFF');
+    rect(ctx, 14, 10, 3, 1, '#F0F0F0');
+
+    // Trees
+    rect(ctx, 9, 14, 2, 4, '#5C3A1E');
+    circle(ctx, 10, 13, 2, '#2D6B1E');
+
+    // Frame corner ornaments
+    px(ctx, 3, 5, lighten('#D4A843', 0.3));
+    px(ctx, 28, 5, lighten('#D4A843', 0.3));
+    px(ctx, 3, 26, lighten('#D4A843', 0.3));
+    px(ctx, 28, 26, lighten('#D4A843', 0.3));
+
+    c.refresh();
+  }
+
+  // interior-mirror — 32×32, oval mirror with gold ornate frame, reflective surface
+  {
+    const c = scene.textures.createCanvas('interior-mirror', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Gold frame — oval approximation
+    circle(ctx, 16, 16, 13, '#D4A843');
+    circle(ctx, 16, 16, 12, '#C9A648');
+    circle(ctx, 16, 16, 11, '#B8942E');
+
+    // Mirror surface — reflective blue-white
+    circle(ctx, 16, 16, 10, '#C8D8E8');
+    circle(ctx, 16, 16, 9, '#D0E0F0');
+
+    // Reflection highlights
+    rect(ctx, 11, 10, 3, 1, '#E8F0FF');
+    rect(ctx, 12, 11, 2, 3, '#E0E8F0');
+    px(ctx, 11, 9, '#FFFFFF');
+    px(ctx, 20, 18, '#E0E8F0');
+
+    // Frame ornament — top
+    rect(ctx, 14, 2, 4, 2, '#D4A843');
+    px(ctx, 15, 1, lighten('#D4A843', 0.2));
+    px(ctx, 16, 1, lighten('#D4A843', 0.2));
+
+    // Frame ornament — bottom
+    rect(ctx, 14, 28, 4, 2, '#D4A843');
+    px(ctx, 15, 30, lighten('#D4A843', 0.2));
+    px(ctx, 16, 30, lighten('#D4A843', 0.2));
+
+    c.refresh();
+  }
+
+  // interior-minibar — 32×32, small dark wood cabinet with glass door showing bottles
+  {
+    const c = scene.textures.createCanvas('interior-minibar', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Cabinet body — dark wood
+    rect(ctx, 4, 4, 24, 26, '#4A1E0A');
+    rect(ctx, 5, 5, 22, 24, '#5C2E14');
+
+    // Glass door panel
+    rect(ctx, 7, 7, 18, 18, '#2A3A4A');
+    rect(ctx, 8, 8, 16, 16, '#3A4A5A');
+
+    // Shelves
+    rect(ctx, 8, 14, 16, 1, '#5C2E14');
+    rect(ctx, 8, 20, 16, 1, '#5C2E14');
+
+    // Bottles — top shelf
+    rect(ctx, 10, 9, 2, 5, '#800020'); // burgundy bottle
+    rect(ctx, 10, 8, 2, 1, '#600018');
+    rect(ctx, 14, 10, 2, 4, '#2A5A2A'); // green bottle
+    rect(ctx, 14, 9, 2, 1, '#1A4A1A');
+    rect(ctx, 18, 9, 2, 5, '#C9A648'); // gold bottle
+    rect(ctx, 18, 8, 2, 1, '#B8942E');
+
+    // Bottles — bottom shelf
+    rect(ctx, 11, 15, 2, 5, '#4A6A8A'); // blue bottle
+    rect(ctx, 11, 14, 2, 1, '#3A5A7A');
+    rect(ctx, 16, 15, 2, 5, '#8A4A2A'); // amber bottle
+    rect(ctx, 16, 14, 2, 1, '#7A3A1A');
+
+    // Gold handle
+    rect(ctx, 24, 14, 2, 4, '#D4A843');
+
+    // Gold trim — top
+    rect(ctx, 4, 4, 24, 1, '#B8942E');
+
+    // Legs
+    rect(ctx, 5, 28, 2, 4, '#4A1E0A');
+    rect(ctx, 25, 28, 2, 4, '#4A1E0A');
+
+    c.refresh();
+  }
+
+  // interior-wardrobe — 32×32, tall dark wood wardrobe with ornate handles
+  {
+    const c = scene.textures.createCanvas('interior-wardrobe', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Main body — dark wood
+    rect(ctx, 3, 2, 26, 28, '#4A1E0A');
+    rect(ctx, 4, 3, 24, 26, '#5C2E14');
+
+    // Left door panel
+    rect(ctx, 5, 4, 10, 24, '#6B3A1F');
+    rect(ctx, 6, 5, 8, 22, '#5C2E14');
+
+    // Right door panel
+    rect(ctx, 17, 4, 10, 24, '#6B3A1F');
+    rect(ctx, 18, 5, 8, 22, '#5C2E14');
+
+    // Door gap
+    rect(ctx, 15, 4, 2, 24, '#3A1608');
+
+    // Gold handles
+    rect(ctx, 13, 14, 1, 4, '#D4A843');
+    rect(ctx, 18, 14, 1, 4, '#D4A843');
+    px(ctx, 13, 13, '#B8942E');
+    px(ctx, 18, 13, '#B8942E');
+    px(ctx, 13, 18, '#B8942E');
+    px(ctx, 18, 18, '#B8942E');
+
+    // Ornate panel insets — left door
+    rect(ctx, 7, 7, 6, 8, darken('#5C2E14', 0.15));
+    rect(ctx, 7, 18, 6, 6, darken('#5C2E14', 0.15));
+
+    // Ornate panel insets — right door
+    rect(ctx, 19, 7, 6, 8, darken('#5C2E14', 0.15));
+    rect(ctx, 19, 18, 6, 6, darken('#5C2E14', 0.15));
+
+    // Crown molding
+    rect(ctx, 2, 1, 28, 2, '#4A1E0A');
+    rect(ctx, 3, 0, 26, 1, '#D4A843');
+
+    // Base molding
+    rect(ctx, 2, 29, 28, 2, '#4A1E0A');
+
+    // Feet
+    rect(ctx, 4, 30, 3, 2, '#3A1608');
+    rect(ctx, 25, 30, 3, 2, '#3A1608');
+
+    c.refresh();
+  }
+
+  // interior-coffee-table — 32×32, glass/marble top coffee table with gold legs
+  {
+    const c = scene.textures.createCanvas('interior-coffee-table', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Gold legs
+    rect(ctx, 6, 18, 2, 14, '#D4A843');
+    rect(ctx, 24, 18, 2, 14, '#D4A843');
+    rect(ctx, 6, 20, 2, 2, '#B8942E');
+    rect(ctx, 24, 20, 2, 2, '#B8942E');
+
+    // Cross brace — gold
+    rect(ctx, 8, 24, 16, 1, '#C9A648');
+
+    // Marble/glass tabletop
+    rect(ctx, 3, 14, 26, 5, '#F5F0E8');
+    rect(ctx, 4, 15, 24, 3, '#EDE8DF');
+    rect(ctx, 8, 15, 6, 1, '#E8E3DA');
+    rect(ctx, 18, 16, 4, 1, '#E8E3DA');
+
+    // Gold rim
+    rect(ctx, 3, 14, 26, 1, '#D4A843');
+    rect(ctx, 3, 18, 26, 1, '#C9A648');
+
+    // Subtle marble veining
+    px(ctx, 10, 16, '#D8D3CB');
+    px(ctx, 11, 16, '#D8D3CB');
+    px(ctx, 20, 15, '#D8D3CB');
+
+    c.refresh();
+  }
+
+  // interior-rug — 32×32, persian/ornate rug with rich red/gold pattern
+  {
+    const c = scene.textures.createCanvas('interior-rug', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Base — deep red
+    rect(ctx, 2, 6, 28, 20, '#800020');
+    rect(ctx, 3, 7, 26, 18, '#9A1030');
+
+    // Gold border
+    rect(ctx, 2, 6, 28, 1, '#D4A843');
+    rect(ctx, 2, 25, 28, 1, '#D4A843');
+    rect(ctx, 2, 6, 1, 20, '#D4A843');
+    rect(ctx, 29, 6, 1, 20, '#D4A843');
+
+    // Inner border
+    rect(ctx, 4, 8, 24, 1, '#C9A648');
+    rect(ctx, 4, 24, 24, 1, '#C9A648');
+    rect(ctx, 4, 8, 1, 16, '#C9A648');
+    rect(ctx, 27, 8, 1, 16, '#C9A648');
+
+    // Central medallion
+    circle(ctx, 16, 16, 5, '#D4A843');
+    circle(ctx, 16, 16, 4, '#800020');
+    circle(ctx, 16, 16, 2, '#C9A648');
+    px(ctx, 16, 16, '#FFF8E7');
+
+    // Corner ornaments
+    rect(ctx, 5, 9, 3, 3, '#D4A843');
+    rect(ctx, 6, 10, 1, 1, '#800020');
+    rect(ctx, 24, 9, 3, 3, '#D4A843');
+    rect(ctx, 25, 10, 1, 1, '#800020');
+    rect(ctx, 5, 21, 3, 3, '#D4A843');
+    rect(ctx, 6, 22, 1, 1, '#800020');
+    rect(ctx, 24, 21, 3, 3, '#D4A843');
+    rect(ctx, 25, 22, 1, 1, '#800020');
+
+    // Pattern details
+    px(ctx, 10, 12, '#B8942E');
+    px(ctx, 22, 12, '#B8942E');
+    px(ctx, 10, 20, '#B8942E');
+    px(ctx, 22, 20, '#B8942E');
+    px(ctx, 16, 10, '#FFF8E7');
+    px(ctx, 16, 22, '#FFF8E7');
+
+    // Fringe on short edges
+    for (let x = 3; x < 30; x += 2) {
+      px(ctx, x, 5, '#D4A843');
+      px(ctx, x, 26, '#D4A843');
+    }
+
+    c.refresh();
+  }
+
+  // interior-nightstand — 32×32, small bedside table with gold knob, lamp on top
+  {
+    const c = scene.textures.createCanvas('interior-nightstand', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Table body — dark wood
+    rect(ctx, 6, 16, 20, 12, '#4A1E0A');
+    rect(ctx, 7, 17, 18, 10, '#5C2E14');
+
+    // Drawer
+    rect(ctx, 8, 19, 16, 6, '#6B3A1F');
+    rect(ctx, 9, 20, 14, 4, '#5C2E14');
+
+    // Gold knob
+    px(ctx, 16, 21, '#D4A843');
+    px(ctx, 15, 21, '#B8942E');
+
+    // Table top
+    rect(ctx, 5, 14, 22, 2, '#4A1E0A');
+    rect(ctx, 5, 14, 22, 1, '#5C2E14');
+
+    // Legs
+    rect(ctx, 7, 27, 2, 5, '#4A1E0A');
+    rect(ctx, 23, 27, 2, 5, '#4A1E0A');
+
+    // Lamp on top
+    // Lamp base
+    rect(ctx, 14, 12, 4, 2, '#B8942E');
+    // Lamp stem
+    rect(ctx, 15, 8, 2, 4, '#D4A843');
+    // Lampshade
+    rect(ctx, 11, 4, 10, 5, '#FFF8E7');
+    rect(ctx, 12, 5, 8, 3, lighten('#FFF8E7', 0.1));
+    // Warm glow
+    px(ctx, 16, 6, '#FFFDE0');
+
+    c.refresh();
+  }
+
+  // interior-luxury-bed — 64×64, king-size bed with dark wood frame, white/gold bedding
+  {
+    const c = scene.textures.createCanvas('interior-luxury-bed', 64, 64);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Bed frame — dark wood
+    rect(ctx, 4, 8, 56, 52, '#4A1E0A');
+    rect(ctx, 6, 10, 52, 48, '#5C2E14');
+
+    // Headboard
+    rect(ctx, 4, 4, 56, 10, '#4A1E0A');
+    rect(ctx, 6, 5, 52, 8, '#5C2E14');
+    rect(ctx, 8, 6, 48, 6, '#6B3A1F');
+    // Gold trim on headboard
+    rect(ctx, 4, 4, 56, 1, '#D4A843');
+    rect(ctx, 8, 7, 48, 1, '#C9A648');
+
+    // Mattress
+    rect(ctx, 8, 14, 48, 40, '#FFFFFF');
+    rect(ctx, 9, 15, 46, 38, '#FFF8E7');
+
+    // Duvet/comforter — white with gold trim
+    rect(ctx, 8, 24, 48, 30, '#FFFFFF');
+    rect(ctx, 9, 25, 46, 28, '#F5F0E8');
+    rect(ctx, 8, 24, 48, 2, '#D4A843');
+
+    // Duvet fold detail
+    rect(ctx, 10, 26, 44, 1, '#EDE8DF');
+    rect(ctx, 10, 30, 44, 1, lighten('#EDE8DF', 0.1));
+
+    // Pillows — left
+    rect(ctx, 10, 15, 20, 10, '#FFFFFF');
+    rect(ctx, 11, 16, 18, 8, '#FFF8E7');
+    rect(ctx, 12, 17, 16, 2, '#F5F0E8');
+
+    // Pillows — right
+    rect(ctx, 34, 15, 20, 10, '#FFFFFF');
+    rect(ctx, 35, 16, 18, 8, '#FFF8E7');
+    rect(ctx, 36, 17, 16, 2, '#F5F0E8');
+
+    // Gold accent stripe on duvet
+    rect(ctx, 10, 38, 44, 1, '#D4A843');
+    rect(ctx, 10, 42, 44, 1, '#C9A648');
+
+    // Decorative throw pillow — center (burgundy with gold)
+    rect(ctx, 24, 16, 16, 8, '#800020');
+    rect(ctx, 25, 17, 14, 6, '#9A1030');
+    rect(ctx, 26, 19, 12, 1, '#D4A843');
+
+    // Footboard
+    rect(ctx, 4, 54, 56, 6, '#4A1E0A');
+    rect(ctx, 6, 55, 52, 4, '#5C2E14');
+    rect(ctx, 4, 59, 56, 1, '#D4A843');
+
+    // Bed legs
+    rect(ctx, 4, 58, 4, 6, '#3A1608');
+    rect(ctx, 56, 58, 4, 6, '#3A1608');
+
+    c.refresh();
+  }
+
+  // interior-tv-luxury — 32×32, flat screen mounted TV with thin bezel, blue screen
+  {
+    const c = scene.textures.createCanvas('interior-tv-luxury', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Wall mount bracket
+    rect(ctx, 14, 4, 4, 3, '#3A3A3A');
+
+    // TV frame — thin dark bezel
+    rect(ctx, 3, 6, 26, 18, '#1A1A1A');
+    rect(ctx, 4, 7, 24, 16, '#222222');
+
+    // Screen — blue glow
+    rect(ctx, 5, 8, 22, 14, '#1A3A6A');
+    rect(ctx, 6, 9, 20, 12, '#2A4A7A');
+
+    // Screen reflection/content
+    rect(ctx, 8, 10, 8, 4, '#3A5A8A');
+    rect(ctx, 18, 12, 6, 3, '#2A4A7A');
+    rect(ctx, 10, 15, 12, 1, '#3A5A8A');
+
+    // Screen highlight
+    rect(ctx, 6, 9, 10, 1, 'rgba(255,255,255,0.15)');
+
+    // Power LED
+    px(ctx, 16, 23, '#00FF00');
+
+    // Gold accent strip on bottom bezel
+    rect(ctx, 5, 22, 22, 1, '#B8942E');
+
+    c.refresh();
+  }
+
+  // interior-vanity — 32×32, bathroom vanity with marble counter, gold faucet, vessel sink
+  {
+    const c = scene.textures.createCanvas('interior-vanity', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Cabinet body — dark wood
+    rect(ctx, 4, 16, 24, 14, '#4A1E0A');
+    rect(ctx, 5, 17, 22, 12, '#5C2E14');
+
+    // Cabinet doors
+    rect(ctx, 6, 18, 9, 10, '#6B3A1F');
+    rect(ctx, 17, 18, 9, 10, '#6B3A1F');
+
+    // Gold handles
+    px(ctx, 14, 22, '#D4A843');
+    px(ctx, 18, 22, '#D4A843');
+
+    // Marble countertop
+    rect(ctx, 3, 13, 26, 3, '#F5F0E8');
+    rect(ctx, 5, 14, 4, 1, '#EDE8DF');
+    rect(ctx, 16, 13, 6, 1, '#EDE8DF');
+    rect(ctx, 24, 14, 3, 1, '#E8E3DA');
+
+    // Vessel sink — white porcelain
+    rect(ctx, 12, 10, 8, 4, '#FFFFFF');
+    rect(ctx, 13, 11, 6, 2, '#E8E8F0');
+    rect(ctx, 12, 13, 8, 1, '#F5F0E8');
+
+    // Gold faucet
+    rect(ctx, 15, 6, 2, 5, '#D4A843');
+    rect(ctx, 14, 6, 4, 1, '#C9A648');
+    px(ctx, 15, 11, '#B8942E');
+
+    // Faucet handles
+    px(ctx, 13, 7, '#D4A843');
+    px(ctx, 18, 7, '#D4A843');
+
+    // Legs
+    rect(ctx, 5, 29, 2, 3, '#4A1E0A');
+    rect(ctx, 25, 29, 2, 3, '#4A1E0A');
+
+    c.refresh();
+  }
+
+  // interior-towel-rack — 32×32, gold towel rack with white towels
+  {
+    const c = scene.textures.createCanvas('interior-towel-rack', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Wall mount plates — gold
+    rect(ctx, 5, 8, 3, 4, '#D4A843');
+    rect(ctx, 24, 8, 3, 4, '#D4A843');
+
+    // Top bar — gold
+    rect(ctx, 5, 10, 22, 2, '#D4A843');
+    rect(ctx, 6, 10, 20, 1, '#C9A648');
+
+    // Towel 1 — white, draped over bar
+    rect(ctx, 7, 11, 8, 2, '#FFFFFF');
+    rect(ctx, 6, 13, 10, 12, '#FFFFFF');
+    rect(ctx, 7, 14, 8, 10, '#F5F0E8');
+    rect(ctx, 8, 15, 6, 2, '#EDE8DF');
+
+    // Towel 2 — white, draped over bar
+    rect(ctx, 17, 11, 8, 2, '#FFFFFF');
+    rect(ctx, 16, 13, 10, 10, '#FFFFFF');
+    rect(ctx, 17, 14, 8, 8, '#F5F0E8');
+    rect(ctx, 18, 15, 6, 2, '#EDE8DF');
+
+    // Gold trim on towels
+    rect(ctx, 6, 24, 10, 1, '#D4A843');
+    rect(ctx, 16, 22, 10, 1, '#D4A843');
+
+    // Bottom bar — gold
+    rect(ctx, 5, 26, 22, 2, '#D4A843');
+    rect(ctx, 24, 12, 3, 16, '#B8942E');
+    rect(ctx, 5, 12, 3, 16, '#B8942E');
+
+    c.refresh();
+  }
+
+  // interior-staircase — 32×32, spiral staircase with ornate railing, marble steps
+  {
+    const c = scene.textures.createCanvas('interior-staircase', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Central pole — gold
+    rect(ctx, 15, 0, 2, 32, '#D4A843');
+    rect(ctx, 15, 0, 1, 32, '#C9A648');
+
+    // Steps — marble, spiraling down
+    // Step 1 (top)
+    rect(ctx, 16, 2, 12, 3, '#F5F0E8');
+    rect(ctx, 17, 2, 10, 1, '#EDE8DF');
+    rect(ctx, 16, 4, 12, 1, '#D8D3CB');
+
+    // Step 2
+    rect(ctx, 18, 7, 10, 3, '#F5F0E8');
+    rect(ctx, 19, 7, 8, 1, '#EDE8DF');
+    rect(ctx, 18, 9, 10, 1, '#D8D3CB');
+
+    // Step 3
+    rect(ctx, 16, 12, 12, 3, '#F5F0E8');
+    rect(ctx, 17, 12, 10, 1, '#EDE8DF');
+    rect(ctx, 16, 14, 12, 1, '#D8D3CB');
+
+    // Step 4
+    rect(ctx, 4, 17, 12, 3, '#F5F0E8');
+    rect(ctx, 5, 17, 10, 1, '#EDE8DF');
+    rect(ctx, 4, 19, 12, 1, '#D8D3CB');
+
+    // Step 5
+    rect(ctx, 4, 22, 12, 3, '#F5F0E8');
+    rect(ctx, 5, 22, 10, 1, '#EDE8DF');
+    rect(ctx, 4, 24, 12, 1, '#D8D3CB');
+
+    // Step 6 (bottom)
+    rect(ctx, 4, 27, 14, 3, '#F5F0E8');
+    rect(ctx, 5, 27, 12, 1, '#EDE8DF');
+    rect(ctx, 4, 29, 14, 1, '#D8D3CB');
+
+    // Railing — gold ornate
+    px(ctx, 27, 1, '#D4A843');
+    rect(ctx, 27, 2, 1, 3, '#B8942E');
+    px(ctx, 27, 6, '#D4A843');
+    rect(ctx, 27, 7, 1, 3, '#B8942E');
+    px(ctx, 27, 11, '#D4A843');
+    rect(ctx, 27, 12, 1, 3, '#B8942E');
+    px(ctx, 4, 16, '#D4A843');
+    rect(ctx, 4, 17, 1, 3, '#B8942E');
+    px(ctx, 4, 21, '#D4A843');
+    rect(ctx, 4, 22, 1, 3, '#B8942E');
+    px(ctx, 4, 26, '#D4A843');
+
+    // Top finial
+    circle(ctx, 16, 0, 1, '#D4A843');
+
+    c.refresh();
+  }
+
+  // interior-luggage-rack — 32×32, hotel luggage rack with suitcase on it
+  {
+    const c = scene.textures.createCanvas('interior-luggage-rack', 32, 32);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Rack legs — gold/brass X-shape
+    // Left leg pair
+    rect(ctx, 6, 20, 2, 12, '#B5A642');
+    rect(ctx, 10, 20, 2, 12, '#B5A642');
+
+    // Right leg pair
+    rect(ctx, 20, 20, 2, 12, '#B5A642');
+    rect(ctx, 24, 20, 2, 12, '#B5A642');
+
+    // Cross braces
+    rect(ctx, 8, 26, 16, 1, '#D4A843');
+
+    // Rack straps/bars
+    rect(ctx, 5, 18, 22, 2, '#4A1E0A');
+    rect(ctx, 6, 18, 20, 1, '#5C2E14');
+    rect(ctx, 5, 20, 22, 1, '#D4A843');
+
+    // Suitcase on rack — burgundy
+    rect(ctx, 6, 6, 20, 12, '#800020');
+    rect(ctx, 7, 7, 18, 10, '#9A1030');
+
+    // Suitcase handle
+    rect(ctx, 14, 4, 4, 3, '#5C0018');
+    rect(ctx, 15, 4, 2, 1, '#D4A843');
+
+    // Suitcase trim
+    rect(ctx, 6, 11, 20, 1, '#700018');
+    rect(ctx, 6, 6, 20, 1, '#B8942E');
+
+    // Gold clasps
+    px(ctx, 12, 9, '#D4A843');
+    px(ctx, 20, 9, '#D4A843');
+
+    // Suitcase tag
+    rect(ctx, 22, 8, 3, 4, '#FFF8E7');
+    px(ctx, 23, 7, '#D4A843');
+
+    c.refresh();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // ── MAIN EXPORT ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 
@@ -6125,4 +7016,5 @@ export function generateBudapestTextures(scene: Phaser.Scene): void {
   generateBudapestCutsceneSprites(scene);
   generateCurryHuntTextures(scene);
   generateMinigameTextures(scene);
+  generateBudapestAirbnbInteriors(scene);
 }
