@@ -5473,17 +5473,28 @@ function drawCutsceneHead(
   skin: string, hairColor: string, hairStyle: string,
   isMale: boolean, eyeState: 'open' | 'closed' = 'open',
 ): void {
-  // Head shape
-  rect(ctx, hx + 1, hy, hw - 2, hh, skin);
-  rect(ctx, hx, hy + 1, hw, hh - 2, skin);
+  // Head shape — round!
+  const headCX = hx + Math.floor(hw / 2);
+  const headCY = hy + Math.floor(hh / 2);
+  const headRX = Math.floor(hw / 2);
+  const headRY = Math.floor(hh / 2);
 
-  if (isMale) {
-    // Stronger jaw for male
-    rect(ctx, hx - 1, hy + hh - 4, hw + 2, 4, skin);
+  // Draw elliptical head (wider than tall or vice versa)
+  for (let py = -headRY; py <= headRY; py++) {
+    for (let px2 = -headRX; px2 <= headRX; px2++) {
+      if ((px2 * px2) / (headRX * headRX) + (py * py) / (headRY * headRY) <= 1) {
+        px(ctx, headCX + px2, headCY + py, skin);
+      }
+    }
   }
 
-  // Forehead highlight
-  rect(ctx, hx + 2, hy + 1, hw - 4, 2, lighten(skin, 0.1));
+  if (isMale) {
+    // Stronger jaw — extend bottom of ellipse
+    rect(ctx, headCX - headRX + 1, headCY + headRY - 3, hw - 2, 4, skin);
+  }
+
+  // Forehead highlight (across top of head)
+  rect(ctx, headCX - 3, hy + 1, 6, 2, lighten(skin, 0.1));
 
   // Eyes
   const eyeY = hy + Math.floor(hh * 0.4);

@@ -495,37 +495,49 @@ function drawCharFrame(
   const shadowX = ox + (64 - shadowW) / 2;
   rect(ctx, shadowX, oy + 58, shadowW, 4, 'rgba(0,0,0,0.15)');
 
-  // ── Head (16x14, rounded) ──
+  // ── Head (round!) ──
   const headX = ox + 24;
   const headBaseY = isMale ? 4 : 5;
   const headY = oy + headBaseY + (bob > 0 ? 1 : 0);
 
-  // Head base (rounded corners)
-  rect(ctx, headX + 1, headY, 14, 14, skin);
-  rect(ctx, headX, headY + 1, 16, 12, skin);
-  // Forehead highlight
-  rect(ctx, headX + 4, headY + 1, 8, 2, skinHighlight);
-  // Chin/jaw shadow
-  const jawW = isMale ? 14 : 10;
-  const jawOff = isMale ? 1 : 3;
-  rect(ctx, headX + jawOff, headY + 13, jawW, 1, skinShadow);
-  // Male wider jaw shadow
+  // Head center for circle drawing
+  const headCX = headX + 8;
+  const headCY = headY + 7;
+  const headR = isMale ? 8 : 7;
+
+  // Main round head
+  circle(ctx, headCX, headCY, headR, skin);
+
+  // Male: slightly wider jaw (extend bottom of circle)
   if (isMale) {
-    rect(ctx, headX + 1, headY + 11, 14, 2, darken(skin, 0.05));
+    rect(ctx, headCX - 7, headCY + 3, 14, 4, skin);
+    rect(ctx, headCX - 6, headCY + 6, 12, 2, darken(skin, 0.05));
+  } else {
+    // Female: softer chin (narrower at bottom)
+    rect(ctx, headCX - 5, headCY + 5, 10, 2, skin);
   }
 
-  // Ears
+  // Forehead highlight (arc across top of circle)
+  rect(ctx, headCX - 3, headCY - headR + 1, 6, 2, skinHighlight);
+
+  // Chin shadow
+  const jawW = isMale ? 10 : 6;
+  rect(ctx, headCX - jawW / 2, headCY + headR - 1, jawW, 1, skinShadow);
+
+  // Ears (small circles on sides)
   if (direction === 0 || direction === 3) {
-    rect(ctx, headX - 1, headY + 5, 1, 3, skin);
-    rect(ctx, headX + 16, headY + 5, 1, 3, skin);
-    px(ctx, headX - 1, headY + 7, skinShadow);
-    px(ctx, headX + 16, headY + 7, skinShadow);
+    px(ctx, headCX - headR - 1, headCY, skin);
+    px(ctx, headCX - headR - 1, headCY + 1, skin);
+    px(ctx, headCX + headR + 1, headCY, skin);
+    px(ctx, headCX + headR + 1, headCY + 1, skin);
+    px(ctx, headCX - headR - 1, headCY + 1, skinShadow);
+    px(ctx, headCX + headR + 1, headCY + 1, skinShadow);
   } else if (direction === 1) {
-    rect(ctx, headX - 1, headY + 5, 1, 3, skin);
-    px(ctx, headX - 1, headY + 7, skinShadow);
+    px(ctx, headCX - headR - 1, headCY, skin);
+    px(ctx, headCX - headR - 1, headCY + 1, skinShadow);
   } else {
-    rect(ctx, headX + 16, headY + 5, 1, 3, skin);
-    px(ctx, headX + 16, headY + 7, skinShadow);
+    px(ctx, headCX + headR + 1, headCY, skin);
+    px(ctx, headCX + headR + 1, headCY + 1, skinShadow);
   }
 
   // ── Hair ──
