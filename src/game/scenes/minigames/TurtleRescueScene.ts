@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
+import { audioManager } from '../../../audio/AudioManager';
 
 const TOTAL_TURTLES = 10;
 const TURTLE_SPEED = 4000;       // ms to cross screen
@@ -58,6 +59,9 @@ export class TurtleRescueScene extends Phaser.Scene {
       color: '#8B6914',
     }).setOrigin(0.5, 0).setDepth(1);
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     // Score overlay
     uiManager.showMinigameOverlay({
       title: 'Turtle Rescue',
@@ -114,6 +118,7 @@ export class TurtleRescueScene extends Phaser.Scene {
             this.time.delayedCall(500, () => {
               if (turtle.scene) turtle.destroy();
             });
+            audioManager.playSFX('mg_wrong');
             this.lost++;
             this.checkEnd();
             return;
@@ -123,6 +128,7 @@ export class TurtleRescueScene extends Phaser.Scene {
       onComplete: () => {
         if (turtleBlocked.value) return;
         // Turtle reached ocean — saved!
+        audioManager.playSFX('mg_correct');
         turtle.destroy();
         this.saved++;
         uiManager.updateMinigameOverlay({ score: this.saved });
@@ -147,6 +153,7 @@ export class TurtleRescueScene extends Phaser.Scene {
 
     // Tap/click to clear obstacle
     obs.on('pointerdown', () => {
+      audioManager.playSFX('mg_correct');
       obs.disableInteractive();
       obs.active = false;
       this.tweens.add({
@@ -188,6 +195,7 @@ export class TurtleRescueScene extends Phaser.Scene {
     this.time.removeAllEvents();
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showDialog({
       title: 'Turtle Rescue Complete!',
       message: `You saved ${this.saved} out of ${TOTAL_TURTLES} baby turtles!`,

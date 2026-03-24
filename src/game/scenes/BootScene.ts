@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { uiManager } from '../../ui/UIManager';
 import { hasSavedGame } from '../systems/SaveSystem';
 import { generateAllTextures } from '../rendering/PixelArtGenerator';
+import { audioManager } from '../../audio/AudioManager';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -41,14 +42,21 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     generateAllTextures(this);
 
+    // Initialize audio system (AudioContext created in suspended state)
+    audioManager.init(this.game);
+
     // Show main menu
     const canContinue = hasSavedGame();
     uiManager.showMainMenu(
       () => {
+        // Unlock audio on user gesture (New Game)
+        audioManager.unlock();
         uiManager.hideMainMenu();
         this.scene.start('DressingRoomScene', { isNewGame: true });
       },
       canContinue ? () => {
+        // Unlock audio on user gesture (Continue)
+        audioManager.unlock();
         uiManager.hideMainMenu();
         this.scene.start('DressingRoomScene', { isNewGame: false });
       } : () => {},

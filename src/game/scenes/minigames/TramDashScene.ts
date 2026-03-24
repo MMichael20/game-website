@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const GAME_DURATION = 30;
 const LANE_COUNT = 5;
@@ -87,6 +88,9 @@ export class TramDashScene extends Phaser.Scene {
       else this.player.x += 20;
     });
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     uiManager.showMinigameOverlay({
       title: 'Tram Dash!',
       score: 0,
@@ -107,6 +111,7 @@ export class TramDashScene extends Phaser.Scene {
       callback: () => {
         this.timeLeft--;
         uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+        if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
         if (this.timeLeft <= 0) this.endGame();
       },
       loop: true,
@@ -166,6 +171,7 @@ export class TramDashScene extends Phaser.Scene {
       const dy = Math.abs(v.y - this.player.y);
       if (dx < (v.width / 2 + 8) && dy < (v.height / 2 + 8)) {
         // Hit! Reset to bottom
+        audioManager.playSFX('mg_wrong');
         this.player.y = height - 40;
         this.player.x = width / 2;
         this.score = Math.max(0, this.score - 10);
@@ -178,6 +184,7 @@ export class TramDashScene extends Phaser.Scene {
 
     // Check if reached safe zone
     if (this.player.y <= this.safeZoneY + this.laneHeight / 2) {
+      audioManager.playSFX('mg_correct');
       this.crossings++;
       this.score += 50;
       uiManager.updateMinigameOverlay({ score: this.score, progress: `${this.crossings} crossings!` });
@@ -203,6 +210,7 @@ export class TramDashScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult(`${this.crossings} Crossings!`, this.score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

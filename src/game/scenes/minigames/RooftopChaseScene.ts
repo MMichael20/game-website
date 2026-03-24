@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const GAME_DURATION = 30;
 const GRAVITY = 0.35;
@@ -128,6 +129,9 @@ export class RooftopChaseScene extends Phaser.Scene {
     }
     this.input.on('pointerdown', () => this.jump());
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     uiManager.showMinigameOverlay({
       title: 'Rooftop Chase!',
       score: 0,
@@ -142,6 +146,7 @@ export class RooftopChaseScene extends Phaser.Scene {
       callback: () => {
         this.timeLeft--;
         uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+        if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
         if (this.timeLeft <= 0) this.endGame();
       },
       loop: true,
@@ -229,6 +234,7 @@ export class RooftopChaseScene extends Phaser.Scene {
             roof.scored = true;
             this.rooftopsCrossed++;
             this.score += 25;
+            audioManager.playSFX('mg_catch');
             uiManager.updateMinigameOverlay({
               score: this.score,
               progress: `${this.rooftopsCrossed} roofs crossed!`,
@@ -250,6 +256,7 @@ export class RooftopChaseScene extends Phaser.Scene {
         const dy = Math.abs(this.player.y - obs.y);
         if (dx < (obs.width / 2 + 6) && dy < (obs.height / 2 + 8)) {
           // Hit obstacle — respawn on current roof, lose points
+          audioManager.playSFX('mg_wrong');
           this.respawnOnCurrentRoof();
           this.score = Math.max(0, this.score - 15);
           uiManager.updateMinigameOverlay({ score: this.score });
@@ -263,6 +270,7 @@ export class RooftopChaseScene extends Phaser.Scene {
 
     // Fell below screen — respawn
     if (this.player.y > height + 20) {
+      audioManager.playSFX('mg_wrong');
       this.respawnOnCurrentRoof();
       this.score = Math.max(0, this.score - 15);
       uiManager.updateMinigameOverlay({ score: this.score });
@@ -377,6 +385,7 @@ export class RooftopChaseScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Great Chase!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

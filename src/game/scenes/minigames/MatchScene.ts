@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 import type { MatchConfig } from '../../data/checkpoints';
 
 interface Card extends Phaser.GameObjects.Sprite {
@@ -39,6 +40,9 @@ export class MatchScene extends Phaser.Scene {
 
     // Dark background
     this.add.rectangle(width / 2, height / 2, width, height, 0x1a1a2e);
+
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
 
     uiManager.showMinigameOverlay({
       title: 'Memory Match!',
@@ -113,6 +117,7 @@ export class MatchScene extends Phaser.Scene {
 
       if (first.pairIndex === second.pairIndex) {
         // Match found
+        audioManager.playSFX('mg_correct');
         first.isMatched = true;
         second.isMatched = true;
         this.matchedPairs++;
@@ -129,6 +134,7 @@ export class MatchScene extends Phaser.Scene {
         }
       } else {
         // No match — flip back after delay
+        audioManager.playSFX('mg_wrong');
         this.time.delayedCall(1000, () => {
           first.setTexture('card-back');
           first.isFlipped = false;
@@ -148,6 +154,7 @@ export class MatchScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Match Complete!', score, () => {
       uiManager.hideDialog();
       this.scene.start('WorldScene');

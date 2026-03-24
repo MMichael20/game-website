@@ -1,6 +1,7 @@
 // src/game/systems/WaterEffectSystem.ts
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../../utils/constants';
+import { audioManager } from '../../audio/AudioManager';
 
 const BUBBLE_KEY = '__water_bubble';
 const FOAM_KEY = '__water_foam';
@@ -128,13 +129,22 @@ export class WaterEffectSystem {
       fx.overlay.setVisible(false);
       fx.bubbleEmitter.emitting = false;
       fx.foamEmitter.emitting = false;
-      if (fx.depth !== 0) setSpeed(1.0);
+      if (fx.depth !== 0) {
+        setSpeed(1.0);
+        audioManager.playSFX('water_splash');
+      }
       fx.depth = 0;
       return;
     }
 
     const isDeep = this.config.isDeepWater?.(tileY) ?? false;
     const depth = isDeep ? 2 : 1;
+    // Play splash when entering water or changing depth
+    if (fx.depth === 0 && depth > 0) {
+      audioManager.playSFX('water_splash');
+    } else if (fx.depth !== depth && depth > 0) {
+      audioManager.playSFX('water_wade');
+    }
     setSpeed(depth === 2 ? this.swimmingSpeed : this.wadingSpeed);
     fx.overlay.setVisible(true);
     fx.depth = depth;

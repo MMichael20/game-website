@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const SPICE_PAIRS = [
   { name: 'Paprika', color: 0xCC2222 },
@@ -47,6 +48,9 @@ export class PaprikaSortScene extends Phaser.Scene {
 
     // Warm market background
     this.add.rectangle(width / 2, height / 2, width, height, 0x3A2A1A);
+
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
 
     uiManager.showMinigameOverlay({
       title: 'Paprika Sort!',
@@ -127,6 +131,7 @@ export class PaprikaSortScene extends Phaser.Scene {
 
       if (first.pairIndex === second.pairIndex) {
         // Match!
+        audioManager.playSFX('mg_correct');
         first.isMatched = true;
         second.isMatched = true;
         this.matchedPairs++;
@@ -146,6 +151,7 @@ export class PaprikaSortScene extends Phaser.Scene {
         }
       } else {
         // No match — flip back
+        audioManager.playSFX('mg_wrong');
         this.time.delayedCall(800, () => {
           first.fillColor = 0x5C3A1E;
           first.label.setText('?');
@@ -167,6 +173,7 @@ export class PaprikaSortScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Spices Sorted!', score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

@@ -8,6 +8,8 @@ import { Partner } from '../entities/Partner';
 import { InputSystem } from '../systems/InputSystem';
 import { loadGameState, clearGameState } from '../systems/SaveSystem';
 import { uiManager } from '../../ui/UIManager';
+import { audioManager } from '../../audio/AudioManager';
+import { FootstepSurface } from '../../audio/audioTypes';
 
 interface InteriorSceneData {
   returnX: number;
@@ -89,10 +91,14 @@ export abstract class InteriorScene extends Phaser.Scene {
     uiManager.setSettingsHandler(() => this.openSettings());
     uiManager.showHUD();
 
-    // 8. Register shutdown handler for proper cleanup
+    // 8. Audio — scene transition + door sound
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('door_open');
+
+    // 9. Register shutdown handler for proper cleanup
     this.events.on('shutdown', this.shutdown, this);
 
-    // 9. Fade in
+    // 10. Fade in
     cam.setAlpha(0);
     this.tweens.add({
       targets: cam,
@@ -113,6 +119,15 @@ export abstract class InteriorScene extends Phaser.Scene {
     // Player & Partner
     this.player.update(dir);
     this.partner.update(this.player.getPosition());
+
+    // Footstep audio
+    if (dir.x !== 0 || dir.y !== 0) {
+      const pos = this.player.getPosition();
+      const tileX = Math.floor(pos.x / TILE_SIZE);
+      const tileY = Math.floor(pos.y / TILE_SIZE);
+      const surface = this.getInteriorFootstepSurface(tileX, tileY);
+      audioManager.playFootstep(surface);
+    }
 
     // Zone detection
     const playerPos = this.player.getPosition();
@@ -254,6 +269,18 @@ export abstract class InteriorScene extends Phaser.Scene {
 
   protected openSettings(): void {
     uiManager.showSettings({
+      audio: {
+        masterVolume: audioManager.getMasterVolume(),
+        musicVolume: audioManager.getMusicVolume(),
+        sfxVolume: audioManager.getSFXVolume(),
+        ambientVolume: audioManager.getAmbientVolume(),
+        muted: audioManager.isMuted(),
+        onMasterVolume: (v) => audioManager.setMasterVolume(v),
+        onMusicVolume: (v) => audioManager.setMusicVolume(v),
+        onSFXVolume: (v) => audioManager.setSFXVolume(v),
+        onAmbientVolume: (v) => audioManager.setAmbientVolume(v),
+        onMuteToggle: () => audioManager.setMuted(!audioManager.isMuted()),
+      },
       onFullscreen: () => {
         if (this.scale.isFullscreen) this.scale.stopFullscreen();
         else this.scale.startFullscreen();
@@ -281,6 +308,22 @@ export abstract class InteriorScene extends Phaser.Scene {
     });
   }
 
+  private getInteriorFootstepSurface(tileX: number, tileY: number): FootstepSurface {
+    const floorTypeMap: Record<string, FootstepSurface> = {
+      wood: 'wood',
+      carpet: 'carpet',
+      carpet_beige: 'carpet',
+      tile_floor: 'tile',
+    };
+    for (const zone of this.layout.floors) {
+      if (tileX >= zone.tileX && tileX < zone.tileX + zone.width &&
+          tileY >= zone.tileY && tileY < zone.tileY + zone.height) {
+        return floorTypeMap[zone.floorType] ?? 'wood';
+      }
+    }
+    return 'wood'; // default interior surface
+  }
+
   protected getWalkCheck(layout: InteriorLayout): (tileX: number, tileY: number) => boolean {
     return createInteriorWalkCheck(layout);
   }
@@ -290,6 +333,7 @@ export abstract class InteriorScene extends Phaser.Scene {
   }
 
   protected transitionToScene(sceneKey: string): void {
+    audioManager.playSFX('door_close');
     uiManager.hideInteractionPrompt();
     const cam = this.cameras.main;
     this.tweens.add({
@@ -307,6 +351,7 @@ export abstract class InteriorScene extends Phaser.Scene {
   }
 
   protected exitToOverworld(): void {
+    audioManager.playSFX('door_close');
     uiManager.hideInteractionPrompt();
     const cam = this.cameras.main;
     this.tweens.add({

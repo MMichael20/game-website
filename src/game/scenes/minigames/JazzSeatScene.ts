@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const TOTAL_ROUNDS = 5;
 const ROUND_TIMES = [6, 5.5, 5, 4.5, 4];
@@ -172,6 +173,9 @@ export class JazzSeatScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.targetPointer = { x: pointer.x, y: pointer.y };
     });
+
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
 
     // --- UI overlay ---
     uiManager.showMinigameOverlay({
@@ -383,6 +387,7 @@ export class JazzSeatScene extends Phaser.Scene {
 
   private seatFound(): void {
     if (this.gameOver) return;
+    audioManager.playSFX('mg_correct');
 
     // Score: base 100 + time bonus
     const timeBonus = Math.floor(this.timeLeft * 20);
@@ -587,6 +592,7 @@ export class JazzSeatScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Seated!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

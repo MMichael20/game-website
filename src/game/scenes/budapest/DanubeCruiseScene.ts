@@ -3,6 +3,7 @@ import { addLetterbox, removeLetterbox, showDialogue, addSkipButton, addBreathin
 import { generateBudapestCoupleSprites } from '../../rendering/BudapestTextures';
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
+import { audioManager } from '../../../audio/AudioManager';
 
 export class DanubeCruiseScene extends Phaser.Scene {
   constructor() {
@@ -10,6 +11,8 @@ export class DanubeCruiseScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.transitionToScene(this.scene.key);
+
     const w = Number(this.cameras.main.width);
     const h = Number(this.cameras.main.height);
     const waterY = h * 0.4;

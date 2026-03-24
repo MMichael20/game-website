@@ -9,6 +9,8 @@ import { NPCSystem } from '../systems/NPCSystem';
 import { loadGameState, clearGameState, savePlayerPosition } from '../systems/SaveSystem';
 import { uiManager } from '../../ui/UIManager';
 import { MinimapRenderer } from '../../ui/MinimapRenderer';
+import { audioManager } from '../../audio/AudioManager';
+import { FootstepSurface } from '../../audio/audioTypes';
 
 export interface OverworldConfig {
   mapWidth: number;
@@ -122,10 +124,13 @@ export abstract class OverworldScene extends Phaser.Scene {
     this.minimap = new MinimapRenderer(this, config, this.getLabelMap(), () => this.player.getPosition());
     uiManager.setMinimapHandler(() => this.minimap.toggle());
 
-    // 10. Register shutdown handler for proper cleanup
+    // 10. Audio — start scene-specific music & ambient
+    audioManager.transitionToScene(this.scene.key);
+
+    // 11. Register shutdown handler for proper cleanup
     this.events.on('shutdown', this.shutdown, this);
 
-    // 11. Resize handler (debounced for mobile orientation changes)
+    // 12. Resize handler (debounced for mobile orientation changes)
     let resizeTimeout: number | undefined;
     this.scale.on('resize', () => {
       clearTimeout(resizeTimeout);
@@ -134,7 +139,7 @@ export abstract class OverworldScene extends Phaser.Scene {
       }, 100);
     });
 
-    // 12. Fade-in from interior transition
+    // 13. Fade-in from interior transition
     if (this.shouldFadeIn) {
       const cam2 = this.cameras.main;
       cam2.setAlpha(0);
@@ -163,6 +168,12 @@ export abstract class OverworldScene extends Phaser.Scene {
     // 2. Player
     this.player.update(dir);
 
+    // 2b. Footstep audio when player is moving
+    if (dir.x !== 0 || dir.y !== 0) {
+      const surface = this.getFootstepSurface();
+      if (surface) audioManager.playFootstep(surface);
+    }
+
     // 3. Partner follows player
     this.partner.update(this.player.getPosition());
 
@@ -184,6 +195,7 @@ export abstract class OverworldScene extends Phaser.Scene {
 
     if (inZone && inZone !== this.activeZone) {
       this.activeZone = inZone;
+      audioManager.playSFX('ui_dialog_open');
       uiManager.showInteractionPrompt(inZone.promptText, () => {
         this.interactCooldown = 500;
         this.onEnterCheckpoint(inZone);
@@ -221,6 +233,7 @@ export abstract class OverworldScene extends Phaser.Scene {
   private handleNPCInteract(npc: { id: string; onInteract?: string; interactionData?: { lines?: string[]; sceneKey?: string; sceneData?: any } }): void {
     if (npc.onInteract === 'dialog' && npc.interactionData?.lines) {
       this.inputSystem.freeze();
+      audioManager.playSFX('ui_dialog_open');
       uiManager.showNPCDialog(npc.interactionData.lines, () => {
         uiManager.hideNPCDialog();
         this.inputSystem.unfreeze();
@@ -247,8 +260,25 @@ export abstract class OverworldScene extends Phaser.Scene {
     }
   }
 
+  /** Override in subclasses to return the correct footstep surface for the player's current tile */
+  protected getFootstepSurface(): FootstepSurface | null {
+    return 'stone';
+  }
+
   protected openSettings(): void {
     uiManager.showSettings({
+      audio: {
+        masterVolume: audioManager.getMasterVolume(),
+        musicVolume: audioManager.getMusicVolume(),
+        sfxVolume: audioManager.getSFXVolume(),
+        ambientVolume: audioManager.getAmbientVolume(),
+        muted: audioManager.isMuted(),
+        onMasterVolume: (v) => audioManager.setMasterVolume(v),
+        onMusicVolume: (v) => audioManager.setMusicVolume(v),
+        onSFXVolume: (v) => audioManager.setSFXVolume(v),
+        onAmbientVolume: (v) => audioManager.setAmbientVolume(v),
+        onMuteToggle: () => audioManager.setMuted(!audioManager.isMuted()),
+      },
       onFullscreen: () => {
         if (this.scale.isFullscreen) this.scale.stopFullscreen();
         else this.scale.startFullscreen();

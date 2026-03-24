@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const TOTAL_ROUNDS = 5;
 const COVER_Y = 280;
@@ -73,6 +74,9 @@ export class CurryHuntScene extends Phaser.Scene {
       backgroundColor: '#333',
       padding: { x: 6, y: 4 },
     }).setOrigin(0.5);
+
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
 
     uiManager.showMinigameOverlay({
       title: 'Curry Hunt!',
@@ -287,6 +291,7 @@ export class CurryHuntScene extends Phaser.Scene {
     }
 
     if (correct) {
+      audioManager.playSFX('mg_correct');
       this.score += 200;
       // Bonus for later rounds
       this.score += this.round * 20;
@@ -313,6 +318,7 @@ export class CurryHuntScene extends Phaser.Scene {
         fontStyle: 'bold',
       }).setOrigin(0.5).setDepth(10);
     } else {
+      audioManager.playSFX('mg_wrong');
       // Red flash
       const flash = this.add.rectangle(
         this.scale.width / 2, this.scale.height / 2,
@@ -346,6 +352,7 @@ export class CurryHuntScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Curry Hunt Complete!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

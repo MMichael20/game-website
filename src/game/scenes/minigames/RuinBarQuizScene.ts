@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const QUESTIONS = [
   { question: 'What river runs through Budapest?', options: ['Danube', 'Rhine', 'Vistula', 'Thames'], answer: 0 },
@@ -50,6 +51,9 @@ export class RuinBarQuizScene extends Phaser.Scene {
       ).setAlpha(0.08);
     }
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     uiManager.showMinigameOverlay({
       title: 'Ruin Bar Quiz!',
       score: 0,
@@ -74,7 +78,12 @@ export class RuinBarQuizScene extends Phaser.Scene {
     const q = this.questions[this.currentQuestion];
     const correct = index === q.answer;
 
-    if (correct) this.score += 100;
+    if (correct) {
+      this.score += 100;
+      audioManager.playSFX('mg_correct');
+    } else {
+      audioManager.playSFX('mg_wrong');
+    }
 
     uiManager.showQuizFeedback(correct, q.options[q.answer]);
     uiManager.updateMinigameOverlay({
@@ -102,6 +111,7 @@ export class RuinBarQuizScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Quiz Complete!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

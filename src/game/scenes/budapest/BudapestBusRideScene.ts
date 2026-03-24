@@ -6,6 +6,7 @@ import {
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { generateBudapestCoupleSprites } from '../../rendering/BudapestTextures';
+import { audioManager } from '../../../audio/AudioManager';
 
 export class BudapestBusRideScene extends Phaser.Scene {
   constructor() {
@@ -13,6 +14,8 @@ export class BudapestBusRideScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.transitionToScene(this.scene.key);
+
     const w = this.cameras.main.width;
     const h = this.cameras.main.height;
     const roadY = h * 0.78;

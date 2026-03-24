@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const GAME_DURATION = 30;
 const TOPPING_TYPES = ['sour-cream', 'cheese', 'garlic', 'ketchup'];
@@ -53,6 +54,9 @@ export class LangosCatchScene extends Phaser.Scene {
       this.cursors = this.input.keyboard.createCursorKeys();
     }
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     uiManager.showMinigameOverlay({
       title: 'Lángos Catch!',
       score: 0,
@@ -73,6 +77,7 @@ export class LangosCatchScene extends Phaser.Scene {
       callback: () => {
         this.timeLeft--;
         uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+        if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
         if (this.timeLeft <= 0) this.endGame();
       },
       loop: true,
@@ -125,11 +130,13 @@ export class LangosCatchScene extends Phaser.Scene {
       if (dx < 40 && dy < 24) {
         if (item.isBad) {
           this.score = Math.max(0, this.score - 20);
+          audioManager.playSFX('mg_miss');
           // Red flash
           const flash = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0xFF0000, 0.15).setDepth(10);
           this.tweens.add({ targets: flash, alpha: 0, duration: 300, onComplete: () => flash.destroy() });
         } else {
           this.score += 10;
+          audioManager.playSFX('mg_catch');
         }
         uiManager.updateMinigameOverlay({ score: this.score });
         this.removeItem(item);
@@ -150,6 +157,7 @@ export class LangosCatchScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Lángos Ready!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

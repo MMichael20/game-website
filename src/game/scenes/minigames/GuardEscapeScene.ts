@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const GAME_DURATION = 30;
 const PLAYER_SPEED = 3.0;
@@ -131,6 +132,9 @@ export class GuardEscapeScene extends Phaser.Scene {
       this.moveTarget = { x: pointer.x, y: pointer.y };
     });
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     // UI overlay
     uiManager.showMinigameOverlay({
       title: 'Guard Escape!',
@@ -153,6 +157,7 @@ export class GuardEscapeScene extends Phaser.Scene {
       callback: () => {
         this.timeLeft--;
         uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+        if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
         if (this.timeLeft <= 0) this.endGame();
       },
       loop: true,
@@ -302,6 +307,7 @@ export class GuardEscapeScene extends Phaser.Scene {
 
   private handleHit(): void {
     const { width, height } = this.scale;
+    audioManager.playSFX('mg_wrong');
 
     // Penalty
     this.score = Math.max(0, this.score - HIT_PENALTY);
@@ -390,6 +396,7 @@ export class GuardEscapeScene extends Phaser.Scene {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < 20) {
         // Activate: slow nearby guards
+        audioManager.playSFX('mg_catch');
         for (const g of this.guards) {
           const gx = g.x - pu.x;
           const gy = g.y - pu.y;
@@ -502,6 +509,7 @@ export class GuardEscapeScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Escaped!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

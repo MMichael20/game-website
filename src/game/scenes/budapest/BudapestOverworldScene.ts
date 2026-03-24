@@ -5,6 +5,9 @@ import { tileToWorld, CheckpointZone } from '../../data/mapLayout';
 import { saveCurrentScene, getVisitedCheckpoints, loadGameState } from '../../systems/SaveSystem';
 import { uiManager } from '../../../ui/UIManager';
 import { WaterEffectSystem } from '../../systems/WaterEffectSystem';
+import { audioManager } from '../../../audio/AudioManager';
+import { FootstepSurface } from '../../../audio/audioTypes';
+import { BUDAPEST_SURFACE_MAP } from '../../../audio/audioData';
 import {
   BUDAPEST_WIDTH, BUDAPEST_HEIGHT, budapestTileGrid, isBudapestWalkable,
   BUDAPEST_NPCS, BUDAPEST_CHECKPOINT_ZONES, BUDAPEST_DECORATIONS, BUDAPEST_BUILDINGS,
@@ -115,6 +118,7 @@ export class BudapestOverworldScene extends OverworldScene {
     this.addForegroundBuildings();
     this.addStreetDetails();
     this.addBuildingShadows();
+    this.addEnvironmentalSFX();
   }
 
   // ── Visited checkpoint stars — green ★ above completed locations ──
@@ -562,6 +566,42 @@ export class BudapestOverworldScene extends OverworldScene {
     }
   }
 
+  // ── Environmental sound effects on timers ──
+  private addEnvironmentalSFX(): void {
+    // Periodic tram bell
+    this.time.addEvent({
+      delay: 15000 + Math.random() * 10000,
+      loop: true,
+      callback: () => audioManager.playSFX('tram_bell'),
+    });
+
+    // Periodic boat horn
+    this.time.addEvent({
+      delay: 25000 + Math.random() * 15000,
+      loop: true,
+      callback: () => audioManager.playSFX('boat_horn'),
+    });
+
+    // Periodic pigeon coos
+    this.time.addEvent({
+      delay: 8000 + Math.random() * 6000,
+      loop: true,
+      callback: () => audioManager.playSFX('pigeon_coo'),
+    });
+  }
+
+  protected getFootstepSurface(): FootstepSurface | null {
+    const pos = this.player.getPosition();
+    const tileX = Math.floor(pos.x / TILE_SIZE);
+    const tileY = Math.floor(pos.y / TILE_SIZE);
+    const tileType = getBudapestTileType(tileX, tileY);
+    // Don't play footsteps in water
+    if (tileType === BudapestTileType.Water || tileType === BudapestTileType.WaterShallow) {
+      return null;
+    }
+    return BUDAPEST_SURFACE_MAP[tileType] ?? 'stone';
+  }
+
   onEnterCheckpoint(zone: CheckpointZone): void {
     const pos = this.player.getPosition();
 
@@ -846,6 +886,15 @@ export class BudapestOverworldScene extends OverworldScene {
   update(time: number, delta: number): void {
     super.update(time, delta);
     this.waterSystem.update(this.player, this.partner);
+
+    // Proximity-based ambient audio: water louder near Danube (rows 10-14)
+    const playerPos = this.player.getPosition();
+    const playerTileY = Math.floor(playerPos.y / TILE_SIZE);
+    const waterCenterRow = 12;
+    const distFromWater = Math.abs(playerTileY - waterCenterRow);
+    // Ramp water volume: full at river (0.2), fades to 0.04 at 15+ tiles away
+    const waterGain = Math.max(0.04, 0.2 - distFromWater * 0.012);
+    audioManager.setProximityLayerGain('water_flow', waterGain);
   }
 
   shutdown(): void {

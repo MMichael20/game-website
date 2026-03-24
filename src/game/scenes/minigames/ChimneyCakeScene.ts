@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const TOTAL_ROUNDS = 10;
 const BASE_WIDTH = 60;
@@ -110,6 +111,9 @@ export class ChimneyCakeScene extends Phaser.Scene {
       this.input.keyboard.on('keydown-SPACE', () => this.dropLayer());
     }
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     // --- UI overlay ---
     uiManager.showMinigameOverlay({
       title: 'Chimney Cake!',
@@ -169,11 +173,13 @@ export class ChimneyCakeScene extends Phaser.Scene {
       feedbackMsg = 'Perfect!';
       feedbackColor = '#FFD700';
       isPerfect = true;
+      audioManager.playSFX('mg_correct');
       // No width loss on perfect
     } else if (offset <= GOOD_THRESHOLD) {
       points = 60;
       feedbackMsg = 'Good!';
       feedbackColor = '#90EE90';
+      audioManager.playSFX('mg_correct');
       newWidth = this.stackWidth - (offset - PERFECT_THRESHOLD) * 0.5;
     } else if (offset <= OK_THRESHOLD) {
       points = 30;
@@ -185,6 +191,7 @@ export class ChimneyCakeScene extends Phaser.Scene {
       feedbackMsg = 'Bad...';
       feedbackColor = '#FF6666';
       newWidth = this.stackWidth - offset * 1.2;
+      audioManager.playSFX('mg_wrong');
     }
 
     newWidth = Math.max(0, Math.round(newWidth));
@@ -313,6 +320,8 @@ export class ChimneyCakeScene extends Phaser.Scene {
     markCheckpointVisited(this.checkpointId);
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
+
+    audioManager.playSFX('mg_complete');
 
     // Determine result title based on score
     let title = 'Delicious!';

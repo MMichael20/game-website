@@ -15,10 +15,24 @@ export interface MinigameOverlayConfig {
   onExit?: () => void;
 }
 
+export interface AudioSettingsConfig {
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
+  ambientVolume: number;
+  muted: boolean;
+  onMasterVolume: (value: number) => void;
+  onMusicVolume: (value: number) => void;
+  onSFXVolume: (value: number) => void;
+  onAmbientVolume: (value: number) => void;
+  onMuteToggle: () => void;
+}
+
 export interface SettingsConfig {
   onClose: () => void;
   onFullscreen: () => void;
   onNewGame: () => void;
+  audio?: AudioSettingsConfig;
 }
 
 export interface DressingRoomConfig {
@@ -261,14 +275,69 @@ class UIManager {
     this.dialogContainer.innerHTML = '';
     const panel = document.createElement('div');
     panel.className = 'dialog-overlay';
+
+    const audio = config.audio;
+    const audioHTML = audio ? `
+      <div class="settings-panel__audio">
+        <div class="audio-slider">
+          <span class="audio-slider__label">Master</span>
+          <input type="range" class="audio-slider__input" data-vol="master" min="0" max="100" value="${Math.round(audio.masterVolume * 100)}">
+        </div>
+        <div class="audio-slider">
+          <span class="audio-slider__label">Music</span>
+          <input type="range" class="audio-slider__input" data-vol="music" min="0" max="100" value="${Math.round(audio.musicVolume * 100)}">
+        </div>
+        <div class="audio-slider">
+          <span class="audio-slider__label">SFX</span>
+          <input type="range" class="audio-slider__input" data-vol="sfx" min="0" max="100" value="${Math.round(audio.sfxVolume * 100)}">
+        </div>
+        <div class="audio-slider">
+          <span class="audio-slider__label">Ambient</span>
+          <input type="range" class="audio-slider__input" data-vol="ambient" min="0" max="100" value="${Math.round(audio.ambientVolume * 100)}">
+        </div>
+        <button class="btn btn--secondary settings-panel__mute-btn ${audio.muted ? 'settings-panel__mute-btn--muted' : ''}" data-action="mute">
+          ${audio.muted ? 'Unmute Audio' : 'Mute Audio'}
+        </button>
+      </div>
+    ` : '';
+
     panel.innerHTML = `
       <div class="settings-panel">
         <h2 class="settings-panel__title">Settings</h2>
+        ${audioHTML}
         <button class="btn btn--secondary settings-panel__btn" data-action="fullscreen">Toggle Fullscreen</button>
         <button class="btn btn--secondary settings-panel__btn" data-action="newgame">New Game</button>
         <button class="btn btn--primary settings-panel__btn" data-action="close">Close</button>
       </div>
     `;
+
+    // Wire audio sliders
+    if (audio) {
+      const volHandlers: Record<string, (v: number) => void> = {
+        master: audio.onMasterVolume,
+        music: audio.onMusicVolume,
+        sfx: audio.onSFXVolume,
+        ambient: audio.onAmbientVolume,
+      };
+      panel.querySelectorAll<HTMLInputElement>('.audio-slider__input').forEach(slider => {
+        const key = slider.dataset.vol;
+        if (key && volHandlers[key]) {
+          slider.addEventListener('input', () => {
+            volHandlers[key](parseInt(slider.value, 10) / 100);
+          });
+        }
+      });
+      panel.querySelector('[data-action="mute"]')?.addEventListener('click', () => {
+        audio.onMuteToggle();
+        // Update button text
+        const btn = panel.querySelector('[data-action="mute"]');
+        if (btn) {
+          const nowMuted = btn.classList.toggle('settings-panel__mute-btn--muted');
+          btn.textContent = nowMuted ? 'Unmute Audio' : 'Mute Audio';
+        }
+      });
+    }
+
     panel.querySelector('[data-action="fullscreen"]')?.addEventListener('click', config.onFullscreen);
     panel.querySelector('[data-action="newgame"]')?.addEventListener('click', config.onNewGame);
     panel.querySelector('[data-action="close"]')?.addEventListener('click', config.onClose);

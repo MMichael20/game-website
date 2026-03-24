@@ -1,6 +1,7 @@
 // src/game/scenes/minigames/TennisScene.ts
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
+import { audioManager } from '../../../audio/AudioManager';
 
 export class TennisScene extends Phaser.Scene {
   private score = 0;
@@ -58,6 +59,9 @@ export class TennisScene extends Phaser.Scene {
 
     // Ball
     this.ball = this.add.circle(width * 0.75, height / 2, 8, 0xccff00);
+
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
 
     // Score overlay
     uiManager.showMinigameOverlay({
@@ -117,6 +121,7 @@ export class TennisScene extends Phaser.Scene {
 
     if (inZone) {
       // Successful return!
+      audioManager.playSFX('mg_catch');
       this.score++;
       this.ballSpeed = Math.max(600, this.ballSpeed - 60); // Speed up each rally
       uiManager.updateMinigameOverlay({ score: this.score });
@@ -153,6 +158,7 @@ export class TennisScene extends Phaser.Scene {
     this.tweens.killAll();
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showDialog({
       title: 'Game Over!',
       message: `Rally score: ${this.score}`,

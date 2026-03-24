@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 import type { QuizConfig } from '../../data/checkpoints';
 
 export class QuizScene extends Phaser.Scene {
@@ -24,6 +25,9 @@ export class QuizScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
     this.add.rectangle(width / 2, height / 2, width, height, 0x2a1a3a);
+
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
 
     uiManager.showMinigameOverlay({
       title: 'Quiz Time!',
@@ -51,6 +55,9 @@ export class QuizScene extends Phaser.Scene {
 
     if (correct) {
       this.score += 100;
+      audioManager.playSFX('mg_correct');
+    } else {
+      audioManager.playSFX('mg_wrong');
     }
 
     uiManager.showQuizFeedback(correct, q.options[q.answer]);
@@ -79,6 +86,7 @@ export class QuizScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Quiz Complete!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('WorldScene');

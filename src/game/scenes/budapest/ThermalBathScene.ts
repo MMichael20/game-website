@@ -7,6 +7,7 @@ import {
 import { generateBudapestCoupleSprites } from '../../rendering/BudapestTextures';
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
+import { audioManager } from '../../../audio/AudioManager';
 
 export class ThermalBathScene extends Phaser.Scene {
   constructor() {
@@ -14,6 +15,8 @@ export class ThermalBathScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.transitionToScene(this.scene.key);
+
     const w = Number(this.cameras.main.width);
     const h = Number(this.cameras.main.height);
 

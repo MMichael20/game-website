@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { loadGameState } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const CHASE_DURATION = 45;
 const BABY_BASE_SPEED = 80;
@@ -174,6 +175,9 @@ export class ChaseBabyScene extends Phaser.Scene {
       });
     }
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     // Overlay
     uiManager.showMinigameOverlay({
       title: 'Chase the Baby!',
@@ -192,6 +196,7 @@ export class ChaseBabyScene extends Phaser.Scene {
         if (this.phase !== 'chase') return;
         this.timeLeft--;
         uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+        if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
         if (this.timeLeft <= 0) {
           this.endGame('lose');
         }
@@ -429,6 +434,7 @@ export class ChaseBabyScene extends Phaser.Scene {
   private onCatch(): void {
     this.catches++;
     this.catching = true;
+    audioManager.playSFX('mg_catch');
 
     // Score for catching
     const catchPoints = this.catches * 100; // 100, 200, 300
@@ -682,6 +688,7 @@ export class ChaseBabyScene extends Phaser.Scene {
     }
 
     this.time.delayedCall(result === 'win' ? 1000 : 500, () => {
+      audioManager.playSFX('mg_complete');
       uiManager.showMinigameResult(title, this.score, () => {
         uiManager.hideDialog();
         const returnScene = this.returnData.returnScene ?? 'MichaelsHouseScene';

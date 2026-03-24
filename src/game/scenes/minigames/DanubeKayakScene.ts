@@ -4,6 +4,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 
 const GAME_DURATION = 30;
 const PLAYER_SPEED = 3.0;
@@ -148,6 +149,9 @@ export class DanubeKayakScene extends Phaser.Scene {
       else this.player.y += 30;
     });
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     uiManager.showMinigameOverlay({
       title: 'Danube Kayak!',
       score: 0,
@@ -195,6 +199,7 @@ export class DanubeKayakScene extends Phaser.Scene {
         this.timeLeft--;
         this.elapsed++;
         uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+        if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
 
         // Increase difficulty every SPEED_INTERVAL seconds
         if (this.elapsed % SPEED_INTERVAL === 0) {
@@ -469,6 +474,7 @@ export class DanubeKayakScene extends Phaser.Scene {
       const dy = Math.abs(coin.y - this.player.y);
       if (dx < 14 && dy < 12) {
         this.score += 10;
+        audioManager.playSFX('mg_catch');
         uiManager.updateMinigameOverlay({ score: this.score });
         this.createCoinSparkle(coin.x, coin.y);
         coin.destroy();
@@ -479,6 +485,7 @@ export class DanubeKayakScene extends Phaser.Scene {
 
   private handleHit(obs: Obstacle): void {
     const { width, height } = this.scale;
+    audioManager.playSFX('mg_wrong');
 
     this.score = Math.max(0, this.score - 20);
     uiManager.updateMinigameOverlay({ score: this.score });
@@ -548,6 +555,7 @@ export class DanubeKayakScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Great paddle!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('BudapestOverworldScene');

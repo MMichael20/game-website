@@ -8,6 +8,7 @@ import {
   addSway,
   type AnimationSet,
 } from './cutsceneHelpers';
+import { audioManager } from '../../../audio/AudioManager';
 
 /**
  * BudapestEyeScene — First-person POV from inside the ferris wheel cabin.
@@ -38,6 +39,8 @@ export class BudapestEyeScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.transitionToScene(this.scene.key);
+
     const w = Number(this.cameras.main.width);
     const h = Number(this.cameras.main.height);
     const maxOffset = 250;

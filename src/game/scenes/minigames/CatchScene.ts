@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
 import { saveMiniGameScore, markCheckpointVisited } from '../../systems/SaveSystem';
+import { audioManager } from '../../../audio/AudioManager';
 import type { CatchConfig } from '../../data/checkpoints';
 
 const GAME_DURATION = 30;
@@ -58,6 +59,9 @@ export class CatchScene extends Phaser.Scene {
       this.cursors = this.input.keyboard.createCursorKeys();
     }
 
+    audioManager.transitionToScene(this.scene.key);
+    audioManager.playSFX('mg_start');
+
     // Show overlay
     uiManager.showMinigameOverlay({
       title: 'Catch!',
@@ -82,6 +86,9 @@ export class CatchScene extends Phaser.Scene {
       callback: () => {
         this.timeLeft--;
         uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+        if (this.timeLeft === 5) {
+          audioManager.playSFX('mg_timer_warning');
+        }
         if (this.timeLeft <= 0) {
           this.endGame();
         }
@@ -144,6 +151,7 @@ export class CatchScene extends Phaser.Scene {
       const dy = Math.abs(item.y - this.basket.y);
       if (dx < 40 && dy < 20) {
         this.score += 10;
+        audioManager.playSFX('mg_catch');
         uiManager.updateMinigameOverlay({ score: this.score });
         this.removeItem(item);
       }
@@ -168,6 +176,7 @@ export class CatchScene extends Phaser.Scene {
     saveMiniGameScore(this.checkpointId, this.score);
     uiManager.hideMinigameOverlay();
 
+    audioManager.playSFX('mg_complete');
     uiManager.showMinigameResult('Time\'s Up!', this.score, () => {
       uiManager.hideDialog();
       this.scene.start('WorldScene');

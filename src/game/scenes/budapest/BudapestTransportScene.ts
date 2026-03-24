@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
+import { audioManager } from '../../../audio/AudioManager';
 
 export class BudapestTransportScene extends Phaser.Scene {
   private returnX?: number;
@@ -15,6 +16,8 @@ export class BudapestTransportScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.transitionToScene(this.scene.key);
+
     const { width, height } = this.scale;
 
     // Urban background
