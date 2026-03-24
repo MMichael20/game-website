@@ -394,19 +394,19 @@ export class BudapestOverworldScene extends OverworldScene {
 
     // Distant skyline behind the Danube (spans full width, behind the river)
     this.add.image(mapW / 2, 8 * TILE_SIZE, 'bp-bg-city-distant')
-      .setDepth(-15).setAlpha(0.5).setScrollFactor(0.85, 0.85);
+      .setDepth(-55).setAlpha(0.5).setScrollFactor(0.85, 0.85);
 
     // Mid-distance buildings behind Parliament plaza area
     this.add.image(23 * TILE_SIZE, 14 * TILE_SIZE, 'bp-bg-city-mid')
-      .setDepth(-14).setAlpha(0.4).setScrollFactor(0.9, 0.9);
+      .setDepth(-54).setAlpha(0.4).setScrollFactor(0.9, 0.9);
 
     // Distant skyline behind the southern park area
     this.add.image(mapW / 2, 37 * TILE_SIZE, 'bp-bg-city-distant')
-      .setDepth(-15).setAlpha(0.4).setScrollFactor(0.85, 0.85);
+      .setDepth(-55).setAlpha(0.4).setScrollFactor(0.85, 0.85);
 
     // Mid-distance behind Erzsebet Square / Eye area
     this.add.image(32 * TILE_SIZE, 20 * TILE_SIZE, 'bp-bg-city-mid')
-      .setDepth(-14).setAlpha(0.35).setScrollFactor(0.9, 0.9);
+      .setDepth(-54).setAlpha(0.35).setScrollFactor(0.9, 0.9);
   }
 
   // ── Foreground building tops for urban canyon effect ──
