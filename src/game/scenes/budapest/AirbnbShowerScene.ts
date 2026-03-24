@@ -92,15 +92,21 @@ export class AirbnbShowerScene extends Phaser.Scene {
     // Positions relative to container center (0,0)
 
     const himBody = this.add.image(18, 8, 'shower-him-body').setOrigin(0.5, 0);
-    const himHead = this.add.image(18, -22, 'shower-him-head').setOrigin(0.5, 0.5);
-    const himArmL = this.add.image(2, 6, 'shower-him-arm').setOrigin(0.5, 0);
-    const himArmR = this.add.image(34, 6, 'shower-him-arm').setOrigin(0.5, 0).setFlipX(true);
+    // Head bottom must overlap body top (neck). His head: 34px tall, origin 0.5 = center at 17px
+    // Bottom of head = y + 17, body top = 8 → y = 8 - 17 + 3(overlap) = -6
+    const himHead = this.add.image(18, -6, 'shower-him-head').setOrigin(0.5, 0.5).setAngle(-5);
+    // Arms at shoulder height: body y=8, shoulders at ~y=4 in texture → world y=12
+    const himArmL = this.add.image(2, 12, 'shower-him-arm').setOrigin(0.5, 0);
+    const himArmR = this.add.image(34, 12, 'shower-him-arm').setOrigin(0.5, 0).setFlipX(true);
 
     // --- HER (in front, overlapping slightly for hug) ---
     const herBody = this.add.image(-10, 6, 'shower-her-body').setOrigin(0.5, 0);
-    const herHead = this.add.image(-10, -18, 'shower-her-head').setOrigin(0.5, 0.5);
-    const herArmL = this.add.image(-24, 4, 'shower-her-arm').setOrigin(0.5, 0);
-    const herArmR = this.add.image(4, 4, 'shower-her-arm').setOrigin(0.5, 0).setFlipX(true);
+    // Her head: 30px tall, origin 0.5 = center at 15px
+    // Bottom = y + 15, body top = 6 → y = 6 - 15 + 3(overlap) = -6
+    const herHead = this.add.image(-10, -6, 'shower-her-head').setOrigin(0.5, 0.5).setAngle(5);
+    // Arms at shoulder height: body y=6, shoulders at ~y=4 in texture → world y=10
+    const herArmL = this.add.image(-24, 10, 'shower-her-arm').setOrigin(0.5, 0);
+    const herArmR = this.add.image(4, 10, 'shower-her-arm').setOrigin(0.5, 0).setFlipX(true);
 
     // Add to container in draw order (back to front)
     coupleContainer.add([
@@ -273,17 +279,17 @@ export class AirbnbShowerScene extends Phaser.Scene {
       herHead.setTexture('shower-her-head-closed');
       himHead.setTexture('shower-him-head-closed');
 
-      // Her head nuzzles onto his chest — tilts right, moves toward him
+      // Her head nuzzles onto his chest — tilts more right, moves toward him
       this.tweens.add({
         targets: herHead,
-        x: herHead.x + 8, y: herHead.y + 4, angle: 12,
+        x: herHead.x + 8, y: herHead.y + 4, angle: 18,
         duration: 2000, ease: 'Sine.easeInOut',
       });
 
-      // His head tilts down toward her
+      // His head tilts down toward her (from -5° to -15°)
       this.tweens.add({
         targets: himHead,
-        y: himHead.y + 3, angle: -8,
+        y: himHead.y + 3, angle: -15,
         duration: 2000, ease: 'Sine.easeInOut',
       });
 
