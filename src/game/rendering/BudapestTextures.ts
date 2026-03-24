@@ -410,6 +410,12 @@ function generateBudapestTerrain(scene: Phaser.Scene): void {
   }
 
   c.refresh();
+
+  // Register individual 32×32 frames so drawFrame() can address them by tile type index
+  const texture = scene.textures.get('budapest-terrain');
+  for (let i = 0; i < 11; i++) {
+    texture.add(i, 0, i * 32, 0, 32, 32);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
