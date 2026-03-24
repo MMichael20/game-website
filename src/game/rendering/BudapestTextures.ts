@@ -5819,97 +5819,140 @@ export function generateBudapestCoupleSprites(
     c.refresh();
   }
 
-  // ── bp-couple-shower: close-up in bathing suits under water — 64×64 ──
+  // ── bp-couple-shower: hugging in bathing suits under water — 64×64 ──
+  // Female has hourglass figure: defined bust, narrow waist, wider hips
+  // Couple is hugging — arms wrapped around each other, bodies close
   {
     const c = scene.textures.createCanvas('bp-couple-shower', 64, 64);
     if (!c) return;
     const ctx = c.context;
 
     const pSkin = playerOutfit.skin;
+    const pSkinS = darken(pSkin, 0.08);
     const pHair = playerOutfit.hair;
     const pHairStyle = playerOutfit.hairStyle;
     const mSkin = partnerOutfit.skin;
+    const mSkinS = darken(mSkin, 0.08);
     const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
     const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
 
-    // Player (left, female) — bikini
-    drawCutsceneHead(ctx, 6, 2, 14, 16, pSkin, pHair, pHairStyle, false);
-    rect(ctx, 10, 18, 6, 3, pSkin);         // neck
-    rect(ctx, 4, 21, 8, 3, pSkin);          // shoulders left
-    rect(ctx, 14, 21, 6, 3, pSkin);         // shoulders right
-    rect(ctx, 4, 24, 16, 4, '#FF1493');     // bikini top
-    rect(ctx, 4, 28, 16, 12, pSkin);        // torso
-    rect(ctx, 6, 40, 12, 4, '#FF1493');     // bikini bottom
-    rect(ctx, 2, 24, 4, 14, pSkin);         // left arm
-    rect(ctx, 18, 24, 4, 14, pSkin);        // right arm
-    rect(ctx, 6, 44, 5, 14, pSkin);         // left leg
-    rect(ctx, 13, 44, 5, 14, pSkin);        // right leg
-
-    // Partner (right, male) — swim trunks
-    drawCutsceneHead(ctx, 32, 0, 16, 18, mSkin, mHair, mHairStyle, true);
-    rect(ctx, 38, 18, 6, 3, mSkin);         // neck
-    rect(ctx, 30, 21, 10, 3, mSkin);        // shoulders left
+    // Partner (right, male) — drawn first so female overlaps slightly in hug
+    drawCutsceneHead(ctx, 30, 0, 16, 18, mSkin, mHair, mHairStyle, true);
+    rect(ctx, 36, 18, 6, 3, mSkin);         // neck
+    rect(ctx, 28, 21, 12, 3, mSkin);        // shoulders left
     rect(ctx, 42, 21, 8, 3, mSkin);         // shoulders right
-    rect(ctx, 30, 24, 20, 16, mSkin);       // torso/chest
-    rect(ctx, 32, 40, 16, 6, '#003366');    // swim trunks
-    rect(ctx, 28, 24, 4, 16, mSkin);        // left arm
-    rect(ctx, 48, 24, 4, 16, mSkin);        // right arm
-    rect(ctx, 33, 46, 6, 14, mSkin);        // left leg
+    rect(ctx, 28, 24, 22, 16, mSkin);       // broad torso/chest
+    rect(ctx, 30, 25, 18, 2, lighten(mSkin, 0.06));  // pec highlight
+    rect(ctx, 30, 40, 18, 6, '#003366');    // swim trunks
+    rect(ctx, 48, 24, 4, 16, mSkin);        // right arm (away side)
+    // Left arm wraps around her back (drawn behind her)
+    rect(ctx, 18, 26, 12, 3, mSkin);        // arm reaching across to her
+    rect(ctx, 16, 28, 4, 3, mSkin);         // hand on her back
+    rect(ctx, 32, 46, 6, 14, mSkin);        // left leg
     rect(ctx, 41, 46, 6, 14, mSkin);        // right leg
+    rect(ctx, 32, 46, 6, 1, mSkinS);        // leg shadow
 
-    // Hands touching in middle
-    rect(ctx, 20, 32, 10, 3, pSkin);
+    // Player (left, female) — hourglass figure, hugging him
+    drawCutsceneHead(ctx, 8, 2, 14, 16, pSkin, pHair, pHairStyle, false);
+    rect(ctx, 12, 18, 6, 3, pSkin);         // neck
+    rect(ctx, 6, 21, 8, 3, pSkin);          // shoulders left
+    rect(ctx, 16, 21, 6, 3, pSkin);         // shoulders right
+
+    // Hourglass torso — bust → narrow waist → wide hips
+    rect(ctx, 4, 24, 18, 4, '#FF1493');     // bikini top (wide, bust)
+    rect(ctx, 5, 25, 16, 2, lighten('#FF1493', 0.1)); // bikini highlight
+    rect(ctx, 6, 28, 14, 2, pSkin);         // upper torso (still wide from bust)
+    rect(ctx, 8, 30, 10, 2, pSkin);         // narrowing waist
+    rect(ctx, 9, 32, 8, 2, pSkin);          // narrowest waist
+    rect(ctx, 7, 34, 12, 2, pSkin);         // waist widens to hips
+    rect(ctx, 5, 36, 16, 4, pSkin);         // wide hips
+    rect(ctx, 5, 40, 16, 4, '#FF1493');     // bikini bottom (wide, hips)
+    rect(ctx, 6, 41, 14, 2, lighten('#FF1493', 0.08)); // bottom highlight
+    // Waist shadow for depth
+    rect(ctx, 9, 32, 1, 2, pSkinS);
+    rect(ctx, 16, 32, 1, 2, pSkinS);
+
+    rect(ctx, 2, 24, 4, 14, pSkin);         // left arm (away side)
+    // Right arm wraps around his waist
+    rect(ctx, 20, 26, 10, 3, pSkin);        // arm reaching across to him
+    rect(ctx, 28, 28, 4, 3, pSkin);         // hand on his side
+    rect(ctx, 7, 44, 5, 14, pSkin);         // left leg
+    rect(ctx, 14, 44, 5, 14, pSkin);        // right leg
+    rect(ctx, 7, 44, 5, 1, pSkinS);         // leg shadow
 
     // Wet hair shine highlights
-    rect(ctx, 8, 3, 2, 6, 'rgba(255,255,255,0.25)');
-    rect(ctx, 36, 1, 2, 7, 'rgba(255,255,255,0.25)');
+    rect(ctx, 10, 3, 2, 6, 'rgba(255,255,255,0.25)');
+    rect(ctx, 34, 1, 2, 7, 'rgba(255,255,255,0.25)');
 
     c.refresh();
   }
 
-  // ── bp-couple-shower-cozy: leaning together, eyes closed — 64×64 ──
+  // ── bp-couple-shower-cozy: tight embrace, eyes closed, intimate — 64×64 ──
+  // Bodies pressed close, his arms around her, her head on his chest
   {
     const c = scene.textures.createCanvas('bp-couple-shower-cozy', 64, 64);
     if (!c) return;
     const ctx = c.context;
 
     const pSkin = playerOutfit.skin;
+    const pSkinS = darken(pSkin, 0.08);
     const pHair = playerOutfit.hair;
     const pHairStyle = playerOutfit.hairStyle;
     const mSkin = partnerOutfit.skin;
+    const mSkinS = darken(mSkin, 0.08);
     const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
     const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
 
-    // Player (left, female) — leaning right, eyes closed
-    drawCutsceneHead(ctx, 8, 4, 14, 16, pSkin, pHair, pHairStyle, false, 'closed');
-    rect(ctx, 12, 20, 6, 3, pSkin);
-    rect(ctx, 6, 23, 8, 3, pSkin);
-    rect(ctx, 16, 23, 6, 3, pSkin);
-    rect(ctx, 6, 26, 16, 4, '#FF1493');
-    rect(ctx, 6, 30, 16, 10, pSkin);
-    rect(ctx, 8, 40, 12, 4, '#FF1493');
-    rect(ctx, 4, 26, 4, 12, pSkin);
-    rect(ctx, 20, 26, 4, 12, pSkin);
-    rect(ctx, 8, 44, 5, 14, pSkin);
-    rect(ctx, 15, 44, 5, 14, pSkin);
+    // Partner (right, male) — both arms wrapping around her
+    drawCutsceneHead(ctx, 30, 0, 16, 18, mSkin, mHair, mHairStyle, true, 'closed');
+    rect(ctx, 36, 18, 6, 3, mSkin);         // neck
+    rect(ctx, 28, 21, 12, 3, mSkin);        // shoulders left
+    rect(ctx, 42, 21, 8, 3, mSkin);         // shoulders right
+    rect(ctx, 28, 24, 22, 16, mSkin);       // broad torso
+    rect(ctx, 30, 25, 18, 2, lighten(mSkin, 0.06)); // pec highlight
+    rect(ctx, 30, 40, 18, 6, '#003366');    // swim trunks
+    rect(ctx, 48, 24, 4, 12, mSkin);        // right arm (partially visible)
+    // Both arms wrapping around her (behind her body)
+    rect(ctx, 14, 26, 16, 3, mSkin);        // left arm across her upper back
+    rect(ctx, 12, 34, 16, 3, mSkin);        // right arm across her lower back
+    rect(ctx, 12, 26, 3, 3, mSkin);         // left hand on her shoulder
+    rect(ctx, 10, 34, 3, 3, mSkin);         // right hand on her waist
+    rect(ctx, 32, 46, 6, 14, mSkin);        // left leg
+    rect(ctx, 41, 46, 6, 14, mSkin);        // right leg
+    rect(ctx, 32, 46, 6, 1, mSkinS);
 
-    // Partner (right, male) — leaning left, arm around player
-    drawCutsceneHead(ctx, 30, 2, 16, 18, mSkin, mHair, mHairStyle, true, 'closed');
-    rect(ctx, 36, 20, 6, 3, mSkin);
-    rect(ctx, 28, 23, 10, 3, mSkin);
-    rect(ctx, 40, 23, 8, 3, mSkin);
-    rect(ctx, 28, 26, 20, 14, mSkin);
-    rect(ctx, 30, 40, 16, 6, '#003366');
-    rect(ctx, 46, 26, 4, 14, mSkin);
-    rect(ctx, 31, 46, 6, 14, mSkin);
-    rect(ctx, 39, 46, 6, 14, mSkin);
+    // Player (left, female) — pressed against him, head tilted onto his chest
+    // Head closer to him and slightly lower (resting on chest)
+    drawCutsceneHead(ctx, 12, 4, 14, 16, pSkin, pHair, pHairStyle, false, 'closed');
+    rect(ctx, 16, 20, 6, 3, pSkin);         // neck (shifted right toward him)
+    rect(ctx, 10, 23, 8, 3, pSkin);         // shoulders left
+    rect(ctx, 20, 23, 6, 3, pSkin);         // shoulders right
 
-    // Partner's arm around player's shoulder
-    rect(ctx, 20, 26, 10, 3, mSkin);
+    // Hourglass torso — bust → narrow waist → wide hips
+    rect(ctx, 8, 26, 18, 4, '#FF1493');     // bikini top (wide bust)
+    rect(ctx, 9, 27, 16, 2, lighten('#FF1493', 0.1)); // bikini highlight
+    rect(ctx, 10, 30, 14, 2, pSkin);        // upper torso
+    rect(ctx, 12, 32, 10, 2, pSkin);        // narrowing waist
+    rect(ctx, 13, 34, 8, 2, pSkin);         // narrowest waist
+    rect(ctx, 11, 36, 12, 2, pSkin);        // widens to hips
+    rect(ctx, 9, 38, 16, 2, pSkin);         // wide hips
+    rect(ctx, 9, 40, 16, 4, '#FF1493');     // bikini bottom (wide hips)
+    rect(ctx, 10, 41, 14, 2, lighten('#FF1493', 0.08)); // bottom highlight
+    // Waist shadow
+    rect(ctx, 13, 34, 1, 2, pSkinS);
+    rect(ctx, 20, 34, 1, 2, pSkinS);
 
-    // Wet hair shine
-    rect(ctx, 10, 5, 2, 6, 'rgba(255,255,255,0.3)');
-    rect(ctx, 34, 3, 2, 7, 'rgba(255,255,255,0.3)');
+    // Her arms around his torso
+    rect(ctx, 24, 28, 8, 3, pSkin);         // right arm across him
+    rect(ctx, 30, 30, 4, 3, pSkin);         // hand on his back
+    rect(ctx, 6, 26, 4, 12, pSkin);         // left arm (partially visible)
+    rect(ctx, 10, 44, 5, 14, pSkin);        // left leg
+    rect(ctx, 17, 44, 5, 14, pSkin);        // right leg
+    rect(ctx, 10, 44, 5, 1, pSkinS);
+
+    // Wet hair shine (intensified for cozy)
+    rect(ctx, 14, 5, 2, 6, 'rgba(255,255,255,0.3)');
+    rect(ctx, 34, 1, 2, 7, 'rgba(255,255,255,0.3)');
 
     c.refresh();
   }
