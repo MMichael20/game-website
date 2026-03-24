@@ -442,6 +442,27 @@ export const BUDAPEST_CHECKPOINT_ZONES: CheckpointZone[] = [
     radius: 48,
     promptText: 'Spice Market',
   },
+  {
+    id: 'bp_guard_escape',
+    centerX: tileToWorld(25, 14).x,
+    centerY: tileToWorld(25, 14).y,
+    radius: 48,
+    promptText: 'Parliament Park',
+  },
+  {
+    id: 'bp_jazz_seat',
+    centerX: tileToWorld(50, 27).x,
+    centerY: tileToWorld(50, 27).y,
+    radius: 48,
+    promptText: 'Jazz Club',
+  },
+  {
+    id: 'bp_rooftop_chase',
+    centerX: tileToWorld(6, 5).x,
+    centerY: tileToWorld(6, 5).y,
+    radius: 48,
+    promptText: 'Rooftop View',
+  },
 ];
 
 export const BUDAPEST_DECORATIONS = [

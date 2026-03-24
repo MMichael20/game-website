@@ -46,6 +46,9 @@ export class BudapestOverworldScene extends OverworldScene {
       bp_ruin_bar_quiz: 'Ruin Bar Trivia',
       bp_tram_dash: 'Road Crossing',
       bp_spice_market: 'Spice Market',
+      bp_guard_escape: 'Parliament Park',
+      bp_jazz_seat: 'Jazz Club',
+      bp_rooftop_chase: 'Rooftop View',
       bp_parliament: 'Parliament',
       bp_chain_bridge: 'Chain Bridge',
       bp_fishermans_bastion: 'Fisherman\'s Bastion',
@@ -714,6 +717,42 @@ export class BudapestOverworldScene extends OverworldScene {
         });
         break;
       }
+
+      case 'bp_guard_escape':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Hey! No photos this close to Parliament!', 'The guards are coming — RUN!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('GuardEscapeScene', { checkpointId: 'bp_guard_escape' });
+          },
+        );
+        break;
+
+      case 'bp_jazz_seat':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Welcome to the Budapest Jazz Club!', 'It\'s packed tonight... better find a seat fast!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('JazzSeatScene', { checkpointId: 'bp_jazz_seat' });
+          },
+        );
+        break;
+
+      case 'bp_rooftop_chase':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Oh no! A stray cat just grabbed your scarf!', 'After it — across the rooftops!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('RooftopChaseScene', { checkpointId: 'bp_rooftop_chase' });
+          },
+        );
+        break;
 
       case 'bp_fishermans_bastion': {
         // Enhanced viewpoint moment
