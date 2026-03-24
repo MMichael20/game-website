@@ -78,6 +78,92 @@
   transform: scale(0.95);
 }
 
+/* ========== Album Button (top-right, next to settings) ========== */
+.hud__album-btn {
+  position: absolute;
+  top: clamp(8px, 2vh, 16px);
+  right: clamp(60px, calc(2vw + 52px), 70px);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ccc;
+  border: none;
+  border-radius: var(--radius);
+  font-size: clamp(16px, 2.5vw, 20px);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.2s, color 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hud__album-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+}
+
+.hud__album-btn:active {
+  transform: scale(0.95);
+}
+
+/* ========== Photo Album Items ========== */
+.photo-item {
+  padding: 6px 8px;
+  margin: 4px 0;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.photo-item--collected {
+  background: rgba(68, 221, 68, 0.1);
+  border-left: 3px solid #44DD44;
+}
+
+.photo-item--locked {
+  background: rgba(100, 100, 100, 0.1);
+  border-left: 3px solid #666;
+  color: #888;
+}
+
+/* ========== Map Button (top-right, further left) ========== */
+.hud__map-btn {
+  position: absolute;
+  top: clamp(8px, 2vh, 16px);
+  right: clamp(112px, calc(2vw + 104px), 122px);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ccc;
+  border: none;
+  border-radius: var(--radius);
+  font-size: clamp(16px, 2.5vw, 20px);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.2s, color 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hud__map-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+}
+
+.hud__map-btn:active {
+  transform: scale(0.95);
+}
+
 /* ========== Interaction Prompt (bottom center) ========== */
 .interaction-prompt {
   position: absolute;

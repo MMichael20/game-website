@@ -2,7 +2,7 @@
 import { OverworldScene, OverworldConfig } from '../OverworldScene';
 import { TILE_SIZE } from '../../../utils/constants';
 import { tileToWorld, CheckpointZone } from '../../data/mapLayout';
-import { saveCurrentScene, getVisitedCheckpoints } from '../../systems/SaveSystem';
+import { saveCurrentScene, getVisitedCheckpoints, loadGameState } from '../../systems/SaveSystem';
 import { uiManager } from '../../../ui/UIManager';
 import { WaterEffectSystem } from '../../systems/WaterEffectSystem';
 import {
@@ -67,6 +67,12 @@ export class BudapestOverworldScene extends OverworldScene {
   create(): void {
     super.create();
     saveCurrentScene('BudapestOverworldScene');
+
+    // Wire up photo album button
+    uiManager.setAlbumHandler(() => {
+      const visited = getVisitedCheckpoints();
+      uiManager.showPhotoAlbum(visited, this.getLabelMap());
+    });
   }
 
   onCreateExtras(): void {

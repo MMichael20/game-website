@@ -38,6 +38,7 @@ class UIManager {
   private menuContainer!: HTMLElement;
   private settingsHandler: (() => void) | null = null;
   private minimapHandler: (() => void) | null = null;
+  private albumHandler: (() => void) | null = null;
 
   init(container: HTMLElement): void {
     this.container = container;
@@ -76,6 +77,7 @@ class UIManager {
     hudEl.className = 'hud';
     hudEl.innerHTML = `
       <button class="hud__map-btn" title="Map">\uD83D\uDDFA</button>
+      <button class="hud__album-btn" title="Photo Album">\uD83D\uDCF7</button>
       <button class="hud__settings-btn" title="Settings">\u2699</button>
     `;
     hudEl.querySelector('.hud__settings-btn')?.addEventListener('click', () => {
@@ -83,6 +85,9 @@ class UIManager {
     });
     hudEl.querySelector('.hud__map-btn')?.addEventListener('click', () => {
       if (!this.isDialogActive()) this.minimapHandler?.();
+    });
+    hudEl.querySelector('.hud__album-btn')?.addEventListener('click', () => {
+      if (!this.isDialogActive()) this.albumHandler?.();
     });
     this.hud.appendChild(hudEl);
   }
@@ -93,6 +98,45 @@ class UIManager {
 
   setMinimapHandler(handler: (() => void) | null): void {
     this.minimapHandler = handler;
+  }
+
+  setAlbumHandler(handler: (() => void) | null): void {
+    this.albumHandler = handler;
+  }
+
+  showPhotoAlbum(visitedIds: string[], labelMap: Record<string, string>): void {
+    const LANDMARK_PHOTOS: Record<string, { name: string; desc: string }> = {
+      bp_parliament: { name: 'Parliament', desc: 'Neo-Gothic masterpiece on the Danube' },
+      bp_chain_bridge: { name: 'Chain Bridge', desc: 'First permanent bridge across the Danube' },
+      bp_fishermans_bastion: { name: "Fisherman's Bastion", desc: 'Seven towers for seven tribes' },
+      bp_liberty_bridge: { name: 'Liberty Bridge', desc: 'Art Nouveau ironwork, painted green' },
+      bp_margaret_bridge: { name: 'Margaret Bridge', desc: 'Gateway to Margaret Island' },
+      bp_gellert_hill: { name: 'Gellert Hill', desc: 'Panoramic view over all of Budapest' },
+      bp_opera: { name: 'Opera House', desc: 'Neo-Renaissance gem on Andrássy Avenue' },
+      bp_thermal_baths: { name: 'Thermal Baths', desc: 'Warm waters, warm memories' },
+      bp_danube_cruise: { name: 'Danube Cruise', desc: 'City of light from the river' },
+      bp_eye: { name: 'Budapest Eye', desc: 'The city from above' },
+      bp_jewish_quarter: { name: 'Jewish Quarter', desc: 'History and vibrant street art' },
+      bp_airbnb: { name: 'Our Apartment', desc: 'Home away from home' },
+    };
+
+    const allPhotos = Object.entries(LANDMARK_PHOTOS);
+    const collected = allPhotos.filter(([id]) => visitedIds.includes(id));
+    const missing = allPhotos.filter(([id]) => !visitedIds.includes(id));
+
+    const photoHTML = collected.map(([, p]) =>
+      `<div class="photo-item photo-item--collected">📸 <strong>${p.name}</strong><br><small>${p.desc}</small></div>`
+    ).join('');
+
+    const missingHTML = missing.map(([, p]) =>
+      `<div class="photo-item photo-item--locked">🔒 <strong>???</strong><br><small>Visit to unlock</small></div>`
+    ).join('');
+
+    this.showDialog({
+      title: `📷 Photo Album (${collected.length}/${allPhotos.length})`,
+      message: (photoHTML || '<em>No photos yet! Visit landmarks to collect them.</em>') + missingHTML,
+      buttons: [{ label: 'Close', onClick: () => this.hideDialog() }],
+    });
   }
 
   hideHUD(): void {
