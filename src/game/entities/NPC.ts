@@ -42,7 +42,7 @@ export class NPC {
 
     const worldPos = tileToWorld(def.tileX, def.tileY);
     this.sprite = scene.add.sprite(worldPos.x, worldPos.y, def.texture ?? 'npc-default');
-    this.sprite.setDepth(8);
+    this.sprite.setDepth(53);
 
     this.walkPath = def.walkPath ?? [];
     this.speed = def.speed ?? DEFAULT_NPC_SPEED;

@@ -39,7 +39,10 @@ export class BudapestAirbnbScene extends InteriorScene {
           this.tweens.add({
             targets: cam, alpha: 0, duration: 300, ease: 'Linear',
             onComplete: () => {
-              this.scene.start('AirbnbShowerScene');
+              this.scene.start('AirbnbShowerScene', {
+                returnX: this.returnData.returnX,
+                returnY: this.returnData.returnY,
+              });
             },
           });
         });

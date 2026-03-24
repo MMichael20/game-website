@@ -13,8 +13,16 @@ import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { audioManager } from '../../../audio/AudioManager';
 
 export class AirbnbShowerScene extends Phaser.Scene {
+  private returnX?: number;
+  private returnY?: number;
+
   constructor() {
     super({ key: 'AirbnbShowerScene' });
+  }
+
+  init(data: { returnX?: number; returnY?: number }) {
+    this.returnX = data?.returnX;
+    this.returnY = data?.returnY;
   }
 
   create() {
@@ -29,7 +37,7 @@ export class AirbnbShowerScene extends Phaser.Scene {
     const partnerOutfit = OUTFIT_STYLES[state.outfits.partner] ?? OUTFIT_STYLES[0];
     generateShowerLayered(this, playerOutfit, partnerOutfit);
 
-    addSkipButton(this, 'BudapestAirbnbScene', { returnFromInterior: true });
+    addSkipButton(this, 'BudapestAirbnbScene', { returnX: this.returnX, returnY: this.returnY });
 
     const activeAnims: AnimationSet[] = [];
 
@@ -430,7 +438,7 @@ export class AirbnbShowerScene extends Phaser.Scene {
       this.tweens.add({
         targets: whiteOut, alpha: 1, duration: 2500,
         onComplete: () => {
-          this.scene.start('BudapestAirbnbScene', { returnFromInterior: true });
+          this.scene.start('BudapestAirbnbScene', { returnX: this.returnX, returnY: this.returnY });
         },
       });
     });

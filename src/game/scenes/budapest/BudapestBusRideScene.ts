@@ -85,7 +85,7 @@ export class BudapestBusRideScene extends Phaser.Scene {
     const bars = addLetterbox(this);
 
     // Skip button
-    addSkipButton(this, 'BudapestOverworldScene');
+    addSkipButton(this, 'BudapestOverworldScene', { returnFromInterior: true });
 
     // Departure dialogue
     this.time.delayedCall(800, () => {
@@ -319,7 +319,7 @@ export class BudapestBusRideScene extends Phaser.Scene {
       this.time.delayedCall(1200, () => {
         this.cameras.main.fadeOut(800, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
-          this.scene.start('BudapestOverworldScene');
+          this.scene.start('BudapestOverworldScene', { returnFromInterior: true });
         });
       });
     });

@@ -21,7 +21,7 @@ export class Player {
     this.sprite = scene.physics.add.sprite(x, y, key, 0);
     this.sprite.setSize(36, 36);
     this.sprite.setOffset(14, 22);
-    this.sprite.setDepth(10);
+    this.sprite.setDepth(55);
 
     this.createAnimations(scene);
   }

@@ -19,7 +19,7 @@ export class Partner {
     this.sprite = scene.physics.add.sprite(x + FOLLOW_DISTANCE, y, key, 0);
     this.sprite.setSize(36, 36);
     this.sprite.setOffset(14, 22);
-    this.sprite.setDepth(9);
+    this.sprite.setDepth(54);
 
     this.createAnimations(scene);
   }
