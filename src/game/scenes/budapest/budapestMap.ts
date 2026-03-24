@@ -444,8 +444,8 @@ export const BUDAPEST_CHECKPOINT_ZONES: CheckpointZone[] = [
   },
   {
     id: 'bp_guard_escape',
-    centerX: tileToWorld(25, 18).x,
-    centerY: tileToWorld(25, 18).y,
+    centerX: tileToWorld(18, 20).x,
+    centerY: tileToWorld(18, 20).y,
     radius: 48,
     promptText: 'Parliament Park',
   },
