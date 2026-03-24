@@ -29,7 +29,7 @@ export class BudapestAirbnbScene extends InteriorScene {
     if (!this.showerTriggered) {
       const pos = this.player.getPosition();
       const tile = worldToTile(pos.x, pos.y);
-      if (tile.x >= 11 && tile.x <= 12 && tile.y >= 8 && tile.y <= 9) {
+      if (tile.x >= 18 && tile.x <= 20 && tile.y >= 10 && tile.y <= 12) {
         this.showerTriggered = true;
         this.inputSystem.freeze();
         uiManager.showInteractionPrompt('Take a shower?', () => {

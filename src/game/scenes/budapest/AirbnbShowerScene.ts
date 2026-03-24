@@ -30,22 +30,86 @@ export class AirbnbShowerScene extends Phaser.Scene {
 
     const activeAnims: AnimationSet[] = [];
 
-    // ── Background: bathroom tiles ──
-    this.add.rectangle(w / 2, h / 2, w, h, 0x1A2A3A).setDepth(0);
-    for (let tx = 0; tx < Math.ceil(w / 24); tx++) {
-      for (let ty = 0; ty < Math.ceil(h / 24); ty++) {
-        const tileColor = (tx + ty) % 2 === 0 ? 0x2A3A4A : 0x253545;
-        this.add.rectangle(tx * 24 + 12, ty * 24 + 12, 22, 22, tileColor).setDepth(1);
+    // ── Background: luxury marble bathroom ──
+
+    // Base wall color — warm cream marble
+    this.add.rectangle(w / 2, h / 2, w, h, 0xF5F0E8).setDepth(0);
+
+    // Marble wall tiles (light cream with subtle variation)
+    for (let tx = 0; tx < Math.ceil(w / 32); tx++) {
+      for (let ty = 0; ty < Math.ceil(h * 0.7 / 32); ty++) {
+        const base = (tx + ty) % 2 === 0 ? 0xEDE8DF : 0xF2ECE2;
+        this.add.rectangle(tx * 32 + 16, ty * 32 + 16, 30, 30, base).setDepth(1);
+        // Marble vein detail
+        if ((tx + ty * 3) % 5 === 0) {
+          this.add.rectangle(tx * 32 + 10, ty * 32 + 14, 12, 1, 0xDDD8CF, 0.4).setDepth(1);
+        }
+        if ((tx * 2 + ty) % 7 === 0) {
+          this.add.rectangle(tx * 32 + 20, ty * 32 + 22, 8, 1, 0xE0DBD0, 0.3).setDepth(1);
+        }
       }
     }
 
-    // Shower head
-    this.add.rectangle(w / 2, 20, 60, 12, 0xC0C0C0).setDepth(3);
-    this.add.rectangle(w / 2, 10, 8, 20, 0xA0A0A0).setDepth(3);
+    // Tile border strip (gold accent line between wall and floor)
+    this.add.rectangle(w / 2, h * 0.7, w, 3, 0xD4A843).setDepth(2);
 
-    // Glass door frames
-    this.add.rectangle(40, h / 2, 6, h, 0x88AACC, 0.3).setDepth(4);
-    this.add.rectangle(w - 40, h / 2, 6, h, 0x88AACC, 0.3).setDepth(4);
+    // Floor tiles — darker marble
+    for (let tx = 0; tx < Math.ceil(w / 28); tx++) {
+      for (let ty = 0; ty < Math.ceil(h * 0.3 / 28); ty++) {
+        const floorBase = (tx + ty) % 2 === 0 ? 0xC8C0B0 : 0xBEB6A6;
+        this.add.rectangle(tx * 28 + 14, h * 0.7 + 10 + ty * 28 + 14, 26, 26, floorBase).setDepth(1);
+      }
+    }
+
+    // Drain in floor center
+    this.add.circle(w / 2, h * 0.88, 8, 0x999999).setDepth(2);
+    this.add.circle(w / 2, h * 0.88, 6, 0xAAAAAA).setDepth(2);
+    this.add.circle(w / 2, h * 0.88, 2, 0x888888).setDepth(2);
+
+    // ── Glass shower enclosure ──
+    // Left glass wall
+    this.add.rectangle(60, h / 2, 4, h * 0.85, 0xB4DCF0, 0.25).setDepth(4);
+    this.add.rectangle(58, h / 2, 2, h * 0.85, 0xC0C0C0, 0.6).setDepth(4);  // Chrome frame
+    // Right glass wall
+    this.add.rectangle(w - 60, h / 2, 4, h * 0.85, 0xB4DCF0, 0.25).setDepth(4);
+    this.add.rectangle(w - 58, h / 2, 2, h * 0.85, 0xC0C0C0, 0.6).setDepth(4);
+    // Top glass rail
+    this.add.rectangle(w / 2, h * 0.08, w - 116, 3, 0xC0C0C0, 0.7).setDepth(4);
+
+    // ── Rain shower head ──
+    // Pipe from wall (right side)
+    this.add.rectangle(w / 2 + 40, 20, 4, 30, 0xA8A8A8).setDepth(3);
+    // Horizontal arm
+    this.add.rectangle(w / 2 + 20, 14, 44, 4, 0xB0B0B0).setDepth(3);
+    // Rain head (wide oval)
+    this.add.rectangle(w / 2, 18, 50, 8, 0xC8C8C8).setDepth(3);
+    this.add.rectangle(w / 2, 20, 46, 4, 0xD0D0D0).setDepth(3);
+    // Nozzle dots on shower head
+    for (let nx = -20; nx <= 20; nx += 5) {
+      this.add.circle(w / 2 + nx, 22, 1, 0xAAAAAA).setDepth(3);
+    }
+
+    // ── Chrome fixtures on right wall ──
+    // Temperature knob
+    this.add.circle(w - 75, h * 0.45, 6, 0xC0C0C0).setDepth(3);
+    this.add.circle(w - 75, h * 0.45, 4, 0xD4A843).setDepth(3); // Gold center
+    this.add.circle(w - 75, h * 0.45, 2, 0xB8942E).setDepth(3);
+
+    // ── Shelf with bottles (left wall) ──
+    // Shelf
+    this.add.rectangle(75, h * 0.35, 30, 3, 0xC0C0C0).setDepth(3);
+    // Shampoo bottle (tall, amber)
+    this.add.rectangle(67, h * 0.35 - 10, 6, 16, 0xDAA520).setDepth(3);
+    this.add.rectangle(67, h * 0.35 - 18, 4, 4, 0xC89418).setDepth(3); // cap
+    // Conditioner bottle (shorter, white)
+    this.add.rectangle(77, h * 0.35 - 8, 7, 12, 0xF5F5F5).setDepth(3);
+    this.add.rectangle(77, h * 0.35 - 14, 5, 3, 0xE0E0E0).setDepth(3); // cap
+    // Soap bar (small, pink)
+    this.add.rectangle(85, h * 0.35 - 4, 8, 4, 0xFFB6C1).setDepth(3);
+
+    // ── Warm ambient light glow from above ──
+    this.add.circle(w / 2, 30, 80, 0xFFF8E7, 0.06).setDepth(2);
+    this.add.circle(w / 2, 30, 50, 0xFFF8E7, 0.04).setDepth(2);
 
     // Mist overlay
     const mistOverlay = this.add.rectangle(w / 2, h / 2, w, h, 0xFFFFFF)
