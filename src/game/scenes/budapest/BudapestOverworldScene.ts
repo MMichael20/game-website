@@ -2,7 +2,7 @@
 import { OverworldScene, OverworldConfig } from '../OverworldScene';
 import { TILE_SIZE } from '../../../utils/constants';
 import { tileToWorld, CheckpointZone } from '../../data/mapLayout';
-import { saveCurrentScene } from '../../systems/SaveSystem';
+import { saveCurrentScene, getVisitedCheckpoints } from '../../systems/SaveSystem';
 import { uiManager } from '../../../ui/UIManager';
 import { WaterEffectSystem } from '../../systems/WaterEffectSystem';
 import {
@@ -49,6 +49,8 @@ export class BudapestOverworldScene extends OverworldScene {
       bp_guard_escape: 'Parliament Park',
       bp_jazz_seat: 'Jazz Club',
       bp_rooftop_chase: 'Rooftop View',
+      bp_danube_kayak: 'Kayak Rental',
+      bp_chimney_cake: 'Chimney Cake',
       bp_parliament: 'Parliament',
       bp_chain_bridge: 'Chain Bridge',
       bp_fishermans_bastion: 'Fisherman\'s Bastion',
@@ -93,6 +95,9 @@ export class BudapestOverworldScene extends OverworldScene {
     });
     this.waterSystem.create();
 
+    // ── Visited checkpoint indicators (green stars) ──
+    this.addVisitedStars();
+
     this.addDanubeWaves();
     this.addBoats();
     this.addVehicles();
@@ -104,6 +109,31 @@ export class BudapestOverworldScene extends OverworldScene {
     this.addForegroundBuildings();
     this.addStreetDetails();
     this.addBuildingShadows();
+  }
+
+  // ── Visited checkpoint stars — green ★ above completed locations ──
+  private addVisitedStars(): void {
+    const visited = getVisitedCheckpoints();
+    for (const zone of BUDAPEST_CHECKPOINT_ZONES) {
+      if (visited.includes(zone.id)) {
+        const star = this.add.text(zone.centerX, zone.centerY - 20, '★', {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: '8px',
+          color: '#44DD44',
+          stroke: '#000000',
+          strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(15);
+        // Gentle float animation
+        this.tweens.add({
+          targets: star,
+          y: star.y - 3,
+          duration: 1500,
+          ease: 'Sine.easeInOut',
+          yoyo: true,
+          repeat: -1,
+        });
+      }
+    }
   }
 
   // ── Enhanced 3-layer Danube water with sparkle reflections ──
@@ -750,6 +780,30 @@ export class BudapestOverworldScene extends OverworldScene {
             uiManager.hideNPCDialog();
             this.inputSystem.unfreeze();
             this.fadeToScene('RooftopChaseScene', { checkpointId: 'bp_rooftop_chase' });
+          },
+        );
+        break;
+
+      case 'bp_danube_kayak':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Want to try kayaking on the Danube?', 'Dodge the tour boats and collect coins!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('DanubeKayakScene', { checkpointId: 'bp_danube_kayak' });
+          },
+        );
+        break;
+
+      case 'bp_chimney_cake':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Fresh kürtőskalács! Hot off the spit!', 'Stack the layers perfectly for the best cake!'],
+          () => {
+            uiManager.hideNPCDialog();
+            this.inputSystem.unfreeze();
+            this.fadeToScene('ChimneyCakeScene', { checkpointId: 'bp_chimney_cake' });
           },
         );
         break;

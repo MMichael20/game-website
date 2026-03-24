@@ -463,6 +463,20 @@ export const BUDAPEST_CHECKPOINT_ZONES: CheckpointZone[] = [
     radius: 48,
     promptText: 'Rooftop View',
   },
+  {
+    id: 'bp_danube_kayak',
+    centerX: tileToWorld(28, 12).x,
+    centerY: tileToWorld(28, 12).y,
+    radius: 48,
+    promptText: 'Kayak Rental',
+  },
+  {
+    id: 'bp_chimney_cake',
+    centerX: tileToWorld(44, 30).x,
+    centerY: tileToWorld(44, 30).y,
+    radius: 48,
+    promptText: 'Chimney Cake Shop',
+  },
 ];
 
 export const BUDAPEST_DECORATIONS = [

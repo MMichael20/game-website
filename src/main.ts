@@ -29,6 +29,8 @@ import { PaprikaSortScene } from './game/scenes/minigames/PaprikaSortScene';
 import { GuardEscapeScene } from './game/scenes/minigames/GuardEscapeScene';
 import { JazzSeatScene } from './game/scenes/minigames/JazzSeatScene';
 import { RooftopChaseScene } from './game/scenes/minigames/RooftopChaseScene';
+import { DanubeKayakScene } from './game/scenes/minigames/DanubeKayakScene';
+import { ChimneyCakeScene } from './game/scenes/minigames/ChimneyCakeScene';
 import { AirbnbShowerScene } from './game/scenes/budapest/AirbnbShowerScene';
 import { BudapestAirportScene } from './game/scenes/budapest/BudapestAirportScene';
 import { BudapestBusRideScene } from './game/scenes/budapest/BudapestBusRideScene';
@@ -70,7 +72,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     touch: { capture: true },
   },
-  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, HadarsHouseScene, AirportInteriorScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, AirbnbCompoundScene, DrivingScene, HanaPulloverScene, HanaDrivingScene, SunBeachScene, QuizScene, CatchScene, MatchScene, TennisScene, ChaseBabyScene, TurtleRescueScene, CurryHuntScene, LangosCatchScene, RuinBarQuizScene, TramDashScene, PaprikaSortScene, AirbnbShowerScene, BudapestAirportScene, BudapestBusRideScene, BudapestOverworldScene, JewishQuarterScene, RuinBarScene, BudapestEyeScene, BudapestAirbnbLobbyScene, BudapestAirbnbScene, BudapestTransportScene, DanubeCruiseScene, ThermalBathScene, GuardEscapeScene, JazzSeatScene, RooftopChaseScene],
+  scene: [BootScene, DressingRoomScene, WorldScene, MichaelsHouseScene, HadarsHouseScene, AirportInteriorScene, AirplaneCutscene, MauiOverworldScene, MauiHotelScene, AirbnbCompoundScene, DrivingScene, HanaPulloverScene, HanaDrivingScene, SunBeachScene, QuizScene, CatchScene, MatchScene, TennisScene, ChaseBabyScene, TurtleRescueScene, CurryHuntScene, LangosCatchScene, RuinBarQuizScene, TramDashScene, PaprikaSortScene, AirbnbShowerScene, BudapestAirportScene, BudapestBusRideScene, BudapestOverworldScene, JewishQuarterScene, RuinBarScene, BudapestEyeScene, BudapestAirbnbLobbyScene, BudapestAirbnbScene, BudapestTransportScene, DanubeCruiseScene, ThermalBathScene, GuardEscapeScene, JazzSeatScene, RooftopChaseScene, DanubeKayakScene, ChimneyCakeScene],
 };
 
 new Phaser.Game(config);
