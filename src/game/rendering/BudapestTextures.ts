@@ -5543,6 +5543,214 @@ function drawCutsceneHead(
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// ── LAYERED SHOWER SPRITES — body parts as separate textures for animation
+// ══════════════════════════════════════════════════════════════════════════
+
+export function generateShowerLayered(
+  scene: Phaser.Scene,
+  playerOutfit: OutfitColors,
+  partnerOutfit: OutfitColors,
+): void {
+  const pSkin = playerOutfit.skin;
+  const pSkinS = darken(pSkin, 0.08);
+  const pHair = playerOutfit.hair;
+  const pHairStyle = playerOutfit.hairStyle;
+  const mSkin = partnerOutfit.skin;
+  const mSkinS = darken(mSkin, 0.08);
+  const mHair = partnerOutfit.maleHair ?? partnerOutfit.hair;
+  const mHairStyle = partnerOutfit.maleHairStyle ?? partnerOutfit.hairStyle;
+
+  const bikini = '#FF1493';
+  const bikiniHi = lighten(bikini, 0.1);
+  const trunks = '#003366';
+  const trunksHi = lighten(trunks, 0.12);
+
+  // ── HER HEAD (open eyes) — 24×30 ──
+  {
+    const c = scene.textures.createCanvas('shower-her-head', 24, 30);
+    if (!c) return;
+    const ctx = c.context;
+    drawCutsceneHead(ctx, 3, 6, 18, 20, pSkin, pHair, pHairStyle, false, 'open');
+    // Wet shine
+    rect(ctx, 7, 7, 2, 8, 'rgba(255,255,255,0.2)');
+    c.refresh();
+  }
+
+  // ── HER HEAD (closed eyes) — 24×30 ──
+  {
+    const c = scene.textures.createCanvas('shower-her-head-closed', 24, 30);
+    if (!c) return;
+    const ctx = c.context;
+    drawCutsceneHead(ctx, 3, 6, 18, 20, pSkin, pHair, pHairStyle, false, 'closed');
+    rect(ctx, 7, 7, 2, 8, 'rgba(255,255,255,0.25)');
+    c.refresh();
+  }
+
+  // ── HER BODY — hourglass: shoulders → bust → waist → hips → legs — 28×50 ──
+  {
+    const c = scene.textures.createCanvas('shower-her-body', 28, 50);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Neck
+    rect(ctx, 10, 0, 8, 4, pSkin);
+
+    // Shoulders
+    rect(ctx, 4, 4, 10, 3, pSkin);    // left shoulder
+    rect(ctx, 14, 4, 10, 3, pSkin);   // right shoulder
+
+    // Bikini top / bust area (wide — 22px)
+    rect(ctx, 3, 7, 22, 5, bikini);
+    rect(ctx, 4, 8, 20, 3, bikiniHi);
+    // Bust shape — slight roundness
+    rect(ctx, 5, 7, 7, 5, bikini);
+    rect(ctx, 16, 7, 7, 5, bikini);
+    rect(ctx, 6, 6, 5, 1, bikini);    // top curve left
+    rect(ctx, 17, 6, 5, 1, bikini);   // top curve right
+
+    // Upper torso tapering (20px → 16px)
+    rect(ctx, 4, 12, 20, 2, pSkin);
+    rect(ctx, 5, 14, 18, 2, pSkin);
+
+    // Narrow waist (14px → 12px)
+    rect(ctx, 7, 16, 14, 2, pSkin);
+    rect(ctx, 8, 18, 12, 2, pSkin);
+    // Waist shadows for curve definition
+    rect(ctx, 7, 16, 1, 4, pSkinS);
+    rect(ctx, 20, 16, 1, 4, pSkinS);
+
+    // Hips widening (14px → 20px → 22px)
+    rect(ctx, 6, 20, 16, 2, pSkin);
+    rect(ctx, 4, 22, 20, 2, pSkin);
+    rect(ctx, 3, 24, 22, 2, pSkin);
+
+    // Bikini bottom (wide hips — 22px)
+    rect(ctx, 3, 26, 22, 5, bikini);
+    rect(ctx, 4, 27, 20, 3, bikiniHi);
+
+    // Upper thighs (still wide then split)
+    rect(ctx, 4, 31, 9, 4, pSkin);    // left thigh
+    rect(ctx, 15, 31, 9, 4, pSkin);   // right thigh
+
+    // Lower legs
+    rect(ctx, 5, 35, 7, 10, pSkin);   // left leg
+    rect(ctx, 16, 35, 7, 10, pSkin);  // right leg
+
+    // Leg shadows
+    rect(ctx, 5, 35, 1, 10, pSkinS);
+    rect(ctx, 16, 35, 1, 10, pSkinS);
+
+    // Hip curve highlight
+    rect(ctx, 4, 23, 1, 4, lighten(pSkin, 0.06));
+    rect(ctx, 23, 23, 1, 4, lighten(pSkin, 0.06));
+
+    c.refresh();
+  }
+
+  // ── HER ARM — 10×28 (upper arm + forearm + hand) ──
+  {
+    const c = scene.textures.createCanvas('shower-her-arm', 10, 28);
+    if (!c) return;
+    const ctx = c.context;
+    // Upper arm
+    rect(ctx, 2, 0, 6, 14, pSkin);
+    rect(ctx, 2, 0, 1, 14, pSkinS);   // shadow edge
+    // Forearm (slightly thinner)
+    rect(ctx, 3, 14, 5, 10, pSkin);
+    // Hand
+    rect(ctx, 3, 24, 5, 4, pSkin);
+    rect(ctx, 3, 24, 5, 1, lighten(pSkin, 0.06));
+    c.refresh();
+  }
+
+  // ── HIS HEAD (open eyes) — 28×34 ──
+  {
+    const c = scene.textures.createCanvas('shower-him-head', 28, 34);
+    if (!c) return;
+    const ctx = c.context;
+    drawCutsceneHead(ctx, 4, 6, 20, 24, mSkin, mHair, mHairStyle, true, 'open');
+    rect(ctx, 8, 7, 2, 9, 'rgba(255,255,255,0.2)');
+    c.refresh();
+  }
+
+  // ── HIS HEAD (closed eyes) — 28×34 ──
+  {
+    const c = scene.textures.createCanvas('shower-him-head-closed', 28, 34);
+    if (!c) return;
+    const ctx = c.context;
+    drawCutsceneHead(ctx, 4, 6, 20, 24, mSkin, mHair, mHairStyle, true, 'closed');
+    rect(ctx, 8, 7, 2, 9, 'rgba(255,255,255,0.25)');
+    c.refresh();
+  }
+
+  // ── HIS BODY — broad chest → trunks → legs — 36×54 ──
+  {
+    const c = scene.textures.createCanvas('shower-him-body', 36, 54);
+    if (!c) return;
+    const ctx = c.context;
+
+    // Neck (thicker)
+    rect(ctx, 13, 0, 10, 4, mSkin);
+
+    // Broad shoulders
+    rect(ctx, 4, 4, 14, 4, mSkin);    // left shoulder
+    rect(ctx, 18, 4, 14, 4, mSkin);   // right shoulder
+
+    // Chest / torso (wide — 28px)
+    rect(ctx, 4, 8, 28, 18, mSkin);
+    // Pec definition
+    rect(ctx, 6, 9, 10, 4, lighten(mSkin, 0.05));
+    rect(ctx, 20, 9, 10, 4, lighten(mSkin, 0.05));
+    // Center line
+    rect(ctx, 17, 10, 2, 12, mSkinS);
+    // Ab hint
+    rect(ctx, 12, 18, 12, 1, mSkinS);
+    rect(ctx, 13, 22, 10, 1, mSkinS);
+
+    // Waist (slightly narrower — 24px)
+    rect(ctx, 6, 26, 24, 2, mSkin);
+
+    // Swim trunks
+    rect(ctx, 5, 28, 26, 7, trunks);
+    rect(ctx, 6, 29, 24, 4, trunksHi);
+    // Waistband
+    rect(ctx, 5, 28, 26, 2, darken(trunks, 0.15));
+
+    // Upper thighs
+    rect(ctx, 6, 35, 10, 4, mSkin);   // left thigh
+    rect(ctx, 20, 35, 10, 4, mSkin);  // right thigh
+
+    // Lower legs
+    rect(ctx, 7, 39, 8, 12, mSkin);   // left leg
+    rect(ctx, 21, 39, 8, 12, mSkin);  // right leg
+
+    // Leg shadows
+    rect(ctx, 7, 39, 1, 12, mSkinS);
+    rect(ctx, 21, 39, 1, 12, mSkinS);
+
+    c.refresh();
+  }
+
+  // ── HIS ARM — 12×32 (broader) ──
+  {
+    const c = scene.textures.createCanvas('shower-him-arm', 12, 32);
+    if (!c) return;
+    const ctx = c.context;
+    // Upper arm (muscular)
+    rect(ctx, 1, 0, 8, 16, mSkin);
+    rect(ctx, 1, 0, 1, 16, mSkinS);
+    // Bicep highlight
+    rect(ctx, 4, 2, 3, 6, lighten(mSkin, 0.05));
+    // Forearm
+    rect(ctx, 2, 16, 7, 12, mSkin);
+    // Hand
+    rect(ctx, 2, 28, 7, 4, mSkin);
+    rect(ctx, 2, 28, 7, 1, lighten(mSkin, 0.06));
+    c.refresh();
+  }
+}
+
 export function generateBudapestCoupleSprites(
   scene: Phaser.Scene,
   playerOutfit: OutfitColors,

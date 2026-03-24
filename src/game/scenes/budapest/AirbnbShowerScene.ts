@@ -1,13 +1,13 @@
 // src/game/scenes/budapest/AirbnbShowerScene.ts
-// Romantic shower cutscene at the Budapest Airbnb — bathing suits, steam, water effects, zoom-in
+// Romantic shower cutscene — layered body-part animation for realistic movement
+// Each character is split into head, body, and arms that animate independently
 
 import Phaser from 'phaser';
 import {
   addLetterbox, removeLetterbox, showDialogue, addSkipButton,
-  addBreathing, addSway, addHeartParticles, addSleepingZ,
-  AnimationSet,
+  addHeartParticles, AnimationSet,
 } from './cutsceneHelpers';
-import { generateBudapestCoupleSprites } from '../../rendering/BudapestTextures';
+import { generateShowerLayered } from '../../rendering/BudapestTextures';
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 
@@ -20,11 +20,11 @@ export class AirbnbShowerScene extends Phaser.Scene {
     const w = Number(this.cameras.main.width);
     const h = Number(this.cameras.main.height);
 
-    // ── Load outfits and generate couple sprites ──
+    // ── Generate layered body-part textures ──
     const state = loadGameState();
     const playerOutfit = OUTFIT_STYLES[state.outfits.player] ?? OUTFIT_STYLES[0];
     const partnerOutfit = OUTFIT_STYLES[state.outfits.partner] ?? OUTFIT_STYLES[0];
-    generateBudapestCoupleSprites(this, playerOutfit, partnerOutfit);
+    generateShowerLayered(this, playerOutfit, partnerOutfit);
 
     addSkipButton(this, 'BudapestAirbnbScene', { returnFromInterior: true });
 
@@ -32,29 +32,26 @@ export class AirbnbShowerScene extends Phaser.Scene {
 
     // ── Background: bathroom tiles ──
     this.add.rectangle(w / 2, h / 2, w, h, 0x1A2A3A).setDepth(0);
-
-    // Tile wall pattern
     for (let tx = 0; tx < Math.ceil(w / 24); tx++) {
       for (let ty = 0; ty < Math.ceil(h / 24); ty++) {
         const tileColor = (tx + ty) % 2 === 0 ? 0x2A3A4A : 0x253545;
-        this.add.rectangle(tx * 24 + 12, ty * 24 + 12, 22, 22, tileColor)
-          .setDepth(1);
+        this.add.rectangle(tx * 24 + 12, ty * 24 + 12, 22, 22, tileColor).setDepth(1);
       }
     }
 
-    // Shower head at top
+    // Shower head
     this.add.rectangle(w / 2, 20, 60, 12, 0xC0C0C0).setDepth(3);
     this.add.rectangle(w / 2, 10, 8, 20, 0xA0A0A0).setDepth(3);
 
-    // Glass door frame (left and right)
+    // Glass door frames
     this.add.rectangle(40, h / 2, 6, h, 0x88AACC, 0.3).setDepth(4);
     this.add.rectangle(w - 40, h / 2, 6, h, 0x88AACC, 0.3).setDepth(4);
 
-    // Warm mist overlay
+    // Mist overlay
     const mistOverlay = this.add.rectangle(w / 2, h / 2, w, h, 0xFFFFFF)
       .setAlpha(0.05).setDepth(40);
 
-    // ── Steam helper ──
+    // ── Steam & water helpers ──
     const spawnSteam = (sx: number, sy: number) => {
       const steam = this.add.circle(
         sx + (Math.random() - 0.5) * 60, sy,
@@ -70,16 +67,13 @@ export class AirbnbShowerScene extends Phaser.Scene {
       });
     };
 
-    // ── Water droplet helper ──
     const spawnWaterDrop = () => {
       const x = w * 0.25 + Math.random() * w * 0.5;
       const drop = this.add.rectangle(x, 30, 1.5, 5 + Math.random() * 4, 0x6699CC)
         .setAlpha(0.35 + Math.random() * 0.2).setDepth(30);
       this.tweens.add({
-        targets: drop,
-        y: h + 10,
-        duration: 300 + Math.random() * 200,
-        ease: 'Linear',
+        targets: drop, y: h + 10,
+        duration: 300 + Math.random() * 200, ease: 'Linear',
         onComplete: () => drop.destroy(),
       });
     };
@@ -88,34 +82,99 @@ export class AirbnbShowerScene extends Phaser.Scene {
     const bars = addLetterbox(this);
 
     // ════════════════════════════════════════════════════════
-    // PHASE 1: Stepping In (0–5s)
+    // BUILD LAYERED CHARACTER SPRITES
     // ════════════════════════════════════════════════════════
 
-    // Couple sprite — bathing suits, starts small and zooms in
-    const coupleY = h * 0.5;
-    const couple = this.add.image(w / 2, coupleY, 'bp-couple-shower')
-      .setScale(1.5).setDepth(20).setAlpha(0);
+    // All parts go in a container for unified scaling
+    const coupleContainer = this.add.container(w / 2, h * 0.5).setDepth(20);
 
-    // Fade in and zoom
+    // --- HIM (drawn first, behind her in the hug) ---
+    // Positions relative to container center (0,0)
+
+    const himBody = this.add.image(18, 8, 'shower-him-body').setOrigin(0.5, 0);
+    const himHead = this.add.image(18, -22, 'shower-him-head').setOrigin(0.5, 0.5);
+    const himArmL = this.add.image(2, 6, 'shower-him-arm').setOrigin(0.5, 0);
+    const himArmR = this.add.image(34, 6, 'shower-him-arm').setOrigin(0.5, 0).setFlipX(true);
+
+    // --- HER (in front, overlapping slightly for hug) ---
+    const herBody = this.add.image(-10, 6, 'shower-her-body').setOrigin(0.5, 0);
+    const herHead = this.add.image(-10, -18, 'shower-her-head').setOrigin(0.5, 0.5);
+    const herArmL = this.add.image(-24, 4, 'shower-her-arm').setOrigin(0.5, 0);
+    const herArmR = this.add.image(4, 4, 'shower-her-arm').setOrigin(0.5, 0).setFlipX(true);
+
+    // Add to container in draw order (back to front)
+    coupleContainer.add([
+      himArmL, himBody, himArmR,
+      herArmL, herBody, herArmR,
+      himHead, herHead,
+    ]);
+
+    // Start invisible, small
+    coupleContainer.setScale(1.5).setAlpha(0);
+
+    // ════════════════════════════════════════════════════════
+    // PHASE 1: Stepping In (0–5s)
+    // Arms at sides, breathing, fade in
+    // ════════════════════════════════════════════════════════
+
+    // Fade in + zoom
     this.tweens.add({
-      targets: couple,
+      targets: coupleContainer,
       alpha: 1, scaleX: 2.5, scaleY: 2.5,
       duration: 3000, ease: 'Sine.easeInOut',
     });
 
-    activeAnims.push(addBreathing(this, couple, 2, 2200));
+    // Independent breathing — her chest rises more (bust emphasis)
+    const herBreath = this.tweens.add({
+      targets: herBody, y: herBody.y - 1.5,
+      duration: 2200, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+    const herHeadBreath = this.tweens.add({
+      targets: herHead, y: herHead.y - 2,
+      duration: 2200, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+    const himBreath = this.tweens.add({
+      targets: himBody, y: himBody.y - 1,
+      duration: 2600, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+    const himHeadBreath = this.tweens.add({
+      targets: himHead, y: himHead.y - 1.5,
+      duration: 2600, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+    // Arms follow body breathing
+    const herArmBreathL = this.tweens.add({
+      targets: herArmL, y: herArmL.y - 1.5,
+      duration: 2200, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+    const herArmBreathR = this.tweens.add({
+      targets: herArmR, y: herArmR.y - 1.5,
+      duration: 2200, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+    const himArmBreathL = this.tweens.add({
+      targets: himArmL, y: himArmL.y - 1,
+      duration: 2600, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+    const himArmBreathR = this.tweens.add({
+      targets: himArmR, y: himArmR.y - 1,
+      duration: 2600, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
 
-    // Light steam from the start
+    activeAnims.push({
+      tweens: [herBreath, herHeadBreath, himBreath, himHeadBreath,
+               herArmBreathL, herArmBreathR, himArmBreathL, himArmBreathR],
+      kill: () => {
+        [herBreath, herHeadBreath, himBreath, himHeadBreath,
+         herArmBreathL, herArmBreathR, himArmBreathL, himArmBreathR]
+          .forEach(t => t.destroy());
+      },
+    });
+
+    // Steam + water
     const steamEvent = this.time.addEvent({
       delay: 500, loop: true,
       callback: () => spawnSteam(w / 2, h * 0.3),
     });
-
-    // Water drops — light shower
-    const waterEvent = this.time.addEvent({
-      delay: 60, loop: true,
-      callback: spawnWaterDrop,
-    });
+    this.time.addEvent({ delay: 60, loop: true, callback: spawnWaterDrop });
 
     this.time.delayedCall(1000, () => {
       showDialogue(this, 'The water is perfect...', 'partner');
@@ -125,40 +184,65 @@ export class AirbnbShowerScene extends Phaser.Scene {
     });
 
     // ════════════════════════════════════════════════════════
-    // PHASE 2: Close-up Zoom (5–12s)
+    // PHASE 2: Arms Wrapping (5–12s)
+    // Arms reach out and wrap around each other
     // ════════════════════════════════════════════════════════
 
     this.time.delayedCall(5000, () => {
-      // Big zoom in — intimate close-up
+      // Zoom closer
       this.tweens.add({
-        targets: couple,
+        targets: coupleContainer,
         scaleX: 3.5, scaleY: 3.5,
         duration: 3000, ease: 'Sine.easeInOut',
       });
-
-      // Camera zoom too
       this.tweens.add({
-        targets: this.cameras.main,
-        zoom: 1.1,
+        targets: this.cameras.main, zoom: 1.1,
         duration: 3000, ease: 'Sine.easeInOut',
       });
 
-      // Add sway
-      activeAnims.push(addSway(this, couple, 1.0, 3500));
+      // Her right arm reaches across to him (rotates toward him)
+      this.tweens.add({
+        targets: herArmR,
+        x: 10, angle: -35,
+        duration: 2500, ease: 'Sine.easeInOut',
+      });
 
-      // Water droplets on bodies — sparkles
+      // His left arm wraps around her back (rotates toward her)
+      this.tweens.add({
+        targets: himArmL,
+        x: -8, angle: 25,
+        duration: 2500, ease: 'Sine.easeInOut',
+      });
+
+      // Bodies move slightly closer together
+      this.tweens.add({
+        targets: herBody, x: herBody.x + 3,
+        duration: 2500, ease: 'Sine.easeInOut',
+      });
+      this.tweens.add({
+        targets: himBody, x: himBody.x - 2,
+        duration: 2500, ease: 'Sine.easeInOut',
+      });
+
+      // Gentle sway on the whole container
+      const sway = this.tweens.add({
+        targets: coupleContainer,
+        angle: { from: -0.8, to: 0.8 },
+        duration: 3500, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+      });
+      activeAnims.push({ tweens: [sway], kill: () => sway.destroy() });
+
+      // Water sparkles on bodies
       this.time.addEvent({
         delay: 600, loop: true,
         callback: () => {
           const dx = (Math.random() - 0.5) * 60;
           const dy = (Math.random() - 0.5) * 40;
           const droplet = this.add.circle(
-            w / 2 + dx, coupleY + dy,
-            1.5, 0xAADDFF,
+            w / 2 + dx, h * 0.5 + dy, 1.5, 0xAADDFF,
           ).setAlpha(0.6).setDepth(22);
           this.tweens.add({
-            targets: droplet,
-            y: droplet.y + 10 + Math.random() * 10,
+            targets: droplet, y: droplet.y + 10 + Math.random() * 10,
             alpha: 0, duration: 800,
             onComplete: () => droplet.destroy(),
           });
@@ -166,9 +250,7 @@ export class AirbnbShowerScene extends Phaser.Scene {
       });
 
       // Mist thickens
-      this.tweens.add({
-        targets: mistOverlay, alpha: 0.1, duration: 3000,
-      });
+      this.tweens.add({ targets: mistOverlay, alpha: 0.1, duration: 3000 });
 
       this.time.delayedCall(2000, () => {
         showDialogue(this, 'Come closer...', 'partner');
@@ -182,33 +264,59 @@ export class AirbnbShowerScene extends Phaser.Scene {
     });
 
     // ════════════════════════════════════════════════════════
-    // PHASE 3: Cozy Moment (12–20s)
+    // PHASE 3: Full Embrace (12–20s)
+    // Eyes close, head nuzzle, tight hug, hearts
     // ════════════════════════════════════════════════════════
 
     this.time.delayedCall(12000, () => {
-      // Swap to cozy sprite (eyes closed, arm around)
-      couple.setTexture('bp-couple-shower-cozy');
+      // Swap to closed-eye heads
+      herHead.setTexture('shower-her-head-closed');
+      himHead.setTexture('shower-him-head-closed');
 
-      // Even bigger zoom
+      // Her head nuzzles onto his chest — tilts right, moves toward him
       this.tweens.add({
-        targets: couple,
-        scaleX: 4.0, scaleY: 4.0,
+        targets: herHead,
+        x: herHead.x + 8, y: herHead.y + 4, angle: 12,
         duration: 2000, ease: 'Sine.easeInOut',
       });
 
+      // His head tilts down toward her
       this.tweens.add({
-        targets: this.cameras.main,
-        zoom: 1.15,
+        targets: himHead,
+        y: himHead.y + 3, angle: -8,
+        duration: 2000, ease: 'Sine.easeInOut',
+      });
+
+      // His right arm also wraps around her (full embrace)
+      this.tweens.add({
+        targets: himArmR,
+        x: -2, angle: -20,
+        duration: 2000, ease: 'Sine.easeInOut',
+      });
+
+      // Her left arm wraps around his waist
+      this.tweens.add({
+        targets: herArmL,
+        x: herArmL.x + 8, angle: -20,
+        duration: 2000, ease: 'Sine.easeInOut',
+      });
+
+      // Even bigger zoom
+      this.tweens.add({
+        targets: coupleContainer,
+        scaleX: 4.0, scaleY: 4.0,
+        duration: 2000, ease: 'Sine.easeInOut',
+      });
+      this.tweens.add({
+        targets: this.cameras.main, zoom: 1.15,
         duration: 2000, ease: 'Sine.easeInOut',
       });
 
       // Hearts
-      addHeartParticles(this, w / 2, coupleY - 60, 5, 55);
+      addHeartParticles(this, w / 2, h * 0.5 - 60, 5, 55);
 
-      // Warm color shift
-      this.tweens.add({
-        targets: mistOverlay, alpha: 0.15, duration: 4000,
-      });
+      // Mist intensifies
+      this.tweens.add({ targets: mistOverlay, alpha: 0.15, duration: 4000 });
 
       // Steam intensifies
       steamEvent.destroy();
@@ -235,19 +343,15 @@ export class AirbnbShowerScene extends Phaser.Scene {
     this.time.delayedCall(20000, () => {
       activeAnims.forEach(a => a.kill());
 
-      // Fade couple
       this.tweens.add({
-        targets: couple, alpha: 0, duration: 2000,
+        targets: coupleContainer, alpha: 0, duration: 2000,
       });
-
-      // Mist fills the screen
       this.tweens.add({
         targets: mistOverlay, alpha: 0.6, duration: 2500,
       });
 
       removeLetterbox(this, bars);
 
-      // White fade out
       const whiteOut = this.add.rectangle(w / 2, h / 2, w, h, 0xFFFFFF)
         .setAlpha(0).setDepth(100);
       this.tweens.add({
