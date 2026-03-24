@@ -6,7 +6,7 @@ import { Player } from '../entities/Player';
 import { Partner } from '../entities/Partner';
 import { InputSystem } from '../systems/InputSystem';
 import { NPCSystem } from '../systems/NPCSystem';
-import { loadGameState, clearGameState } from '../systems/SaveSystem';
+import { loadGameState, clearGameState, savePlayerPosition } from '../systems/SaveSystem';
 import { uiManager } from '../../ui/UIManager';
 import { MinimapRenderer } from '../../ui/MinimapRenderer';
 
@@ -86,6 +86,10 @@ export abstract class OverworldScene extends Phaser.Scene {
       this.player.sprite.setPosition(this.returnFromInteriorData.returnX, this.returnFromInteriorData.returnY);
       this.partner.sprite.setPosition(this.returnFromInteriorData.returnX + 32, this.returnFromInteriorData.returnY);
       this.returnFromInteriorData = null;
+    } else if (state.playerPosition) {
+      // Restore saved position (e.g., returning from minigame)
+      this.player.sprite.setPosition(state.playerPosition.x, state.playerPosition.y);
+      this.partner.sprite.setPosition(state.playerPosition.x + 32, state.playerPosition.y);
     }
 
     // 4. NPC system
@@ -274,6 +278,10 @@ export abstract class OverworldScene extends Phaser.Scene {
 
   /** Fade camera to black and start a new scene */
   protected fadeToScene(sceneKey: string, sceneData?: object): void {
+    // Save player position so we can restore it when returning
+    const pos = this.player.getPosition();
+    savePlayerPosition(pos.x, pos.y);
+
     uiManager.hideHUD();
     uiManager.hideInteractionPrompt();
     const cam = this.cameras.main;

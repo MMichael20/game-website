@@ -25,7 +25,7 @@ export class BudapestAirbnbScene extends InteriorScene {
   update(time: number, delta: number): void {
     super.update(time, delta);
 
-    // Shower trigger — when player enters bathroom area (tiles 11-12, 8-9)
+    // Shower trigger — when player enters bathroom area
     if (!this.showerTriggered) {
       const pos = this.player.getPosition();
       const tile = worldToTile(pos.x, pos.y);
