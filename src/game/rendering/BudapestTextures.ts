@@ -2228,6 +2228,235 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
 
     c.refresh();
   }
+
+  // building-szechenyi-baths — 160×96, yellow Neo-Baroque with central dome
+  {
+    const c = scene.textures.createCanvas('building-szechenyi-baths', 160, 96);
+    if (!c) return;
+    const ctx = c.context;
+    const yellow = '#E8D44C';
+    const dark = darken(yellow, 0.15);
+    const roof = darken(yellow, 0.25);
+
+    // Main facade — distinctive bright yellow
+    rect(ctx, 8, 28, 144, 62, yellow);
+    // Foundation
+    rect(ctx, 6, 88, 148, 8, darken(yellow, 0.2));
+
+    // Central dome — larger, Neo-Baroque
+    circle(ctx, 80, 14, 20, darken(yellow, 0.12));
+    rect(ctx, 64, 14, 32, 16, yellow);
+    circle(ctx, 80, 12, 16, darken(yellow, 0.08));
+    // Dome lantern/cupola
+    rect(ctx, 78, 0, 4, 8, dark);
+    circle(ctx, 80, 2, 3, roof);
+
+    // Two side domes (smaller)
+    circle(ctx, 32, 22, 10, darken(yellow, 0.1));
+    rect(ctx, 24, 22, 16, 8, yellow);
+    circle(ctx, 128, 22, 10, darken(yellow, 0.1));
+    rect(ctx, 120, 22, 16, 8, yellow);
+
+    // Columns — 6 across the front
+    for (let i = 0; i < 6; i++) {
+      const cx = 20 + i * 24;
+      rect(ctx, cx, 34, 4, 46, dark);
+      rect(ctx, cx - 1, 34, 6, 2, dark);
+      rect(ctx, cx - 1, 78, 6, 2, dark);
+    }
+
+    // Windows — two rows
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 8; col++) {
+        const wx = 16 + col * 18;
+        const wy = 40 + row * 18;
+        rect(ctx, wx, wy, 6, 10, '#6A7A8A');
+        // Arch top
+        px(ctx, wx + 2, wy - 1, dark);
+        px(ctx, wx + 3, wy - 1, dark);
+      }
+    }
+
+    // Central arched entrance — pool-themed turquoise
+    const pool = '#3AACB0';
+    rect(ctx, 64, 62, 32, 28, pool);
+    circle(ctx, 80, 62, 16, pool);
+    rect(ctx, 68, 66, 24, 24, darken(pool, 0.15));
+
+    // Decorative horizontal bands
+    rect(ctx, 8, 28, 144, 2, dark);
+    rect(ctx, 8, 55, 144, 1, dark);
+    rect(ctx, 8, 78, 144, 1, dark);
+
+    // Rooftop balustrade
+    for (let x = 10; x < 150; x += 5) {
+      rect(ctx, x, 26, 3, 3, roof);
+    }
+
+    c.refresh();
+  }
+
+  // building-heroes-square — 96×64, Millennium Monument colonnade
+  {
+    const c = scene.textures.createCanvas('building-heroes-square', 96, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const stone = '#D8D0C0';
+    const dark = darken(stone, 0.15);
+
+    // Central column (tall pillar with archangel)
+    rect(ctx, 44, 0, 8, 50, stone);
+    rect(ctx, 42, 48, 12, 4, dark);
+    // Archangel figure at top
+    circle(ctx, 48, 2, 3, dark);
+    rect(ctx, 47, 4, 2, 4, dark);
+
+    // Left colonnade — curved row of columns
+    for (let i = 0; i < 4; i++) {
+      const cx = 8 + i * 8;
+      rect(ctx, cx, 28, 3, 24, stone);
+      rect(ctx, cx - 1, 28, 5, 2, dark);
+      rect(ctx, cx - 1, 50, 5, 2, dark);
+    }
+    // Colonnade top beam
+    rect(ctx, 4, 26, 36, 3, dark);
+
+    // Right colonnade
+    for (let i = 0; i < 4; i++) {
+      const cx = 60 + i * 8;
+      rect(ctx, cx, 28, 3, 24, stone);
+      rect(ctx, cx - 1, 28, 5, 2, dark);
+      rect(ctx, cx - 1, 50, 5, 2, dark);
+    }
+    rect(ctx, 56, 26, 36, 3, dark);
+
+    // Base platform
+    rect(ctx, 2, 52, 92, 12, darken(stone, 0.1));
+    rect(ctx, 0, 60, 96, 4, darken(stone, 0.2));
+
+    // Statues between columns (small figures)
+    for (let i = 0; i < 3; i++) {
+      circle(ctx, 12 + i * 8, 38, 2, darken(stone, 0.2));
+      circle(ctx, 64 + i * 8, 38, 2, darken(stone, 0.2));
+    }
+
+    c.refresh();
+  }
+
+  // building-st-stephens-basilica — 96×64, domed basilica with bell towers
+  {
+    const c = scene.textures.createCanvas('building-st-stephens-basilica', 96, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const stone = '#C8BCA8';
+    const dark = darken(stone, 0.15);
+    const roof = darken(stone, 0.25);
+
+    // Main body
+    rect(ctx, 16, 24, 64, 36, stone);
+    // Foundation
+    rect(ctx, 14, 58, 68, 6, darken(stone, 0.2));
+
+    // Central dome — large
+    circle(ctx, 48, 12, 18, darken(stone, 0.1));
+    rect(ctx, 34, 12, 28, 14, stone);
+    circle(ctx, 48, 10, 14, darken(stone, 0.06));
+    // Dome lantern
+    rect(ctx, 46, 0, 4, 6, dark);
+    // Cross at top
+    rect(ctx, 47, -3, 2, 4, '#5A5A5A');
+    rect(ctx, 45, -1, 6, 1, '#5A5A5A');
+
+    // Left bell tower
+    rect(ctx, 8, 10, 12, 48, stone);
+    rect(ctx, 12, 4, 4, 8, dark);
+    px(ctx, 13, 2, dark); // spire
+    px(ctx, 14, 2, dark);
+
+    // Right bell tower
+    rect(ctx, 76, 10, 12, 48, stone);
+    rect(ctx, 80, 4, 4, 8, dark);
+    px(ctx, 81, 2, dark);
+    px(ctx, 82, 2, dark);
+
+    // Windows
+    for (let col = 0; col < 4; col++) {
+      rect(ctx, 22 + col * 14, 30, 6, 10, '#6A7A8A');
+    }
+    // Tower windows
+    rect(ctx, 11, 20, 4, 6, '#6A7A8A');
+    rect(ctx, 79, 20, 4, 6, '#6A7A8A');
+
+    // Central entrance
+    rect(ctx, 38, 44, 20, 16, '#4A3A2A');
+    circle(ctx, 48, 44, 10, dark);
+
+    // Decorative bands
+    rect(ctx, 16, 24, 64, 2, dark);
+    rect(ctx, 16, 42, 64, 1, dark);
+
+    c.refresh();
+  }
+
+  // building-great-market-hall — 160×64, long hall with Zsolnay tile roof
+  {
+    const c = scene.textures.createCanvas('building-great-market-hall', 160, 64);
+    if (!c) return;
+    const ctx = c.context;
+    const brick = '#B87333';
+    const dark = darken(brick, 0.15);
+
+    // Main body — red/orange brick
+    rect(ctx, 4, 22, 152, 38, brick);
+    // Foundation
+    rect(ctx, 2, 58, 156, 6, darken(brick, 0.25));
+
+    // Colorful Zsolnay tile roof — diamond pattern
+    const roofColors = ['#CE2939', '#477050', '#E8D44C', '#CE2939', '#477050'];
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 20; col++) {
+        const color = roofColors[(row + col) % roofColors.length];
+        rect(ctx, 6 + col * 8, 4 + row * 6, 6, 5, color);
+      }
+    }
+    // Roof ridge
+    rect(ctx, 4, 2, 152, 3, darken(brick, 0.2));
+
+    // Central tower/gable
+    rect(ctx, 68, 0, 24, 22, brick);
+    rect(ctx, 72, 0, 16, 4, darken(brick, 0.1));
+    // Clock
+    circle(ctx, 80, 8, 5, '#F0F0E0');
+    circle(ctx, 80, 8, 3, '#6A7A8A');
+
+    // Arched windows — repeated across facade
+    for (let i = 0; i < 12; i++) {
+      const wx = 10 + i * 12;
+      rect(ctx, wx, 28, 8, 14, '#6A7A8A');
+      // Arch tops
+      circle(ctx, wx + 4, 28, 4, '#6A7A8A');
+      px(ctx, wx + 3, 26, dark);
+      px(ctx, wx + 4, 26, dark);
+    }
+
+    // Ground-level arched entrances (3)
+    for (let i = 0; i < 3; i++) {
+      const ex = 30 + i * 40;
+      rect(ctx, ex, 44, 16, 16, '#4A3A2A');
+      circle(ctx, ex + 8, 44, 8, dark);
+    }
+
+    // Decorative bands
+    rect(ctx, 4, 22, 152, 2, dark);
+    rect(ctx, 4, 42, 152, 1, dark);
+
+    // Small buttresses
+    for (let x = 10; x < 150; x += 16) {
+      rect(ctx, x, 22, 3, 38, dark);
+    }
+
+    c.refresh();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════

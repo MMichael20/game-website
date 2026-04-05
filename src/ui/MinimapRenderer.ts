@@ -21,7 +21,8 @@ const CHECKPOINT_CATEGORY_MAP: Record<string, string> = {};
 [
   'bp_parliament', 'bp_chain_bridge', 'bp_fishermans_bastion',
   'bp_liberty_bridge', 'bp_margaret_bridge', 'bp_gellert_hill',
-  'bp_opera', 'bp_thermal_baths',
+  'bp_opera', 'bp_gellert_baths', 'bp_szechenyi_baths',
+  'bp_heroes_square', 'bp_st_stephens', 'bp_great_market',
 ].forEach(id => { CHECKPOINT_CATEGORY_MAP[id] = 'landmark'; });
 [
   'bp_indian_restaurant', 'bp_langos_stand', 'bp_ruin_bar_quiz',

@@ -29,17 +29,21 @@ const SUGGESTED_PATH: string[] = [
   'bp_langos_stand',
   'bp_spice_market',
   'bp_tram_dash',
+  'bp_st_stephens',
   'bp_opera',
+  'bp_heroes_square',
+  'bp_szechenyi_baths',
   'bp_ruin_bar_quiz',
   'bp_jazz_seat',
   'bp_jewish_quarter',
   'bp_danube_kayak',
   'bp_rooftop_chase',
   'bp_liberty_bridge',
+  'bp_great_market',
   'bp_gellert_hill',
   'bp_chimney_cake',
   'bp_margaret_bridge',
-  'bp_thermal_baths',
+  'bp_gellert_baths',
 ];
 
 /** Category color map for on-map checkpoint markers (Phaser hex) */
@@ -47,7 +51,8 @@ const CHECKPOINT_CATEGORY: Record<string, number> = {};
 [
   'bp_parliament', 'bp_chain_bridge', 'bp_fishermans_bastion',
   'bp_liberty_bridge', 'bp_margaret_bridge', 'bp_gellert_hill',
-  'bp_opera', 'bp_thermal_baths',
+  'bp_opera', 'bp_gellert_baths', 'bp_szechenyi_baths',
+  'bp_heroes_square', 'bp_st_stephens', 'bp_great_market',
 ].forEach(id => { CHECKPOINT_CATEGORY[id] = 0xFFD700; }); // Landmarks — gold
 [
   'bp_indian_restaurant', 'bp_langos_stand', 'bp_ruin_bar_quiz',
@@ -129,7 +134,11 @@ export class BudapestOverworldScene extends OverworldScene {
       bp_margaret_bridge: 'Margaret Bridge',
       bp_gellert_hill: 'Gellert Hill',
       bp_opera: 'Opera House',
-      bp_thermal_baths: 'Thermal Baths',
+      bp_gellert_baths: 'Gellért Baths',
+      bp_szechenyi_baths: 'Széchenyi Baths',
+      bp_heroes_square: 'Heroes\' Square',
+      bp_st_stephens: 'St. Stephen\'s Basilica',
+      bp_great_market: 'Great Market Hall',
       bp_danube_cruise: 'Danube Cruise',
       bp_fast_travel: 'Fast Travel',
     };
@@ -403,6 +412,7 @@ export class BudapestOverworldScene extends OverworldScene {
       { cx: 29, cy: 22, count: 5 },  // Erzsebet Square
       { cx: 10, cy: 15, count: 3 },   // Near Liberty Bridge
       { cx: 52, cy: 15, count: 3 },   // Near Margaret Bridge
+      { cx: 65, cy: 23, count: 4 },   // City Park
     ];
 
     clusterDefs.forEach(def => {
@@ -528,30 +538,36 @@ export class BudapestOverworldScene extends OverworldScene {
     });
   }
 
-  // ── Steam rising from thermal baths area ──
+  // ── Steam rising from both thermal baths ──
   private addBathSteam(): void {
-    const bathPos = tileToWorld(8, 36);
-    this.time.addEvent({
-      delay: 600,
-      loop: true,
-      callback: () => {
-        const steam = this.add.circle(
-          bathPos.x + (Math.random() - 0.5) * 96,
-          bathPos.y,
-          3 + Math.random() * 4,
-          0xFFFFFF,
-        ).setAlpha(0.25).setDepth(-4);
+    const steamSources = [
+      tileToWorld(8, 36),   // Gellért Baths
+      tileToWorld(70, 26),  // Széchenyi Baths
+    ];
 
-        this.tweens.add({
-          targets: steam,
-          y: bathPos.y - 30 - Math.random() * 20,
-          alpha: 0,
-          scaleX: 1.5,
-          scaleY: 1.5,
-          duration: 2000 + Math.random() * 1000,
-          onComplete: () => steam.destroy(),
-        });
-      },
+    steamSources.forEach(bathPos => {
+      this.time.addEvent({
+        delay: 600,
+        loop: true,
+        callback: () => {
+          const steam = this.add.circle(
+            bathPos.x + (Math.random() - 0.5) * 96,
+            bathPos.y,
+            3 + Math.random() * 4,
+            0xFFFFFF,
+          ).setAlpha(0.25).setDepth(-4);
+
+          this.tweens.add({
+            targets: steam,
+            y: bathPos.y - 30 - Math.random() * 20,
+            alpha: 0,
+            scaleX: 1.5,
+            scaleY: 1.5,
+            duration: 2000 + Math.random() * 1000,
+            onComplete: () => steam.destroy(),
+          });
+        },
+      });
     });
   }
 
@@ -573,6 +589,10 @@ export class BudapestOverworldScene extends OverworldScene {
 
     // Mid-distance behind Erzsebet Square / Eye area
     this.add.image(32 * TILE_SIZE, 20 * TILE_SIZE, 'bp-bg-city-mid')
+      .setDepth(-54).setAlpha(0.35).setScrollFactor(0.9, 0.9);
+
+    // Mid-distance behind City Park / Heroes' Square
+    this.add.image(66 * TILE_SIZE, 18 * TILE_SIZE, 'bp-bg-city-mid')
       .setDepth(-54).setAlpha(0.35).setScrollFactor(0.9, 0.9);
   }
 
@@ -786,8 +806,36 @@ export class BudapestOverworldScene extends OverworldScene {
         this.fadeToScene('DanubeCruiseScene');
         break;
 
-      case 'bp_thermal_baths':
+      case 'bp_gellert_baths':
         this.fadeToScene('ThermalBathScene');
+        break;
+
+      case 'bp_szechenyi_baths':
+        this.fadeToScene('ThermalBathScene');
+        break;
+
+      case 'bp_heroes_square':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['Heroes\' Square — the Millennium Monument.', 'Seven chieftains who founded Hungary stand here.', 'At the end of Andrássy Avenue, gateway to City Park.'],
+          () => { uiManager.hideNPCDialog(); this.inputSystem.unfreeze(); },
+        );
+        break;
+
+      case 'bp_st_stephens':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['St. Stephen\'s Basilica — Budapest\'s largest church.', 'The dome is the same height as Parliament\'s — 96 meters.', 'You can climb to the top for panoramic city views.'],
+          () => { uiManager.hideNPCDialog(); this.inputSystem.unfreeze(); },
+        );
+        break;
+
+      case 'bp_great_market':
+        this.inputSystem.freeze();
+        uiManager.showNPCDialog(
+          ['The Great Market Hall — Nagyvásárcsarnok.', 'Three floors of Hungarian delicacies.', 'Paprika, sausages, lángos upstairs...', 'Built in 1897, the largest indoor market in Budapest.'],
+          () => { uiManager.hideNPCDialog(); this.inputSystem.unfreeze(); },
+        );
         break;
 
       case 'bp_restaurant_1':
@@ -925,6 +973,10 @@ export class BudapestOverworldScene extends OverworldScene {
           { label: 'Airport', scene: 'AirportInteriorScene', data: { returnX: 496, returnY: 208 } },
           { label: 'Maui', scene: 'MauiOverworldScene', data: { returnFromInterior: true } },
           { label: 'Jewish Quarter', scene: 'JewishQuarterScene', data: { returnFromInterior: true } },
+          { label: 'Széchenyi Baths', scene: 'BudapestOverworldScene',
+            data: { returnFromInterior: true, returnX: 70 * TILE_SIZE + TILE_SIZE / 2, returnY: 24 * TILE_SIZE + TILE_SIZE / 2 } },
+          { label: 'City Park', scene: 'BudapestOverworldScene',
+            data: { returnFromInterior: true, returnX: 63 * TILE_SIZE + TILE_SIZE / 2, returnY: 22 * TILE_SIZE + TILE_SIZE / 2 } },
         ];
         uiManager.showDialog({
           title: 'Fast Travel',

@@ -1,8 +1,8 @@
 // src/game/scenes/budapest/budapestMap.ts
 import { NPCDef, CheckpointZone, tileToWorld } from '../../data/mapLayout';
 
-export const BUDAPEST_WIDTH = 65;
-export const BUDAPEST_HEIGHT = 40;
+export const BUDAPEST_WIDTH = 75;
+export const BUDAPEST_HEIGHT = 45;
 
 export const enum BudapestTileType {
   Cobblestone = 0,
@@ -18,7 +18,7 @@ export const enum BudapestTileType {
   WaterShallow = 10,
 }
 
-// 65×40 tile grid — row-major: budapestTileGrid[y][x]
+// 75×45 tile grid — row-major: budapestTileGrid[y][x]
 export const budapestTileGrid: number[][] = Array.from({ length: BUDAPEST_HEIGHT }, (_, y) => {
   return Array.from({ length: BUDAPEST_WIDTH }, (_, x) => {
     // === BUDA SIDE (y=0-9) ===
@@ -80,10 +80,28 @@ export const budapestTileGrid: number[][] = Array.from({ length: BUDAPEST_HEIGHT
     // Erzsébet Square / Budapest Eye area (y=21-25, x=28-36) — Plaza
     if (y >= 21 && y <= 25 && x >= 28 && x <= 36) return BudapestTileType.Plaza;
 
-    // Andrassy Avenue corridor (y=21-25, x=40-58)
-    if (y >= 21 && y <= 25 && x >= 40 && x <= 58) {
+    // === CITY PARK / VÁROSLIGET (northeast, x=60-73, y=17-30) ===
+
+    // Heroes' Square plaza (x=60-66, y=20-22)
+    if (y >= 20 && y <= 22 && x >= 60 && x <= 66) return BudapestTileType.Plaza;
+
+    // Széchenyi Baths plaza (x=67-73, y=25-28)
+    if (y >= 25 && y <= 28 && x >= 67 && x <= 73) {
+      if (x === 67 || x === 73 || y === 25 || y === 28) return BudapestTileType.Grass;
+      return BudapestTileType.Plaza;
+    }
+
+    // City Park paths
+    if (y === 23 && x >= 60 && x <= 73) return BudapestTileType.ParkPath;
+    if (x === 66 && y >= 17 && y <= 30) return BudapestTileType.ParkPath;
+
+    // City Park grass (x=60-73, y=17-30)
+    if (y >= 17 && y <= 30 && x >= 60 && x <= 73) return BudapestTileType.Grass;
+
+    // Andrássy Avenue corridor (y=21-25, x=40-59) — extended to Heroes' Square
+    if (y >= 21 && y <= 25 && x >= 40 && x <= 59) {
       // Grass tree strips on edges
-      if (x === 41 || x === 57) return BudapestTileType.Grass;
+      if (x === 41 || x === 57 || x === 59) return BudapestTileType.Grass;
       // Sidewalk sides
       if (x === 40 || x === 42 || x === 56 || x === 58) return BudapestTileType.Sidewalk;
       // Road center
@@ -99,7 +117,10 @@ export const budapestTileGrid: number[][] = Array.from({ length: BUDAPEST_HEIGHT
     // Airbnb area (y=31-34, x=40-44) — Cobblestone
     if (y >= 31 && y <= 34 && x >= 40 && x <= 44) return BudapestTileType.Cobblestone;
 
-    // Thermal baths area (y=35-39, x=4-14) — Plaza with Grass surroundings
+    // Great Market Hall area (y=31-34, x=8-14) — Cobblestone
+    if (y >= 31 && y <= 34 && x >= 8 && x <= 14) return BudapestTileType.Cobblestone;
+
+    // Gellért Baths area (y=35-39, x=4-14) — Plaza with Grass surroundings
     if (y >= 35 && y <= 39 && x >= 4 && x <= 14) {
       if (x === 4 || x === 14 || y === 35 || y === 39) return BudapestTileType.Grass;
       return BudapestTileType.Plaza;
@@ -173,6 +194,18 @@ export const budapestWalkGrid: boolean[][] = Array.from({ length: BUDAPEST_HEIGH
 
     // Gellert Baths (y=36-38, x=5-11) — impassable
     if (y >= 36 && y <= 38 && x >= 5 && x <= 11) return false;
+
+    // Heroes' Square monument (y=20-21, x=62-64) — impassable
+    if (y >= 20 && y <= 21 && x >= 62 && x <= 64) return false;
+
+    // St. Stephen's Basilica (y=20-21, x=35-37) — impassable
+    if (y >= 20 && y <= 21 && x >= 35 && x <= 37) return false;
+
+    // Széchenyi Baths building (y=25-27, x=68-72) — impassable
+    if (y >= 25 && y <= 27 && x >= 68 && x <= 72) return false;
+
+    // Great Market Hall building (y=32-33, x=9-13) — impassable
+    if (y >= 32 && y <= 33 && x >= 9 && x <= 13) return false;
 
     // Everything else walkable
     return true;
@@ -288,6 +321,26 @@ export const BUDAPEST_NPCS: NPCDef[] = [
     walkPath: [{ x: 55, y: 26 }, { x: 62, y: 26 }] },
   { id: 'bp-south-jogger', tileX: 24, tileY: 37, behavior: 'walk', texture: 'npc-bp-jogger', speed: 70,
     walkPath: [{ x: 22, y: 37 }, { x: 34, y: 37 }] },
+
+  // === City Park / Széchenyi area NPCs ===
+  { id: 'bp-park-walker-1', tileX: 62, tileY: 23, behavior: 'walk', texture: 'npc-bp-tourist',
+    walkPath: [{ x: 62, y: 23 }, { x: 72, y: 23 }] },
+  { id: 'bp-park-jogger', tileX: 65, tileY: 19, behavior: 'walk', texture: 'npc-bp-jogger', speed: 70,
+    walkPath: [{ x: 61, y: 19 }, { x: 72, y: 19 }] },
+  { id: 'bp-szechenyi-goer', tileX: 70, tileY: 24, behavior: 'walk', texture: 'npc-bp-bath-goer',
+    walkPath: [{ x: 70, y: 24 }, { x: 70, y: 28 }] },
+  { id: 'bp-heroes-tourist', tileX: 61, tileY: 22, behavior: 'idle', texture: 'npc-bp-tourist-2' },
+  { id: 'bp-park-bench-sitter', tileX: 68, tileY: 23, behavior: 'sit', texture: 'npc-bp-local-2' },
+
+  // === Great Market Hall area NPCs ===
+  { id: 'bp-market-shopper', tileX: 11, tileY: 35, behavior: 'walk', texture: 'npc-bp-local',
+    walkPath: [{ x: 9, y: 35 }, { x: 14, y: 35 }] },
+
+  // === St. Stephen's area NPCs ===
+  { id: 'bp-basilica-tourist', tileX: 34, tileY: 22, behavior: 'idle', texture: 'npc-bp-tourist',
+    interactable: true, onInteract: 'dialog',
+    facingDirection: 'up',
+    interactionData: { lines: ['The dome is 96 meters — same as Parliament!', 'They say it represents equality of church and state.'] } },
 ];
 
 export const BUDAPEST_CHECKPOINT_ZONES: CheckpointZone[] = [
@@ -400,11 +453,39 @@ export const BUDAPEST_CHECKPOINT_ZONES: CheckpointZone[] = [
     promptText: 'Opera House',
   },
   {
-    id: 'bp_thermal_baths',
+    id: 'bp_gellert_baths',
     centerX: tileToWorld(8, 35).x,
     centerY: tileToWorld(8, 35).y,
     radius: 56,
-    promptText: 'Visit Thermal Baths?',
+    promptText: 'Visit Gellért Thermal Baths?',
+  },
+  {
+    id: 'bp_szechenyi_baths',
+    centerX: tileToWorld(70, 24).x,
+    centerY: tileToWorld(70, 24).y,
+    radius: 56,
+    promptText: 'Visit Széchenyi Thermal Baths?',
+  },
+  {
+    id: 'bp_heroes_square',
+    centerX: tileToWorld(63, 22).x,
+    centerY: tileToWorld(63, 22).y,
+    radius: 56,
+    promptText: 'Heroes\' Square',
+  },
+  {
+    id: 'bp_st_stephens',
+    centerX: tileToWorld(36, 22).x,
+    centerY: tileToWorld(36, 22).y,
+    radius: 56,
+    promptText: 'St. Stephen\'s Basilica',
+  },
+  {
+    id: 'bp_great_market',
+    centerX: tileToWorld(11, 34).x,
+    centerY: tileToWorld(11, 34).y,
+    radius: 56,
+    promptText: 'Great Market Hall',
   },
   {
     id: 'bp_danube_cruise',
@@ -646,6 +727,40 @@ export const BUDAPEST_DECORATIONS = [
   { type: 'bp-lamp', tileX: 42, tileY: 37 },
   { type: 'bp-bush', tileX: 46, tileY: 38 },
   { type: 'bp-flower-bed', tileX: 34, tileY: 38 },
+
+  // ── City Park / Városliget decorations ──
+  { type: 'bp-tree', tileX: 62, tileY: 18 },
+  { type: 'bp-tree', tileX: 65, tileY: 19 },
+  { type: 'bp-tree', tileX: 68, tileY: 18 },
+  { type: 'bp-tree', tileX: 71, tileY: 19 },
+  { type: 'bp-tree-autumn', tileX: 64, tileY: 24 },
+  { type: 'bp-tree-autumn', tileX: 70, tileY: 30 },
+  { type: 'bp-tree', tileX: 72, tileY: 23 },
+  { type: 'bp-tree', tileX: 61, tileY: 28 },
+  { type: 'bp-bench', tileX: 63, tileY: 23 },
+  { type: 'bp-bench', tileX: 68, tileY: 23 },
+  { type: 'bp-lamp', tileX: 60, tileY: 23 },
+  { type: 'bp-lamp', tileX: 66, tileY: 23 },
+  { type: 'bp-lamp', tileX: 73, tileY: 23 },
+  { type: 'bp-fountain', tileX: 66, tileY: 26 },
+  { type: 'bp-statue', tileX: 63, tileY: 21 },
+  { type: 'bp-flower-bed', tileX: 65, tileY: 28 },
+  { type: 'bp-bush', tileX: 69, tileY: 30 },
+
+  // ── St. Stephen's Basilica area decorations ──
+  { type: 'bp-lamp', tileX: 34, tileY: 22 },
+  { type: 'bp-lamp', tileX: 38, tileY: 22 },
+  { type: 'bp-bench', tileX: 36, tileY: 23 },
+
+  // ── Great Market Hall area decorations ──
+  { type: 'bp-lamp', tileX: 8, tileY: 34 },
+  { type: 'bp-lamp', tileX: 14, tileY: 34 },
+  { type: 'bp-bench', tileX: 11, tileY: 35 },
+
+  // ── Extended Andrássy (gap fill x=58-60) ──
+  { type: 'bp-tree', tileX: 59, tileY: 21 },
+  { type: 'bp-tree', tileX: 59, tileY: 23 },
+  { type: 'bp-tree', tileX: 59, tileY: 25 },
 ];
 
 export const BUDAPEST_BUILDINGS = [
@@ -670,4 +785,10 @@ export const BUDAPEST_BUILDINGS = [
   { name: 'opera-house', tileX: 46, tileY: 22, tileW: 4, tileH: 3 },
   { name: 'gellert-baths', tileX: 5, tileY: 36, tileW: 6, tileH: 3 },
   { name: 'bp-indian-restaurant', tileX: 16, tileY: 26, tileW: 5, tileH: 3 },
+
+  // Geography accuracy additions
+  { name: 'szechenyi-baths', tileX: 68, tileY: 25, tileW: 5, tileH: 3 },
+  { name: 'heroes-square', tileX: 62, tileY: 20, tileW: 3, tileH: 2 },
+  { name: 'st-stephens-basilica', tileX: 35, tileY: 20, tileW: 3, tileH: 2 },
+  { name: 'great-market-hall', tileX: 9, tileY: 32, tileW: 5, tileH: 2 },
 ];
