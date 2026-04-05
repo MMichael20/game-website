@@ -427,7 +427,8 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
   // npc-bp-local — male, light skin, brown hair, navy jacket, khaki pants
   {
     const c = scene.textures.createCanvas('npc-bp-local', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#5A3A20', top: '#2A3A5A', pants: '#B8A878',
@@ -443,12 +444,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-local-2 — female, light skin, blonde hair, red top, dark skirt
   {
     const c = scene.textures.createCanvas('npc-bp-local-2', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#D4B060', top: '#C04040', pants: '#3A3A4A',
@@ -465,12 +467,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-tourist — light skin, brown hair, green shirt, cargo shorts, camera strap
   {
     const c = scene.textures.createCanvas('npc-bp-tourist', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#5A3A20', top: '#4A7A4A', pants: '#8A7A60',
@@ -489,12 +492,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-tourist-2 — tan skin, hat, floral shirt
   {
     const c = scene.textures.createCanvas('npc-bp-tourist-2', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#D8B888', hair: '#6A4A2A', top: '#6A9A6A', pants: '#5A5A6A',
@@ -514,12 +518,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-guide — vest over white shirt, clipboard
   {
     const c = scene.textures.createCanvas('npc-bp-guide', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#5A4030', top: '#EEEEEE', pants: '#3A3A4A',
@@ -539,12 +544,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-vendor — white shirt, apron, chef hat
   {
     const c = scene.textures.createCanvas('npc-bp-vendor', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#4A3020', top: '#EEEEEE', pants: '#3A3A4A',
@@ -563,12 +569,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-vendor-2 — green apron, brown hair
   {
     const c = scene.textures.createCanvas('npc-bp-vendor-2', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#6A4A2A', top: '#DDDDDD', pants: '#4A4A5A',
@@ -583,12 +590,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-conductor — blue uniform, cap
   {
     const c = scene.textures.createCanvas('npc-bp-conductor', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#4A3020', top: '#2A4A8A', pants: '#2A3A6A',
@@ -609,12 +617,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-police — dark uniform, belt, cap
   {
     const c = scene.textures.createCanvas('npc-bp-police', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#3A2A18', top: '#2A2A3A', pants: '#2A2A3A',
@@ -636,12 +645,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-performer — beret, brown hair, black shirt
   {
     const c = scene.textures.createCanvas('npc-bp-performer', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#5A3A20', top: '#1A1A1A', pants: '#2A2A3A',
@@ -658,12 +668,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-bouncer — black shirt, broad shoulders
   {
     const c = scene.textures.createCanvas('npc-bp-bouncer', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#D8B888', hair: '#2A2A2A', top: '#1A1A1A', pants: '#2A2A2A',
@@ -688,12 +699,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-bartender — vest, rolled sleeves (skin on arms)
   {
     const c = scene.textures.createCanvas('npc-bp-bartender', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#5A3A20', top: '#DDDDDD', pants: '#2A2A3A',
@@ -712,12 +724,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-artist — beret, paint-stained smock
   {
     const c = scene.textures.createCanvas('npc-bp-artist', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#5A3A20', top: '#AAAAAA', pants: '#4A4A5A',
@@ -741,12 +754,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-jogger — sportswear, headband
   {
     const c = scene.textures.createCanvas('npc-bp-jogger', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#5A3A20', top: '#2A8ACA', pants: '#2A2A3A',
@@ -766,12 +780,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-couple — 64×48 canvas, two people side by side
   {
     const c = scene.textures.createCanvas('npc-bp-couple', 64, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Person 1 (left) — male
@@ -801,12 +816,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
     rect(ctx, 26, 28, 12, 2, '#E8C8A0');
 
     c.refresh();
-  }
+  } }
 
   // npc-bp-elderly — 64×48 canvas, two older people
   {
     const c = scene.textures.createCanvas('npc-bp-elderly', 64, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Person 1 (left) — elderly man
@@ -847,12 +863,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
     rect(ctx, 26, 28, 12, 2, '#E0C098');
 
     c.refresh();
-  }
+  } }
 
   // npc-bp-exchange-clerk — blue vest, nametag
   {
     const c = scene.textures.createCanvas('npc-bp-exchange-clerk', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#4A3020', top: '#DDDDDD', pants: '#3A3A4A',
@@ -867,12 +884,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-ticket-clerk — blue vest lighter shade, nametag
   {
     const c = scene.textures.createCanvas('npc-bp-ticket-clerk', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#6A4A2A', top: '#DDDDDD', pants: '#3A3A4A',
@@ -889,12 +907,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-info-desk — blazer, badge
   {
     const c = scene.textures.createCanvas('npc-bp-info-desk', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#4A3020', top: '#3A3A5A', pants: '#3A3A4A',
@@ -911,12 +930,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-traveler — casual clothes, suitcase
   {
     const c = scene.textures.createCanvas('npc-bp-traveler', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#5A3A20', top: '#6A8A6A', pants: '#5A5A6A',
@@ -932,12 +952,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-traveler-2 — backpack, different shirt color
   {
     const c = scene.textures.createCanvas('npc-bp-traveler-2', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#D8B888', hair: '#3A2A18', top: '#CA6A3A', pants: '#4A4A5A',
@@ -955,12 +976,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-hiker — olive green top, khaki pants, walking stick, hat
   {
     const c = scene.textures.createCanvas('npc-bp-hiker', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#D4A574', hair: '#5A3A1A', top: '#556B2F', pants: '#8B7355',
@@ -975,12 +997,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-fisherman — blue-gray top, gray hair, fishing rod
   {
     const c = scene.textures.createCanvas('npc-bp-fisherman', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#C8A882', hair: '#888888', top: '#4A6A7A', pants: '#5A5A5A',
@@ -1002,12 +1025,13 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // npc-bp-bath-goer — white top, blue shorts, towel over shoulder
   {
     const c = scene.textures.createCanvas('npc-bp-bath-goer', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#E8C8A0', hair: '#AA6622', top: '#FFFFFF', pants: '#4488AA',
@@ -1022,7 +1046,7 @@ function generateBudapestNPCs(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1034,7 +1058,8 @@ function generateBudapestVehicles(scene: Phaser.Scene): void {
   // budapest-tram — 64×24, yellow tram
   {
     const c = scene.textures.createCanvas('budapest-tram', 64, 24);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Main body
     rect(ctx, 2, 4, 60, 14, '#E8C820');
@@ -1068,12 +1093,13 @@ function generateBudapestVehicles(scene: Phaser.Scene): void {
     rect(ctx, 0, 6, 3, 12, darken('#E8C820', 0.05));
     rect(ctx, 61, 6, 3, 12, darken('#E8C820', 0.05));
     c.refresh();
-  }
+  } }
 
   // budapest-bus — 48×24, blue bus
   {
     const c = scene.textures.createCanvas('budapest-bus', 48, 24);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Main body
     rect(ctx, 2, 4, 44, 14, '#3A6AAA');
@@ -1098,12 +1124,13 @@ function generateBudapestVehicles(scene: Phaser.Scene): void {
     // Route number area
     rect(ctx, 3, 3, 8, 3, '#FFFFFF');
     c.refresh();
-  }
+  } }
 
   // Helper for small European sedans
   function drawCar(key: string, bodyColor: string): void {
     const c = scene.textures.createCanvas(key, 32, 16);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Body
     rect(ctx, 3, 4, 26, 8, bodyColor);
@@ -1131,7 +1158,7 @@ function generateBudapestVehicles(scene: Phaser.Scene): void {
     px(ctx, 16, 9, darken(bodyColor, 0.12));
     px(ctx, 16, 10, darken(bodyColor, 0.12));
     c.refresh();
-  }
+  } }
 
   drawCar('budapest-car-blue', '#4A6A8A');
   drawCar('budapest-car-red', '#AA3A3A');
@@ -1141,7 +1168,8 @@ function generateBudapestVehicles(scene: Phaser.Scene): void {
   // budapest-river-boat — 48×16, white river boat with windows and Hungarian flag
   {
     const c = scene.textures.createCanvas('budapest-river-boat', 48, 16);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // White hull with curved bottom
     rect(ctx, 4, 6, 40, 8, '#F0F0F0');
@@ -1166,12 +1194,13 @@ function generateBudapestVehicles(scene: Phaser.Scene): void {
     // Waterline
     rect(ctx, 4, 13, 40, 1, '#4A7AAA');
     c.refresh();
-  }
+  } }
 
   // budapest-barge — 64×12, dark cargo barge
   {
     const c = scene.textures.createCanvas('budapest-barge', 64, 12);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Dark hull
     rect(ctx, 2, 6, 60, 5, '#3A3A4A');
@@ -1190,7 +1219,7 @@ function generateBudapestVehicles(scene: Phaser.Scene): void {
     // Waterline
     rect(ctx, 2, 10, 60, 1, '#4A7AAA');
     c.refresh();
-  }
+  } }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1202,7 +1231,8 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
   // building-parliament — 256×96, neo-Gothic with central dome and spires
   {
     const c = scene.textures.createCanvas('building-parliament', 256, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const base = '#D4C8B0';
     const dark = darken(base, 0.15);
@@ -1272,12 +1302,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // building-fishermans-bastion — 256×96, white turrets, fairytale castle
   {
     const c = scene.textures.createCanvas('building-fishermans-bastion', 256, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const white = '#EEEEEE';
     const shade = darken(white, 0.1);
@@ -1337,12 +1368,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // building-buda-castle — 256×96, brown/gray castle on hill
   {
     const c = scene.textures.createCanvas('building-buda-castle', 256, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#9A8A70';
     const dark = darken(wall, 0.15);
@@ -1392,12 +1424,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 28, 74, 200, 3, dark);
 
     c.refresh();
-  }
+  } }
 
   // building-dohany-synagogue — 160×96, ornate facade, two thin towers
   {
     const c = scene.textures.createCanvas('building-dohany-synagogue', 160, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const facade = '#8A6A3A';
     const dark = darken(facade, 0.15);
@@ -1453,12 +1486,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // building-kazinczy-synagogue — 96×64, art nouveau, blue accents
   {
     const c = scene.textures.createCanvas('building-kazinczy-synagogue', 96, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#D8C8A0';
     const blue = '#4A6AAA';
@@ -1498,12 +1532,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 84, 16, 4, 40, dark);
 
     c.refresh();
-  }
+  } }
 
   // building-bp-airbnb — 128×96, apartment with balconies
   {
     const c = scene.textures.createCanvas('building-bp-airbnb', 128, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#D8C8A0';
     const dark = darken(wall, 0.12);
@@ -1548,12 +1583,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // building-bp-restaurant-1 — 128×96, goulash restaurant
   {
     const c = scene.textures.createCanvas('building-bp-restaurant-1', 128, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#C8A878';
     const dark = darken(wall, 0.15);
@@ -1622,12 +1658,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // building-bp-restaurant-2 — 128×96, building with awning
   {
     const c = scene.textures.createCanvas('building-bp-restaurant-2', 128, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#D0B888';
     const dark = darken(wall, 0.12);
@@ -1661,12 +1698,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 104, 88, 8, 4, '#8A6A4A');
 
     c.refresh();
-  }
+  } }
 
   // building-budapest-eye — 96×96, Ferris wheel structure
   {
     const c = scene.textures.createCanvas('building-budapest-eye', 96, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const metal = '#7A7A8A';
 
@@ -1722,12 +1760,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     circle(ctx, 48, 92, 14, 'rgba(255,238,136,0.08)');
 
     c.refresh();
-  }
+  } }
 
   // building-bp-hotel — 128×96, hotel facade
   {
     const c = scene.textures.createCanvas('building-bp-hotel', 128, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#C8B898';
     const dark = darken(wall, 0.12);
@@ -1771,12 +1810,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 4, 10, 120, 2, dark);
 
     c.refresh();
-  }
+  } }
 
   // building-ruin-bar-exterior — 128×96, weathered brick, neon accent
   {
     const c = scene.textures.createCanvas('building-ruin-bar-exterior', 128, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const brick = '#8A6A50';
     const rng = seededRandom(7000);
@@ -1842,12 +1882,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 122, 10, 2, 80, '#666');
 
     c.refresh();
-  }
+  } }
 
   // building-bp-shop-1 — 64×64, shopfront with awning
   {
     const c = scene.textures.createCanvas('building-bp-shop-1', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#D4C0A0';
 
@@ -1876,12 +1917,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 14, 26, 36, 4, '#5A4A3A');
 
     c.refresh();
-  }
+  } }
 
   // building-bp-shop-2 — 64×64, variant shopfront
   {
     const c = scene.textures.createCanvas('building-bp-shop-2', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#C8B898';
 
@@ -1909,12 +1951,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     px(ctx, 38, 58, '#C8A020');
 
     c.refresh();
-  }
+  } }
 
   // building-bp-shop-3 — 64×64, variant
   {
     const c = scene.textures.createCanvas('building-bp-shop-3', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#B8A888';
 
@@ -1944,12 +1987,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 2, 26, 60, 2, lighten(wall, 0.15));
 
     c.refresh();
-  }
+  } }
 
   // building-bp-shop-4 — 64×64, variant
   {
     const c = scene.textures.createCanvas('building-bp-shop-4', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#D0C0A8';
 
@@ -1986,12 +2030,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 45, 20, 3, 2, '#CC4444');
 
     c.refresh();
-  }
+  } }
 
   // building-bp-airport-terminal — 192×96, modern glass terminal
   {
     const c = scene.textures.createCanvas('building-bp-airport-terminal', 192, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const glass = '#6A8AAA';
     const frame = '#4A5A6A';
@@ -2046,12 +2091,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 174, 6, 8, 8, lighten(glass, 0.15));
 
     c.refresh();
-  }
+  } }
 
   // building-citadella — 128×64, star-shaped fortress on Gellért Hill
   {
     const c = scene.textures.createCanvas('building-citadella', 128, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#7A7A6A';
     const dark = darken(wall, 0.15);
@@ -2098,12 +2144,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 8, 58, 112, 6, dark);
 
     c.refresh();
-  }
+  } }
 
   // building-opera-house — 128×64, classical facade with columns and pediment
   {
     const c = scene.textures.createCanvas('building-opera-house', 128, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#C8B890';
     const dark = darken(stone, 0.15);
@@ -2162,12 +2209,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 4, 18, 120, 1, dark);
 
     c.refresh();
-  }
+  } }
 
   // building-gellert-baths — 192×96, art nouveau thermal baths
   {
     const c = scene.textures.createCanvas('building-gellert-baths', 192, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#D4C8A0';
     const dark = darken(stone, 0.12);
@@ -2227,12 +2275,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // building-szechenyi-baths — 160×96, yellow Neo-Baroque with central dome
   {
     const c = scene.textures.createCanvas('building-szechenyi-baths', 160, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const yellow = '#E8D44C';
     const dark = darken(yellow, 0.15);
@@ -2294,12 +2343,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // building-heroes-square — 96×64, Millennium Monument colonnade
   {
     const c = scene.textures.createCanvas('building-heroes-square', 96, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#D8D0C0';
     const dark = darken(stone, 0.15);
@@ -2341,12 +2391,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // building-st-stephens-basilica — 96×64, domed basilica with bell towers
   {
     const c = scene.textures.createCanvas('building-st-stephens-basilica', 96, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#C8BCA8';
     const dark = darken(stone, 0.15);
@@ -2396,12 +2447,13 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     rect(ctx, 16, 42, 64, 1, dark);
 
     c.refresh();
-  }
+  } }
 
   // building-great-market-hall — 160×64, long hall with Zsolnay tile roof
   {
     const c = scene.textures.createCanvas('building-great-market-hall', 160, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const brick = '#B87333';
     const dark = darken(brick, 0.15);
@@ -2456,7 +2508,7 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -2465,10 +2517,28 @@ function generateBudapestBuildings(scene: Phaser.Scene): void {
 
 function generateBudapestDecorations(scene: Phaser.Scene): void {
 
+  // deco-wave-foam — 32×8, semi-transparent white foam for Danube waves
+  // (also generated by MauiTextures, but we create it here as a safety fallback)
+  if (!scene.textures.exists('deco-wave-foam')) {
+    const c = scene.textures.createCanvas('deco-wave-foam', 32, 8);
+    if (c) {
+      const ctx = c.context;
+      ctx.globalAlpha = 0.6;
+      for (let x = 0; x < 32; x++) {
+        const y = Math.round(3 + Math.sin(x * 0.3) * 2);
+        rect(ctx, x, y, 1, 2, '#FFFFFF');
+        if (x % 3 === 0) px(ctx, x, y - 1, '#E8F4FF');
+      }
+      ctx.globalAlpha = 1.0;
+      c.refresh();
+    }
+  }
+
   // deco-bp-bench — 32×32, European park bench
   {
     const c = scene.textures.createCanvas('deco-bp-bench', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wood = '#8B6942';
     const metal = '#4A4A4A';
@@ -2492,12 +2562,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 24, 8, 2, 12, metal);
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-lamp — 32×32, ornate street lamp
   {
     const c = scene.textures.createCanvas('deco-bp-lamp', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const pole = '#3A3A3A';
 
@@ -2518,12 +2589,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 14, 2, 4, 2, pole);
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-tree — 32×32, deciduous tree (round green crown)
   {
     const c = scene.textures.createCanvas('deco-bp-tree', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const trunk = '#6A4A2A';
     const crown = '#3A7A3A';
@@ -2544,12 +2616,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 10, 30, 12, 2, 'rgba(0,0,0,0.1)');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-tree-autumn — 32×32, same shape, orange/red crown
   {
     const c = scene.textures.createCanvas('deco-bp-tree-autumn', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const trunk = '#6A4A2A';
     const crown = '#CC6622';
@@ -2571,12 +2644,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 10, 30, 12, 2, 'rgba(0,0,0,0.1)');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-bush — 32×32, trimmed hedge
   {
     const c = scene.textures.createCanvas('deco-bp-bush', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const green = '#2A5A2A';
 
@@ -2596,12 +2670,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 6, 28, 20, 2, 'rgba(0,0,0,0.1)');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-flower-bed — 32×32, colorful flower patch
   {
     const c = scene.textures.createCanvas('deco-bp-flower-bed', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(6100);
 
@@ -2628,12 +2703,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-fountain — 48×48, circular basin with water
   {
     const c = scene.textures.createCanvas('deco-bp-fountain', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#8A8A8A';
 
@@ -2665,12 +2741,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     circle(ctx, 24, 42, 16, 'rgba(0,0,0,0.08)');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-statue — 32×64, gray figure on pedestal
   {
     const c = scene.textures.createCanvas('deco-bp-statue', 32, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#7A7A7A';
     const dark = darken(stone, 0.15);
@@ -2699,12 +2776,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 20, 26, 2, 16, darken(stone, 0.08));
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-cafe-table — 32×32, round table with 2 chairs
   {
     const c = scene.textures.createCanvas('deco-bp-cafe-table', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const table = '#8A7A6A';
     const chair = '#5A4A3A';
@@ -2734,12 +2812,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     px(ctx, 14, 15, '#FFFFFF'); // handle
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-string-lights — 64×8, horizontal line with yellow dots
   {
     const c = scene.textures.createCanvas('deco-bp-string-lights', 64, 8);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Wire
@@ -2758,12 +2837,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-mural — 64×64, colorful abstract rectangles on brick
   {
     const c = scene.textures.createCanvas('deco-bp-mural', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(6200);
 
@@ -2802,12 +2882,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-mural-2 — 64×64, different abstract pattern
   {
     const c = scene.textures.createCanvas('deco-bp-mural-2', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(6300);
 
@@ -2840,12 +2921,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-flag-hungarian — 32×32, red-white-green horizontal stripes on pole
   {
     const c = scene.textures.createCanvas('deco-bp-flag-hungarian', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Pole
@@ -2862,12 +2944,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     circle(ctx, 5, 2, 2, '#C8A020');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-flag-eu — 32×32, blue with yellow circle dots on pole
   {
     const c = scene.textures.createCanvas('deco-bp-flag-eu', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Pole
@@ -2886,12 +2969,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     circle(ctx, 5, 2, 2, '#C8A020');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-pigeon — 16×16, small gray bird
   {
     const c = scene.textures.createCanvas('deco-bp-pigeon', 16, 16);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const gray = '#8A8A8A';
 
@@ -2919,12 +3003,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     px(ctx, 11, 8, '#6A5A8A');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-luggage-carousel — 64×32, conveyor belt with bags
   {
     const c = scene.textures.createCanvas('deco-bp-luggage-carousel', 64, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const belt = '#4A4A4A';
 
@@ -2959,12 +3044,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 30, 26, 2, 4, '#666');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-exchange-booth — 32×32, orange counter with sign
   {
     const c = scene.textures.createCanvas('deco-bp-exchange-booth', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Counter body
@@ -2984,12 +3070,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 8, 16, 16, 1, '#AACCEE');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-bus-stop-sign — 32×32, tall pole with blue sign
   {
     const c = scene.textures.createCanvas('deco-bp-bus-stop-sign', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Pole
@@ -3007,12 +3094,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 6, 11, 20, 1, '#1A4A8A');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-tram-stop — 32×32, shelter shape
   {
     const c = scene.textures.createCanvas('deco-bp-tram-stop', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const metal = '#5A5A5A';
 
@@ -3035,12 +3123,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 0, 28, 32, 2, '#8A8A8A');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-chain-bridge-pillar — 32×64, tall stone pillar/tower
   {
     const c = scene.textures.createCanvas('deco-bp-chain-bridge-pillar', 32, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#8A8070';
     const dark = darken(stone, 0.15);
@@ -3067,12 +3156,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     circle(ctx, 16, 20, 4, darken(stone, 0.08));
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-bathtub-couch — 32×32, quirky bathtub shape with cushion
   {
     const c = scene.textures.createCanvas('deco-bp-bathtub-couch', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Bathtub body (clawfoot shape)
@@ -3094,12 +3184,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 24, 8, 4, 2, '#AAA');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-graffiti — 64×32, colorful spray-paint pattern
   {
     const c = scene.textures.createCanvas('deco-bp-graffiti', 64, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(6400);
 
@@ -3137,12 +3228,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-neon-sign — 32×32, bright pink/blue glowing rectangle
   {
     const c = scene.textures.createCanvas('deco-bp-neon-sign', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Dark backing board
@@ -3185,12 +3277,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     px(ctx, 28, 23, '#666');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-barrels — 32×32, wine barrels stacked
   {
     const c = scene.textures.createCanvas('deco-bp-barrels', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wood = '#7A5A3A';
     const band = '#5A5A5A';
@@ -3216,12 +3309,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 10, 12, 12, 1, band);
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-mismatched-chair — 32×32, quirky colored chair
   {
     const c = scene.textures.createCanvas('deco-bp-mismatched-chair', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Chair back (teal)
@@ -3243,12 +3337,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 22, 28, 2, 2, '#5A5A5A');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-plants-hanging — 32×32, green hanging plant tendrils
   {
     const c = scene.textures.createCanvas('deco-bp-plants-hanging', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const pot = '#AA6A3A';
     const green = '#3A8A3A';
@@ -3288,12 +3383,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-liberty-bridge-pillar — 32×48, green iron art nouveau pillar
   {
     const c = scene.textures.createCanvas('deco-bp-liberty-bridge-pillar', 32, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const iron = '#2A6A3A';
     const dark = darken(iron, 0.15);
@@ -3320,12 +3416,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-margaret-bridge-pillar — 32×48, light gray stone pillar
   {
     const c = scene.textures.createCanvas('deco-bp-margaret-bridge-pillar', 32, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#AAAAAA';
     const dark = darken(stone, 0.12);
@@ -3346,12 +3443,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 14, 6, 4, 2, lighten(stone, 0.1));
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-music-note — 8×8, black eighth note
   {
     const c = scene.textures.createCanvas('deco-bp-music-note', 8, 8);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Note head circle at (3,5) radius 2
@@ -3364,12 +3462,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     px(ctx, 6, 2, '#1A1A1A');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-couple-bench — 32×32, two figures sitting on a bench
   {
     const c = scene.textures.createCanvas('deco-bp-couple-bench', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Bench — brown rectangle
@@ -3398,12 +3497,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 6, 28, 20, 2, 'rgba(0,0,0,0.1)');
 
     c.refresh();
-  }
+  } }
 
   // deco-bp-heart — 8×8, tiny pixel heart
   {
     const c = scene.textures.createCanvas('deco-bp-heart', 8, 8);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const red = '#FF4466';
 
@@ -3426,14 +3526,15 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     px(ctx, 3, 7, red);
 
     c.refresh();
-  }
+  } }
 
   // ── DEPTH-LAYERED CITY TEXTURES (urban canyon effect) ─────────────────
 
   // Foreground building strip — apartment building top, viewed from above
   {
     const c = scene.textures.createCanvas('bp-fg-building-top-1', 96, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const roofBeige = '#C8B8A0';
     const corniceColor = '#A09080';
@@ -3486,12 +3587,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 72, 46, 6, 4, windowBlue);
 
     c.refresh();
-  }
+  } }
 
   // Foreground building strip — ornate Pest-side building
   {
     const c = scene.textures.createCanvas('bp-fg-building-top-2', 96, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const creamFacade = '#D8D0C0';
     const corniceColor = '#B0A090';
@@ -3542,12 +3644,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     px(ctx, 68, 45, '#CC4444'); px(ctx, 70, 45, '#FF88AA');
 
     c.refresh();
-  }
+  } }
 
   // Foreground building strip — Art nouveau style
   {
     const c = scene.textures.createCanvas('bp-fg-building-top-3', 96, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const roofPink = '#D8A8A0';
     const patina = '#6AAA6A';
@@ -3593,12 +3696,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // Foreground building strip — modern/commercial building
   {
     const c = scene.textures.createCanvas('bp-fg-building-top-4', 96, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const roofGray = '#888888';
     const acGray = '#777777';
@@ -3638,12 +3742,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 72, 46, 10, 6, glassBlue);
 
     c.refresh();
-  }
+  } }
 
   // Foreground vertical strip — rotated for vertical streets (left/right sides)
   {
     const c = scene.textures.createCanvas('bp-fg-building-side-1', 64, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const roofBeige = '#C8B8A0';
     const corniceColor = '#A09080';
@@ -3691,12 +3796,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 44, 72, 4, 6, windowBlue);
 
     c.refresh();
-  }
+  } }
 
   // Foreground vertical strip — ornate variant for vertical streets
   {
     const c = scene.textures.createCanvas('bp-fg-building-side-2', 64, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const creamFacade = '#D8D0C0';
     const corniceColor = '#B0A090';
@@ -3740,12 +3846,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     px(ctx, 43, 64, '#FF88AA'); px(ctx, 43, 66, '#CC4444'); px(ctx, 43, 68, '#FF88AA');
 
     c.refresh();
-  }
+  } }
 
   // Background cityscape — wide distant city silhouette
   {
     const c = scene.textures.createCanvas('bp-bg-city-distant', 640, 128);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(7777);
     const skyDark = '#5A6A7A';
@@ -3789,12 +3896,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // Background cityscape — mid-distance buildings, slightly more detailed
   {
     const c = scene.textures.createCanvas('bp-bg-city-mid', 480, 160);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(7778);
     const bgWarm = '#7A8A8A';
@@ -3837,12 +3945,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // Street-level — red/white striped cafe awning
   {
     const c = scene.textures.createCanvas('bp-street-awning-1', 48, 24);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const red = '#CC3333';
     const white = '#EEEEEE';
@@ -3864,12 +3973,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // Street-level — green solid awning with scalloped edge
   {
     const c = scene.textures.createCanvas('bp-street-awning-2', 48, 24);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const green = '#336644';
 
@@ -3893,12 +4003,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 10, 7, 12, 1, '#CCAA44');
 
     c.refresh();
-  }
+  } }
 
   // Street-level — wrought iron shop sign (coffee)
   {
     const c = scene.textures.createCanvas('bp-hanging-sign-1', 24, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const iron = '#4A4A4A';
     const wood = '#6A4A2A';
@@ -3921,12 +4032,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 16, 20, 2, 1, cream);
 
     c.refresh();
-  }
+  } }
 
   // Street-level — bakery sign
   {
     const c = scene.textures.createCanvas('bp-hanging-sign-2', 24, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const iron = '#4A4A4A';
     const signCream = '#E8D8B0';
@@ -3949,12 +4061,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     px(ctx, 15, 18, darken(brown, 0.1));
 
     c.refresh();
-  }
+  } }
 
   // Street-level — ornate iron balcony extending over street
   {
     const c = scene.textures.createCanvas('bp-balcony-overhang-1', 64, 20);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const iron = '#4A4A4A';
     const stone = '#9A9A9A';
@@ -3982,12 +4095,13 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 2, 16, 60, 2, darken(iron, 0.3));
 
     c.refresh();
-  }
+  } }
 
   // Street-level — simpler modern balcony
   {
     const c = scene.textures.createCanvas('bp-balcony-overhang-2', 64, 20);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const glass = '#88AACC';
     const metal = '#4A4A4A';
@@ -4007,7 +4121,7 @@ function generateBudapestDecorations(scene: Phaser.Scene): void {
     rect(ctx, 4, 17, 56, 1, darken(metal, 0.2));
 
     c.refresh();
-  }
+  } }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -4019,7 +4133,8 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
   // budapest-eye-wheel — 128×128, large Ferris wheel
   {
     const c = scene.textures.createCanvas('budapest-eye-wheel', 128, 128);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const metal = '#7A7A8A';
     const darkMetal = darken(metal, 0.15);
@@ -4070,12 +4185,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // budapest-eye-cabin — 16×16, single cabin
   {
     const c = scene.textures.createCanvas('budapest-eye-cabin', 16, 16);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Hanger arm
@@ -4095,12 +4211,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 3, 14, 10, 1, '#5A5A6A');
 
     c.refresh();
-  }
+  } }
 
   // budapest-skyline — 800×200, city silhouette in dark gray
   {
     const c = scene.textures.createCanvas('budapest-skyline', 800, 200);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const dark = '#2A2A3A';
     const mid = '#3A3A4A';
@@ -4161,12 +4278,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 474, 150, 6, 40, dark);
 
     c.refresh();
-  }
+  } }
 
   // bp-bus-interior-frame — 800×600, dark border frame with window cutout
   {
     const c = scene.textures.createCanvas('bp-bus-interior-frame', 800, 600);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const border = '#2A2A2A';
 
@@ -4205,12 +4323,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 750, 48, 2, 502, '#5A5A5A');
 
     c.refresh();
-  }
+  } }
 
   // bp-bus-building-1 — 64×96, suburban building silhouette
   {
     const c = scene.textures.createCanvas('bp-bus-building-1', 64, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#C8B898';
     const rng = seededRandom(8100);
@@ -4243,12 +4362,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 44, 4, 6, 14, '#8A6A5A');
 
     c.refresh();
-  }
+  } }
 
   // bp-bus-building-2 — 64×128, taller city building
   {
     const c = scene.textures.createCanvas('bp-bus-building-2', 64, 128);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#AAAAAA';
     const rng = seededRandom(8200);
@@ -4282,12 +4402,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // bp-bus-building-3 — 48×96, apartment block variant
   {
     const c = scene.textures.createCanvas('bp-bus-building-3', 48, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#D4C0A0';
     const rng = seededRandom(8300);
@@ -4321,12 +4442,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 44, 14, 2, 78, '#6A6A6A');
 
     c.refresh();
-  }
+  } }
 
   // bp-cutscene-bus-couple — 64×48, two figures sitting side by side
   {
     const c = scene.textures.createCanvas('bp-cutscene-bus-couple', 64, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const skin = '#E8C8A0';
 
@@ -4356,7 +4478,7 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 28, 30, 5, 3, skin);
 
     c.refresh();
-  }
+  } }
 
   // bp-bus-building-pastel-1 through bp-bus-building-pastel-4
   {
@@ -4423,7 +4545,8 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
   // bp-bus-countryside — 128×96, rolling green hills with houses
   {
     const c = scene.textures.createCanvas('bp-bus-countryside', 128, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(8400);
 
@@ -4472,12 +4595,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // bp-bus-danube-flash — 128×64, blue water with dark building edges
   {
     const c = scene.textures.createCanvas('bp-bus-danube-flash', 128, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Dark sky
@@ -4512,12 +4636,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // bp-cutscene-couple-walking — 48×48, two figures side by side hand-in-hand
   {
     const c = scene.textures.createCanvas('bp-cutscene-couple-walking', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const skin = '#E8C8A0';
 
@@ -4566,12 +4691,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 20, 26, 8, 2, skin);
 
     c.refresh();
-  }
+  } }
 
   // bp-eye-cabin-couple — 16×16, cabin with two tiny colored dots in window
   {
     const c = scene.textures.createCanvas('bp-eye-cabin-couple', 16, 16);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Hanger arm
@@ -4594,12 +4720,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 3, 14, 10, 1, '#5A5A6A');
 
     c.refresh();
-  }
+  } }
 
   // bp-eye-sun-disc — 32×32, warm orange-gold circle with glow
   {
     const c = scene.textures.createCanvas('bp-eye-sun-disc', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Outer glow (lowest density)
@@ -4614,12 +4741,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     circle(ctx, 16, 16, 6, '#FFCC66');
 
     c.refresh();
-  }
+  } }
 
   // bp-cutscene-couple-close — 64×48, upper body view of couple
   {
     const c = scene.textures.createCanvas('bp-cutscene-couple-close', 64, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const skin = '#E8C8A0';
 
@@ -4669,12 +4797,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 52, 28, 6, 14, '#FF6688');
 
     c.refresh();
-  }
+  } }
 
   // bp-cruise-boat — 200×60, elongated white cruise boat
   {
     const c = scene.textures.createCanvas('bp-cruise-boat', 200, 60);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // White hull
@@ -4721,12 +4850,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 4, 47, 190, 1, '#4A7AAA');
 
     c.refresh();
-  }
+  } }
 
   // bp-cruise-parliament-lit — 256×120, night parliament with lit windows
   {
     const c = scene.textures.createCanvas('bp-cruise-parliament-lit', 256, 120);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const base = '#D4C8B0';
     const dark = darken(base, 0.15);
@@ -4781,12 +4911,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 8, 108, 240, 12, 'rgba(255,170,68,0.15)');
 
     c.refresh();
-  }
+  } }
 
   // bp-cruise-castle-lit — 200×80, castle on hill with lit windows
   {
     const c = scene.textures.createCanvas('bp-cruise-castle-lit', 200, 80);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#9A8A70';
     const dark = darken(wall, 0.15);
@@ -4826,12 +4957,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 28, 54, 144, 10, 'rgba(255,238,200,0.12)');
 
     c.refresh();
-  }
+  } }
 
   // bp-cruise-bridge-overhead — 400×40, Chain Bridge from below
   {
     const c = scene.textures.createCanvas('bp-cruise-bridge-overhead', 400, 40);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const metal = '#5A5A6A';
     const dark = darken(metal, 0.15);
@@ -4878,12 +5010,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 20, 36, 360, 1, metal);
 
     c.refresh();
-  }
+  } }
 
   // bp-bath-columns — 32×96, ornate column with capital and base
   {
     const c = scene.textures.createCanvas('bp-bath-columns', 32, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const stone = '#D4C8A0';
     const dark = darken(stone, 0.12);
@@ -4912,12 +5045,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 2, 90, 28, 6, darken(dark, 0.08));
 
     c.refresh();
-  }
+  } }
 
   // bp-cutscene-couple-pool — 64×32, couple at pool edge
   {
     const c = scene.textures.createCanvas('bp-cutscene-couple-pool', 64, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const skin = '#E8C8A0';
 
@@ -4948,12 +5082,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, 26, 8, 10, 2, skin); // shoulders touching suggestion
 
     c.refresh();
-  }
+  } }
 
   // bp-bath-mosaic — 32×32, geometric tile pattern
   {
     const c = scene.textures.createCanvas('bp-bath-mosaic', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const colors = ['#C8A060', '#E8D8B0', '#C87848'];
     const grout = '#5A4A3A';
@@ -4980,12 +5115,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // ── Budapest Eye POV: cabin window frame ──
   {
     const c = scene.textures.createCanvas('bp-eye-pov-frame', 800, 600);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Draw the dark metallic frame border
@@ -5088,12 +5224,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // ── Budapest Eye POV: couple seen from behind ──
   {
     const c = scene.textures.createCanvas('bp-eye-pov-couple', 240, 140);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Railing bar at bottom
@@ -5213,12 +5350,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     rect(ctx, midX - 2, midY - 1, 8, 4, '#DEB890');
 
     c.refresh();
-  }
+  } }
 
   // ── Budapest Eye POV: panoramic cityscape ──
   {
     const c = scene.textures.createCanvas('bp-eye-pov-cityscape', 1200, 400);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(9000);
 
@@ -5496,12 +5634,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // ── Budapest Eye POV: near buildings (parallax layer) ──
   {
     const c = scene.textures.createCanvas('bp-eye-pov-buildings-near', 1000, 300);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const rng = seededRandom(9001);
 
@@ -5630,12 +5769,13 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // ── Budapest Eye POV: cabin interior railing/ledge ──
   {
     const c = scene.textures.createCanvas('bp-eye-pov-railing', 800, 50);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Main railing bar at top
@@ -5685,7 +5825,7 @@ function generateBudapestCutsceneSprites(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -5815,28 +5955,31 @@ export function generateShowerLayered(
   // ── HER HEAD (open eyes) — 24×30 ──
   {
     const c = scene.textures.createCanvas('shower-her-head', 24, 30);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawCutsceneHead(ctx, 3, 6, 18, 20, pSkin, pHair, pHairStyle, false, 'open');
     // Wet shine
     rect(ctx, 7, 7, 2, 8, 'rgba(255,255,255,0.2)');
     c.refresh();
-  }
+  } }
 
   // ── HER HEAD (closed eyes) — 24×30 ──
   {
     const c = scene.textures.createCanvas('shower-her-head-closed', 24, 30);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawCutsceneHead(ctx, 3, 6, 18, 20, pSkin, pHair, pHairStyle, false, 'closed');
     rect(ctx, 7, 7, 2, 8, 'rgba(255,255,255,0.25)');
     c.refresh();
-  }
+  } }
 
   // ── HER BODY — hourglass: shoulders → bust → waist → hips → legs — 28×50 ──
   {
     const c = scene.textures.createCanvas('shower-her-body', 28, 50);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Neck
@@ -5892,12 +6035,13 @@ export function generateShowerLayered(
     rect(ctx, 23, 23, 1, 4, lighten(pSkin, 0.06));
 
     c.refresh();
-  }
+  } }
 
   // ── HER ARM — 10×28 (upper arm + forearm + hand) ──
   {
     const c = scene.textures.createCanvas('shower-her-arm', 10, 28);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Upper arm
     rect(ctx, 2, 0, 6, 14, pSkin);
@@ -5908,32 +6052,35 @@ export function generateShowerLayered(
     rect(ctx, 3, 24, 5, 4, pSkin);
     rect(ctx, 3, 24, 5, 1, lighten(pSkin, 0.06));
     c.refresh();
-  }
+  } }
 
   // ── HIS HEAD (open eyes) — 28×34 ──
   {
     const c = scene.textures.createCanvas('shower-him-head', 28, 34);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawCutsceneHead(ctx, 4, 6, 20, 24, mSkin, mHair, mHairStyle, true, 'open');
     rect(ctx, 8, 7, 2, 9, 'rgba(255,255,255,0.2)');
     c.refresh();
-  }
+  } }
 
   // ── HIS HEAD (closed eyes) — 28×34 ──
   {
     const c = scene.textures.createCanvas('shower-him-head-closed', 28, 34);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawCutsceneHead(ctx, 4, 6, 20, 24, mSkin, mHair, mHairStyle, true, 'closed');
     rect(ctx, 8, 7, 2, 9, 'rgba(255,255,255,0.25)');
     c.refresh();
-  }
+  } }
 
   // ── HIS BODY — broad chest → trunks → legs — 36×54 ──
   {
     const c = scene.textures.createCanvas('shower-him-body', 36, 54);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Neck (thicker)
@@ -5976,12 +6123,13 @@ export function generateShowerLayered(
     rect(ctx, 21, 39, 1, 12, mSkinS);
 
     c.refresh();
-  }
+  } }
 
   // ── HIS ARM — 12×32 (broader) ──
   {
     const c = scene.textures.createCanvas('shower-him-arm', 12, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Upper arm (muscular)
     rect(ctx, 1, 0, 8, 16, mSkin);
@@ -5994,7 +6142,7 @@ export function generateShowerLayered(
     rect(ctx, 2, 28, 7, 4, mSkin);
     rect(ctx, 2, 28, 7, 1, lighten(mSkin, 0.06));
     c.refresh();
-  }
+  } }
 }
 
 export function generateBudapestCoupleSprites(
@@ -6005,7 +6153,8 @@ export function generateBudapestCoupleSprites(
   // ── bp-couple-bus: side-by-side seated on bus — 64×48 ──
   {
     const c = scene.textures.createCanvas('bp-couple-bus', 64, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Seat/bench
@@ -6048,12 +6197,13 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 27, 30, 6, 3, pSkin);
 
     c.refresh();
-  }
+  } }
 
   // ── bp-couple-bus-cozy: leaning together on bus — 64×48 ──
   {
     const c = scene.textures.createCanvas('bp-couple-bus-cozy', 64, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Seat
@@ -6090,12 +6240,13 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 27, 24, 5, 3, mSkin);
 
     c.refresh();
-  }
+  } }
 
   // ── bp-couple-close: upper body close-up — 64×48 ──
   {
     const c = scene.textures.createCanvas('bp-couple-close', 64, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Player (left)
@@ -6129,12 +6280,13 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 56, 28, 6, 16, mShirt);
 
     c.refresh();
-  }
+  } }
 
   // ── bp-couple-close-cozy: close-up, leaning together — 64×48 ──
   {
     const c = scene.textures.createCanvas('bp-couple-close-cozy', 64, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Player (left) — leaning right
@@ -6164,12 +6316,13 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 28, 27, 5, 3, mSkin);
 
     c.refresh();
-  }
+  } }
 
   // ── bp-couple-pool: in the thermal bath — 64×32 ──
   {
     const c = scene.textures.createCanvas('bp-couple-pool', 64, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Water at bottom
@@ -6203,12 +6356,13 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 27, 12, 8, 2, pSkin);
 
     c.refresh();
-  }
+  } }
 
   // ── bp-couple-pool-relaxed: eyes closed, blissful — 64×32 ──
   {
     const c = scene.textures.createCanvas('bp-couple-pool-relaxed', 64, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     rect(ctx, 0, 20, 64, 12, '#2A8A9A');
@@ -6233,12 +6387,13 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 27, 12, 8, 2, pSkin);
 
     c.refresh();
-  }
+  } }
 
   // ── bp-couple-walking: side by side — 48×48 ──
   {
     const c = scene.textures.createCanvas('bp-couple-walking', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     const pSkin = playerOutfit.skin;
@@ -6271,14 +6426,15 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 16, 26, 10, 3, pSkin);
 
     c.refresh();
-  }
+  } }
 
   // ── bp-couple-shower: hugging in bathing suits under water — 64×64 ──
   // Female has hourglass figure: defined bust, narrow waist, wider hips
   // Couple is hugging — arms wrapped around each other, bodies close
   {
     const c = scene.textures.createCanvas('bp-couple-shower', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     const pSkin = playerOutfit.skin;
@@ -6339,13 +6495,14 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 34, 1, 2, 7, 'rgba(255,255,255,0.25)');
 
     c.refresh();
-  }
+  } }
 
   // ── bp-couple-shower-cozy: tight embrace, eyes closed, intimate — 64×64 ──
   // Bodies pressed close, his arms around her, her head on his chest
   {
     const c = scene.textures.createCanvas('bp-couple-shower-cozy', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     const pSkin = playerOutfit.skin;
@@ -6409,7 +6566,7 @@ export function generateBudapestCoupleSprites(
     rect(ctx, 34, 1, 2, 7, 'rgba(255,255,255,0.3)');
 
     c.refresh();
-  }
+  } }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -6421,7 +6578,8 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
   // interior-reception-desk — 32×32, dark mahogany desk with gold trim and marble top
   {
     const c = scene.textures.createCanvas('interior-reception-desk', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Desk body — dark mahogany
@@ -6451,12 +6609,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 15, 22, '#B8942E');
 
     c.refresh();
-  }
+  } }
 
   // interior-luggage — 32×32, elegant stacked suitcases, burgundy/brown leather
   {
     const c = scene.textures.createCanvas('interior-luggage', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Bottom suitcase — brown leather
@@ -6485,12 +6644,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     rect(ctx, 8, 6, 16, 1, '#B8942E');
 
     c.refresh();
-  }
+  } }
 
   // interior-elevator — 32×32, brass/gold elevator doors with art deco pattern
   {
     const c = scene.textures.createCanvas('interior-elevator', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Wall surround
@@ -6533,12 +6693,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 16, 1, '#D4A843');
 
     c.refresh();
-  }
+  } }
 
   // interior-shower — 32×32, glass shower enclosure with chrome/gold fixtures, marble base
   {
     const c = scene.textures.createCanvas('interior-shower', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Marble base/floor
@@ -6576,12 +6737,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     circle(ctx, 16, 29, 1, '#B8942E');
 
     c.refresh();
-  }
+  } }
 
   // interior-chandelier — 32×32, crystal chandelier with gold frame and light glow
   {
     const c = scene.textures.createCanvas('interior-chandelier', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Glow effect (soft yellow backdrop)
@@ -6634,12 +6796,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 18, 11, '#FFFDE0');
 
     c.refresh();
-  }
+  } }
 
   // interior-armchair — 32×32, plush velvet emerald armchair with gold legs
   {
     const c = scene.textures.createCanvas('interior-armchair', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Gold legs
@@ -6675,12 +6838,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     rect(ctx, 25, 10, 4, 1, '#D4A843');
 
     c.refresh();
-  }
+  } }
 
   // interior-plant-lux — 32×32, tall potted plant in gold/brass pot
   {
     const c = scene.textures.createCanvas('interior-plant-lux', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Gold/brass pot
@@ -6714,12 +6878,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 21, 9, '#1A5C2A');
 
     c.refresh();
-  }
+  } }
 
   // interior-painting — 32×32, ornate gold frame with landscape painting
   {
     const c = scene.textures.createCanvas('interior-painting', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Outer gold frame
@@ -6757,12 +6922,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 28, 26, lighten('#D4A843', 0.3));
 
     c.refresh();
-  }
+  } }
 
   // interior-mirror — 32×32, oval mirror with gold ornate frame, reflective surface
   {
     const c = scene.textures.createCanvas('interior-mirror', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Gold frame — oval approximation
@@ -6791,12 +6957,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 16, 30, lighten('#D4A843', 0.2));
 
     c.refresh();
-  }
+  } }
 
   // interior-minibar — 32×32, small dark wood cabinet with glass door showing bottles
   {
     const c = scene.textures.createCanvas('interior-minibar', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Cabinet body — dark wood
@@ -6836,12 +7003,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     rect(ctx, 25, 28, 2, 4, '#4A1E0A');
 
     c.refresh();
-  }
+  } }
 
   // interior-wardrobe — 32×32, tall dark wood wardrobe with ornate handles
   {
     const c = scene.textures.createCanvas('interior-wardrobe', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Main body — dark wood
@@ -6887,12 +7055,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     rect(ctx, 25, 30, 3, 2, '#3A1608');
 
     c.refresh();
-  }
+  } }
 
   // interior-coffee-table — 32×32, glass/marble top coffee table with gold legs
   {
     const c = scene.textures.createCanvas('interior-coffee-table', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Gold legs
@@ -6920,12 +7089,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 20, 15, '#D8D3CB');
 
     c.refresh();
-  }
+  } }
 
   // interior-rug — 32×32, persian/ornate rug with rich red/gold pattern
   {
     const c = scene.textures.createCanvas('interior-rug', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Base — deep red
@@ -6975,12 +7145,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     }
 
     c.refresh();
-  }
+  } }
 
   // interior-nightstand — 32×32, small bedside table with gold knob, lamp on top
   {
     const c = scene.textures.createCanvas('interior-nightstand', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Table body — dark wood
@@ -7015,12 +7186,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 16, 6, '#FFFDE0');
 
     c.refresh();
-  }
+  } }
 
   // interior-luxury-bed — 64×64, king-size bed with dark wood frame, white/gold bedding
   {
     const c = scene.textures.createCanvas('interior-luxury-bed', 64, 64);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Bed frame — dark wood
@@ -7077,12 +7249,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     rect(ctx, 56, 58, 4, 6, '#3A1608');
 
     c.refresh();
-  }
+  } }
 
   // interior-tv-luxury — 32×32, flat screen mounted TV with thin bezel, blue screen
   {
     const c = scene.textures.createCanvas('interior-tv-luxury', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Wall mount bracket
@@ -7111,12 +7284,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     rect(ctx, 5, 22, 22, 1, '#B8942E');
 
     c.refresh();
-  }
+  } }
 
   // interior-vanity — 32×32, bathroom vanity with marble counter, gold faucet, vessel sink
   {
     const c = scene.textures.createCanvas('interior-vanity', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Cabinet body — dark wood
@@ -7156,12 +7330,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     rect(ctx, 25, 29, 2, 3, '#4A1E0A');
 
     c.refresh();
-  }
+  } }
 
   // interior-towel-rack — 32×32, gold towel rack with white towels
   {
     const c = scene.textures.createCanvas('interior-towel-rack', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Wall mount plates — gold
@@ -7194,12 +7369,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     rect(ctx, 5, 12, 3, 16, '#B8942E');
 
     c.refresh();
-  }
+  } }
 
   // interior-staircase — 32×32, spiral staircase with ornate railing, marble steps
   {
     const c = scene.textures.createCanvas('interior-staircase', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Central pole — gold
@@ -7254,12 +7430,13 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     circle(ctx, 16, 0, 1, '#D4A843');
 
     c.refresh();
-  }
+  } }
 
   // interior-luggage-rack — 32×32, hotel luggage rack with suitcase on it
   {
     const c = scene.textures.createCanvas('interior-luggage-rack', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
 
     // Rack legs — gold/brass X-shape
@@ -7300,7 +7477,7 @@ function generateBudapestAirbnbInteriors(scene: Phaser.Scene): void {
     px(ctx, 23, 7, '#D4A843');
 
     c.refresh();
-  }
+  } }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -7313,7 +7490,8 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
   // Curry bowl (32×32)
   {
     const c = scene.textures.createCanvas('curry-bowl', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Bowl
     rect(ctx, 6, 14, 20, 10, '#D2691E');
@@ -7334,12 +7512,13 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
     // Bowl base
     rect(ctx, 10, 24, 12, 2, '#A0522D');
     c.refresh();
-  }
+  } }
 
   // Cover / dome (32×32)
   {
     const c = scene.textures.createCanvas('curry-cover', 32, 32);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Dome body (silver cloche)
     rect(ctx, 6, 12, 20, 14, '#C0C0C0');
@@ -7358,12 +7537,13 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
     // Shadow on right side
     rect(ctx, 22, 12, 3, 12, 'rgba(0,0,0,0.15)');
     c.refresh();
-  }
+  } }
 
   // Indian waiter NPC (48×48)
   {
     const c = scene.textures.createCanvas('npc-indian-waiter', 48, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     drawNPCBase(ctx, {
       skin: '#C68642',
@@ -7384,12 +7564,13 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
       },
     });
     c.refresh();
-  }
+  } }
 
   // building-bp-indian-restaurant — 128×96, Indian restaurant exterior
   {
     const c = scene.textures.createCanvas('building-bp-indian-restaurant', 128, 96);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     const wall = '#D4A050'; // warm saffron/ochre wall
     const trim = '#8B1A1A'; // deep red trim (Indian aesthetic)
@@ -7466,14 +7647,15 @@ function generateCurryHuntTextures(scene: Phaser.Scene): void {
     circle(ctx, 64, 0, 2, '#FFD700'); // gold finial
 
     c.refresh();
-  }
+  } }
 }
 
 function generateMinigameTextures(scene: Phaser.Scene): void {
   // Lángos plate (72×48)
   {
     const c = scene.textures.createCanvas('langos-plate', 72, 48);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     // Plate
     circle(ctx, 36, 28, 22, '#E8D8B0');
@@ -7482,7 +7664,7 @@ function generateMinigameTextures(scene: Phaser.Scene): void {
     circle(ctx, 36, 26, 16, '#D4A040');
     circle(ctx, 36, 26, 14, '#DAA520');
     c.refresh();
-  }
+  } }
 
   // Topping sprites (28×28 each)
   const toppings: Array<{ key: string; color: string; accent?: string }> = [
@@ -7496,12 +7678,13 @@ function generateMinigameTextures(scene: Phaser.Scene): void {
 
   toppings.forEach(t => {
     const c = scene.textures.createCanvas(t.key, 28, 28);
-    if (!c) return;
+    if (!c) { /* skip — texture may already exist or canvas limit reached */ }
+    else {
     const ctx = c.context;
     circle(ctx, 14, 14, 10, t.color);
     circle(ctx, 14, 12, 6, t.accent || t.color);
     c.refresh();
-  });
+  } });
 }
 
 export function generateBudapestTextures(scene: Phaser.Scene): void {

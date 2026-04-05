@@ -1150,10 +1150,13 @@ export class BudapestOverworldScene extends OverworldScene {
 
   // ── Time-based atmosphere tinting ──
   private addAtmosphereTint(): void {
-    const mapW = BUDAPEST_WIDTH * TILE_SIZE;
-    const mapH = BUDAPEST_HEIGHT * TILE_SIZE;
-    this.atmosphereTint = this.add.rectangle(mapW / 2, mapH / 2, mapW, mapH, 0xFFD080)
-      .setDepth(200).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD)
+    const cam = this.cameras.main;
+    // Use camera viewport size, positioned at screen center, scrollFactor 0
+    this.atmosphereTint = this.add.rectangle(
+      cam.width / 2, cam.height / 2,
+      cam.width * 2, cam.height * 2,
+      0xFFD080,
+    ).setDepth(200).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD)
       .setScrollFactor(0);
   }
 
