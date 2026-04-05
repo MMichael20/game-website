@@ -13,7 +13,7 @@ export interface AudioPreferences {
 
 export const DEFAULT_AUDIO_PREFS: AudioPreferences = {
   masterVolume: 0.7,
-  musicVolume: 0.6,
+  musicVolume: 0.35,
   sfxVolume: 0.8,
   ambientVolume: 0.5,
   muted: false,

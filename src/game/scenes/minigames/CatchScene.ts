@@ -22,6 +22,8 @@ export class CatchScene extends Phaser.Scene {
   private countdownTimer!: Phaser.Time.TimerEvent;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private gameOver = false;
+  private combo = 0;
+  private comboText!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'CatchScene' });
@@ -34,6 +36,7 @@ export class CatchScene extends Phaser.Scene {
     this.timeLeft = GAME_DURATION;
     this.items = [];
     this.gameOver = false;
+    this.combo = 0;
   }
 
   create(): void {
@@ -72,29 +75,54 @@ export class CatchScene extends Phaser.Scene {
       },
     });
 
-    // Spawn timer
-    this.spawnTimer = this.time.addEvent({
-      delay: this.config.spawnRate,
-      callback: this.spawnItem,
-      callbackScope: this,
-      loop: true,
-    });
+    // Combo display
+    this.comboText = this.add.text(width / 2, 30, '', {
+      fontSize: '16px', color: '#FFD700', fontStyle: 'bold', fontFamily: 'monospace',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(20).setAlpha(0);
 
-    // Countdown timer
-    this.countdownTimer = this.time.addEvent({
-      delay: 1000,
-      callback: () => {
-        this.timeLeft--;
-        uiManager.updateMinigameOverlay({ timer: this.timeLeft });
-        if (this.timeLeft === 5) {
-          audioManager.playSFX('mg_timer_warning');
-        }
-        if (this.timeLeft <= 0) {
-          this.endGame();
-        }
-      },
-      callbackScope: this,
-      loop: true,
+    // Countdown 3-2-1-GO then start
+    this.showCountdown(() => {
+      // Spawn timer
+      this.spawnTimer = this.time.addEvent({
+        delay: this.config.spawnRate,
+        callback: this.spawnItem,
+        callbackScope: this,
+        loop: true,
+      });
+
+      // Countdown timer
+      this.countdownTimer = this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+          this.timeLeft--;
+          uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+
+          // Difficulty ramp-up — destroy and recreate spawn timer with faster rate
+          if (this.timeLeft === 20 && this.spawnTimer) {
+            this.spawnTimer.destroy();
+            this.spawnTimer = this.time.addEvent({
+              delay: Math.max(400, this.config.spawnRate * 0.85),
+              callback: this.spawnItem, callbackScope: this, loop: true,
+            });
+          } else if (this.timeLeft === 10 && this.spawnTimer) {
+            this.spawnTimer.destroy();
+            this.spawnTimer = this.time.addEvent({
+              delay: Math.max(300, this.config.spawnRate * 0.7),
+              callback: this.spawnItem, callbackScope: this, loop: true,
+            });
+          }
+
+          if (this.timeLeft === 5) {
+            audioManager.playSFX('mg_timer_warning');
+          }
+          if (this.timeLeft <= 0) {
+            this.endGame();
+          }
+        },
+        callbackScope: this,
+        loop: true,
+      });
     });
   }
 
@@ -116,6 +144,9 @@ export class CatchScene extends Phaser.Scene {
       y: this.scale.height + 20,
       duration: fallDuration,
       onComplete: () => {
+        audioManager.playSFX('mg_miss');
+        this.combo = 0;
+        this.comboText.setAlpha(0);
         this.removeItem(item);
       },
     });
@@ -150,12 +181,50 @@ export class CatchScene extends Phaser.Scene {
       const dx = Math.abs(item.x - this.basket.x);
       const dy = Math.abs(item.y - this.basket.y);
       if (dx < 40 && dy < 20) {
-        this.score += 10;
+        // Combo scoring
+        this.combo++;
+        const multiplier = this.combo >= 5 ? 2 : this.combo >= 3 ? 1.5 : 1;
+        const points = Math.floor(10 * multiplier);
+        this.score += points;
         audioManager.playSFX('mg_catch');
         uiManager.updateMinigameOverlay({ score: this.score });
+
+        // Update combo display
+        if (this.combo >= 3) {
+          this.comboText.setText(`${this.combo}x Combo! (${multiplier}x)`);
+          this.comboText.setAlpha(1);
+          this.tweens.killTweensOf(this.comboText);
+          this.comboText.setScale(1.2);
+          this.tweens.add({ targets: this.comboText, scaleX: 1, scaleY: 1, duration: 200 });
+        }
+
+        // Score popup
+        const popupText = multiplier > 1 ? `+${points}` : '+10';
+        const popupColor = multiplier >= 2 ? '#FF4444' : multiplier >= 1.5 ? '#FFA500' : '#FFD700';
+        const popup = this.add.text(item.x, item.y - 10, popupText, {
+          fontSize: '12px', color: popupColor, fontStyle: 'bold', fontFamily: 'monospace',
+        }).setDepth(20).setOrigin(0.5);
+        this.tweens.add({
+          targets: popup, y: item.y - 35, alpha: 0, duration: 500,
+          onComplete: () => popup.destroy(),
+        });
+
         this.removeItem(item);
       }
     }
+  }
+
+  private showCountdown(onComplete: () => void): void {
+    const { width, height } = this.scale;
+    const text = this.add.text(width / 2, height / 2, '3', {
+      fontSize: '48px', color: '#FFFFFF', fontStyle: 'bold', fontFamily: 'monospace',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(100);
+
+    this.time.delayedCall(800, () => { text.setText('2'); });
+    this.time.delayedCall(1600, () => { text.setText('1'); });
+    this.time.delayedCall(2400, () => { text.setText('GO!'); text.setColor('#FFD700'); });
+    this.time.delayedCall(3000, () => { text.destroy(); onComplete(); });
   }
 
   private endGame(): void {

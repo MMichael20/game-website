@@ -107,6 +107,7 @@ export class TennisScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
       onComplete: () => {
         if (!this.gameOver) {
+          audioManager.playSFX('mg_miss');
           this.endGame(); // Missed!
         }
       },

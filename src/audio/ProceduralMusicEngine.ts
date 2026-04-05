@@ -663,6 +663,16 @@ export class ProceduralMusicEngine {
 
   private trackNodes(nodes: AudioNode[], cleanupTime: number): void {
     this.activeNodeSets.add(nodes);
+
+    // Safety cap: prevent memory leak from accumulated node sets
+    if (this.activeNodeSets.size > 200) {
+      const first = this.activeNodeSets.values().next().value;
+      if (first) {
+        for (const node of first) { try { node.disconnect(); } catch { /* ok */ } }
+        this.activeNodeSets.delete(first);
+      }
+    }
+
     const delay = Math.max(0, (cleanupTime - this.ctx.currentTime) * 1000);
     setTimeout(() => {
       for (const node of nodes) {

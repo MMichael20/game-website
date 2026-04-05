@@ -99,13 +99,7 @@ export abstract class InteriorScene extends Phaser.Scene {
     this.events.on('shutdown', this.shutdown, this);
 
     // 10. Fade in
-    cam.setAlpha(0);
-    this.tweens.add({
-      targets: cam,
-      alpha: 1,
-      duration: 300,
-      ease: 'Linear',
-    });
+    cam.fadeIn(400, 0, 0, 0);
   }
 
   update(_time: number, delta: number): void {
@@ -336,17 +330,12 @@ export abstract class InteriorScene extends Phaser.Scene {
     audioManager.playSFX('door_close');
     uiManager.hideInteractionPrompt();
     const cam = this.cameras.main;
-    this.tweens.add({
-      targets: cam,
-      alpha: 0,
-      duration: 300,
-      ease: 'Linear',
-      onComplete: () => {
-        this.scene.start(sceneKey, {
-          returnX: this.returnData.returnX,
-          returnY: this.returnData.returnY,
-        });
-      },
+    cam.fadeOut(300, 0, 0, 0);
+    cam.once('camerafadeoutcomplete', () => {
+      this.scene.start(sceneKey, {
+        returnX: this.returnData.returnX,
+        returnY: this.returnData.returnY,
+      });
     });
   }
 
@@ -354,18 +343,13 @@ export abstract class InteriorScene extends Phaser.Scene {
     audioManager.playSFX('door_close');
     uiManager.hideInteractionPrompt();
     const cam = this.cameras.main;
-    this.tweens.add({
-      targets: cam,
-      alpha: 0,
-      duration: 300,
-      ease: 'Linear',
-      onComplete: () => {
-        this.scene.start('WorldScene', {
-          returnFromInterior: true,
-          returnX: this.returnData.returnX,
-          returnY: this.returnData.returnY,
-        });
-      },
+    cam.fadeOut(300, 0, 0, 0);
+    cam.once('camerafadeoutcomplete', () => {
+      this.scene.start('WorldScene', {
+        returnFromInterior: true,
+        returnX: this.returnData.returnX,
+        returnY: this.returnData.returnY,
+      });
     });
   }
 

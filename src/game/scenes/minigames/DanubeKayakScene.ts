@@ -160,7 +160,11 @@ export class DanubeKayakScene extends Phaser.Scene {
       onExit: () => this.endGame(),
     });
 
-    // Spawn timers
+    // Countdown 3-2-1-GO then start
+    this.showCountdown(() => this.startGameTimers());
+  }
+
+  private startGameTimers(): void {
     this.boatTimer = this.time.addEvent({
       delay: 1500,
       callback: () => this.spawnObstacle('boat'),
@@ -210,6 +214,19 @@ export class DanubeKayakScene extends Phaser.Scene {
       },
       loop: true,
     });
+  }
+
+  private showCountdown(onComplete: () => void): void {
+    const { width, height } = this.scale;
+    const text = this.add.text(width / 2, height / 2, '3', {
+      fontSize: '48px', color: '#FFFFFF', fontStyle: 'bold', fontFamily: 'monospace',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(100);
+
+    this.time.delayedCall(800, () => { text.setText('2'); });
+    this.time.delayedCall(1600, () => { text.setText('1'); });
+    this.time.delayedCall(2400, () => { text.setText('GO!'); text.setColor('#FFD700'); });
+    this.time.delayedCall(3000, () => { text.destroy(); onComplete(); });
   }
 
   private spawnObstacle(type: 'boat' | 'pillar' | 'debris'): void {
@@ -486,6 +503,7 @@ export class DanubeKayakScene extends Phaser.Scene {
   private handleHit(obs: Obstacle): void {
     const { width, height } = this.scale;
     audioManager.playSFX('mg_wrong');
+    this.cameras.main.shake(150, 0.008);
 
     this.score = Math.max(0, this.score - 20);
     uiManager.updateMinigameOverlay({ score: this.score });

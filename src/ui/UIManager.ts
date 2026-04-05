@@ -284,11 +284,15 @@ class UIManager {
           <input type="range" class="audio-slider__input" data-vol="master" min="0" max="100" value="${Math.round(audio.masterVolume * 100)}">
         </div>
         <div class="audio-slider">
+          <span class="audio-slider__label">Music</span>
+          <input type="range" class="audio-slider__input" data-vol="music" min="0" max="100" value="${Math.round(audio.musicVolume * 100)}">
+        </div>
+        <div class="audio-slider">
           <span class="audio-slider__label">SFX</span>
           <input type="range" class="audio-slider__input" data-vol="sfx" min="0" max="100" value="${Math.round(audio.sfxVolume * 100)}">
         </div>
         <div class="audio-slider">
-          <span class="audio-slider__label">Birds</span>
+          <span class="audio-slider__label">Ambient</span>
           <input type="range" class="audio-slider__input" data-vol="ambient" min="0" max="100" value="${Math.round(audio.ambientVolume * 100)}">
         </div>
         <button class="btn btn--secondary settings-panel__mute-btn ${audio.muted ? 'settings-panel__mute-btn--muted' : ''}" data-action="mute">
@@ -470,12 +474,19 @@ class UIManager {
   // --- Minigame result screen ---
   showMinigameResult(title: string, score: number, onContinue: () => void): void {
     this.dialogContainer.innerHTML = '';
+
+    // Star rating based on score thresholds
+    const stars = score >= 300 ? 3 : score >= 150 ? 2 : score >= 50 ? 1 : 0;
+    const starStr = '\u2605'.repeat(stars) + '\u2606'.repeat(3 - stars);
+    const ratingMsg = stars === 3 ? 'Amazing!' : stars === 2 ? 'Great job!' : stars === 1 ? 'Not bad!' : 'Try again!';
+
     const el = document.createElement('div');
     el.className = 'dialog-overlay';
     el.innerHTML = `
       <div class="dialog">
         <h2 class="dialog__title">${title}</h2>
-        <p class="dialog__message">Score: ${score}</p>
+        <div class="dialog__stars" style="font-size:32px;color:#FFD700;text-align:center;margin:8px 0;">${starStr}</div>
+        <p class="dialog__message" style="text-align:center;">${ratingMsg}<br>Score: <strong>${score}</strong></p>
         <button class="btn btn--primary" id="minigame-continue">Continue</button>
       </div>
     `;

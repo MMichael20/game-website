@@ -140,17 +140,32 @@ export class RooftopChaseScene extends Phaser.Scene {
       onExit: () => this.endGame(),
     });
 
-    // Countdown
-    this.countdownTimer = this.time.addEvent({
-      delay: 1000,
-      callback: () => {
-        this.timeLeft--;
-        uiManager.updateMinigameOverlay({ timer: this.timeLeft });
-        if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
-        if (this.timeLeft <= 0) this.endGame();
-      },
-      loop: true,
+    // Countdown 3-2-1-GO then start timer
+    this.showCountdown(() => {
+      this.countdownTimer = this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+          this.timeLeft--;
+          uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+          if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
+          if (this.timeLeft <= 0) this.endGame();
+        },
+        loop: true,
+      });
     });
+  }
+
+  private showCountdown(onComplete: () => void): void {
+    const { width, height } = this.scale;
+    const text = this.add.text(width / 2, height / 2, '3', {
+      fontSize: '48px', color: '#FFFFFF', fontStyle: 'bold', fontFamily: 'monospace',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(100);
+
+    this.time.delayedCall(800, () => { text.setText('2'); });
+    this.time.delayedCall(1600, () => { text.setText('1'); });
+    this.time.delayedCall(2400, () => { text.setText('GO!'); text.setColor('#FFD700'); });
+    this.time.delayedCall(3000, () => { text.destroy(); onComplete(); });
   }
 
   private createRooftop(x: number, topY: number, w: number): Rooftop {
@@ -240,6 +255,15 @@ export class RooftopChaseScene extends Phaser.Scene {
               progress: `${this.rooftopsCrossed} roofs crossed!`,
             });
 
+            // Score popup
+            const scorePopup = this.add.text(this.player.x, this.player.y - 15, '+25', {
+              fontSize: '14px', color: '#FFD700', fontStyle: 'bold', fontFamily: 'monospace',
+            }).setDepth(25).setOrigin(0.5);
+            this.tweens.add({
+              targets: scorePopup, y: this.player.y - 45, alpha: 0, duration: 600,
+              onComplete: () => scorePopup.destroy(),
+            });
+
             // Green flash
             const flash = this.add.rectangle(width / 2, height / 2, width, height, 0x00FF00, 0.1).setDepth(20);
             this.tweens.add({ targets: flash, alpha: 0, duration: 250, onComplete: () => flash.destroy() });
@@ -257,6 +281,7 @@ export class RooftopChaseScene extends Phaser.Scene {
         if (dx < (obs.width / 2 + 6) && dy < (obs.height / 2 + 8)) {
           // Hit obstacle — respawn on current roof, lose points
           audioManager.playSFX('mg_wrong');
+          this.cameras.main.shake(150, 0.008);
           this.respawnOnCurrentRoof();
           this.score = Math.max(0, this.score - 15);
           uiManager.updateMinigameOverlay({ score: this.score });

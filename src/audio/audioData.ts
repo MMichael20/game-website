@@ -105,29 +105,29 @@ export const VOICE_PRESETS: Record<VoiceType, VoiceConfig> = {
     type: 'cimbalom',
     oscType: 'fm',
     fmRatio: 3.5,
-    fmIndex: 2.0,
-    envelope: { attack: 0.002, decay: 0.3, sustain: 0.1, release: 0.4 },
+    fmIndex: 1.5,
+    envelope: { attack: 0.005, decay: 0.4, sustain: 0.05, release: 0.5 },
     filter: { type: 'highpass', frequency: 800 },
-    gain: 0.25,
+    gain: 0.12,
   },
   violin: {
     type: 'violin',
     oscType: 'sawtooth',
     detuneCents: 3,
     unisonCount: 2,
-    envelope: { attack: 0.08, decay: 0.1, sustain: 0.7, release: 0.3 },
-    filter: { type: 'lowpass', frequency: 4000, Q: 1.5 },
-    vibrato: { rate: 5.5, depth: 15, delay: 0.2 },
-    gain: 0.22,
+    envelope: { attack: 0.15, decay: 0.15, sustain: 0.5, release: 0.5 },
+    filter: { type: 'lowpass', frequency: 3000, Q: 1.0 },
+    vibrato: { rate: 4.5, depth: 10, delay: 0.3 },
+    gain: 0.14,
   },
   accordion: {
     type: 'accordion',
     oscType: 'square',
     detuneCents: 8,
     unisonCount: 2,
-    envelope: { attack: 0.05, decay: 0.1, sustain: 0.6, release: 0.2 },
-    filter: { type: 'lowpass', frequency: 2500 },
-    gain: 0.15,
+    envelope: { attack: 0.08, decay: 0.15, sustain: 0.4, release: 0.3 },
+    filter: { type: 'lowpass', frequency: 2000 },
+    gain: 0.08,
   },
   bass: {
     type: 'bass',
@@ -141,17 +141,17 @@ export const VOICE_PRESETS: Record<VoiceType, VoiceConfig> = {
     oscType: 'sawtooth',
     detuneCents: 12,
     unisonCount: 3,
-    envelope: { attack: 0.8, decay: 0.3, sustain: 0.4, release: 1.0 },
-    filter: { type: 'lowpass', frequency: 1200, Q: 0.7 },
-    gain: 0.12,
+    envelope: { attack: 1.2, decay: 0.5, sustain: 0.3, release: 1.5 },
+    filter: { type: 'lowpass', frequency: 900, Q: 0.5 },
+    gain: 0.10,
   },
   pluck: {
     type: 'pluck',
     oscType: 'fm',
     fmRatio: 2.0,
-    fmIndex: 1.5,
-    envelope: { attack: 0.001, decay: 0.2, sustain: 0.0, release: 0.15 },
-    gain: 0.25,
+    fmIndex: 1.0,
+    envelope: { attack: 0.002, decay: 0.25, sustain: 0.0, release: 0.2 },
+    gain: 0.15,
   },
 };
 
@@ -162,25 +162,24 @@ export const SCENE_MUSIC_PROFILES: Record<string, SceneMusicProfile> = {
   // ── Budapest Overworld: moderate energy, Hungarian folk ──
   BudapestOverworldScene: {
     sceneKey: 'BudapestOverworldScene',
-    bpm: 100,
+    bpm: 90,
     rootNote: 57,  // A3
     scale: HUNGARIAN_MINOR,
     progressions: [PROG_AM_DM_E7_AM, PROG_AM_F_G_E7],
     voices: {
       bass: VOICE_PRESETS.bass,
-      violin: VOICE_PRESETS.violin,
       pad: VOICE_PRESETS.pad,
-      cimbalom: { ...VOICE_PRESETS.cimbalom, gain: 0.18 },
+      cimbalom: { ...VOICE_PRESETS.cimbalom, gain: 0.10 },
     },
     melody: {
-      density: 0.5,
-      maxJump: 3,
+      density: 0.25,
+      maxJump: 2,
       octaveRange: [0, 1],
       callResponse: true,
-      phraseLength: 4,
+      phraseLength: 8,
     },
-    energy: 0.45,
-    swing: 0.15,
+    energy: 0.3,
+    swing: 0.1,
   },
 
   // ── Danube Cruise: slow, romantic ──
@@ -345,44 +344,44 @@ export const SCENE_MUSIC_PROFILES: Record<string, SceneMusicProfile> = {
   // ── Minigame: action-oriented ──
   MinigameDefault: {
     sceneKey: 'MinigameDefault',
-    bpm: 140,
+    bpm: 125,
     rootNote: 57,
     scale: HUNGARIAN_MINOR,
     progressions: [PROG_ENERGETIC],
     voices: {
-      bass: VOICE_PRESETS.bass,
-      pluck: { ...VOICE_PRESETS.pluck, gain: 0.3 },
+      bass: { ...VOICE_PRESETS.bass, gain: 0.25 },
+      pluck: { ...VOICE_PRESETS.pluck, gain: 0.12 },
     },
     melody: {
-      density: 0.7,
-      maxJump: 3,
+      density: 0.4,
+      maxJump: 2,
       octaveRange: [0, 1],
       callResponse: false,
       phraseLength: 4,
     },
-    energy: 0.75,
+    energy: 0.5,
     swing: 0.1,
   },
 
   // ── Minigame: chase/escape (intense) ──
   MinigameChase: {
     sceneKey: 'MinigameChase',
-    bpm: 155,
+    bpm: 140,
     rootNote: 57,
     scale: HUNGARIAN_MINOR,
     progressions: [PROG_ENERGETIC],
     voices: {
-      bass: { ...VOICE_PRESETS.bass, gain: 0.4 },
-      pluck: { ...VOICE_PRESETS.pluck, gain: 0.3 },
+      bass: { ...VOICE_PRESETS.bass, gain: 0.3 },
+      pluck: { ...VOICE_PRESETS.pluck, gain: 0.15 },
     },
     melody: {
-      density: 0.8,
-      maxJump: 4,
+      density: 0.5,
+      maxJump: 3,
       octaveRange: [0, 1],
       callResponse: false,
-      phraseLength: 2,
+      phraseLength: 4,
     },
-    energy: 0.85,
+    energy: 0.6,
     swing: 0,
   },
 
@@ -556,6 +555,85 @@ export const SCENE_AMBIENT_PROFILES: Record<string, SceneAmbientProfile> = {
     ],
     reverbMix: 0,
     reverbDecay: 0,
+  },
+
+  // ── Interior & special scenes ──
+
+  ThermalBathScene: {
+    sceneKey: 'ThermalBathScene',
+    layers: [
+      { type: 'water_lapping', gain: 0.15, params: { speed: 0.2 } },
+      { type: 'steam_hiss', gain: 0.08, params: { intensity: 0.3 } },
+    ],
+    reverbMix: 0.4,
+    reverbDecay: 2.5,
+  },
+
+  RuinBarScene: {
+    sceneKey: 'RuinBarScene',
+    layers: [
+      { type: 'bar_chatter', gain: 0.12, params: { density: 0.5 } },
+    ],
+    reverbMix: 0.2,
+    reverbDecay: 1.5,
+  },
+
+  DanubeCruiseScene: {
+    sceneKey: 'DanubeCruiseScene',
+    layers: [
+      { type: 'water_flow', gain: 0.1, params: { filterFreq: 250, speed: 0.3 } },
+      { type: 'wind_gentle', gain: 0.06, params: { speed: 0.2 } },
+    ],
+    reverbMix: 0.1,
+    reverbDecay: 1.0,
+  },
+
+  BudapestAirbnbScene: {
+    sceneKey: 'BudapestAirbnbScene',
+    layers: [
+      { type: 'indoor_reverb', gain: 0.05, params: {} },
+    ],
+    reverbMix: 0.15,
+    reverbDecay: 1.0,
+  },
+
+  DanubeKayakScene: {
+    sceneKey: 'DanubeKayakScene',
+    layers: [
+      { type: 'water_flow', gain: 0.12, params: { filterFreq: 350, speed: 0.6 } },
+    ],
+    reverbMix: 0,
+    reverbDecay: 0,
+  },
+
+  BudapestBusRideScene: {
+    sceneKey: 'BudapestBusRideScene',
+    layers: [
+      { type: 'crowd_murmur', gain: 0.05, params: { density: 0.2 } },
+    ],
+    reverbMix: 0.1,
+    reverbDecay: 0.8,
+  },
+
+  SunBeachScene: {
+    sceneKey: 'SunBeachScene',
+    layers: [
+      { type: 'water_lapping', gain: 0.15, params: { speed: 0.25 } },
+      { type: 'wind_gentle', gain: 0.05, params: { speed: 0.15 } },
+      { type: 'birds', gain: 0.08, params: { count: 2, interval: 6 } },
+    ],
+    reverbMix: 0,
+    reverbDecay: 0,
+  },
+
+  AirportInteriorScene: {
+    sceneKey: 'AirportInteriorScene',
+    layers: [
+      { type: 'crowd_murmur', gain: 0.08, params: { density: 0.4 } },
+      { type: 'indoor_reverb', gain: 0.04, params: {} },
+    ],
+    reverbMix: 0.15,
+    reverbDecay: 1.2,
   },
 };
 

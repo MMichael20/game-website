@@ -99,22 +99,24 @@ export class TramDashScene extends Phaser.Scene {
       onExit: () => this.endGame(),
     });
 
-    // Spawn vehicles
-    this.spawnTimer = this.time.addEvent({
-      delay: 600,
-      callback: () => this.spawnVehicle(),
-      loop: true,
-    });
+    // Countdown 3-2-1-GO then start
+    this.showCountdown(() => {
+      this.spawnTimer = this.time.addEvent({
+        delay: 600,
+        callback: () => this.spawnVehicle(),
+        loop: true,
+      });
 
-    this.countdownTimer = this.time.addEvent({
-      delay: 1000,
-      callback: () => {
-        this.timeLeft--;
-        uiManager.updateMinigameOverlay({ timer: this.timeLeft });
-        if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
-        if (this.timeLeft <= 0) this.endGame();
-      },
-      loop: true,
+      this.countdownTimer = this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+          this.timeLeft--;
+          uiManager.updateMinigameOverlay({ timer: this.timeLeft });
+          if (this.timeLeft === 5) audioManager.playSFX('mg_timer_warning');
+          if (this.timeLeft <= 0) this.endGame();
+        },
+        loop: true,
+      });
     });
   }
 
@@ -172,6 +174,7 @@ export class TramDashScene extends Phaser.Scene {
       if (dx < (v.width / 2 + 8) && dy < (v.height / 2 + 8)) {
         // Hit! Reset to bottom
         audioManager.playSFX('mg_wrong');
+        this.cameras.main.shake(150, 0.008);
         this.player.y = height - 40;
         this.player.x = width / 2;
         this.score = Math.max(0, this.score - 10);
@@ -189,6 +192,15 @@ export class TramDashScene extends Phaser.Scene {
       this.score += 50;
       uiManager.updateMinigameOverlay({ score: this.score, progress: `${this.crossings} crossings!` });
 
+      // Score popup
+      const popup = this.add.text(this.player.x, this.player.y - 10, '+50', {
+        fontSize: '14px', color: '#FFD700', fontStyle: 'bold', fontFamily: 'monospace',
+      }).setDepth(25).setOrigin(0.5);
+      this.tweens.add({
+        targets: popup, y: this.player.y - 40, alpha: 0, duration: 600,
+        onComplete: () => popup.destroy(),
+      });
+
       // Green flash
       const flash = this.add.rectangle(width / 2, height / 2, width, height, 0x00FF00, 0.15).setDepth(20);
       this.tweens.add({ targets: flash, alpha: 0, duration: 300, onComplete: () => flash.destroy() });
@@ -196,6 +208,19 @@ export class TramDashScene extends Phaser.Scene {
       // Reset to bottom
       this.player.y = height - 40;
     }
+  }
+
+  private showCountdown(onComplete: () => void): void {
+    const { width, height } = this.scale;
+    const text = this.add.text(width / 2, height / 2, '3', {
+      fontSize: '48px', color: '#FFFFFF', fontStyle: 'bold', fontFamily: 'monospace',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(100);
+
+    this.time.delayedCall(800, () => { text.setText('2'); });
+    this.time.delayedCall(1600, () => { text.setText('1'); });
+    this.time.delayedCall(2400, () => { text.setText('GO!'); text.setColor('#FFD700'); });
+    this.time.delayedCall(3000, () => { text.destroy(); onComplete(); });
   }
 
   private endGame(): void {

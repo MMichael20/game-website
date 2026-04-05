@@ -563,6 +563,7 @@ export class JazzSeatScene extends Phaser.Scene {
         });
 
         // Time penalty
+        audioManager.playSFX('mg_wrong');
         this.timeLeft = Math.max(0, this.timeLeft - 1);
         uiManager.updateMinigameOverlay({ timer: Math.max(0, Math.ceil(this.timeLeft * 10) / 10) });
 

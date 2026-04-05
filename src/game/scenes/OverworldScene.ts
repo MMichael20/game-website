@@ -36,6 +36,7 @@ export abstract class OverworldScene extends Phaser.Scene {
   protected mapCooldown = 0;
   protected cachedConfig!: OverworldConfig;
   protected minimap!: MinimapRenderer;
+  private transitioning = false;
 
   private returnFromInteriorData: { returnX: number; returnY: number } | null = null;
   private shouldFadeIn = false;
@@ -141,14 +142,7 @@ export abstract class OverworldScene extends Phaser.Scene {
 
     // 13. Fade-in from interior transition
     if (this.shouldFadeIn) {
-      const cam2 = this.cameras.main;
-      cam2.setAlpha(0);
-      this.tweens.add({
-        targets: cam2,
-        alpha: 1,
-        duration: 300,
-        ease: 'Linear',
-      });
+      this.cameras.main.fadeIn(400, 0, 0, 0);
       this.shouldFadeIn = false;
     }
   }
@@ -247,9 +241,9 @@ export abstract class OverworldScene extends Phaser.Scene {
         this.npcSystem.onDialogueEnd(npc.id);
         uiManager.hideInteractionPrompt();
         const cam = this.cameras.main;
-        this.tweens.add({
-          targets: cam, alpha: 0, duration: 300, ease: 'Linear',
-          onComplete: () => { this.scene.start(sceneKey, sceneData); },
+        cam.fadeOut(400, 0, 0, 0);
+        cam.once('camerafadeoutcomplete', () => {
+          this.scene.start(sceneKey, sceneData);
         });
       };
       if (npc.interactionData.lines?.length) {
@@ -308,21 +302,20 @@ export abstract class OverworldScene extends Phaser.Scene {
 
   /** Fade camera to black and start a new scene */
   protected fadeToScene(sceneKey: string, sceneData?: object): void {
+    if (this.transitioning) return;
+    this.transitioning = true;
+
     // Save player position so we can restore it when returning
     const pos = this.player.getPosition();
     savePlayerPosition(pos.x, pos.y);
 
+    audioManager.playSFX('whoosh');
     uiManager.hideHUD();
     uiManager.hideInteractionPrompt();
     const cam = this.cameras.main;
-    this.tweens.add({
-      targets: cam,
-      alpha: 0,
-      duration: 300,
-      ease: 'Linear',
-      onComplete: () => {
-        this.scene.start(sceneKey, sceneData);
-      },
+    cam.fadeOut(400, 0, 0, 0);
+    cam.once('camerafadeoutcomplete', () => {
+      this.scene.start(sceneKey, sceneData);
     });
   }
 

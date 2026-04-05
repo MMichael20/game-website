@@ -308,6 +308,7 @@ export class GuardEscapeScene extends Phaser.Scene {
   private handleHit(): void {
     const { width, height } = this.scale;
     audioManager.playSFX('mg_wrong');
+    this.cameras.main.shake(150, 0.008);
 
     // Penalty
     this.score = Math.max(0, this.score - HIT_PENALTY);
