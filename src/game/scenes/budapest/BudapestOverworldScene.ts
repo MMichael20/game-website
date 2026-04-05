@@ -6,7 +6,7 @@ import { saveCurrentScene, getVisitedCheckpoints, loadGameState } from '../../sy
 import { uiManager } from '../../../ui/UIManager';
 import { WaterEffectSystem } from '../../systems/WaterEffectSystem';
 import { audioManager } from '../../../audio/AudioManager';
-import { FootstepSurface } from '../../../audio/audioTypes';
+import { FootstepSurface, SFXId } from '../../../audio/audioTypes';
 import { BUDAPEST_SURFACE_MAP } from '../../../audio/audioData';
 import {
   BUDAPEST_WIDTH, BUDAPEST_HEIGHT, budapestTileGrid, isBudapestWalkable,
@@ -64,8 +64,26 @@ const CHECKPOINT_CATEGORY: Record<string, number> = {};
   'bp_restaurant_1', 'bp_restaurant_2',
 ].forEach(id => { CHECKPOINT_CATEGORY[id] = 0x66BB6A; }); // Food — green
 
+interface PigeonCluster {
+  cx: number;
+  cy: number;
+  birds: Phaser.GameObjects.Image[];
+  scattered: boolean;
+}
+
+interface LampGlow {
+  glow: Phaser.GameObjects.Arc;
+  outerGlow: Phaser.GameObjects.Arc;
+  worldX: number;
+  worldY: number;
+}
+
 export class BudapestOverworldScene extends OverworldScene {
   private waterSystem!: WaterEffectSystem;
+  private pigeonClusters: PigeonCluster[] = [];
+  private lampGlows: LampGlow[] = [];
+  private sceneElapsed = 0;
+  private atmosphereTint!: Phaser.GameObjects.Rectangle;
 
   constructor() {
     super({ key: 'BudapestOverworldScene' });
@@ -139,6 +157,11 @@ export class BudapestOverworldScene extends OverworldScene {
           uiManager.showToast(`Try visiting ${label} next!`, 3000);
         });
       }
+    } else {
+      // All suggested checkpoints visited — celebrate!
+      this.time.delayedCall(1500, () => {
+        uiManager.showToast('You\'ve explored all of Budapest! Amazing!', 4000);
+      });
     }
   }
 
@@ -147,7 +170,7 @@ export class BudapestOverworldScene extends OverworldScene {
     BUDAPEST_DECORATIONS.forEach(deco => {
       const pos = tileToWorld(deco.tileX, deco.tileY);
       this.add.image(pos.x, pos.y, `deco-${deco.type}`)
-        .setDepth(-10);
+        .setDepth(deco.tileY * 0.1);
     });
 
     // Buildings
@@ -155,7 +178,7 @@ export class BudapestOverworldScene extends OverworldScene {
       const cx = b.tileX * TILE_SIZE + (b.tileW * TILE_SIZE) / 2;
       const cy = b.tileY * TILE_SIZE + (b.tileH * TILE_SIZE) / 2;
       this.add.image(cx, cy, `building-${b.name}`)
-        .setDepth(-5);
+        .setDepth((b.tileY + b.tileH) * 0.1 - 0.05);
     });
 
     // Water system for Danube
@@ -183,6 +206,8 @@ export class BudapestOverworldScene extends OverworldScene {
     this.addStreetDetails();
     this.addBuildingShadows();
     this.addEnvironmentalSFX();
+    this.addBridgeAtmosphere();
+    this.addAtmosphereTint();
   }
 
   /** Returns the next unvisited checkpoint in the suggested path, or null if all visited */
@@ -374,42 +399,85 @@ export class BudapestOverworldScene extends OverworldScene {
 
   // ── Pigeons with scatter behavior ──
   private addPigeons(): void {
-    // Multiple pigeon clusters
-    const clusters = [
+    const clusterDefs = [
       { cx: 29, cy: 22, count: 5 },  // Erzsebet Square
       { cx: 10, cy: 15, count: 3 },   // Near Liberty Bridge
       { cx: 52, cy: 15, count: 3 },   // Near Margaret Bridge
     ];
 
-    clusters.forEach(cluster => {
-      const pigeons: Phaser.GameObjects.Image[] = [];
+    clusterDefs.forEach(def => {
+      const cluster: PigeonCluster = {
+        cx: def.cx * TILE_SIZE,
+        cy: def.cy * TILE_SIZE,
+        birds: [],
+        scattered: false,
+      };
 
-      for (let i = 0; i < cluster.count; i++) {
-        const px = (cluster.cx + (Math.random() - 0.5) * 3) * TILE_SIZE;
-        const py = (cluster.cy + (Math.random() - 0.5) * 2) * TILE_SIZE;
+      for (let i = 0; i < def.count; i++) {
+        const px = (def.cx + (Math.random() - 0.5) * 3) * TILE_SIZE;
+        const py = (def.cy + (Math.random() - 0.5) * 2) * TILE_SIZE;
         const p = this.add.image(px, py, 'deco-bp-pigeon')
           .setDepth(-6).setAlpha(0.8);
-        pigeons.push(p);
+        cluster.birds.push(p);
 
-        // Pecking + drift
-        this.tweens.add({
-          targets: p,
-          x: px + (Math.random() - 0.5) * 64,
-          y: py + (Math.random() - 0.5) * 32,
-          duration: 3000 + Math.random() * 2000,
-          ease: 'Sine.easeInOut',
-          repeat: -1,
-          yoyo: true,
-          delay: Math.random() * 2000,
-        });
+        this.addPigeonDrift(p, px, py);
       }
+
+      this.pigeonClusters.push(cluster);
+    });
+  }
+
+  private addPigeonDrift(p: Phaser.GameObjects.Image, px: number, py: number): void {
+    this.tweens.add({
+      targets: p,
+      x: px + (Math.random() - 0.5) * 64,
+      y: py + (Math.random() - 0.5) * 32,
+      duration: 3000 + Math.random() * 2000,
+      ease: 'Sine.easeInOut',
+      repeat: -1,
+      yoyo: true,
+      delay: Math.random() * 2000,
+    });
+  }
+
+  private scatterPigeons(cluster: PigeonCluster): void {
+    cluster.scattered = true;
+    audioManager.playSFX('pigeon_coo');
+
+    cluster.birds.forEach(bird => {
+      this.tweens.killTweensOf(bird);
+      this.tweens.add({
+        targets: bird,
+        y: bird.y - 60 - Math.random() * 30,
+        x: bird.x + (Math.random() - 0.5) * 80,
+        alpha: 0,
+        duration: 500 + Math.random() * 200,
+        ease: 'Quad.easeOut',
+      });
+    });
+
+    // Respawn after 6-8 seconds
+    this.time.delayedCall(6000 + Math.random() * 2000, () => {
+      cluster.birds.forEach(bird => {
+        const nx = cluster.cx + (Math.random() - 0.5) * 3 * TILE_SIZE;
+        const ny = cluster.cy + (Math.random() - 0.5) * 2 * TILE_SIZE;
+        bird.setPosition(nx, ny).setAlpha(0);
+
+        this.tweens.add({
+          targets: bird,
+          alpha: 0.8,
+          duration: 800,
+          onComplete: () => this.addPigeonDrift(bird, nx, ny),
+        });
+      });
+      cluster.scattered = false;
     });
   }
 
   // ── Street musician sway + floating music notes ──
   private addMusicianAnimation(): void {
     // Music notes floating from performer area
-    const performerPos = tileToWorld(27, 22);
+    const performerPos = tileToWorld(33, 22);
     this.time.addEvent({
       delay: 2000,
       loop: true,
@@ -433,20 +501,30 @@ export class BudapestOverworldScene extends OverworldScene {
     });
   }
 
-  // ── Ambient lamplight glow on all lamp decorations ──
+  // ── Ambient lamplight glow with proximity-based brightness ──
   private addLamplightGlow(): void {
     BUDAPEST_DECORATIONS.filter(d => d.type === 'bp-lamp').forEach(deco => {
       const pos = tileToWorld(deco.tileX, deco.tileY);
+
+      // Outer ground-level warm glow
+      const outerGlow = this.add.circle(pos.x, pos.y - 4, 24, 0xFFEE88)
+        .setAlpha(0.06).setDepth(-11);
+
+      // Inner lamplight glow
       const glow = this.add.circle(pos.x, pos.y - 10, 12, 0xFFEE88)
         .setAlpha(0.15).setDepth(-11);
+
+      // Gentle flicker
       this.tweens.add({
         targets: glow,
-        alpha: 0.28,
+        alpha: 0.22,
         duration: 2000 + Math.random() * 1000,
         ease: 'Sine.easeInOut',
         yoyo: true,
         repeat: -1,
       });
+
+      this.lampGlows.push({ glow, outerGlow, worldX: pos.x, worldY: pos.y });
     });
   }
 
@@ -563,7 +641,7 @@ export class BudapestOverworldScene extends OverworldScene {
       const worldX = def.x * TILE_SIZE + TILE_SIZE / 2;
       const worldY = def.y * TILE_SIZE + TILE_SIZE / 2;
       const img = this.add.image(worldX, worldY, def.tex)
-        .setDepth(50)
+        .setDepth(100)
         .setAlpha(0.85);
       if ((def as any).flip) img.setFlipX(true);
     });
@@ -585,7 +663,7 @@ export class BudapestOverworldScene extends OverworldScene {
     awnings.forEach(a => {
       const pos = tileToWorld(a.x, a.y);
       this.add.image(pos.x, pos.y, a.tex)
-        .setDepth(15)
+        .setDepth(55)
         .setAlpha(0.9);
     });
 
@@ -655,28 +733,20 @@ export class BudapestOverworldScene extends OverworldScene {
     }
   }
 
-  // ── Environmental sound effects on timers ──
+  // ── Environmental sound effects with randomized intervals ──
   private addEnvironmentalSFX(): void {
-    // Periodic tram bell
-    this.time.addEvent({
-      delay: 15000 + Math.random() * 10000,
-      loop: true,
-      callback: () => audioManager.playSFX('tram_bell'),
-    });
+    this.scheduleRepeatingSFX('tram_bell', 15000, 10000);
+    this.scheduleRepeatingSFX('boat_horn', 25000, 15000);
+    this.scheduleRepeatingSFX('pigeon_coo', 8000, 6000);
+  }
 
-    // Periodic boat horn
-    this.time.addEvent({
-      delay: 25000 + Math.random() * 15000,
-      loop: true,
-      callback: () => audioManager.playSFX('boat_horn'),
-    });
-
-    // Periodic pigeon coos
-    this.time.addEvent({
-      delay: 8000 + Math.random() * 6000,
-      loop: true,
-      callback: () => audioManager.playSFX('pigeon_coo'),
-    });
+  /** Self-rescheduling SFX so each interval is independently randomized */
+  private scheduleRepeatingSFX(sfxKey: SFXId, minDelay: number, variance: number): void {
+    const fire = () => {
+      audioManager.playSFX(sfxKey);
+      this.time.delayedCall(minDelay + Math.random() * variance, fire);
+    };
+    this.time.delayedCall(minDelay + Math.random() * variance, fire);
   }
 
   protected getFootstepSurface(): FootstepSurface | null {
@@ -977,9 +1047,102 @@ export class BudapestOverworldScene extends OverworldScene {
     });
   }
 
+  // ── Bridge wind particles ──
+  private addBridgeAtmosphere(): void {
+    const bridges = [
+      { x1: 8, x2: 12, y1: 10, y2: 14 },   // Liberty
+      { x1: 28, x2: 32, y1: 10, y2: 14 },   // Chain
+      { x1: 50, x2: 54, y1: 10, y2: 14 },   // Margaret
+    ];
+
+    bridges.forEach(bridge => {
+      const cx = ((bridge.x1 + bridge.x2) / 2) * TILE_SIZE;
+      const cy = ((bridge.y1 + bridge.y2) / 2) * TILE_SIZE;
+      const w = (bridge.x2 - bridge.x1 + 1) * TILE_SIZE;
+
+      // Wind particles drifting across the bridge
+      this.time.addEvent({
+        delay: 400,
+        loop: true,
+        callback: () => {
+          const px = cx + (Math.random() - 0.5) * w;
+          const py = cy + (Math.random() - 0.5) * TILE_SIZE * 3;
+          const particle = this.add.circle(px, py, 1, 0xFFFFFF)
+            .setAlpha(0.3).setDepth(-5);
+
+          this.tweens.add({
+            targets: particle,
+            x: px + 30 + Math.random() * 20,
+            alpha: 0,
+            duration: 1200 + Math.random() * 600,
+            ease: 'Sine.easeOut',
+            onComplete: () => particle.destroy(),
+          });
+        },
+      });
+
+      // Decorative chain/cable lines between bridge pillars
+      const topY = bridge.y1 * TILE_SIZE + TILE_SIZE / 2;
+      const botY = bridge.y2 * TILE_SIZE + TILE_SIZE / 2;
+      for (let x = bridge.x1 + 1; x < bridge.x2; x++) {
+        const wx = x * TILE_SIZE + TILE_SIZE / 2;
+        // Top rail
+        this.add.rectangle(wx, topY - 4, TILE_SIZE, 1, 0x8B7355)
+          .setAlpha(0.5).setDepth(-4);
+        // Bottom rail
+        this.add.rectangle(wx, botY + 4, TILE_SIZE, 1, 0x8B7355)
+          .setAlpha(0.5).setDepth(-4);
+      }
+    });
+  }
+
+  // ── Time-based atmosphere tinting ──
+  private addAtmosphereTint(): void {
+    const mapW = BUDAPEST_WIDTH * TILE_SIZE;
+    const mapH = BUDAPEST_HEIGHT * TILE_SIZE;
+    this.atmosphereTint = this.add.rectangle(mapW / 2, mapH / 2, mapW, mapH, 0xFFD080)
+      .setDepth(200).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD)
+      .setScrollFactor(0);
+  }
+
   update(time: number, delta: number): void {
     super.update(time, delta);
     this.waterSystem.update(this.player, this.partner);
+
+    const playerPos = this.player.getPosition();
+
+    // Pigeon scatter: check player proximity to each cluster
+    for (const cluster of this.pigeonClusters) {
+      if (cluster.scattered) continue;
+      const dist = Phaser.Math.Distance.Between(playerPos.x, playerPos.y, cluster.cx, cluster.cy);
+      if (dist < TILE_SIZE * 2.5) {
+        this.scatterPigeons(cluster);
+      }
+    }
+
+    // Dynamic lamp glow: brighter near player
+    for (const lamp of this.lampGlows) {
+      const dist = Phaser.Math.Distance.Between(playerPos.x, playerPos.y, lamp.worldX, lamp.worldY);
+      const proximity = Math.max(0, 1 - dist / (TILE_SIZE * 5));
+      lamp.outerGlow.setAlpha(0.06 + proximity * 0.12);
+      lamp.outerGlow.setRadius(24 + proximity * 12);
+    }
+
+    // Atmosphere tint cycle (5 minute cycle)
+    this.sceneElapsed += delta;
+    const cycle = (this.sceneElapsed % 300000) / 300000; // 0-1 over 5 minutes
+    let tintAlpha = 0;
+    if (cycle > 0.3 && cycle < 0.5) {
+      // Golden hour ramp up
+      tintAlpha = (cycle - 0.3) / 0.2 * 0.04;
+    } else if (cycle >= 0.5 && cycle < 0.7) {
+      // Peak dusk
+      tintAlpha = 0.04 + (cycle - 0.5) / 0.2 * 0.02;
+    } else if (cycle >= 0.7 && cycle < 0.85) {
+      // Fade back
+      tintAlpha = 0.06 * (1 - (cycle - 0.7) / 0.15);
+    }
+    this.atmosphereTint.setAlpha(tintAlpha);
   }
 
   shutdown(): void {

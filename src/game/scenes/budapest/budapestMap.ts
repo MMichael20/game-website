@@ -229,8 +229,8 @@ export const BUDAPEST_NPCS: NPCDef[] = [
     walkPath: [{ x: 38, y: 26 }, { x: 38, y: 32 }] },
   { id: 'bp-walker-5', tileX: 15, tileY: 28, behavior: 'walk', texture: 'npc-bp-tourist-2',
     walkPath: [{ x: 15, y: 28 }, { x: 28, y: 28 }] },
-  { id: 'bp-walker-6', tileX: 52, tileY: 22, behavior: 'walk', texture: 'npc-bp-local-2',
-    walkPath: [{ x: 52, y: 22 }, { x: 52, y: 28 }] },
+  { id: 'bp-walker-6', tileX: 54, tileY: 22, behavior: 'walk', texture: 'npc-bp-local-2',
+    walkPath: [{ x: 54, y: 22 }, { x: 54, y: 28 }] },
   { id: 'bp-bridge-walker-1', tileX: 29, tileY: 12, behavior: 'walk', texture: 'npc-bp-tourist',
     walkPath: [{ x: 28, y: 12 }, { x: 32, y: 12 }] },
   { id: 'bp-bridge-walker-2', tileX: 31, tileY: 12, behavior: 'walk', texture: 'npc-bp-local',
@@ -271,16 +271,23 @@ export const BUDAPEST_NPCS: NPCDef[] = [
     walkPath: [{ x: 42, y: 22 }, { x: 56, y: 22 }] },
   { id: 'bp-andrassy-walker-2', tileX: 55, tileY: 24, behavior: 'walk', texture: 'npc-bp-tourist',
     walkPath: [{ x: 55, y: 24 }, { x: 42, y: 24 }] },
-  { id: 'bp-window-shopper', tileX: 48, tileY: 23, behavior: 'idle', texture: 'npc-bp-tourist-2' },
+  { id: 'bp-window-shopper', tileX: 45, tileY: 22, behavior: 'idle', texture: 'npc-bp-tourist-2' },
   // Thermal baths area
-  { id: 'bp-bath-goer', tileX: 8, tileY: 35, behavior: 'walk', texture: 'npc-bp-bath-goer',
-    walkPath: [{ x: 8, y: 35 }, { x: 8, y: 38 }] },
+  { id: 'bp-bath-goer', tileX: 12, tileY: 35, behavior: 'walk', texture: 'npc-bp-bath-goer',
+    walkPath: [{ x: 12, y: 35 }, { x: 12, y: 38 }] },
   { id: 'bp-bath-exit', tileX: 12, tileY: 38, behavior: 'walk', texture: 'npc-bp-local-2',
     walkPath: [{ x: 12, y: 38 }, { x: 12, y: 35 }] },
   // Riverside
   { id: 'bp-fisherman', tileX: 35, tileY: 15, behavior: 'sit', texture: 'npc-bp-fisherman' },
   { id: 'bp-riverside-couple', tileX: 38, tileY: 15, behavior: 'walk', texture: 'npc-bp-couple',
     walkPath: [{ x: 38, y: 15 }, { x: 48, y: 15 }] },
+
+  // === Dead zone NPCs — eastern & southern areas ===
+  { id: 'bp-newspaper-reader', tileX: 58, tileY: 22, behavior: 'sit', texture: 'npc-bp-local' },
+  { id: 'bp-dog-walker', tileX: 55, tileY: 26, behavior: 'walk', texture: 'npc-bp-tourist',
+    walkPath: [{ x: 55, y: 26 }, { x: 62, y: 26 }] },
+  { id: 'bp-south-jogger', tileX: 24, tileY: 37, behavior: 'walk', texture: 'npc-bp-jogger', speed: 70,
+    walkPath: [{ x: 22, y: 37 }, { x: 34, y: 37 }] },
 ];
 
 export const BUDAPEST_CHECKPOINT_ZONES: CheckpointZone[] = [
@@ -622,6 +629,23 @@ export const BUDAPEST_DECORATIONS = [
   { type: 'bp-tree', tileX: 8, tileY: 4 },
   { type: 'bp-bush', tileX: 4, tileY: 4 },
   { type: 'bp-flower-bed', tileX: 2, tileY: 8 },
+
+  // ── Dead zone fill: eastern residential area ──
+  { type: 'bp-bench', tileX: 58, tileY: 22 },
+  { type: 'bp-tree', tileX: 56, tileY: 24 },
+  { type: 'bp-tree-autumn', tileX: 62, tileY: 24 },
+  { type: 'bp-lamp', tileX: 58, tileY: 26 },
+  { type: 'bp-flower-bed', tileX: 56, tileY: 28 },
+  { type: 'bp-bench', tileX: 60, tileY: 32 },
+
+  // ── Dead zone fill: southern park area ──
+  { type: 'bp-tree', tileX: 36, tileY: 36 },
+  { type: 'bp-tree', tileX: 40, tileY: 38 },
+  { type: 'bp-tree-autumn', tileX: 44, tileY: 36 },
+  { type: 'bp-bench', tileX: 38, tileY: 37 },
+  { type: 'bp-lamp', tileX: 42, tileY: 37 },
+  { type: 'bp-bush', tileX: 46, tileY: 38 },
+  { type: 'bp-flower-bed', tileX: 34, tileY: 38 },
 ];
 
 export const BUDAPEST_BUILDINGS = [
