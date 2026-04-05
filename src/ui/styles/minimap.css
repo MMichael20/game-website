@@ -93,34 +93,53 @@
 
 .minimap-legend {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   justify-content: center;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(0.5rem, 1.5vw, 0.7rem);
+  font-size: clamp(0.45rem, 1.3vw, 0.6rem);
   color: #ccc;
 }
 
-.legend-item--visited::before {
+.legend-item::before {
   content: '';
   display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #d4a574;
   margin-right: 4px;
   vertical-align: middle;
 }
 
-.legend-item--unvisited::before {
-  content: '';
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1.5px solid #7b5ea7;
-  margin-right: 4px;
-  vertical-align: middle;
-  box-sizing: border-box;
+.legend-item--landmark::before { background: #FFD700; }
+.legend-item--minigame::before { background: #DA70D6; }
+.legend-item--attraction::before { background: #00CED1; }
+.legend-item--transport::before { background: #4A90D9; }
+.legend-item--food::before { background: #66BB6A; }
+
+/* Toast notification */
+.hud-toast {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #d4a574;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(0.5rem, 1.5vw, 0.7rem);
+  color: #fff;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease, transform 300ms ease;
+  z-index: 50;
+  white-space: nowrap;
+}
+
+.hud-toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* HUD map button */

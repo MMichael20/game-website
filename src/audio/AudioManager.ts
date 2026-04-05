@@ -48,7 +48,7 @@ class AudioManager {
       }
     } catch {
       // AudioContext not supported — silent mode
-      console.warn('AudioManager: AudioContext not available, running silent');
+      // AudioContext not available — running silent
       return;
     }
 
@@ -82,7 +82,7 @@ class AudioManager {
       }
       this.unlocked = true;
     } catch {
-      console.warn('AudioManager: Failed to unlock AudioContext');
+      // Failed to unlock AudioContext — will retry on next user gesture
     }
   }
 

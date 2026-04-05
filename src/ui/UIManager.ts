@@ -207,6 +207,23 @@ class UIManager {
     return this.dialogContainer.children.length > 0;
   }
 
+  showToast(message: string, durationMs = 3000): void {
+    const hud = document.getElementById('hud');
+    if (!hud) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'hud-toast';
+    toast.textContent = message;
+    hud.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add('hud-toast--visible'));
+
+    setTimeout(() => {
+      toast.classList.remove('hud-toast--visible');
+      setTimeout(() => toast.remove(), 300);
+    }, durationMs);
+  }
+
   // --- Mini-game Overlay ---
   showMinigameOverlay(config: MinigameOverlayConfig): void {
     this.hideMinigameOverlay();

@@ -14,6 +14,56 @@ import {
   getBudapestTileType, BudapestTileType,
 } from './budapestMap';
 
+/**
+ * Suggested exploration order — highlights the "next" dot on the minimap.
+ * NOT mandatory, just a gentle nudge for players who want guidance.
+ */
+const SUGGESTED_PATH: string[] = [
+  'bp_parliament',
+  'bp_chain_bridge',
+  'bp_fishermans_bastion',
+  'bp_eye',
+  'bp_danube_cruise',
+  'bp_guard_escape',
+  'bp_indian_restaurant',
+  'bp_langos_stand',
+  'bp_spice_market',
+  'bp_tram_dash',
+  'bp_opera',
+  'bp_ruin_bar_quiz',
+  'bp_jazz_seat',
+  'bp_jewish_quarter',
+  'bp_danube_kayak',
+  'bp_rooftop_chase',
+  'bp_liberty_bridge',
+  'bp_gellert_hill',
+  'bp_chimney_cake',
+  'bp_margaret_bridge',
+  'bp_thermal_baths',
+];
+
+/** Category color map for on-map checkpoint markers (Phaser hex) */
+const CHECKPOINT_CATEGORY: Record<string, number> = {};
+[
+  'bp_parliament', 'bp_chain_bridge', 'bp_fishermans_bastion',
+  'bp_liberty_bridge', 'bp_margaret_bridge', 'bp_gellert_hill',
+  'bp_opera', 'bp_thermal_baths',
+].forEach(id => { CHECKPOINT_CATEGORY[id] = 0xFFD700; }); // Landmarks — gold
+[
+  'bp_indian_restaurant', 'bp_langos_stand', 'bp_ruin_bar_quiz',
+  'bp_tram_dash', 'bp_spice_market', 'bp_guard_escape',
+  'bp_jazz_seat', 'bp_rooftop_chase', 'bp_danube_kayak', 'bp_chimney_cake',
+].forEach(id => { CHECKPOINT_CATEGORY[id] = 0xDA70D6; }); // Minigames — magenta
+[
+  'bp_eye', 'bp_jewish_quarter', 'bp_danube_cruise', 'bp_airbnb',
+].forEach(id => { CHECKPOINT_CATEGORY[id] = 0x00CED1; }); // Attractions — cyan
+[
+  'bp_tram_stop_north', 'bp_tram_stop_south', 'bp_fast_travel',
+].forEach(id => { CHECKPOINT_CATEGORY[id] = 0x4A90D9; }); // Transport — blue
+[
+  'bp_restaurant_1', 'bp_restaurant_2',
+].forEach(id => { CHECKPOINT_CATEGORY[id] = 0x66BB6A; }); // Food — green
+
 export class BudapestOverworldScene extends OverworldScene {
   private waterSystem!: WaterEffectSystem;
 
@@ -76,6 +126,20 @@ export class BudapestOverworldScene extends OverworldScene {
       const visited = getVisitedCheckpoints();
       uiManager.showPhotoAlbum(visited, this.getLabelMap());
     });
+
+    // Set suggested next destination on minimap
+    const nextId = this.getNextSuggested();
+    this.minimap.setSuggested(nextId);
+
+    // Brief toast hint on load
+    if (nextId) {
+      const label = this.getLabelMap()[nextId];
+      if (label) {
+        this.time.delayedCall(1500, () => {
+          uiManager.showToast(`Try visiting ${label} next!`, 3000);
+        });
+      }
+    }
   }
 
   onCreateExtras(): void {
@@ -104,8 +168,8 @@ export class BudapestOverworldScene extends OverworldScene {
     });
     this.waterSystem.create();
 
-    // ── Visited checkpoint indicators (green stars) ──
-    this.addVisitedStars();
+    // ── Color-coded checkpoint markers on game world ──
+    this.addCheckpointMarkers();
 
     this.addDanubeWaves();
     this.addBoats();
@@ -121,23 +185,48 @@ export class BudapestOverworldScene extends OverworldScene {
     this.addEnvironmentalSFX();
   }
 
-  // ── Visited checkpoint stars — green ★ above completed locations ──
-  private addVisitedStars(): void {
-    const visited = getVisitedCheckpoints();
+  /** Returns the next unvisited checkpoint in the suggested path, or null if all visited */
+  private getNextSuggested(): string | null {
+    const visited = new Set(getVisitedCheckpoints());
+    for (const id of SUGGESTED_PATH) {
+      if (!visited.has(id)) return id;
+    }
+    return null;
+  }
+
+  /** Color-coded floating markers above every checkpoint on the game world */
+  private addCheckpointMarkers(): void {
+    const visited = new Set(getVisitedCheckpoints());
+
     for (const zone of BUDAPEST_CHECKPOINT_ZONES) {
-      if (visited.includes(zone.id)) {
-        const star = this.add.text(zone.centerX, zone.centerY - 20, '★', {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: '8px',
-          color: '#44DD44',
-          stroke: '#000000',
-          strokeThickness: 2,
-        }).setOrigin(0.5).setDepth(15);
-        // Gentle float animation
+      const isVisited = visited.has(zone.id);
+      const color = CHECKPOINT_CATEGORY[zone.id] ?? 0xAAAAAA;
+      const markerY = zone.centerY - 22;
+
+      if (isVisited) {
+        // Visited: static small diamond, dimmed
+        this.add.polygon(zone.centerX, markerY, [0, -4, 4, 0, 0, 4, -4, 0], color)
+          .setDepth(15).setAlpha(0.35);
+      } else {
+        // Unvisited: pulsing diamond with bob animation
+        const diamond = this.add.polygon(zone.centerX, markerY, [0, -5, 5, 0, 0, 5, -5, 0], color)
+          .setDepth(15).setAlpha(0.9);
+
+        // Bob up and down
         this.tweens.add({
-          targets: star,
-          y: star.y - 3,
-          duration: 1500,
+          targets: diamond,
+          y: markerY - 4,
+          duration: 1200,
+          ease: 'Sine.easeInOut',
+          yoyo: true,
+          repeat: -1,
+        });
+
+        // Pulse alpha
+        this.tweens.add({
+          targets: diamond,
+          alpha: 0.5,
+          duration: 800,
           ease: 'Sine.easeInOut',
           yoyo: true,
           repeat: -1,
@@ -881,6 +970,11 @@ export class BudapestOverworldScene extends OverworldScene {
         break;
       }
     }
+
+    // Update suggested destination on minimap after any checkpoint visit
+    this.time.delayedCall(500, () => {
+      this.minimap.setSuggested(this.getNextSuggested());
+    });
   }
 
   update(time: number, delta: number): void {

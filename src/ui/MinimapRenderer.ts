@@ -7,6 +7,43 @@ import { getVisitedCheckpoints } from '../game/systems/SaveSystem';
 const MAX_CANVAS_SIZE = 320;
 const UPDATE_INTERVAL = 250;
 
+/** Checkpoint category colors for minimap rendering */
+const CATEGORY_STYLES: Record<string, { fill: string; dim: string }> = {
+  landmark:   { fill: '#FFD700', dim: '#806B00' },
+  minigame:   { fill: '#DA70D6', dim: '#6D3868' },
+  attraction: { fill: '#00CED1', dim: '#006566' },
+  transport:  { fill: '#4A90D9', dim: '#24486C' },
+  food:       { fill: '#66BB6A', dim: '#335D35' },
+  default:    { fill: '#AAAAAA', dim: '#555555' },
+};
+
+const CHECKPOINT_CATEGORY_MAP: Record<string, string> = {};
+[
+  'bp_parliament', 'bp_chain_bridge', 'bp_fishermans_bastion',
+  'bp_liberty_bridge', 'bp_margaret_bridge', 'bp_gellert_hill',
+  'bp_opera', 'bp_thermal_baths',
+].forEach(id => { CHECKPOINT_CATEGORY_MAP[id] = 'landmark'; });
+[
+  'bp_indian_restaurant', 'bp_langos_stand', 'bp_ruin_bar_quiz',
+  'bp_tram_dash', 'bp_spice_market', 'bp_guard_escape',
+  'bp_jazz_seat', 'bp_rooftop_chase', 'bp_danube_kayak', 'bp_chimney_cake',
+].forEach(id => { CHECKPOINT_CATEGORY_MAP[id] = 'minigame'; });
+[
+  'bp_eye', 'bp_jewish_quarter', 'bp_danube_cruise', 'bp_airbnb',
+].forEach(id => { CHECKPOINT_CATEGORY_MAP[id] = 'attraction'; });
+[
+  'bp_tram_stop_north', 'bp_tram_stop_south', 'bp_fast_travel',
+].forEach(id => { CHECKPOINT_CATEGORY_MAP[id] = 'transport'; });
+[
+  'bp_restaurant_1', 'bp_restaurant_2',
+].forEach(id => { CHECKPOINT_CATEGORY_MAP[id] = 'food'; });
+
+function getCheckpointStyle(id: string, visited: boolean): string {
+  const cat = CHECKPOINT_CATEGORY_MAP[id] ?? 'default';
+  const style = CATEGORY_STYLES[cat] ?? CATEGORY_STYLES.default;
+  return visited ? style.dim : style.fill;
+}
+
 export class MinimapRenderer {
   private scene: Phaser.Scene;
   private config: OverworldConfig;
@@ -25,6 +62,7 @@ export class MinimapRenderer {
   private updateTimer: Phaser.Time.TimerEvent | null = null;
 
   private _isOpen = false;
+  private suggestedId: string | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -53,6 +91,10 @@ export class MinimapRenderer {
 
   get isOpen(): boolean {
     return this._isOpen;
+  }
+
+  setSuggested(id: string | null): void {
+    this.suggestedId = id;
   }
 
   toggle(): void {
@@ -155,15 +197,16 @@ export class MinimapRenderer {
       const isVisited = visited.has(zone.id);
       const label = this.labelMap[zone.id];
 
-      // Marker
+      // Marker — color-coded by category
+      const markerColor = getCheckpointStyle(zone.id, isVisited);
+      const radius = isVisited ? 4 : 5;
       ctx.beginPath();
-      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-      if (isVisited) {
-        ctx.fillStyle = '#d4a574';
-        ctx.fill();
-      } else {
-        ctx.strokeStyle = '#7b5ea7';
-        ctx.lineWidth = 1.5;
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fillStyle = markerColor;
+      ctx.fill();
+      if (!isVisited) {
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 1;
         ctx.stroke();
       }
 
@@ -180,6 +223,31 @@ export class MinimapRenderer {
 
         ctx.fillStyle = '#ffffff';
         ctx.fillText(label, cx, cy + 8);
+      }
+    }
+
+    // Draw "next suggested" highlight ring
+    if (this.suggestedId) {
+      const suggestedZone = this.config.checkpointZones.find(z => z.id === this.suggestedId);
+      if (suggestedZone) {
+        const sx = suggestedZone.centerX * scaleX;
+        const sy = suggestedZone.centerY * scaleY;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 9, 0, Math.PI * 2);
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Small arrow pointing down at the suggested dot
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - 12);
+        ctx.lineTo(sx - 3, sy - 16);
+        ctx.lineTo(sx + 3, sy - 16);
+        ctx.closePath();
+        ctx.fill();
       }
     }
   }
@@ -247,8 +315,11 @@ export class MinimapRenderer {
     const legend = document.createElement('div');
     legend.className = 'minimap-legend';
     legend.innerHTML = `
-      <span class="legend-item legend-item--visited">Visited</span>
-      <span class="legend-item legend-item--unvisited">Unvisited</span>
+      <span class="legend-item legend-item--landmark">Landmark</span>
+      <span class="legend-item legend-item--minigame">Minigame</span>
+      <span class="legend-item legend-item--attraction">Attraction</span>
+      <span class="legend-item legend-item--transport">Transport</span>
+      <span class="legend-item legend-item--food">Food</span>
     `;
     panel.appendChild(legend);
 
