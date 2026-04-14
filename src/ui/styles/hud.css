@@ -157,6 +157,8 @@
   transition: background 0.2s, color 0.2s;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .hud__map-btn:hover {
