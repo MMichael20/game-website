@@ -56,6 +56,10 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   transition: background 0.2s;
   padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .minimap-close:hover {
@@ -162,6 +166,10 @@
   justify-content: center;
   transition: background 0.2s;
   z-index: 5;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hud__map-btn:hover {

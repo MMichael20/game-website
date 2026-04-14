@@ -43,6 +43,7 @@
   transition: transform 0.1s ease, box-shadow 0.1s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -341,6 +342,11 @@
   transform: translateX(-50%);
   z-index: 200;
   pointer-events: auto;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
 }
 
 .npc-dialog__box {

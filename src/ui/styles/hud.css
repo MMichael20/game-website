@@ -67,6 +67,8 @@
   transition: background 0.2s, color 0.2s;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .hud__settings-btn:hover {
@@ -100,6 +102,8 @@
   transition: background 0.2s, color 0.2s;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .hud__album-btn:hover {
@@ -179,6 +183,10 @@
   white-space: nowrap;
   backdrop-filter: blur(4px);
   animation: prompt-bounce 1.2s ease-in-out infinite;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .interaction-prompt--clickable:hover {
@@ -228,6 +236,10 @@
   z-index: 200;
   pointer-events: auto;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .skip-cutscene:hover {
   transform: translateY(-2px);

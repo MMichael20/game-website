@@ -45,6 +45,10 @@
   transition: background 0.2s;
   margin-left: 8px;
   padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .minigame-overlay__exit:hover {
@@ -119,6 +123,10 @@
   font-size: clamp(0.75rem, 2vw, 0.95rem);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn--quiz:hover {
