@@ -6,6 +6,7 @@ import { NPCSystem } from '../../systems/NPCSystem';
 import { NPCDef, worldToTile, tileToWorld } from '../../data/mapLayout';
 import { uiManager } from '../../../ui/UIManager';
 import { saveCurrentScene } from '../../systems/SaveSystem';
+import { startScene } from '../sceneData';
 import { SignTooltip, SignDef } from '../../../ui/SignTooltip';
 import { TILE_SIZE } from '../../../utils/constants';
 import {
@@ -457,7 +458,7 @@ export class AirportInteriorScene extends InteriorScene {
       duration: 500,
       ease: 'Linear',
       onComplete: () => {
-        this.scene.start('AirplaneCutscene', { destination });
+        startScene(this, 'AirplaneCutscene', { destination });
       },
     });
   }

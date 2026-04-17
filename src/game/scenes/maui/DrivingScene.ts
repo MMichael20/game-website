@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { uiManager } from '../../../ui/UIManager';
+import { startScene } from '../sceneData';
 
 export class DrivingScene extends Phaser.Scene {
   private returnX?: number;
@@ -106,7 +107,7 @@ export class DrivingScene extends Phaser.Scene {
             uiManager.hideDialog();
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {
-              this.scene.start('AirplaneCutscene', { destination: 'home' });
+              startScene(this, 'AirplaneCutscene', { destination: 'home' });
             });
           },
         },
@@ -143,7 +144,7 @@ export class DrivingScene extends Phaser.Scene {
             uiManager.hideDialog();
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {
-              this.scene.start('MauiOverworldScene', {
+              startScene(this, 'MauiOverworldScene', {
                 returnFromInterior: true,
                 returnX: this.returnX,
                 returnY: this.returnY,

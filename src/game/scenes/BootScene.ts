@@ -4,6 +4,7 @@ import { uiManager } from '../../ui/UIManager';
 import { hasSavedGame } from '../systems/SaveSystem';
 import { generateAllTexturesChunked } from '../rendering/PixelArtGenerator';
 import { audioManager } from '../../audio/AudioManager';
+import { startScene } from './sceneData';
 
 export class BootScene extends Phaser.Scene {
   private loadingBar: HTMLDivElement | null = null;
@@ -58,13 +59,13 @@ export class BootScene extends Phaser.Scene {
         // Unlock audio on user gesture (New Game)
         audioManager.unlock();
         uiManager.hideMainMenu();
-        this.scene.start('DressingRoomScene', { isNewGame: true });
+        startScene(this, 'DressingRoomScene', { isNewGame: true });
       },
       canContinue ? () => {
         // Unlock audio on user gesture (Continue)
         audioManager.unlock();
         uiManager.hideMainMenu();
-        this.scene.start('DressingRoomScene', { isNewGame: false });
+        startScene(this, 'DressingRoomScene', { isNewGame: false });
       } : () => {},
     );
   }

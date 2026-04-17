@@ -10,6 +10,7 @@ import { loadGameState, clearGameState } from '../systems/SaveSystem';
 import { uiManager } from '../../ui/UIManager';
 import { audioManager } from '../../audio/AudioManager';
 import { FootstepSurface } from '../../audio/audioTypes';
+import { startScene } from './sceneData';
 
 interface InteriorSceneData {
   returnX: number;
@@ -291,7 +292,7 @@ export abstract class InteriorScene extends Phaser.Scene {
                 clearGameState();
                 uiManager.hideDialog();
                 uiManager.hideHUD();
-                this.scene.start('DressingRoomScene', { isNewGame: true });
+                startScene(this, 'DressingRoomScene', { isNewGame: true });
               },
             },
             { label: 'No', onClick: () => uiManager.hideDialog() },
@@ -345,7 +346,7 @@ export abstract class InteriorScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.fadeOut(300, 0, 0, 0);
     cam.once('camerafadeoutcomplete', () => {
-      this.scene.start('WorldScene', {
+      startScene(this, 'WorldScene', {
         returnFromInterior: true,
         returnX: this.returnData.returnX,
         returnY: this.returnData.returnY,

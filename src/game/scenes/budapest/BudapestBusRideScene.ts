@@ -7,6 +7,7 @@ import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { generateBudapestCoupleSprites } from '../../rendering/BudapestTextures';
 import { audioManager } from '../../../audio/AudioManager';
+import { startScene } from '../sceneData';
 
 export class BudapestBusRideScene extends Phaser.Scene {
   constructor() {
@@ -319,7 +320,7 @@ export class BudapestBusRideScene extends Phaser.Scene {
       this.time.delayedCall(1200, () => {
         this.cameras.main.fadeOut(800, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
-          this.scene.start('BudapestOverworldScene', { returnFromInterior: true });
+          startScene(this, 'BudapestOverworldScene', { returnFromInterior: true });
         });
       });
     });

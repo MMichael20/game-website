@@ -4,6 +4,7 @@ import { generateBudapestCoupleSprites } from '../../rendering/BudapestTextures'
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { audioManager } from '../../../audio/AudioManager';
+import { startScene } from '../sceneData';
 
 export class DanubeCruiseScene extends Phaser.Scene {
   constructor() {
@@ -530,7 +531,7 @@ export class DanubeCruiseScene extends Phaser.Scene {
     this.time.delayedCall(30000, () => {
       this.cameras.main.fadeOut(1000, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('BudapestOverworldScene', { returnFromInterior: true });
+        startScene(this, 'BudapestOverworldScene', { returnFromInterior: true });
       });
     });
   }

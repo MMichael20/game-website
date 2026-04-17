@@ -12,6 +12,7 @@ import { MinimapRenderer } from '../../ui/MinimapRenderer';
 import { audioManager } from '../../audio/AudioManager';
 import { FootstepSurface } from '../../audio/audioTypes';
 import { validateOverworld, reportIssues } from '../systems/MapValidator';
+import { startScene } from './sceneData';
 
 export interface OverworldConfig {
   mapWidth: number;
@@ -297,7 +298,7 @@ export abstract class OverworldScene extends Phaser.Scene {
                 clearGameState();
                 uiManager.hideDialog();
                 uiManager.hideHUD();
-                this.scene.start('DressingRoomScene', { isNewGame: true });
+                startScene(this, 'DressingRoomScene', { isNewGame: true });
               },
             },
             { label: 'No', onClick: () => uiManager.hideDialog() },

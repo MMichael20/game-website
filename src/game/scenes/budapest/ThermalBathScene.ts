@@ -8,6 +8,7 @@ import { generateBudapestCoupleSprites } from '../../rendering/BudapestTextures'
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { audioManager } from '../../../audio/AudioManager';
+import { startScene } from '../sceneData';
 
 export class ThermalBathScene extends Phaser.Scene {
   constructor() {
@@ -502,7 +503,7 @@ export class ThermalBathScene extends Phaser.Scene {
             alpha: 1,
             duration: 2000,
             onComplete: () => {
-              this.scene.start('BudapestOverworldScene', { returnFromInterior: true });
+              startScene(this, 'BudapestOverworldScene', { returnFromInterior: true });
             },
           });
         });

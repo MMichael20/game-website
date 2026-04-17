@@ -11,6 +11,7 @@ import { generateShowerLayered } from '../../rendering/BudapestTextures';
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { audioManager } from '../../../audio/AudioManager';
+import { startScene } from '../sceneData';
 
 export class AirbnbShowerScene extends Phaser.Scene {
   private returnX?: number;
@@ -438,7 +439,7 @@ export class AirbnbShowerScene extends Phaser.Scene {
       this.tweens.add({
         targets: whiteOut, alpha: 1, duration: 2500,
         onComplete: () => {
-          this.scene.start('BudapestAirbnbScene', { returnX: this.returnX, returnY: this.returnY });
+          startScene(this, 'BudapestAirbnbScene', { returnX: this.returnX, returnY: this.returnY });
         },
       });
     });
