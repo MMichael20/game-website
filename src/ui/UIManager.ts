@@ -90,9 +90,11 @@ class UIManager {
     const hudEl = document.createElement('div');
     hudEl.className = 'hud';
     hudEl.innerHTML = `
-      <button class="hud__map-btn" title="Map">\uD83D\uDDFA</button>
-      <button class="hud__album-btn" title="Photo Album">\uD83D\uDCF7</button>
-      <button class="hud__settings-btn" title="Settings">\u2699</button>
+      <div class="hud__top-right">
+        <button class="hud__btn hud__map-btn" title="Map">\uD83D\uDDFA</button>
+        <button class="hud__btn hud__album-btn" title="Photo Album">\uD83D\uDCF7</button>
+        <button class="hud__btn hud__settings-btn" title="Settings">\u2699</button>
+      </div>
     `;
     hudEl.querySelector('.hud__settings-btn')?.addEventListener('click', () => {
       this.settingsHandler?.();

@@ -45,11 +45,24 @@
   box-shadow: 0 0 6px rgba(212, 165, 116, 0.5);
 }
 
-/* ========== Settings Button (top-right) ========== */
-.hud__settings-btn {
+/* ========== Top-right button cluster ==========
+ * Flex container owns the positioning; individual buttons just style
+ * themselves. Replaces the previous "each button pins to a different magic
+ * pixel offset" approach which drifted out of alignment on narrow viewports
+ * and needed bandage fixes (see commit 2570362). Safe-area-inset handling
+ * keeps the cluster clear of iPhone notches and rounded corners.
+ */
+.hud__top-right {
   position: absolute;
-  top: clamp(8px, 2vh, 16px);
-  right: clamp(8px, 2vw, 16px);
+  top: max(clamp(8px, 2vh, 16px), env(safe-area-inset-top, 0px));
+  right: max(clamp(8px, 2vw, 16px), env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: row-reverse; /* settings pinned to the right edge */
+  align-items: center;
+  gap: clamp(4px, 1vw, 8px);
+}
+
+.hud__btn {
   width: 44px;
   height: 44px;
   min-width: 44px;
@@ -61,7 +74,6 @@
   color: #ccc;
   border: none;
   border-radius: var(--radius);
-  font-size: clamp(18px, 3vw, 24px);
   cursor: pointer;
   backdrop-filter: blur(4px);
   transition: background 0.2s, color 0.2s;
@@ -71,49 +83,20 @@
   user-select: none;
 }
 
-.hud__settings-btn:hover {
+.hud__btn:hover {
   background: rgba(0, 0, 0, 0.8);
   color: #fff;
 }
 
-.hud__settings-btn:active {
+.hud__btn:active {
   transform: scale(0.95);
 }
 
-/* ========== Album Button (top-right, next to settings) ========== */
-.hud__album-btn {
-  position: absolute;
-  top: clamp(8px, 2vh, 16px);
-  right: clamp(60px, calc(2vw + 52px), 70px);
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-  color: #ccc;
-  border: none;
-  border-radius: var(--radius);
-  font-size: clamp(16px, 2.5vw, 20px);
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  transition: background 0.2s, color 0.2s;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.hud__album-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-}
-
-.hud__album-btn:active {
-  transform: scale(0.95);
-}
+/* Per-button font sizing — the settings gear reads larger at the same px
+ * because it's a different glyph. Kept as individual selectors so the
+ * shared .hud__btn rule stays generic. */
+.hud__settings-btn { font-size: clamp(18px, 3vw, 24px); }
+.hud__album-btn    { font-size: clamp(16px, 2.5vw, 20px); }
 
 /* ========== Photo Album Items ========== */
 .photo-item {
@@ -135,40 +118,8 @@
   color: #888;
 }
 
-/* ========== Map Button (top-right, further left) ========== */
-.hud__map-btn {
-  position: absolute;
-  top: clamp(8px, 2vh, 16px);
-  right: clamp(112px, calc(2vw + 104px), 122px);
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-  color: #ccc;
-  border: none;
-  border-radius: var(--radius);
-  font-size: clamp(16px, 2.5vw, 20px);
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  transition: background 0.2s, color 0.2s;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.hud__map-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-}
-
-.hud__map-btn:active {
-  transform: scale(0.95);
-}
+/* Map button font sizing — positioning handled by .hud__top-right cluster. */
+.hud__map-btn { font-size: clamp(16px, 2.5vw, 20px); }
 
 /* ========== Interaction Prompt (bottom center) ========== */
 .interaction-prompt {
@@ -253,11 +204,7 @@
 
 /* ========== Phone overrides ========== */
 @media (max-width: 480px) {
-  .hud__settings-btn {
-    top: max(8px, env(safe-area-inset-top, 8px));
-    right: max(8px, env(safe-area-inset-right, 8px));
-  }
-
+  /* Top-right cluster already handles safe-area-inset; no override needed. */
   .interaction-prompt {
     bottom: max(70px, calc(60px + env(safe-area-inset-bottom)));
     font-size: 12px;
