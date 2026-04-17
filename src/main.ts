@@ -1,6 +1,7 @@
 // src/main.ts
 import Phaser from 'phaser';
 import { uiManager } from './ui/UIManager';
+import { installErrorBoundary } from './ui/errorBoundary';
 import { BootScene } from './game/scenes/BootScene';
 import { DressingRoomScene } from './game/scenes/DressingRoomScene';
 import { WorldScene } from './game/scenes/WorldScene';
@@ -44,6 +45,10 @@ import { BudapestTransportScene } from './game/scenes/budapest/BudapestTransport
 import { DanubeCruiseScene } from './game/scenes/budapest/DanubeCruiseScene';
 import { ThermalBathScene } from './game/scenes/budapest/ThermalBathScene';
 import { GAME_WIDTH, GAME_HEIGHT } from './utils/constants';
+
+// Install crash UI before anything else — we want to catch errors thrown
+// from Phaser scene create() as well as UI init failures.
+installErrorBoundary();
 
 // Initialize UI layer before Phaser
 const uiLayer = document.getElementById('ui-layer');
