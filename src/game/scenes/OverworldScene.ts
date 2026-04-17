@@ -11,6 +11,7 @@ import { uiManager } from '../../ui/UIManager';
 import { MinimapRenderer } from '../../ui/MinimapRenderer';
 import { audioManager } from '../../audio/AudioManager';
 import { FootstepSurface } from '../../audio/audioTypes';
+import { validateOverworld, reportIssues } from '../systems/MapValidator';
 
 export interface OverworldConfig {
   mapWidth: number;
@@ -77,6 +78,13 @@ export abstract class OverworldScene extends Phaser.Scene {
 
     // 1. Build tile map
     this.buildTileMap(config, mapPxWidth, mapPxHeight);
+
+    // Dev-only: surface config/texture bugs with console warnings before
+    // any player-visible regression. Stripped from production by Vite's
+    // import.meta.env.DEV dead-code elimination.
+    if (import.meta.env.DEV) {
+      reportIssues(this.scene.key, validateOverworld(this, config));
+    }
 
     // 2. Subclass extras (decorations, buildings, sky, etc.)
     this.onCreateExtras();
