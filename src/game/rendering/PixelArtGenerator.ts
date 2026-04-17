@@ -2812,24 +2812,63 @@ function generateExitDoorTextures(scene: Phaser.Scene): void {
 
 // ── master generator ─────────────────────────────────────────────────────
 
+type GenStep = { name: string; fn: (scene: Phaser.Scene) => void };
+
+const GEN_STEPS: GenStep[] = [
+  { name: 'terrain',            fn: generateTerrain },
+  { name: 'interior-terrain',   fn: generateInteriorTerrain },
+  { name: 'interior-furniture', fn: generateInteriorFurniture },
+  { name: 'outfits',            fn: generateCharacterOutfits },
+  { name: 'npcs',               fn: generateNPCs },
+  { name: 'buildings',          fn: generateBuildings },
+  { name: 'decorations',        fn: generateDecorations },
+  { name: 'catch-items',        fn: generateCatchItems },
+  { name: 'chase-baby',         fn: generateChaseBabyTextures },
+  { name: 'match-cards',        fn: generateMatchCards },
+  { name: 'sky',                fn: generateSky },
+  { name: 'airport',            fn: generateAirportTextures },
+  { name: 'maui',               fn: generateMauiTextures },
+  { name: 'airbnb-compound',    fn: generateAirbnbCompoundTextures },
+  { name: 'driving',            fn: generateDrivingTextures },
+  { name: 'hana',               fn: generateHanaTextures },
+  { name: 'sun-beach',          fn: generateSunBeachTextures },
+  { name: 'budapest',           fn: generateBudapestTextures },
+  { name: 'exit-doors',         fn: generateExitDoorTextures },
+];
+
+/** Synchronous generation (legacy fallback — blocks main thread ~1-2s). */
 export function generateAllTextures(scene: Phaser.Scene): void {
-  generateTerrain(scene);
-  generateInteriorTerrain(scene);
-  generateInteriorFurniture(scene);
-  generateCharacterOutfits(scene);
-  generateNPCs(scene);
-  generateBuildings(scene);
-  generateDecorations(scene);
-  generateCatchItems(scene);
-  generateChaseBabyTextures(scene);
-  generateMatchCards(scene);
-  generateSky(scene);
-  generateAirportTextures(scene);
-  generateMauiTextures(scene);
-  generateAirbnbCompoundTextures(scene);
-  generateDrivingTextures(scene);
-  generateHanaTextures(scene);
-  generateSunBeachTextures(scene);
-  generateBudapestTextures(scene);
-  generateExitDoorTextures(scene);
+  for (const step of GEN_STEPS) step.fn(scene);
+}
+
+/**
+ * Chunked generation: runs one step per requestAnimationFrame tick so the
+ * browser can paint a loading bar between heavy generators (buildings,
+ * budapest) that otherwise freeze for 50-100ms on mobile.
+ *
+ * `onProgress(done, total, stepName)` fires after each step completes.
+ * A step that throws is logged and skipped — one bad generator must not
+ * brick the whole boot (see commit d5ba9fe for the green-box precedent).
+ */
+export function generateAllTexturesChunked(
+  scene: Phaser.Scene,
+  onProgress?: (done: number, total: number, stepName: string) => void,
+): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const total = GEN_STEPS.length;
+    let i = 0;
+    const tick = () => {
+      if (i >= total) { resolve(); return; }
+      const step = GEN_STEPS[i];
+      try {
+        step.fn(scene);
+      } catch (err) {
+        console.error(`[PixelArtGenerator] step '${step.name}' failed:`, err);
+      }
+      i++;
+      onProgress?.(i, total, step.name);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
 }
