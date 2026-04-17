@@ -19,6 +19,7 @@ export class InputSystem {
   private pathWaypoints: Array<{ x: number; y: number }> = [];
   private currentWaypointIndex = 0;
   private clickMarker?: Phaser.GameObjects.Arc;
+  private clickPulse?: Phaser.GameObjects.Arc;
   private clickToMoveEnabled = false;
   private walkCheck?: (tileX: number, tileY: number) => boolean;
   private gridW = 0;
@@ -72,6 +73,11 @@ export class InputSystem {
       // Let scene handle NPC/special taps first
       if (this.onWorldTap?.(worldPoint.x, worldPoint.y)) return;
 
+      // Atomic cancel: clear existing waypoints + markers BEFORE running A*
+      // so a re-click never leaves the player committed to the old path for
+      // one more frame.
+      this.cancelPath();
+
       const goalTileX = Math.floor(worldPoint.x / TILE_SIZE);
       const goalTileY = Math.floor(worldPoint.y / TILE_SIZE);
 
@@ -82,7 +88,11 @@ export class InputSystem {
 
       // Run pathfinding
       const path = findPath(startTileX, startTileY, goalTileX, goalTileY, this.walkCheck, this.gridW, this.gridH);
-      if (path.length === 0) return;
+
+      // Always show pulse at click for tactile feedback — even on failed paths.
+      this.spawnClickPulse(worldPoint.x, worldPoint.y);
+
+      if (path.length < 2) return;
 
       // Convert tile path to world-pixel waypoints (tile centers)
       this.pathWaypoints = path.map(t => ({
@@ -91,18 +101,11 @@ export class InputSystem {
       }));
       this.currentWaypointIndex = 1; // skip first waypoint (current position)
 
-      // Show click marker at destination
-      this.clearClickMarker();
+      // Persistent destination marker (cleared on arrival or re-click, NOT on a timer)
       const dest = this.pathWaypoints[this.pathWaypoints.length - 1];
-      this.clickMarker = this.scene.add.circle(dest.x, dest.y, 6, 0xffffff, 0.6)
+      this.clickMarker = this.scene.add.circle(dest.x, dest.y, 5, 0xffffff, 0.75)
+        .setStrokeStyle(2, 0xffffff, 1)
         .setDepth(1000);
-      this.scene.tweens.add({
-        targets: this.clickMarker,
-        alpha: 0,
-        duration: 1500,
-        ease: 'Linear',
-        onComplete: () => this.clearClickMarker(),
-      });
     });
   }
 
@@ -115,6 +118,33 @@ export class InputSystem {
   private clearClickMarker(): void {
     this.clickMarker?.destroy();
     this.clickMarker = undefined;
+  }
+
+  // Spawns a short-lived expanding ring at (x,y) for click feedback. Inner
+  // radius starts at 8 and tweens to 22 over 350ms while fading — visible
+  // enough to feel responsive, short enough not to distract.
+  private spawnClickPulse(x: number, y: number): void {
+    // Stop any previous pulse so rapid clicks don't stack tweens.
+    if (this.clickPulse) {
+      this.scene.tweens.killTweensOf(this.clickPulse);
+      this.clickPulse.destroy();
+      this.clickPulse = undefined;
+    }
+    const pulse = this.scene.add.circle(x, y, 8, 0xffffff, 0)
+      .setStrokeStyle(2, 0xffffff, 0.85)
+      .setDepth(1001);
+    this.clickPulse = pulse;
+    this.scene.tweens.add({
+      targets: pulse,
+      radius: 22,
+      strokeAlpha: 0,
+      duration: 350,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        if (this.clickPulse === pulse) this.clickPulse = undefined;
+        pulse.destroy();
+      },
+    });
   }
 
   freeze(): void {
@@ -196,5 +226,10 @@ export class InputSystem {
 
   destroy(): void {
     this.cancelPath();
+    if (this.clickPulse) {
+      this.scene.tweens.killTweensOf(this.clickPulse);
+      this.clickPulse.destroy();
+      this.clickPulse = undefined;
+    }
   }
 }
