@@ -1,7 +1,7 @@
 // src/game/scenes/BootScene.ts
 import Phaser from 'phaser';
 import { uiManager } from '../../ui/UIManager';
-import { hasSavedGame } from '../systems/SaveSystem';
+import { hasSavedGame, consumeCorruptedSaveFlag } from '../systems/SaveSystem';
 import { generateAllTexturesChunked } from '../rendering/PixelArtGenerator';
 import { audioManager } from '../../audio/AudioManager';
 import { startScene } from './sceneData';
@@ -54,6 +54,14 @@ export class BootScene extends Phaser.Scene {
 
     // Show main menu
     const canContinue = hasSavedGame();
+
+    // If loadGameState detected a corrupt save during hasSavedGame/elsewhere,
+    // tell the player their progress couldn't be recovered. The flag is
+    // consumed here so we only show the toast once per boot.
+    if (consumeCorruptedSaveFlag()) {
+      uiManager.showToast('Save data was corrupted — starting fresh.', 5000);
+    }
+
     uiManager.showMainMenu(
       () => {
         // Unlock audio on user gesture (New Game)

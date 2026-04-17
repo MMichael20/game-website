@@ -23,6 +23,43 @@ export interface GameStateV3 {
 
 const STORAGE_KEY = 'couples-map-game';
 
+// One-shot flag set by loadGameState when a corrupt save was found and
+// reset to defaults. Consumed (cleared) by the main menu so we can show
+// a single toast. Kept as module state so consumers don't have to thread
+// a return value through every loader.
+let corruptedSaveDetected = false;
+
+/**
+ * Sanity-check a migrated GameStateV3 shape. Catches partially-valid JSON
+ * that JSON.parse accepts but that would crash the game at runtime (e.g.,
+ * outfits became a string, visitedCheckpoints became null, scene key is a
+ * number). Returns the error string on first failure, or null when valid.
+ */
+function validateState(s: unknown): string | null {
+  if (!s || typeof s !== 'object') return 'state is not an object';
+  const o = s as Partial<GameStateV3>;
+  if (o.version !== 3) return `version is ${String(o.version)} not 3`;
+  if (!o.outfits || typeof o.outfits !== 'object') return 'outfits is missing';
+  if (typeof o.outfits.player !== 'number' || typeof o.outfits.partner !== 'number') {
+    return 'outfits.player/partner must be numbers';
+  }
+  if (!Array.isArray(o.visitedCheckpoints)) return 'visitedCheckpoints is not an array';
+  if (o.miniGameScores == null || typeof o.miniGameScores !== 'object') {
+    return 'miniGameScores is not an object';
+  }
+  if (o.bestScores == null || typeof o.bestScores !== 'object') {
+    return 'bestScores is not an object';
+  }
+  if (typeof o.currentScene !== 'string') return 'currentScene is not a string';
+  if (o.playerPosition !== undefined) {
+    const p = o.playerPosition;
+    if (!p || typeof p !== 'object' || typeof p.x !== 'number' || typeof p.y !== 'number') {
+      return 'playerPosition shape invalid';
+    }
+  }
+  return null;
+}
+
 export function getDefaultState(): GameStateV3 {
   return {
     version: 3,
@@ -75,7 +112,29 @@ export function loadGameState(): GameStateV3 {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return getDefaultState();
-    const state = migrate(JSON.parse(raw));
+
+    let state: GameStateV3;
+    try {
+      state = migrate(JSON.parse(raw));
+    } catch (err) {
+      console.warn('[SaveSystem] migration failed:', err);
+      corruptedSaveDetected = true;
+      localStorage.removeItem(STORAGE_KEY);
+      return getDefaultState();
+    }
+
+    // Belt-and-suspenders: even if migration "succeeded," the result may be
+    // malformed (e.g. raw JSON had {version: 3} but outfits was a string).
+    // Previously we'd crash at first field access; now we fall back to
+    // defaults and surface a toast so the player knows their progress
+    // couldn't be recovered.
+    const validationError = validateState(state);
+    if (validationError) {
+      console.warn(`[SaveSystem] save rejected by validator: ${validationError}`);
+      corruptedSaveDetected = true;
+      localStorage.removeItem(STORAGE_KEY);
+      return getDefaultState();
+    }
 
     // Migrate removed airport scene keys to unified interior scene
     const sceneKeyMigration: Record<string, string> = {
@@ -89,8 +148,24 @@ export function loadGameState(): GameStateV3 {
 
     return state;
   } catch {
+    // JSON.parse failures or localStorage access errors (private-mode Safari)
+    // both land here — treat the same as a corrupted save.
+    corruptedSaveDetected = true;
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ok */ }
     return getDefaultState();
   }
+}
+
+/**
+ * Returns true exactly once if the most recent loadGameState() detected a
+ * corrupt save and had to fall back to defaults. Lets the main menu show a
+ * "save couldn't be loaded" toast without loadGameState re-warning on every
+ * subsequent call.
+ */
+export function consumeCorruptedSaveFlag(): boolean {
+  const flag = corruptedSaveDetected;
+  corruptedSaveDetected = false;
+  return flag;
 }
 
 export function saveGameState(state: GameStateV3): void {
