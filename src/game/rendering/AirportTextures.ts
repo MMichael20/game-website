@@ -1,33 +1,7 @@
 // src/game/rendering/AirportTextures.ts
 // Generates all airport-related textures: NPCs, building, interior decorations, signs
 
-type Ctx = CanvasRenderingContext2D;
-
-function px(ctx: Ctx, x: number, y: number, color: string): void {
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, 1, 1);
-}
-
-function rect(ctx: Ctx, x: number, y: number, w: number, h: number, color: string): void {
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, w, h);
-}
-
-function darken(hex: string, amount = 0.2): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const f = 1 - amount;
-  return `#${Math.round(r * f).toString(16).padStart(2, '0')}${Math.round(g * f).toString(16).padStart(2, '0')}${Math.round(b * f).toString(16).padStart(2, '0')}`;
-}
-
-function lighten(hex: string, amount = 0.2): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const f = amount;
-  return `#${Math.min(255, Math.round(r + (255 - r) * f)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(g + (255 - g) * f)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(b + (255 - b) * f)).toString(16).padStart(2, '0')}`;
-}
+import { px, rect, darken, lighten, Ctx } from './pixelHelpers';
 
 // ── NPC drawing (48×48) ──────────────────────────────────────────────────
 
