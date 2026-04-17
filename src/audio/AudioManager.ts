@@ -70,6 +70,12 @@ class AudioManager {
     // Tab visibility handling
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
 
+    // Safety net: if the AudioContext ever drops to 'suspended' after init
+    // (iOS lock-screen return, tab backgrounding, OS audio-focus interrupt),
+    // the next user pointer gesture re-resumes it. Idempotent and cheap when
+    // already running.
+    document.addEventListener('pointerdown', this.handleUserGesture, { capture: true });
+
     this.initialized = true;
   }
 
@@ -91,6 +97,8 @@ class AudioManager {
   transitionToScene(sceneKey: string): void {
     if (!this.initialized || !this.unlocked || this.preferences.muted) return;
     if (sceneKey === this.currentSceneKey) return;
+
+    this.ensureContextRunning();
 
     this.currentSceneKey = sceneKey;
 
@@ -117,6 +125,7 @@ class AudioManager {
 
   playSFX(id: SFXId): void {
     if (!this.initialized || !this.unlocked || this.preferences.muted) return;
+    this.ensureContextRunning();
     this.sfxEngine?.play(id);
   }
 
@@ -128,6 +137,7 @@ class AudioManager {
 
   playFootstep(surface: FootstepSurface): void {
     if (!this.initialized || !this.unlocked || this.preferences.muted) return;
+    this.ensureContextRunning();
 
     const sfxMap: Record<FootstepSurface, SFXId> = {
       stone: 'footstep_stone',
@@ -206,6 +216,10 @@ class AudioManager {
 
   resume(): void {
     if (this.preferences.muted) return;
+    // The AudioContext itself may have been suspended by the browser when the
+    // tab was hidden — resume it before prodding engines, otherwise music
+    // restarts into a silent context and appears stuck.
+    this.ensureContextRunning();
     this.musicEngine?.resume();
     // Re-enter scene to restart ambient
     if (this.currentSceneKey) {
@@ -217,6 +231,7 @@ class AudioManager {
 
   destroy(): void {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    document.removeEventListener('pointerdown', this.handleUserGesture, { capture: true } as any);
     this.musicEngine?.destroy();
     this.ambientEngine?.destroy();
     this.sfxEngine?.destroy();
@@ -286,6 +301,25 @@ class AudioManager {
       this.resume();
     }
   };
+
+  // Fires on any user pointer gesture. If the AudioContext is suspended
+  // (typical after iOS lock/unlock or tab backgrounding), re-resume it.
+  // No-op when the context is already running.
+  private handleUserGesture = (): void => {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+  };
+
+  // Lazy resume called on every play/transition path. ctx.resume() returns
+  // a Promise that we intentionally fire-and-forget — waiting would race
+  // with the caller's SFX trigger and produce dropped frames instead of
+  // the occasional silent first note (which self-heals on the next call).
+  private ensureContextRunning(): void {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+  }
 
   // ─── Preferences Persistence ─────────────────────────────────────
 
