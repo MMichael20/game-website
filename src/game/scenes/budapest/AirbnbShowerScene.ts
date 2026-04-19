@@ -8,6 +8,7 @@ import {
   addHeartParticles, AnimationSet,
 } from './cutsceneHelpers';
 import { generateShowerLayered } from '../../rendering/BudapestTextures';
+import { BP_PROP_KEYS } from '../../rendering/BudapestWorldProps';
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { audioManager } from '../../../audio/AudioManager';
@@ -47,12 +48,14 @@ export class AirbnbShowerScene extends Phaser.Scene {
     // Base wall color — warm cream marble
     this.add.rectangle(w / 2, h / 2, w, h, 0xF5F0E8).setDepth(0);
 
-    // Marble wall tiles (light cream with subtle variation)
+    // Marble wall tiles — pre-rendered marble floor tile, tileSprite covers the
+    // upper 70% of the scene in one draw (replaces per-cell rectangles).
+    const upperH = Math.ceil(h * 0.7);
+    this.add.tileSprite(0, 0, w, upperH, BP_PROP_KEYS.showerFloorTile)
+      .setOrigin(0, 0).setDepth(1);
+    // Marble vein details still drawn per-cell (UI/EFFECT overlay — preserved).
     for (let tx = 0; tx < Math.ceil(w / 32); tx++) {
       for (let ty = 0; ty < Math.ceil(h * 0.7 / 32); ty++) {
-        const base = (tx + ty) % 2 === 0 ? 0xEDE8DF : 0xF2ECE2;
-        this.add.rectangle(tx * 32 + 16, ty * 32 + 16, 30, 30, base).setDepth(1);
-        // Marble vein detail
         if ((tx + ty * 3) % 5 === 0) {
           this.add.rectangle(tx * 32 + 10, ty * 32 + 14, 12, 1, 0xDDD8CF, 0.4).setDepth(1);
         }
@@ -65,59 +68,51 @@ export class AirbnbShowerScene extends Phaser.Scene {
     // Tile border strip (gold accent line between wall and floor)
     this.add.rectangle(w / 2, h * 0.7, w, 3, 0xD4A843).setDepth(2);
 
-    // Floor tiles — darker marble
-    for (let tx = 0; tx < Math.ceil(w / 28); tx++) {
-      for (let ty = 0; ty < Math.ceil(h * 0.3 / 28); ty++) {
-        const floorBase = (tx + ty) % 2 === 0 ? 0xC8C0B0 : 0xBEB6A6;
-        this.add.rectangle(tx * 28 + 14, h * 0.7 + 10 + ty * 28 + 14, 26, 26, floorBase).setDepth(1);
-      }
-    }
+    // Floor tiles — darker marble reuses the same pre-rendered tile, tinted darker.
+    const floorTop = h * 0.7 + 10;
+    this.add.tileSprite(0, floorTop, w, h - floorTop, BP_PROP_KEYS.showerFloorTile)
+      .setOrigin(0, 0).setDepth(1).setTint(0xC8C0B0);
 
-    // Drain in floor center
-    this.add.circle(w / 2, h * 0.88, 8, 0x999999).setDepth(2);
-    this.add.circle(w / 2, h * 0.88, 6, 0xAAAAAA).setDepth(2);
-    this.add.circle(w / 2, h * 0.88, 2, 0x888888).setDepth(2);
+    // Drain in floor center — single pre-rendered asset replaces 3 circles.
+    this.add.image(w / 2, h * 0.88, BP_PROP_KEYS.showerDrain).setDepth(2);
 
     // ── Glass shower enclosure ──
-    // Left glass wall
-    this.add.rectangle(60, h / 2, 4, h * 0.85, 0xB4DCF0, 0.25).setDepth(4);
-    this.add.rectangle(58, h / 2, 2, h * 0.85, 0xC0C0C0, 0.6).setDepth(4);  // Chrome frame
+    // Left glass wall — rail rotated 90° to read vertical, then display-sized.
+    this.add.image(60, h / 2, BP_PROP_KEYS.showerRail)
+      .setDepth(4).setRotation(Math.PI / 2).setDisplaySize(h * 0.85, 4);
+    // Left glass chrome frame highlight
+    this.add.image(58, h / 2, BP_PROP_KEYS.showerRail)
+      .setDepth(4).setRotation(Math.PI / 2).setDisplaySize(h * 0.85, 2).setAlpha(0.8);
     // Right glass wall
-    this.add.rectangle(w - 60, h / 2, 4, h * 0.85, 0xB4DCF0, 0.25).setDepth(4);
-    this.add.rectangle(w - 58, h / 2, 2, h * 0.85, 0xC0C0C0, 0.6).setDepth(4);
-    // Top glass rail
-    this.add.rectangle(w / 2, h * 0.08, w - 116, 3, 0xC0C0C0, 0.7).setDepth(4);
+    this.add.image(w - 60, h / 2, BP_PROP_KEYS.showerRail)
+      .setDepth(4).setRotation(Math.PI / 2).setDisplaySize(h * 0.85, 4);
+    // Right glass chrome frame highlight
+    this.add.image(w - 58, h / 2, BP_PROP_KEYS.showerRail)
+      .setDepth(4).setRotation(Math.PI / 2).setDisplaySize(h * 0.85, 2).setAlpha(0.8);
+    // Top glass rail (horizontal)
+    this.add.image(w / 2, h * 0.08, BP_PROP_KEYS.showerRail)
+      .setDepth(4).setDisplaySize(w - 116, 4);
 
-    // ── Rain shower head ──
-    // Pipe from wall (right side)
-    this.add.rectangle(w / 2 + 40, 20, 4, 30, 0xA8A8A8).setDepth(3);
-    // Horizontal arm
-    this.add.rectangle(w / 2 + 20, 14, 44, 4, 0xB0B0B0).setDepth(3);
-    // Rain head (wide oval)
-    this.add.rectangle(w / 2, 18, 50, 8, 0xC8C8C8).setDepth(3);
-    this.add.rectangle(w / 2, 20, 46, 4, 0xD0D0D0).setDepth(3);
-    // Nozzle dots on shower head
-    for (let nx = -20; nx <= 20; nx += 5) {
-      this.add.circle(w / 2 + nx, 22, 1, 0xAAAAAA).setDepth(3);
-    }
+    // ── Rain shower head — single pre-rendered asset (arm + disc + nozzles). ──
+    this.add.image(w / 2 + 12, 22, BP_PROP_KEYS.showerHead).setDepth(3);
 
     // ── Chrome fixtures on right wall ──
-    // Temperature knob
-    this.add.circle(w - 75, h * 0.45, 6, 0xC0C0C0).setDepth(3);
-    this.add.circle(w - 75, h * 0.45, 4, 0xD4A843).setDepth(3); // Gold center
-    this.add.circle(w - 75, h * 0.45, 2, 0xB8942E).setDepth(3);
+    // Temperature knob — single pre-rendered asset (chrome rim + gold center + H/C).
+    this.add.image(w - 75, h * 0.45, BP_PROP_KEYS.showerKnob).setDepth(3);
 
     // ── Shelf with bottles (left wall) ──
-    // Shelf
-    this.add.rectangle(75, h * 0.35, 30, 3, 0xC0C0C0).setDepth(3);
-    // Shampoo bottle (tall, amber)
-    this.add.rectangle(67, h * 0.35 - 10, 6, 16, 0xDAA520).setDepth(3);
-    this.add.rectangle(67, h * 0.35 - 18, 4, 4, 0xC89418).setDepth(3); // cap
-    // Conditioner bottle (shorter, white)
-    this.add.rectangle(77, h * 0.35 - 8, 7, 12, 0xF5F5F5).setDepth(3);
-    this.add.rectangle(77, h * 0.35 - 14, 5, 3, 0xE0E0E0).setDepth(3); // cap
-    // Soap bar (small, pink)
-    this.add.rectangle(85, h * 0.35 - 4, 8, 4, 0xFFB6C1).setDepth(3);
+    // Shelf — short rail section
+    this.add.image(75, h * 0.35, BP_PROP_KEYS.showerRail)
+      .setDepth(3).setDisplaySize(30, 4);
+    // Shampoo bottle (tall, amber) — fixture-base tinted amber
+    this.add.image(67, h * 0.35 - 10, BP_PROP_KEYS.showerFixtureBase)
+      .setDepth(3).setDisplaySize(6, 16).setTint(0xDAA520);
+    // Conditioner bottle (white) — fixture-base tinted white
+    this.add.image(77, h * 0.35 - 8, BP_PROP_KEYS.showerFixtureBase)
+      .setDepth(3).setDisplaySize(7, 12).setTint(0xF5F5F5);
+    // Soap bar (pink) — fixture-base tinted pink
+    this.add.image(85, h * 0.35 - 4, BP_PROP_KEYS.showerFixtureBase)
+      .setDepth(3).setDisplaySize(8, 4).setTint(0xFFB6C1);
 
     // ── Warm ambient light glow from above ──
     this.add.circle(w / 2, 30, 80, 0xFFF8E7, 0.06).setDepth(2);

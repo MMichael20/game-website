@@ -16,6 +16,7 @@ import {
   playPassportControl,
   playSecurityScreening,
 } from './CheckinStations';
+import { AP_TEXTURE_KEYS } from '../../rendering/AirportTextures';
 
 // ── Doorway definitions ─────────────────────────────────────────────────
 const DOORWAY_POSITIONS = [
@@ -195,41 +196,39 @@ export class AirportInteriorScene extends InteriorScene {
     this.tarmacRT.setOrigin(0, 0);
     this.tarmacRT.setDepth(-49);
 
-    // Sky gradient (top 40%)
+    // Sky gradient (top 40%) — pre-rendered horizon gradient strip.
     const skyH = Math.floor(tarmacH * 0.4);
-    for (let y = 0; y < skyH; y++) {
-      const t = y / skyH;
-      const r = Math.round(135 + t * 40);
-      const g = Math.round(206 + t * 18);
-      const b = Math.round(235 + t * 10);
-      const color = (r << 16) | (g << 8) | b;
-      const line = this.add.rectangle(tarmacW / 2, y + 0.5, tarmacW, 1, color).setOrigin(0.5, 0.5);
-      this.tarmacRT.draw(line);
-      line.destroy();
-    }
+    const skyStrip = this.add.tileSprite(0, 0, tarmacW, skyH, AP_TEXTURE_KEYS.tarmacGradient)
+      .setOrigin(0, 0);
+    this.tarmacRT.draw(skyStrip);
+    skyStrip.destroy();
 
-    // Tarmac surface (bottom 60%)
-    const tarmacRect = this.add.rectangle(tarmacW / 2, skyH + (tarmacH - skyH) / 2, tarmacW, tarmacH - skyH, 0x555555).setOrigin(0.5, 0.5);
-    this.tarmacRT.draw(tarmacRect);
-    tarmacRect.destroy();
+    // Tarmac surface (bottom 60%) — pre-rendered concrete tileSprite.
+    const tarmacSurface = this.add.tileSprite(0, skyH, tarmacW, tarmacH - skyH, AP_TEXTURE_KEYS.tarmacSurface)
+      .setOrigin(0, 0);
+    this.tarmacRT.draw(tarmacSurface);
+    tarmacSurface.destroy();
 
-    // Grass strip at horizon
-    const grassRect = this.add.rectangle(tarmacW / 2, skyH + 4, tarmacW, 12, 0x2D5016).setOrigin(0.5, 0.5);
-    this.tarmacRT.draw(grassRect);
-    grassRect.destroy();
+    // Grass strip at horizon — pre-rendered dry-grass strip with fence posts.
+    const grassStrip = this.add.tileSprite(0, skyH - 20, tarmacW, 48, AP_TEXTURE_KEYS.grassHorizon)
+      .setOrigin(0, 0);
+    this.tarmacRT.draw(grassStrip);
+    grassStrip.destroy();
 
-    // Runway center line (white dashes)
+    // Runway center line — pre-rendered weathered white dashes.
     for (let x = 0; x < tarmacW; x += 40) {
-      const dash = this.add.rectangle(x + 10, skyH + 72, 20, 3, 0xFFFFFF).setOrigin(0, 0.5);
+      const dash = this.add.image(x + 10, skyH + 72, AP_TEXTURE_KEYS.runwayDash).setOrigin(0, 0.5);
       this.tarmacRT.draw(dash);
       dash.destroy();
     }
 
-    // Taxiway lines (yellow)
-    const taxiLine1 = this.add.rectangle(tarmacW / 2, skyH + 40, tarmacW, 2, 0xFFD700).setOrigin(0.5, 0.5);
+    // Taxiway lines — pre-rendered tileSprites (solid + dashed).
+    const taxiLine1 = this.add.tileSprite(0, skyH + 40, tarmacW, 4, AP_TEXTURE_KEYS.taxiwayLineYellow)
+      .setOrigin(0, 0.5);
     this.tarmacRT.draw(taxiLine1);
     taxiLine1.destroy();
-    const taxiLine2 = this.add.rectangle(tarmacW / 2, skyH + 110, tarmacW, 2, 0xFFD700).setOrigin(0.5, 0.5);
+    const taxiLine2 = this.add.tileSprite(0, skyH + 110, tarmacW, 4, AP_TEXTURE_KEYS.taxiwayLineDashed)
+      .setOrigin(0, 0.5);
     this.tarmacRT.draw(taxiLine2);
     taxiLine2.destroy();
   }

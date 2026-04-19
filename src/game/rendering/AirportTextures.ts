@@ -1,7 +1,53 @@
 // src/game/rendering/AirportTextures.ts
 // Generates all airport-related textures: NPCs, building, interior decorations, signs
 
-import { px, rect, darken, lighten, Ctx } from './pixelHelpers';
+import { px, rect, darken, lighten, seededRandom, Ctx } from './pixelHelpers';
+
+// ══════════════════════════════════════════════════════════════════════════
+// Phase 3 texture keys — typed const, single source of truth.
+// Existing hard-coded strings in this file are intentionally not refactored
+// here (scope creep); the const exists only for the 7 new Phase 3 keys.
+// ══════════════════════════════════════════════════════════════════════════
+
+export const AP_TEXTURE_KEYS = {
+  tarmacSurface:      'ap-tarmac-surface',
+  tarmacGradient:     'ap-tarmac-gradient',
+  grassHorizon:       'ap-grass-horizon',
+  runwayDash:         'ap-runway-dash',
+  taxiwayLineYellow:  'ap-taxiway-line-yellow',
+  taxiwayLineDashed:  'ap-taxiway-line-dashed',
+  airportSignage:     'ap-airport-signage',
+} as const;
+
+const AP_PHASE3_SEED = {
+  tarmacSurface:     9101,
+  tarmacGradient:    9102,
+  grassHorizon:      9103,
+  runwayDash:        9104,
+  taxiwayLineYellow: 9105,
+  taxiwayLineDashed: 9106,
+  airportSignage:    9107,
+} as const;
+
+// Phase 3 palette constants — co-located (matches BudapestWorldProps convention).
+const AP_P3 = {
+  tarmacMid:    '#555555',
+  tarmacLight:  '#6A6A6A',
+  tarmacDark:   '#3E3E3E',
+  tarmacJoint:  '#3A3A3A',
+  skyTint:      '#8AA6C0',
+  grassMid:     '#7A8040',
+  grassLight:   '#A0A858',
+  grassDark:    '#4C5028',
+  grassWheat:   '#C8B070',
+  fencePost:    '#3A2E20',
+  runwayWhite:  '#F6F6F6',
+  runwayGray:   '#C8C8C8',
+  taxiYellow:   '#F2C024',
+  taxiYellowSh: '#A8820C',
+  signYellow:   '#F4C020',
+  signBlack:    '#181818',
+};
 
 // ── NPC drawing (48×48) ──────────────────────────────────────────────────
 
@@ -2581,6 +2627,272 @@ function generateTarmacTextures(scene: Phaser.Scene): void {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// Phase 3 sub-generators — tarmac / runway / taxiway / signage
+// Per-asset failure isolation; each owns its `if (!c) return;` guard.
+// ══════════════════════════════════════════════════════════════════════════
+
+// 1. Tarmac surface — 512×320 tileSprite-friendly concrete slab
+function generateTarmacSurface(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(AP_TEXTURE_KEYS.tarmacSurface, 512, 320);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(AP_PHASE3_SEED.tarmacSurface);
+
+  // Base concrete fill
+  rect(ctx, 0, 0, 512, 320, AP_P3.tarmacMid);
+
+  // Weathering dither — tile-friendly. Wrap x/y with % to keep wrapping clean.
+  for (let y = 0; y < 320; y += 2) {
+    for (let x = 0; x < 512; x += 4) {
+      const ox = ((y / 2) % 2 === 0) ? 0 : 2;
+      const r = rng();
+      if (r < 0.22) {
+        px(ctx, (x + ox) % 512, y, darken(AP_P3.tarmacMid, 0.08));
+      } else if (r < 0.40) {
+        px(ctx, (x + ox + 1) % 512, (y + 1) % 320, AP_P3.tarmacLight);
+      }
+    }
+  }
+
+  // Expansion joints — visible darker horizontal & vertical lines every ~64px.
+  // Vertical joints every 64 columns
+  for (let x = 64; x < 512; x += 64) {
+    rect(ctx, x, 0, 1, 320, AP_P3.tarmacJoint);
+    px(ctx, x, 0, AP_P3.tarmacDark);
+  }
+  // Horizontal joints every 64 rows
+  for (let y = 64; y < 320; y += 64) {
+    rect(ctx, 0, y, 512, 1, AP_P3.tarmacJoint);
+  }
+
+  // Scattered grit specks — seeded for wrap repeatability
+  for (let i = 0; i < 900; i++) {
+    const x = Math.floor(rng() * 512);
+    const y = Math.floor(rng() * 320);
+    const r = rng();
+    if (r < 0.45) px(ctx, x, y, AP_P3.tarmacDark);
+    else if (r < 0.75) px(ctx, x, y, AP_P3.tarmacLight);
+  }
+
+  // Oil-stain wisps — confined to interior of each slab so wrap isn't broken
+  for (let i = 0; i < 8; i++) {
+    const sx = 10 + Math.floor(rng() * 480);
+    const sy = 10 + Math.floor(rng() * 300);
+    const len = 4 + Math.floor(rng() * 6);
+    for (let j = 0; j < len; j++) {
+      if (sx + j < 512 && sy + (j % 2) < 320) {
+        px(ctx, sx + j, sy + (j % 2), darken(AP_P3.tarmacMid, 0.16));
+      }
+    }
+  }
+
+  c.refresh();
+}
+
+// 2. Tarmac gradient — 256×64 horizon gradient strip, tile-friendly horizontally
+function generateTarmacGradient(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(AP_TEXTURE_KEYS.tarmacGradient, 256, 64);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(AP_PHASE3_SEED.tarmacGradient);
+
+  // Vertical gradient: sky-tint at top → tarmac-gray at bottom
+  for (let y = 0; y < 64; y++) {
+    const t = y / 64;
+    // 2-stop lerp between skyTint and tarmacMid
+    const a = 1 - t;
+    const b = t;
+    const r = Math.round(parseInt(AP_P3.skyTint.slice(1, 3), 16) * a + parseInt(AP_P3.tarmacMid.slice(1, 3), 16) * b);
+    const g = Math.round(parseInt(AP_P3.skyTint.slice(3, 5), 16) * a + parseInt(AP_P3.tarmacMid.slice(3, 5), 16) * b);
+    const bl = Math.round(parseInt(AP_P3.skyTint.slice(5, 7), 16) * a + parseInt(AP_P3.tarmacMid.slice(5, 7), 16) * b);
+    const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${bl.toString(16).padStart(2, '0')}`;
+    rect(ctx, 0, y, 256, 1, color);
+  }
+
+  // Subtle horizontal dither to break banding — tile-friendly
+  for (let y = 0; y < 64; y += 2) {
+    for (let x = 0; x < 256; x += 4) {
+      const ox = ((y / 2) % 2 === 0) ? 0 : 2;
+      if (rng() < 0.18) {
+        px(ctx, (x + ox) % 256, y, 'rgba(255,255,255,0.06)');
+      }
+    }
+  }
+
+  c.refresh();
+}
+
+// 3. Grass horizon — 256×48 dry-grass field, tile-friendly horizontally
+function generateGrassHorizon(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(AP_TEXTURE_KEYS.grassHorizon, 256, 48);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(AP_PHASE3_SEED.grassHorizon);
+
+  // Base grass band
+  rect(ctx, 0, 0, 256, 48, AP_P3.grassMid);
+  // Top brighter (sunlit) band
+  rect(ctx, 0, 0, 256, 2, AP_P3.grassLight);
+  // Bottom darker (shadow) band
+  rect(ctx, 0, 45, 256, 3, AP_P3.grassDark);
+
+  // Grass-blade dither — short vertical speckles scattered across band
+  for (let i = 0; i < 600; i++) {
+    const x = Math.floor(rng() * 256);
+    const y = 2 + Math.floor(rng() * 40);
+    const r = rng();
+    let color = AP_P3.grassMid;
+    if (r < 0.28) color = AP_P3.grassLight;
+    else if (r < 0.55) color = AP_P3.grassDark;
+    else if (r < 0.72) color = AP_P3.grassWheat;
+    px(ctx, x, y, color);
+    if (rng() < 0.3 && y + 1 < 45) {
+      px(ctx, x, y + 1, darken(color, 0.15));
+    }
+  }
+
+  // Short grass tufts — 2px vertical strokes
+  for (let i = 0; i < 40; i++) {
+    const x = Math.floor(rng() * 256);
+    const y = 10 + Math.floor(rng() * 30);
+    const color = rng() < 0.5 ? AP_P3.grassLight : AP_P3.grassWheat;
+    px(ctx, x, y, color);
+    px(ctx, x, y + 1, color);
+  }
+
+  // Occasional fence-post silhouettes — 3 posts spaced ~85px for tile-friendly repeat
+  const postYTop = 14;
+  const postYBot = 44;
+  const postXs = [42, 128, 214]; // spaced so tile-edge doesn't land on a post
+  for (const pxs of postXs) {
+    rect(ctx, pxs, postYTop, 2, postYBot - postYTop, AP_P3.fencePost);
+    // Tiny cap pixel
+    px(ctx, pxs, postYTop, darken(AP_P3.fencePost, 0.3));
+    px(ctx, pxs + 1, postYTop, darken(AP_P3.fencePost, 0.3));
+  }
+  // Thin fence wire between posts (horizontal 1px line)
+  rect(ctx, 0, 22, 256, 1, darken(AP_P3.fencePost, 0.1));
+  rect(ctx, 0, 32, 256, 1, darken(AP_P3.fencePost, 0.1));
+
+  c.refresh();
+}
+
+// 4. Runway dash — 96×16 white runway center-line segment
+function generateRunwayDash(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(AP_TEXTURE_KEYS.runwayDash, 96, 16);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(AP_PHASE3_SEED.runwayDash);
+
+  // Main dash body — centered vertically
+  rect(ctx, 0, 5, 96, 6, AP_P3.runwayWhite);
+  // Top highlight
+  rect(ctx, 0, 5, 96, 1, '#FFFFFF');
+  // Bottom shade — slightly grey for weathering
+  rect(ctx, 0, 10, 96, 1, AP_P3.runwayGray);
+
+  // Weathered edges — broken pixels along both ends
+  for (let x = 0; x < 8; x++) {
+    if (rng() < 0.55) px(ctx, x, 5, AP_P3.runwayGray);
+    if (rng() < 0.55) px(ctx, x, 10, AP_P3.runwayGray);
+    if (rng() < 0.35) px(ctx, x, 11, darken(AP_P3.runwayGray, 0.15));
+  }
+  for (let x = 88; x < 96; x++) {
+    if (rng() < 0.55) px(ctx, x, 5, AP_P3.runwayGray);
+    if (rng() < 0.55) px(ctx, x, 10, AP_P3.runwayGray);
+    if (rng() < 0.35) px(ctx, x, 11, darken(AP_P3.runwayGray, 0.15));
+  }
+
+  // Scattered tire-wear scuffs across the dash body
+  for (let i = 0; i < 22; i++) {
+    const x = 4 + Math.floor(rng() * 88);
+    const y = 6 + Math.floor(rng() * 4);
+    if (rng() < 0.6) px(ctx, x, y, AP_P3.runwayGray);
+  }
+
+  c.refresh();
+}
+
+// 5. Taxiway line (yellow solid) — 256×4 tile-friendly
+function generateTaxiwayLineYellow(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(AP_TEXTURE_KEYS.taxiwayLineYellow, 256, 4);
+  if (!c) return;
+  const ctx = c.context;
+
+  // Solid yellow band, full width
+  rect(ctx, 0, 1, 256, 2, AP_P3.taxiYellow);
+  // Top highlight
+  rect(ctx, 0, 1, 256, 1, lighten(AP_P3.taxiYellow, 0.15));
+  // Bottom shade
+  rect(ctx, 0, 3, 256, 1, AP_P3.taxiYellowSh);
+
+  c.refresh();
+}
+
+// 6. Taxiway line (dashed) — 128×4 tile-friendly, dash+gap seamless at width
+function generateTaxiwayLineDashed(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(AP_TEXTURE_KEYS.taxiwayLineDashed, 128, 4);
+  if (!c) return;
+  const ctx = c.context;
+
+  // 32px dash + 32px gap pattern → 4 full dashes over 128px (seamless)
+  // Canvas is transparent by default so gaps are see-through.
+  for (let dx = 0; dx < 128; dx += 32) {
+    // Dash body (first 24 px of each 32 period → 8 px gap)
+    rect(ctx, dx, 1, 24, 2, AP_P3.taxiYellow);
+    rect(ctx, dx, 1, 24, 1, lighten(AP_P3.taxiYellow, 0.15));
+    rect(ctx, dx, 3, 24, 1, AP_P3.taxiYellowSh);
+  }
+
+  c.refresh();
+}
+
+// 7. Airport signage — 64×40 black-on-yellow directional sign
+function generateAirportSignage(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(AP_TEXTURE_KEYS.airportSignage, 64, 40);
+  if (!c) return;
+  const ctx = c.context;
+
+  // Ground shadow stub
+  rect(ctx, 8, 37, 48, 3, 'rgba(0,0,0,0.3)');
+
+  // Mount post (center)
+  rect(ctx, 30, 28, 4, 10, AP_P3.signBlack);
+  rect(ctx, 30, 28, 1, 10, darken(AP_P3.signBlack, 0.2));
+
+  // Sign panel — yellow with black border
+  rect(ctx, 4, 4, 56, 24, AP_P3.signBlack);
+  rect(ctx, 6, 6, 52, 20, AP_P3.signYellow);
+  // Top highlight on yellow panel
+  rect(ctx, 6, 6, 52, 1, lighten(AP_P3.signYellow, 0.18));
+  // Bottom shade
+  rect(ctx, 6, 25, 52, 1, darken(AP_P3.signYellow, 0.18));
+
+  // Generic right-arrow glyph centered
+  // Arrow shaft
+  rect(ctx, 16, 15, 24, 2, AP_P3.signBlack);
+  // Arrow head (triangle built from descending-width rows)
+  for (let i = 0; i < 7; i++) {
+    const w = 7 - i;
+    const x = 40;
+    const yTop = 13 + i;
+    const yBot = 17 - i;
+    if (yTop <= 15) rect(ctx, x, yTop, w, 1, AP_P3.signBlack);
+    if (yBot >= 16 && yTop !== yBot) rect(ctx, x, yBot, w, 1, AP_P3.signBlack);
+  }
+  // Fill the arrow head middle rows cleanly
+  rect(ctx, 40, 15, 7, 2, AP_P3.signBlack);
+  rect(ctx, 41, 14, 5, 4, AP_P3.signBlack);
+  rect(ctx, 43, 13, 2, 6, AP_P3.signBlack);
+  rect(ctx, 44, 12, 1, 8, AP_P3.signBlack);
+
+  // Post base plate
+  rect(ctx, 26, 37, 12, 2, AP_P3.signBlack);
+
+  c.refresh();
+}
+
 export function generateAirportTextures(scene: Phaser.Scene): void {
   generateNPCTextures(scene);
   generateBuildingTexture(scene);
@@ -2594,4 +2906,13 @@ export function generateAirportTextures(scene: Phaser.Scene): void {
   generateStationSignTextures(scene);
   generateBenGurionTextures(scene);
   generateTarmacTextures(scene);
+
+  // Phase 3 — pixel-art refactor
+  generateTarmacSurface(scene);
+  generateTarmacGradient(scene);
+  generateGrassHorizon(scene);
+  generateRunwayDash(scene);
+  generateTaxiwayLineYellow(scene);
+  generateTaxiwayLineDashed(scene);
+  generateAirportSignage(scene);
 }

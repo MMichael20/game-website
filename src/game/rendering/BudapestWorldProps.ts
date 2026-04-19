@@ -92,6 +92,30 @@ export const BP_WORLD_PROPS_PALETTE = {
   pestWindow:   '#F0D890',
   pestShutterGreen: '#4E7A52',
   pestAwningRed:'#A62E24',
+
+  // Phase 3 — Shower (marble/chrome/gold)
+  marbleBase:      '#F2ECE2',
+  marbleLight:     '#F8F3EA',
+  marbleShadow:    '#DCD2C2',
+  marbleVein:      '#C8BEAC',
+  chromeMid:       '#C4C4CC',
+  chromeLight:     '#E2E2E8',
+  chromeDark:      '#7A7A84',
+  chromeHi:        '#F2F2F6',
+  goldTrim:        '#D4A843',
+  goldTrimDark:    '#A88230',
+  goldTrimHi:      '#F0CE6E',
+  hotRed:          '#C83830',
+  coldBlue:        '#2A6AB0',
+  mirrorReflect:   '#AABACC',
+  mirrorShadow:    '#6E82A0',
+
+  // Phase 3 — Water-edge transition tiles
+  waterEdgeStone:   '#8A8278',
+  waterEdgeStoneHi: '#A8A094',
+  waterEdgeStoneSh: '#5E584E',
+  waterEdgeFoam:    '#C8E0E8',
+  waterEdgeShallow: '#5A90A8',
 } as const;
 
 const P = BP_WORLD_PROPS_PALETTE;
@@ -131,6 +155,18 @@ export const BP_PROP_KEYS = {
   thermalPoolSurface:   'bp-thermal-pool-surface',
   thermalTileBorder:    'bp-thermal-tile-border',
   ruinbarDanceLight:    'bp-ruinbar-dance-light',
+
+  // Phase 3 — AirbnbShower + Overworld water tiles
+  showerFloorTile:      'bp-shower-floor-tile',
+  showerDrain:          'bp-shower-drain',
+  showerRail:           'bp-shower-rail',
+  showerHead:           'bp-shower-head',
+  showerKnob:           'bp-shower-knob',
+  showerMirror:         'bp-shower-mirror',
+  showerFixtureBase:    'bp-shower-fixture-base',
+  waterCurrent:         'bp-water-current',
+  waterEdgeTileA:       'bp-water-edge-tile-a',
+  waterEdgeTileB:       'bp-water-edge-tile-b',
 } as const;
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -168,6 +204,18 @@ const SEED = {
   thermalPoolSurface:   8210,
   thermalTileBorder:    8211,
   ruinbarDanceLight:    8212,
+
+  // Phase 3 seeds
+  showerFloorTile:      8301,
+  showerDrain:          8302,
+  showerRail:           8303,
+  showerHead:           8304,
+  showerKnob:           8305,
+  showerMirror:         8306,
+  showerFixtureBase:    8307,
+  waterCurrent:         8308,
+  waterEdgeTileA:       8309,
+  waterEdgeTileB:       8310,
 } as const;
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1996,6 +2044,491 @@ function generateRuinbarDanceLight(scene: Phaser.Scene): void {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// Phase 3 — Shower interior props
+// ══════════════════════════════════════════════════════════════════════════
+
+// 29. Shower floor tile — 32×32 seamless marble floor tile
+function generateShowerFloorTile(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.showerFloorTile, 32, 32);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.showerFloorTile);
+
+  // Base marble fill
+  rect(ctx, 0, 0, 32, 32, P.marbleBase);
+
+  // Subtle band lighting — top slightly lighter, bottom slightly darker.
+  // Keep deltas tiny so tile wraps seamlessly on the vertical axis.
+  rect(ctx, 0, 0,  32, 1, lighten(P.marbleBase, 0.04));
+  rect(ctx, 0, 31, 32, 1, darken(P.marbleBase, 0.04));
+
+  // Edge-matching dither — x%32 and y%32 keep wrap consistent.
+  for (let y = 0; y < 32; y += 2) {
+    for (let x = 0; x < 32; x += 4) {
+      const ox = ((y / 2) % 2 === 0) ? 0 : 2;
+      if (rng() < 0.25) {
+        px(ctx, (x + ox) % 32, y, P.marbleLight);
+      }
+      if (rng() < 0.18) {
+        px(ctx, (x + ox + 1) % 32, (y + 1) % 32, P.marbleShadow);
+      }
+    }
+  }
+
+  // Subtle vein streaks — confined to interior so wrap is clean.
+  // Short, sparse, broken dither-streaks.
+  for (let i = 0; i < 3; i++) {
+    const sx = 4 + Math.floor(rng() * 22);
+    const sy = 4 + Math.floor(rng() * 22);
+    const len = 4 + Math.floor(rng() * 6);
+    const dir = rng() < 0.5 ? 1 : -1;
+    for (let j = 0; j < len; j++) {
+      const x = sx + j;
+      const y = sy + Math.floor(j * 0.5) * dir;
+      if (x >= 1 && x < 31 && y >= 1 && y < 31) {
+        if (rng() < 0.7) px(ctx, x, y, P.marbleVein);
+      }
+    }
+  }
+
+  // A couple of tiny warm-grout grout-seam dots at the corners for anchor.
+  // Only corner pixels — guaranteed symmetric on wrap.
+  px(ctx, 0, 0, darken(P.marbleBase, 0.08));
+  px(ctx, 31, 0, darken(P.marbleBase, 0.08));
+  px(ctx, 0, 31, darken(P.marbleBase, 0.08));
+  px(ctx, 31, 31, darken(P.marbleBase, 0.08));
+
+  c.refresh();
+}
+
+// 30. Shower drain — 16×16 concentric-circle chrome drain
+function generateShowerDrain(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.showerDrain, 16, 16);
+  if (!c) return;
+  const ctx = c.context;
+
+  const cx = 8;
+  const cy = 8;
+
+  // Outer ring — dark chrome
+  circle(ctx, cx, cy, 7, P.chromeDark);
+  // Main chrome body
+  circle(ctx, cx, cy, 6, P.chromeMid);
+  // Upper highlight band
+  circle(ctx, cx, cy - 1, 5, P.chromeLight);
+  // Dark inner well
+  circle(ctx, cx, cy, 4, darken(P.chromeDark, 0.2));
+  // Inner chrome rim
+  circle(ctx, cx, cy, 3, P.chromeMid);
+  // Deep center hole
+  circle(ctx, cx, cy, 2, darken(P.chromeDark, 0.4));
+  // Tiny catch-light on top edge
+  px(ctx, cx - 1, cy - 6, P.chromeHi);
+  px(ctx, cx,     cy - 6, P.chromeHi);
+
+  // Drain slot detail — 4 spoke cuts at N/E/S/W through the inner well.
+  rect(ctx, cx,     cy - 4, 1, 8, P.chromeMid);  // vertical slot frame
+  rect(ctx, cx - 4, cy,     8, 1, P.chromeMid);  // horizontal slot frame
+
+  c.refresh();
+}
+
+// 31. Shower rail — 80×8 horizontal chrome towel rail with end caps
+function generateShowerRail(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.showerRail, 80, 8);
+  if (!c) return;
+  const ctx = c.context;
+
+  // Rail body — main chrome bar spans full width
+  rect(ctx, 4, 2, 72, 4, P.chromeMid);
+  // Top highlight band
+  rect(ctx, 4, 2, 72, 1, P.chromeHi);
+  // Bottom shadow band
+  rect(ctx, 4, 5, 72, 1, P.chromeDark);
+
+  // Left end cap — vertical stub
+  rect(ctx, 0, 1, 4, 6, P.chromeDark);
+  rect(ctx, 1, 1, 3, 6, P.chromeMid);
+  rect(ctx, 1, 1, 3, 1, P.chromeLight);
+  rect(ctx, 1, 6, 3, 1, P.chromeDark);
+  px(ctx, 1, 2, P.chromeHi);
+
+  // Right end cap — mirror
+  rect(ctx, 76, 1, 4, 6, P.chromeDark);
+  rect(ctx, 76, 1, 3, 6, P.chromeMid);
+  rect(ctx, 76, 1, 3, 1, P.chromeLight);
+  rect(ctx, 76, 6, 3, 1, P.chromeDark);
+  px(ctx, 78, 2, P.chromeHi);
+
+  // Subtle catch-light halfway along — reads as a specular speck
+  px(ctx, 28, 2, P.chromeHi);
+  px(ctx, 52, 2, P.chromeHi);
+
+  c.refresh();
+}
+
+// 32. Shower head — 24×40 rainfall showerhead (arm + disc)
+function generateShowerHead(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.showerHead, 24, 40);
+  if (!c) return;
+  const ctx = c.context;
+
+  // Pipe from ceiling (top)
+  rect(ctx, 11, 0, 3, 10, P.chromeMid);
+  rect(ctx, 11, 0, 1, 10, P.chromeLight);
+  rect(ctx, 13, 0, 1, 10, P.chromeDark);
+
+  // Elbow bend
+  rect(ctx, 10, 9, 5, 3, P.chromeMid);
+  rect(ctx, 10, 9, 5, 1, P.chromeLight);
+  rect(ctx, 10, 11, 5, 1, P.chromeDark);
+
+  // Horizontal arm
+  rect(ctx, 9, 12, 3, 4, P.chromeMid);
+  rect(ctx, 9, 12, 3, 1, P.chromeLight);
+  rect(ctx, 9, 15, 3, 1, P.chromeDark);
+
+  // Stem down to disc
+  rect(ctx, 10, 16, 4, 6, P.chromeMid);
+  rect(ctx, 10, 16, 1, 6, P.chromeLight);
+  rect(ctx, 13, 16, 1, 6, P.chromeDark);
+
+  // Large rainfall disc
+  const discY = 24;
+  // Disc outer ring (dark chrome)
+  circle(ctx, 12, discY, 10, P.chromeDark);
+  // Disc body
+  circle(ctx, 12, discY, 9, P.chromeMid);
+  // Upper highlight
+  circle(ctx, 12, discY - 1, 8, P.chromeLight);
+  // Lower shadow
+  rect(ctx, 4, discY + 6, 16, 1, P.chromeDark);
+  // Disc face (slightly recessed — darker concentric)
+  circle(ctx, 12, discY, 7, darken(P.chromeMid, 0.06));
+
+  // Spray nozzle dots in a 5-point grid pattern
+  const nozzles = [
+    [12, discY], [9, discY - 3], [15, discY - 3],
+    [9, discY + 3], [15, discY + 3],
+    [6, discY], [18, discY], [12, discY - 6], [12, discY + 6],
+    [7, discY - 5], [17, discY - 5], [7, discY + 5], [17, discY + 5],
+  ];
+  for (const [nx, ny] of nozzles) {
+    px(ctx, nx, ny, P.chromeDark);
+  }
+
+  // Tiny catch-light on the top-left of the disc
+  px(ctx, 7, discY - 6, P.chromeHi);
+  px(ctx, 8, discY - 7, P.chromeHi);
+
+  c.refresh();
+}
+
+// 33. Shower knob — 16×16 chrome valve knob with H/C indicator
+function generateShowerKnob(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.showerKnob, 16, 16);
+  if (!c) return;
+  const ctx = c.context;
+
+  const cx = 8;
+  const cy = 8;
+
+  // Outer chrome rim (dark)
+  circle(ctx, cx, cy, 7, P.chromeDark);
+  // Chrome body
+  circle(ctx, cx, cy, 6, P.chromeMid);
+  // Upper highlight band
+  circle(ctx, cx, cy - 1, 5, P.chromeLight);
+  // Small recessed center button (gold accent)
+  circle(ctx, cx, cy, 3, P.goldTrim);
+  circle(ctx, cx, cy - 1, 2, P.goldTrimHi);
+  px(ctx, cx, cy, darken(P.goldTrim, 0.25));
+
+  // H (red) marker dot on left, C (blue) on right
+  px(ctx, cx - 5, cy, P.hotRed);
+  px(ctx, cx - 6, cy, P.hotRed);
+  px(ctx, cx + 5, cy, P.coldBlue);
+  px(ctx, cx + 6, cy, P.coldBlue);
+
+  // Top catch-light
+  px(ctx, cx - 2, cy - 5, P.chromeHi);
+  px(ctx, cx - 1, cy - 6, P.chromeHi);
+
+  c.refresh();
+}
+
+// 34. Shower mirror — 64×80 framed mirror
+function generateShowerMirror(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.showerMirror, 64, 80);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.showerMirror);
+
+  // Outer frame — gold, 3px thick
+  rect(ctx, 0, 0, 64, 80, P.goldTrimDark);
+  rect(ctx, 1, 1, 62, 78, P.goldTrim);
+  rect(ctx, 2, 2, 60, 76, P.goldTrimHi);
+  // Inner frame step to mirror surface
+  rect(ctx, 3, 3, 58, 74, P.goldTrim);
+  rect(ctx, 4, 4, 56, 72, P.goldTrimDark);
+
+  // Mirror glass surface
+  rect(ctx, 5, 5, 54, 70, P.mirrorReflect);
+
+  // Gradient on glass — top lighter, bottom darker (ceiling bounce light)
+  for (let y = 0; y < 70; y += 2) {
+    const t = y / 70;
+    if (t < 0.33) {
+      rect(ctx, 5, 5 + y, 54, 1, lighten(P.mirrorReflect, 0.12));
+    } else if (t > 0.66) {
+      rect(ctx, 5, 5 + y, 54, 1, P.mirrorShadow);
+    }
+  }
+
+  // Scattered dither for soft reflection texture
+  for (let i = 0; i < 120; i++) {
+    const x = 6 + Math.floor(rng() * 52);
+    const y = 6 + Math.floor(rng() * 68);
+    const r = rng();
+    if (r < 0.35) {
+      px(ctx, x, y, lighten(P.mirrorReflect, 0.15));
+    } else if (r < 0.65) {
+      px(ctx, x, y, P.mirrorShadow);
+    }
+  }
+
+  // Soft diagonal reflection streak — upper-left highlight
+  for (let i = 0; i < 12; i++) {
+    const x = 8 + i * 2;
+    const y = 8 + i;
+    if (x < 58 && y < 72) {
+      px(ctx, x, y, lighten(P.mirrorReflect, 0.25));
+      if (rng() < 0.5) px(ctx, x + 1, y, lighten(P.mirrorReflect, 0.18));
+    }
+  }
+
+  // Frame corner ornaments (subtle) — highlight pixels on each gold corner
+  px(ctx, 2, 2, P.goldTrimHi);
+  px(ctx, 61, 2, P.goldTrimHi);
+  px(ctx, 2, 77, P.goldTrimHi);
+  px(ctx, 61, 77, P.goldTrimHi);
+
+  c.refresh();
+}
+
+// 35. Shower fixture base — 32×24 chrome mounting plate
+function generateShowerFixtureBase(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.showerFixtureBase, 32, 24);
+  if (!c) return;
+  const ctx = c.context;
+
+  // Outer dark rim
+  rect(ctx, 0, 0, 32, 24, P.chromeDark);
+  // Main chrome body
+  rect(ctx, 1, 1, 30, 22, P.chromeMid);
+  // Top highlight band
+  rect(ctx, 1, 1, 30, 2, P.chromeLight);
+  rect(ctx, 1, 1, 30, 1, P.chromeHi);
+  // Bottom shadow band
+  rect(ctx, 1, 21, 30, 2, P.chromeDark);
+
+  // Side bevels
+  rect(ctx, 1, 1, 1, 22, P.chromeLight);
+  rect(ctx, 30, 1, 1, 22, P.chromeDark);
+
+  // Four mount screws (corners)
+  const screws: Array<[number, number]> = [[4, 4], [27, 4], [4, 19], [27, 19]];
+  for (const [sx, sy] of screws) {
+    rect(ctx, sx, sy, 2, 2, P.chromeDark);
+    px(ctx, sx, sy, P.chromeHi);
+  }
+
+  // Subtle central emboss line
+  rect(ctx, 6, 11, 20, 1, P.chromeLight);
+  rect(ctx, 6, 12, 20, 1, P.chromeDark);
+
+  c.refresh();
+}
+
+// 36. Water current — 48×16 arrow-shaped ripple indicator with fade tail
+function generateWaterCurrent(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.waterCurrent, 48, 16);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.waterCurrent);
+
+  // Arrow head at right (tip at x=45), fading tail to the left.
+  // Body band is 4px tall centered vertically on y=7/8.
+  // Fade-in alpha ramp via column-indexed rgba.
+  for (let x = 0; x < 40; x++) {
+    const t = x / 40; // 0 = tail, 1 = head
+    const alpha = Math.min(1, t * 1.2);
+    // Core band
+    px(ctx, x, 7, `rgba(200,224,232,${(alpha * 0.85).toFixed(2)})`);
+    px(ctx, x, 8, `rgba(200,224,232,${(alpha * 0.85).toFixed(2)})`);
+    // Soft edge feather
+    if (rng() < 0.6) {
+      px(ctx, x, 6, `rgba(200,224,232,${(alpha * 0.35).toFixed(2)})`);
+    }
+    if (rng() < 0.6) {
+      px(ctx, x, 9, `rgba(200,224,232,${(alpha * 0.35).toFixed(2)})`);
+    }
+  }
+
+  // Arrow head — triangular, solid white-blue
+  // Right-pointing triangle, tip at (46, 7/8)
+  for (let i = 0; i < 6; i++) {
+    const x = 40 + i;
+    const span = 6 - i;
+    for (let dy = -span; dy <= span; dy++) {
+      const y = 7 + dy;
+      if (y >= 0 && y < 16) {
+        // fade on edges
+        const edge = Math.abs(dy) === span;
+        px(ctx, x, y, edge ? P.waterEdgeFoam : '#FFFFFF');
+      }
+    }
+  }
+
+  // Tip pixel
+  px(ctx, 46, 7, '#FFFFFF');
+  px(ctx, 46, 8, '#FFFFFF');
+
+  c.refresh();
+}
+
+// 37. Water edge tile A — 32×32 stone-to-water transition, variant A
+// Stone strip on top half, water on bottom half, with foam transition band.
+// Tile-friendly horizontally (x=0 matches x=31 wraparound).
+function generateWaterEdgeTileA(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.waterEdgeTileA, 32, 32);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.waterEdgeTileA);
+
+  // Top half — stone embankment
+  rect(ctx, 0, 0, 32, 14, P.waterEdgeStone);
+  // Stone dither
+  for (let y = 0; y < 14; y += 2) {
+    for (let x = 0; x < 32; x += 4) {
+      const ox = ((y / 2) % 2 === 0) ? 0 : 2;
+      if (rng() < 0.35) {
+        px(ctx, (x + ox) % 32, y, P.waterEdgeStoneHi);
+      }
+      if (rng() < 0.2) {
+        px(ctx, (x + ox + 1) % 32, (y + 1) % 14, P.waterEdgeStoneSh);
+      }
+    }
+  }
+  // Stone block seams — vertical lines at consistent positions that match wraparound
+  rect(ctx, 7, 0, 1, 14, P.waterEdgeStoneSh);
+  rect(ctx, 19, 0, 1, 14, P.waterEdgeStoneSh);
+  // Horizontal courses
+  rect(ctx, 0, 6, 32, 1, darken(P.waterEdgeStone, 0.15));
+
+  // Transition band — foam / wet stone
+  rect(ctx, 0, 14, 32, 3, P.waterEdgeFoam);
+  for (let x = 0; x < 32; x++) {
+    if (rng() < 0.6) {
+      px(ctx, x, 13, lighten(P.waterEdgeStone, 0.1));
+    }
+    if (rng() < 0.4) {
+      px(ctx, x, 17, P.waterEdgeShallow);
+    }
+  }
+
+  // Water — shallow blue with ripples
+  rect(ctx, 0, 18, 32, 14, P.waterEdgeShallow);
+  // Deeper band toward bottom
+  rect(ctx, 0, 28, 32, 4, darken(P.waterEdgeShallow, 0.15));
+  // Ripple dither — tile-friendly
+  for (let y = 19; y < 32; y += 2) {
+    for (let x = 0; x < 32; x += 4) {
+      const ox = ((y / 2) % 2 === 0) ? 0 : 2;
+      if (rng() < 0.3) {
+        px(ctx, (x + ox) % 32, y, lighten(P.waterEdgeShallow, 0.15));
+      }
+      if (rng() < 0.2) {
+        px(ctx, (x + ox + 1) % 32, (y + 1) % 32, darken(P.waterEdgeShallow, 0.1));
+      }
+    }
+  }
+  // Short foam sparkles near the surface
+  for (let i = 0; i < 4; i++) {
+    const sx = Math.floor(rng() * 30);
+    px(ctx, sx, 18, P.waterEdgeFoam);
+    px(ctx, sx + 1, 18, P.waterEdgeFoam);
+  }
+
+  c.refresh();
+}
+
+// 38. Water edge tile B — 32×32 variant B (mirrored + tonal shift)
+// Same composition as A but water on top / stone on bottom (mirrored)
+// so scenes can alternate A/B for visual variety across a run of tiles.
+function generateWaterEdgeTileB(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.waterEdgeTileB, 32, 32);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.waterEdgeTileB);
+
+  // Top half — water (mirror of A which has water on bottom)
+  rect(ctx, 0, 0, 32, 14, P.waterEdgeShallow);
+  rect(ctx, 0, 0, 32, 4, darken(P.waterEdgeShallow, 0.15));
+  // Ripple dither
+  for (let y = 0; y < 14; y += 2) {
+    for (let x = 0; x < 32; x += 4) {
+      const ox = ((y / 2) % 2 === 0) ? 0 : 2;
+      if (rng() < 0.3) {
+        px(ctx, (x + ox) % 32, y, lighten(P.waterEdgeShallow, 0.15));
+      }
+      if (rng() < 0.2) {
+        px(ctx, (x + ox + 1) % 32, (y + 1) % 14, darken(P.waterEdgeShallow, 0.1));
+      }
+    }
+  }
+  // Foam sparkles near wet line
+  for (let i = 0; i < 4; i++) {
+    const sx = Math.floor(rng() * 30);
+    px(ctx, sx, 13, P.waterEdgeFoam);
+    px(ctx, sx + 1, 13, P.waterEdgeFoam);
+  }
+
+  // Transition band — foam / wet stone
+  rect(ctx, 0, 15, 32, 3, P.waterEdgeFoam);
+  for (let x = 0; x < 32; x++) {
+    if (rng() < 0.5) {
+      px(ctx, x, 14, P.waterEdgeShallow);
+    }
+    if (rng() < 0.6) {
+      px(ctx, x, 18, lighten(P.waterEdgeStone, 0.1));
+    }
+  }
+
+  // Bottom half — stone embankment (slightly different seam positions from A)
+  rect(ctx, 0, 18, 32, 14, P.waterEdgeStone);
+  for (let y = 18; y < 32; y += 2) {
+    for (let x = 0; x < 32; x += 4) {
+      const ox = ((y / 2) % 2 === 0) ? 0 : 2;
+      if (rng() < 0.35) {
+        px(ctx, (x + ox) % 32, y, P.waterEdgeStoneHi);
+      }
+      if (rng() < 0.2) {
+        px(ctx, (x + ox + 1) % 32, (y + 1) % 32, P.waterEdgeStoneSh);
+      }
+    }
+  }
+  // Alternate seam positions from variant A for variety
+  rect(ctx, 3, 18, 1, 14, P.waterEdgeStoneSh);
+  rect(ctx, 15, 18, 1, 14, P.waterEdgeStoneSh);
+  rect(ctx, 27, 18, 1, 14, P.waterEdgeStoneSh);
+  // Horizontal course
+  rect(ctx, 0, 25, 32, 1, darken(P.waterEdgeStone, 0.15));
+
+  c.refresh();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // Master generator — invoked by PixelArtGenerator's chunked scheduler
 // ══════════════════════════════════════════════════════════════════════════
 
@@ -2031,4 +2564,16 @@ export function generateBudapestWorldProps(scene: Phaser.Scene): void {
   generateThermalPoolSurface(scene);
   generateThermalTileBorder(scene);
   generateRuinbarDanceLight(scene);
+
+  // Phase 3
+  generateShowerFloorTile(scene);
+  generateShowerDrain(scene);
+  generateShowerRail(scene);
+  generateShowerHead(scene);
+  generateShowerKnob(scene);
+  generateShowerMirror(scene);
+  generateShowerFixtureBase(scene);
+  generateWaterCurrent(scene);
+  generateWaterEdgeTileA(scene);
+  generateWaterEdgeTileB(scene);
 }

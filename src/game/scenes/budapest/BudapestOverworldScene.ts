@@ -13,6 +13,7 @@ import {
   BUDAPEST_NPCS, BUDAPEST_CHECKPOINT_ZONES, BUDAPEST_DECORATIONS, BUDAPEST_BUILDINGS,
   getBudapestTileType, BudapestTileType,
 } from './budapestMap';
+import { BP_PROP_KEYS } from '../../rendering/BudapestWorldProps';
 
 /**
  * Suggested exploration order — highlights the "next" dot on the minimap.
@@ -271,12 +272,12 @@ export class BudapestOverworldScene extends OverworldScene {
 
   // ── Enhanced 3-layer Danube water with sparkle reflections ──
   private addDanubeWaves(): void {
-    // Layer 1: deep current (slowest, lowest alpha)
+    // Layer 1: deep current (slowest, lowest alpha) — pre-rendered arrow indicator.
     for (const wy of [11, 12, 13]) {
       for (let wx = 0; wx < BUDAPEST_WIDTH; wx += 6) {
         const pos = tileToWorld(wx, wy);
-        const current = this.add.rectangle(pos.x, pos.y, 24, 4, 0x1A3060)
-          .setDepth(-9).setAlpha(0.2);
+        const current = this.add.image(pos.x, pos.y, BP_PROP_KEYS.waterCurrent)
+          .setDepth(-9).setAlpha(0.2).setDisplaySize(24, 4);
         this.tweens.add({
           targets: current,
           x: pos.x + 24,
@@ -1133,16 +1134,18 @@ export class BudapestOverworldScene extends OverworldScene {
         },
       });
 
-      // Decorative chain/cable lines between bridge pillars
+      // Decorative water-edge tiles bracketing the bridge span — alternate A/B
+      // variants along the horizontal axis for visual variety.
       const topY = bridge.y1 * TILE_SIZE + TILE_SIZE / 2;
       const botY = bridge.y2 * TILE_SIZE + TILE_SIZE / 2;
       for (let x = bridge.x1 + 1; x < bridge.x2; x++) {
         const wx = x * TILE_SIZE + TILE_SIZE / 2;
-        // Top rail
-        this.add.rectangle(wx, topY - 4, TILE_SIZE, 1, 0x8B7355)
+        const tileKey = x % 2 === 0 ? BP_PROP_KEYS.waterEdgeTileA : BP_PROP_KEYS.waterEdgeTileB;
+        // Top edge tile
+        this.add.image(wx, topY - 4, tileKey)
           .setAlpha(0.5).setDepth(-4);
-        // Bottom rail
-        this.add.rectangle(wx, botY + 4, TILE_SIZE, 1, 0x8B7355)
+        // Bottom edge tile
+        this.add.image(wx, botY + 4, tileKey)
           .setAlpha(0.5).setDepth(-4);
       }
     });
