@@ -9,6 +9,7 @@ import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { audioManager } from '../../../audio/AudioManager';
 import { startScene } from '../sceneData';
+import { BP_PROP_KEYS } from '../../rendering/BudapestWorldProps';
 
 export class ThermalBathScene extends Phaser.Scene {
   constructor() {
@@ -39,16 +40,19 @@ export class ThermalBathScene extends Phaser.Scene {
     const amberOverlay = this.add.rectangle(w / 2, h / 2, w, h, 0xFFAA33)
       .setAlpha(0.15).setDepth(50);
 
-    // ── Arched ceiling — rectangles forming arch shapes at top ──
-    const archColor = 0x1A0F05;
+    // ── Arched ceiling — marble pillars with arch spans between them ──
+    const archPositions: number[] = [];
     for (let i = 0; i < 5; i++) {
       const ax = w * (i / 4);
-      this.add.rectangle(ax, 0, 40, 30, archColor).setDepth(2);
-      this.add.rectangle(ax - 15, 15, 10, 20, archColor).setDepth(2);
-      this.add.rectangle(ax + 15, 15, 10, 20, archColor).setDepth(2);
+      archPositions.push(ax);
+      // One pillar per column (replaces the old 3-rect fake arch composition)
+      this.add.image(ax, 60, BP_PROP_KEYS.thermalArchPillar).setDepth(2);
     }
-    // Top bar connecting arches
-    this.add.rectangle(w / 2, 5, w, 10, archColor).setDepth(1);
+    // Arch span between each consecutive pillar pair
+    for (let i = 0; i < archPositions.length - 1; i++) {
+      const midX = (archPositions[i] + archPositions[i + 1]) / 2;
+      this.add.image(midX, 20, BP_PROP_KEYS.thermalArchSpan).setDepth(2);
+    }
 
     // ── Tiled floor using bp-bath-mosaic ──
     const floorY = h - 32;
@@ -185,7 +189,7 @@ export class ThermalBathScene extends Phaser.Scene {
       const poolH = h * 0.3;
       const poolX = w * 0.5;
       const poolY = h * 0.55;
-      const pool = this.add.rectangle(poolX, poolY, poolW, poolH, 0x2A8A9A)
+      const pool = this.add.tileSprite(poolX, poolY, poolW, poolH, BP_PROP_KEYS.thermalPoolSurface)
         .setAlpha(0).setDepth(8);
       this.tweens.add({ targets: pool, alpha: 1, duration: 1500 });
 

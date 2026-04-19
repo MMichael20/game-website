@@ -5,6 +5,7 @@ import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { audioManager } from '../../../audio/AudioManager';
 import { startScene } from '../sceneData';
+import { BP_PROP_KEYS } from '../../rendering/BudapestWorldProps';
 
 export class DanubeCruiseScene extends Phaser.Scene {
   constructor() {
@@ -139,7 +140,7 @@ export class DanubeCruiseScene extends Phaser.Scene {
     // ── Phase 1: Boarding (0-4s) ─────────────────────────────────────
 
     // Stone dock on the right side
-    const dock = this.add.rectangle(w - 60, waterY + 10, 120, h - waterY + 20, 0x666655)
+    const dock = this.add.image(w - 60, waterY + 10, BP_PROP_KEYS.dockStructure)
       .setDepth(4);
 
     // Cruise boat at dock
@@ -266,40 +267,39 @@ export class DanubeCruiseScene extends Phaser.Scene {
         });
       });
 
-      // Buildings on both sides with lit windows
-      const buildingElements: Phaser.GameObjects.Rectangle[] = [];
+      // Buildings on both sides — nighttime silhouette + lit-window overlay
+      // Left bank: base+overlay pairs = 8 objects; right bank: same 8 → 16 total
+      const leftBankObjs: Phaser.GameObjects.Image[] = [];
+      const rightBankObjs: Phaser.GameObjects.Image[] = [];
       // Left bank buildings
       for (let i = 0; i < 4; i++) {
         const bh = 40 + Math.random() * 30;
         const bx = -50 + i * 45;
-        const building = this.add.rectangle(bx, waterY - bh / 2, 36, bh, 0x2a2a3a).setDepth(4);
-        buildingElements.push(building);
-        // Lit windows
-        for (let wy = 0; wy < 3; wy++) {
-          const win = this.add.rectangle(bx, waterY - bh + 12 + wy * 12, 6, 5, 0xffdd77)
-            .setDepth(4).setAlpha(0.8);
-          buildingElements.push(win);
-        }
+        const by = waterY - bh / 2;
+        const building = this.add.image(bx, by, BP_PROP_KEYS.nightBuilding)
+          .setDepth(4).setDisplaySize(36, bh);
+        const windows = this.add.image(bx, by, BP_PROP_KEYS.nightBuildingWindows)
+          .setDepth(4).setDisplaySize(36, bh);
+        leftBankObjs.push(building, windows);
       }
       // Right bank buildings
       for (let i = 0; i < 4; i++) {
         const bh = 40 + Math.random() * 30;
         const bx = w + 50 + i * 45;
-        const building = this.add.rectangle(bx, waterY - bh / 2, 36, bh, 0x2a2a3a).setDepth(4);
-        buildingElements.push(building);
-        for (let wy = 0; wy < 3; wy++) {
-          const win = this.add.rectangle(bx, waterY - bh + 12 + wy * 12, 6, 5, 0xffdd77)
-            .setDepth(4).setAlpha(0.8);
-          buildingElements.push(win);
-        }
+        const by = waterY - bh / 2;
+        const building = this.add.image(bx, by, BP_PROP_KEYS.nightBuilding)
+          .setDepth(4).setDisplaySize(36, bh);
+        const windows = this.add.image(bx, by, BP_PROP_KEYS.nightBuildingWindows)
+          .setDepth(4).setDisplaySize(36, bh);
+        rightBankObjs.push(building, windows);
       }
       // Slide buildings into view
       this.tweens.add({
-        targets: buildingElements.filter((_, idx) => idx < 16),
+        targets: leftBankObjs,
         x: '+=80', duration: 4000, ease: 'Sine.easeOut',
       });
       this.tweens.add({
-        targets: buildingElements.filter((_, idx) => idx >= 16),
+        targets: rightBankObjs,
         x: '-=80', duration: 4000, ease: 'Sine.easeOut',
       });
 
@@ -394,34 +394,32 @@ export class DanubeCruiseScene extends Phaser.Scene {
         duration: 3000, ease: 'Sine.easeInOut',
       });
 
-      // Both riverbanks visible with building silhouettes
+      // Both riverbanks visible with building silhouettes + lit-window overlay
       for (let side = 0; side < 2; side++) {
         for (let i = 0; i < 5; i++) {
           const bh = 35 + Math.random() * 40;
           const bx = side === 0 ? 20 + i * 40 : w - 20 - i * 40;
-          const building = this.add.rectangle(bx, waterY - bh / 2, 32, bh, 0x222233)
-            .setDepth(4).setAlpha(0);
+          const by = waterY - bh / 2;
+          const building = this.add.image(bx, by, BP_PROP_KEYS.pixelBuildingDay)
+            .setDepth(4).setAlpha(0).setDisplaySize(32, bh);
           this.tweens.add({ targets: building, alpha: 1, duration: 1500 });
-          // Yellow window dots
-          for (let wy = 0; wy < 3; wy++) {
-            const win = this.add.circle(bx, waterY - bh + 10 + wy * 12, 2, 0xffdd66)
-              .setDepth(4).setAlpha(0);
-            this.tweens.add({ targets: win, alpha: 0.9, duration: 1500, delay: 300 });
-          }
+          const windows = this.add.image(bx, by, BP_PROP_KEYS.pixelBuildingWindows)
+            .setDepth(4).setAlpha(0).setDisplaySize(32, bh);
+          this.tweens.add({ targets: windows, alpha: 0.9, duration: 1500, delay: 300 });
         }
       }
 
       // Buda Castle on the right hill
-      const castleHill = this.add.rectangle(w - 80, waterY - 50, 140, 40, 0x333344)
+      const castleHill = this.add.image(w - 80, waterY - 50, BP_PROP_KEYS.castleHill)
         .setDepth(4).setAlpha(0);
       const castle = this.add.image(w - 80, waterY - 60, 'bp-cruise-castle-lit')
         .setDepth(5).setAlpha(0).setOrigin(0.5, 1);
-      const castleGlow = this.add.rectangle(w - 80, waterY - 70, 160, 90, 0xffeedd)
-        .setDepth(4).setAlpha(0);
+      const castleGlow = this.add.image(w - 80, waterY - 50, BP_PROP_KEYS.castleGlow)
+        .setDepth(4).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD);
       this.tweens.add({ targets: castleHill, alpha: 1, duration: 2000 });
       this.tweens.add({ targets: castle, alpha: 1, duration: 2000 });
       this.tweens.add({
-        targets: castleGlow, alpha: 0.06, duration: 2000,
+        targets: castleGlow, alpha: 0.6, duration: 2000,
         yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
       });
 
@@ -496,9 +494,23 @@ export class DanubeCruiseScene extends Phaser.Scene {
       // Boat flips — heading back
       boat.setFlipX(true);
 
-      // City buildings slowly scroll right (moving away)
+      // City buildings slowly scroll right (moving away).
+      // Post Phase-2 refactor: buildings are now Images (not Rectangles), keyed
+      // by our BP_PROP_KEYS facade/window textures. Match those plus any
+      // remaining depth-4 rectangles (ripples, reflections) the old sweep hit.
+      const buildingTextureKeys = new Set<string>([
+        BP_PROP_KEYS.nightBuilding,
+        BP_PROP_KEYS.nightBuildingWindows,
+        BP_PROP_KEYS.pixelBuildingDay,
+        BP_PROP_KEYS.pixelBuildingWindows,
+      ]);
       this.children.list
-        .filter(c => (c as Phaser.GameObjects.Rectangle).depth === 4 && c instanceof Phaser.GameObjects.Rectangle)
+        .filter(c => {
+          if (c instanceof Phaser.GameObjects.Image && c.depth === 4) {
+            return buildingTextureKeys.has(c.texture.key);
+          }
+          return c instanceof Phaser.GameObjects.Rectangle && (c as Phaser.GameObjects.Rectangle).depth === 4;
+        })
         .forEach(c => {
           this.tweens.add({
             targets: c, x: `+=${60}`, alpha: 0.4,

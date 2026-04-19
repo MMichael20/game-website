@@ -6,6 +6,7 @@ import { NPCDef } from '../../data/mapLayout';
 import { uiManager } from '../../../ui/UIManager';
 import { saveCurrentScene } from '../../systems/SaveSystem';
 import { TILE_SIZE } from '../../../utils/constants';
+import { BP_PROP_KEYS } from '../../rendering/BudapestWorldProps';
 
 const RUIN_BAR_NPCS: NPCDef[] = [
   {
@@ -80,10 +81,13 @@ export class RuinBarScene extends InteriorScene {
       },
     });
 
-    // Dance floor colored light overlay (dance area ~x=4-10, y=9-13)
+    // Dance floor colored light overlay (dance area ~x=4-10, y=9-13).
+    // Radial gradient texture tinted/cycled through the same pink/cyan/etc palette.
     const dancePos = tileToPixel(7, 11);
-    const danceLight = this.add.rectangle(dancePos.x, dancePos.y, 6 * TILE_SIZE, 4 * TILE_SIZE, 0xFF4488)
-      .setAlpha(0.08).setDepth(-2);
+    const danceLight = this.add.image(dancePos.x, dancePos.y, BP_PROP_KEYS.ruinbarDanceLight)
+      .setAlpha(0.5).setDepth(-2).setTint(0xFF4488);
+    // Scale the 64×64 texture to cover the 6×4 tile dance area
+    danceLight.setDisplaySize(6 * TILE_SIZE, 4 * TILE_SIZE);
     const danceColors = [0xFF4488, 0x4488FF, 0x44FF88, 0xFFAA44, 0xAA44FF];
     let danceIdx = 0;
     this.time.addEvent({
@@ -91,7 +95,7 @@ export class RuinBarScene extends InteriorScene {
       loop: true,
       callback: () => {
         danceIdx = (danceIdx + 1) % danceColors.length;
-        danceLight.fillColor = danceColors[danceIdx];
+        danceLight.setTint(danceColors[danceIdx]);
       },
     });
 

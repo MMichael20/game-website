@@ -117,6 +117,20 @@ export const BP_PROP_KEYS = {
   landmarkParliament:   'bp-tram-landmark-parliament',
   landmarkBasilica:     'bp-tram-landmark-basilica',
   tramDanubeStrip:      'bp-tram-danube-strip',
+
+  // Phase 2 — DanubeCruise + ThermalBath + RuinBar world props
+  dockStructure:        'bp-dock-structure',
+  nightBuilding:        'bp-night-building',
+  nightBuildingWindows: 'bp-night-building-windows',
+  pixelBuildingDay:     'bp-pixel-building-day',
+  pixelBuildingWindows: 'bp-pixel-building-windows',
+  castleHill:           'bp-castle-hill',
+  castleGlow:           'bp-castle-glow',
+  thermalArchPillar:    'bp-thermal-arch-pillar',
+  thermalArchSpan:      'bp-thermal-arch-span',
+  thermalPoolSurface:   'bp-thermal-pool-surface',
+  thermalTileBorder:    'bp-thermal-tile-border',
+  ruinbarDanceLight:    'bp-ruinbar-dance-light',
 } as const;
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -140,6 +154,20 @@ const SEED = {
   landmarkParliament:8114,
   landmarkBasilica:  8115,
   tramDanubeStrip:   8116,
+
+  // Phase 2 seeds
+  dockStructure:        8201,
+  nightBuilding:        8202,
+  nightBuildingWindows: 8203,
+  pixelBuildingDay:     8204,
+  pixelBuildingWindows: 8205,
+  castleHill:           8206,
+  castleGlow:           8207,
+  thermalArchPillar:    8208,
+  thermalArchSpan:      8209,
+  thermalPoolSurface:   8210,
+  thermalTileBorder:    8211,
+  ruinbarDanceLight:    8212,
 } as const;
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1118,10 +1146,861 @@ function generateTramDanubeStrip(scene: Phaser.Scene): void {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// Phase 2 sub-generators — DanubeCruise + ThermalBath + RuinBar props
+// ══════════════════════════════════════════════════════════════════════════
+
+// 17. Dock structure — 240×96 wooden pier with bollards + waterline shading
+function generateDockStructure(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.dockStructure, 240, 96);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.dockStructure);
+
+  // Palette for this asset (dock wood, not in main palette const)
+  const plankLight = '#8A6940';
+  const plankMid   = '#6A4A28';
+  const plankDark  = '#4A3018';
+  const plankDeep  = '#2E1C0E';
+
+  // Ground / water-line shadow band beneath the dock
+  rect(ctx, 0, 82, 240, 4, 'rgba(0,0,0,0.28)');
+  rect(ctx, 0, 86, 240, 2, 'rgba(10,20,40,0.22)');
+
+  // Dock surface — top deck slab
+  const deckY = 16;
+  const deckH = 22;
+  rect(ctx, 4, deckY, 232, deckH, plankMid);
+  // Top highlight (sunlit plank tops)
+  rect(ctx, 4, deckY, 232, 2, plankLight);
+  rect(ctx, 4, deckY, 232, 1, lighten(plankLight, 0.12));
+  // Bottom shadow of deck
+  rect(ctx, 4, deckY + deckH - 2, 232, 2, plankDark);
+
+  // Plank seams — vertical lines every 24px with slight jitter
+  for (let x = 20; x < 236; x += 24) {
+    const jx = x + (rng() < 0.5 ? 0 : 1);
+    rect(ctx, jx, deckY, 1, deckH, plankDark);
+    px(ctx, jx, deckY, plankDeep);
+  }
+  // Knot specks on planks
+  for (let i = 0; i < 14; i++) {
+    const kx = 8 + Math.floor(rng() * 222);
+    const ky = deckY + 4 + Math.floor(rng() * (deckH - 8));
+    px(ctx, kx, ky, plankDark);
+    px(ctx, kx + 1, ky, plankDeep);
+  }
+
+  // Substructure crossbeams beneath deck
+  const beamY = deckY + deckH;
+  rect(ctx, 4, beamY, 232, 3, plankDark);
+  rect(ctx, 4, beamY, 232, 1, plankMid);
+  rect(ctx, 4, beamY + 2, 232, 1, plankDeep);
+
+  // Pilings (4 tall posts plunging into water)
+  const pilings = [20, 80, 160, 220];
+  for (const px1 of pilings) {
+    rect(ctx, px1, beamY + 3, 8, 40, plankDark);
+    rect(ctx, px1, beamY + 3, 1, 40, plankMid);
+    rect(ctx, px1 + 7, beamY + 3, 1, 40, plankDeep);
+    // Piling cap bolt
+    px(ctx, px1 + 3, beamY + 6, P.ironDark);
+    px(ctx, px1 + 4, beamY + 6, P.ironLight);
+    // Water-line foam / dither at base
+    rect(ctx, px1 - 2, beamY + 38, 12, 2, 'rgba(190,210,220,0.35)');
+    px(ctx, px1 - 1, beamY + 40, 'rgba(190,210,220,0.25)');
+    px(ctx, px1 + 8, beamY + 40, 'rgba(190,210,220,0.25)');
+  }
+
+  // Iron bollards (mooring posts on the deck) — two, between pilings
+  const bollards = [50, 190];
+  for (const bx of bollards) {
+    // Base plate
+    rect(ctx, bx - 5, deckY - 2, 10, 3, P.ironDark);
+    // Stem
+    rect(ctx, bx - 3, deckY - 8, 6, 6, P.ironMid);
+    rect(ctx, bx - 3, deckY - 8, 1, 6, P.ironLight);
+    rect(ctx, bx + 2, deckY - 8, 1, 6, P.ironDark);
+    // Cap (bulb)
+    rect(ctx, bx - 4, deckY - 11, 8, 3, P.ironDark);
+    rect(ctx, bx - 4, deckY - 11, 8, 1, P.ironMid);
+    rect(ctx, bx - 2, deckY - 12, 4, 1, P.ironMid);
+    px(ctx, bx - 1, deckY - 13, P.ironLight);
+  }
+
+  // Rope coil near first bollard — simple brown oval
+  rect(ctx, 42, deckY - 3, 10, 3, P.treeTrunk);
+  rect(ctx, 42, deckY - 3, 10, 1, P.treeTrunkHi);
+  px(ctx, 46, deckY - 2, darken(P.treeTrunk, 0.2));
+
+  // Waterline shading at bottom edge
+  for (let x = 0; x < 240; x += 2) {
+    if (rng() < 0.5) px(ctx, x, 92, 'rgba(120,150,170,0.35)');
+    if (rng() < 0.3) px(ctx, x + 1, 94, 'rgba(160,180,200,0.28)');
+  }
+
+  c.refresh();
+}
+
+// 18. Night building — 88×112 tenement silhouette, windows applied as overlay
+function generateNightBuilding(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.nightBuilding, 88, 112);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.nightBuilding);
+
+  // Dark blue-gray night facade tones
+  const facade      = '#242838';
+  const facadeHi    = '#343A4E';
+  const facadeShade = '#161A28';
+
+  // Ground-contact shadow
+  rect(ctx, 2, 109, 84, 3, 'rgba(0,0,0,0.35)');
+
+  // Main body
+  const bx = 2;
+  const by = 4;
+  const bw = 84;
+  const bh = 106;
+  rect(ctx, bx, by, bw, bh, facade);
+  // Left sunlit edge (faint moonlight from left)
+  rect(ctx, bx, by, 1, bh, facadeHi);
+  // Right shade edge
+  rect(ctx, bx + bw - 2, by, 2, bh, facadeShade);
+  // Top cornice
+  rect(ctx, bx - 1, by - 2, bw + 2, 2, facadeHi);
+  rect(ctx, bx - 1, by - 3, bw + 2, 1, facadeShade);
+
+  // Subtle stucco dither
+  for (let i = 0; i < 140; i++) {
+    const x = bx + 1 + Math.floor(rng() * (bw - 2));
+    const y = by + 1 + Math.floor(rng() * (bh - 3));
+    px(ctx, x, y, rng() > 0.5 ? facadeHi : facadeShade);
+  }
+
+  // Floor dividers (horizontal darker lines) — 4 floors
+  for (let i = 1; i < 4; i++) {
+    const y = by + Math.round((bh / 4) * i);
+    rect(ctx, bx, y, bw, 1, facadeShade);
+    rect(ctx, bx, y + 1, bw, 1, facadeHi);
+  }
+
+  // Roof parapet line + chimney stubs (silhouetted)
+  rect(ctx, bx, by, bw, 2, facadeShade);
+  rect(ctx, bx + 14, by - 4, 6, 4, facadeShade);
+  rect(ctx, bx + 56, by - 3, 5, 3, facadeShade);
+
+  // Ground-floor doorway silhouette (darker block)
+  rect(ctx, bx + bw / 2 - 7, by + bh - 14, 14, 14, facadeShade);
+  rect(ctx, bx + bw / 2 - 6, by + bh - 13, 12, 12, darken(facadeShade, 0.3));
+
+  c.refresh();
+}
+
+// 19. Night building windows overlay — 88×112 transparent, warm lit cells
+function generateNightBuildingWindows(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.nightBuildingWindows, 88, 112);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.nightBuildingWindows);
+
+  const lit      = '#FFDD77';
+  const litDim   = darken('#FFDD77', 0.25);
+  const litDark  = darken('#FFDD77', 0.5);
+  const frame    = '#0D0F18';
+
+  // Window grid — 3 cols × 3 rows in the upper 3 floors (ground floor has door)
+  const cols = 3;
+  const rows = 3;
+  const winW = 14;
+  const winH = 14;
+  const fx = 4;
+  const fw = 80;
+  const gapX = (fw - cols * winW) / (cols + 1);
+  const floorTop = 10;
+  const floorGap = 26;
+
+  for (let row = 0; row < rows; row++) {
+    const wy = floorTop + row * floorGap;
+    for (let col = 0; col < cols; col++) {
+      const wx = fx + Math.round(gapX * (col + 1) + col * winW);
+      // Frame border
+      rect(ctx, wx - 1, wy - 1, winW + 2, winH + 2, frame);
+      // Decide if this window is lit — ~65%
+      const isLit = rng() < 0.65;
+      if (isLit) {
+        // Base warm glow
+        rect(ctx, wx, wy, winW, winH, lit);
+        // Inner shadow for depth
+        rect(ctx, wx + 1, wy + winH - 2, winW - 2, 1, litDim);
+        rect(ctx, wx + winW - 2, wy + 1, 1, winH - 2, litDim);
+        // Subtle curtain / silhouette hint
+        if (rng() < 0.45) {
+          rect(ctx, wx + 1, wy + 1, Math.max(2, Math.floor(rng() * 6)), winH - 2, litDark);
+        }
+        // Mullions
+        rect(ctx, wx + winW / 2 - 1, wy, 1, winH, frame);
+        rect(ctx, wx, wy + winH / 2 - 1, winW, 1, frame);
+        // Glow spill — 1px halo above/below
+        px(ctx, wx + winW / 2, wy - 2, 'rgba(255,221,119,0.35)');
+        px(ctx, wx + winW / 2 - 1, wy - 2, 'rgba(255,221,119,0.25)');
+      } else {
+        // Dark unlit pane
+        rect(ctx, wx, wy, winW, winH, '#0A0C14');
+        // Mullions still visible
+        rect(ctx, wx + winW / 2 - 1, wy, 1, winH, frame);
+        rect(ctx, wx, wy + winH / 2 - 1, winW, 1, frame);
+        // Faint reflection highlight
+        px(ctx, wx + 2, wy + 2, '#1A1E30');
+      }
+    }
+  }
+
+  c.refresh();
+}
+
+// 20. Pixel building day — 96×120 pastel Pest facade with ornate cornice
+function generatePixelBuildingDay(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.pixelBuildingDay, 96, 120);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.pixelBuildingDay);
+
+  // Pastel palette — riverside Pest cream/peach/sage
+  const bodyBase = P.pestCream;       // cream
+  const bodyHi   = lighten(P.pestCream, 0.1);
+  const bodyLo   = darken(P.pestCream, 0.12);
+  const accent   = '#B9D4B2';         // sage accent
+  const corniceLight = '#F4E8CF';
+
+  // Ground-contact shadow
+  rect(ctx, 6, 117, 84, 3, 'rgba(0,0,0,0.25)');
+
+  // Facade body
+  const bx = 6;
+  const by = 8;
+  const bw = 84;
+  const bh = 110;
+  rect(ctx, bx, by, bw, bh, bodyBase);
+  // Left sunlit edge
+  rect(ctx, bx, by, 1, bh, bodyHi);
+  // Right shade edge
+  rect(ctx, bx + bw - 2, by, 2, bh, bodyLo);
+  // Bottom ground-line shading
+  rect(ctx, bx, by + bh - 3, bw, 3, bodyLo);
+
+  // Stucco dither
+  for (let i = 0; i < 140; i++) {
+    const x = bx + 1 + Math.floor(rng() * (bw - 2));
+    const y = by + 1 + Math.floor(rng() * (bh - 4));
+    px(ctx, x, y, rng() > 0.5 ? bodyHi : bodyLo);
+  }
+
+  // Ornate top cornice — 3-tier decorative band
+  rect(ctx, bx - 2, by - 4, bw + 4, 2, corniceLight);
+  rect(ctx, bx - 1, by - 2, bw + 2, 1, bodyLo);
+  rect(ctx, bx - 3, by - 6, bw + 6, 2, bodyHi);
+  rect(ctx, bx - 3, by - 7, bw + 6, 1, corniceLight);
+  // Dentil teeth along cornice
+  for (let x = bx - 2; x < bx + bw + 2; x += 4) {
+    rect(ctx, x, by - 4, 2, 1, bodyLo);
+  }
+
+  // 3 floor divisions — decorative bands
+  const floorCount = 3;
+  const floorH = Math.floor((bh - 20) / floorCount);
+  for (let f = 1; f <= floorCount; f++) {
+    const fy = by + 4 + f * floorH;
+    rect(ctx, bx, fy, bw, 1, bodyLo);
+    rect(ctx, bx, fy + 1, bw, 1, bodyHi);
+    // Small sage accent dots on band
+    for (let x = bx + 8; x < bx + bw - 8; x += 14) {
+      px(ctx, x, fy, accent);
+    }
+  }
+
+  // Ground-floor entrance — arched doorway, taller than windows
+  const doorX = bx + bw / 2 - 8;
+  const doorY = by + bh - 20;
+  rect(ctx, doorX, doorY, 16, 18, darken('#6A4B30', 0.1));
+  rect(ctx, doorX, doorY, 16, 1, darken('#6A4B30', 0.4));
+  rect(ctx, doorX + 1, doorY - 1, 14, 1, corniceLight);
+  // Door panel detail
+  rect(ctx, doorX + 2, doorY + 3, 5, 12, '#8A6A40');
+  rect(ctx, doorX + 9, doorY + 3, 5, 12, '#8A6A40');
+  px(ctx, doorX + 13, doorY + 9, P.bkvYellow);
+
+  c.refresh();
+}
+
+// 21. Pixel building windows overlay — 96×120 transparent window grid
+function generatePixelBuildingWindows(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.pixelBuildingWindows, 96, 120);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.pixelBuildingWindows);
+
+  const glass    = P.tramWindow;
+  const glassHi  = P.tramWindowHi;
+  const frame    = P.bkvBlack;
+  const sill     = '#D8C8A4';
+
+  // Window grid — 3 cols × 3 floors (ground floor has door)
+  const cols = 3;
+  const rows = 3;
+  const winW = 14;
+  const winH = 20;
+  const fx = 6;
+  const fw = 84;
+  const gapX = (fw - cols * winW) / (cols + 1);
+  const floorTop = 14;
+  const floorGap = 28;
+
+  for (let row = 0; row < rows; row++) {
+    const wy = floorTop + row * floorGap;
+    for (let col = 0; col < cols; col++) {
+      const wx = fx + Math.round(gapX * (col + 1) + col * winW);
+      // Sill
+      rect(ctx, wx - 2, wy + winH, winW + 4, 2, sill);
+      rect(ctx, wx - 3, wy + winH + 2, winW + 6, 1, darken(sill, 0.25));
+      // Lintel above
+      rect(ctx, wx - 1, wy - 2, winW + 2, 1, sill);
+      rect(ctx, wx - 2, wy - 3, winW + 4, 1, lighten(sill, 0.1));
+      // Frame
+      rect(ctx, wx - 1, wy - 1, winW + 2, winH + 2, frame);
+      // Glass
+      rect(ctx, wx, wy, winW, winH, glass);
+      // Mullions
+      rect(ctx, wx + winW / 2 - 1, wy, 1, winH, frame);
+      rect(ctx, wx, wy + winH / 2 - 1, winW, 1, frame);
+      // Shine — top-left quadrant
+      rect(ctx, wx + 1, wy + 1, 3, winH / 2 - 2, glassHi);
+      px(ctx, wx + 2, wy + 2, lighten(glassHi, 0.2));
+      // Occasional curtain hint
+      if (rng() < 0.3) {
+        rect(ctx, wx + winW - 3, wy + 1, 2, winH - 2, darken(glass, 0.3));
+      }
+    }
+  }
+
+  c.refresh();
+}
+
+// 22. Castle hill — 320×160 Buda Castle silhouette on stepped hillside
+function generateCastleHill(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.castleHill, 320, 160);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.castleHill);
+
+  const hillBase    = '#283040';
+  const hillHi      = '#3A4458';
+  const hillLo      = '#181E2C';
+  const castleBody  = '#2E3548';
+  const castleHiC   = '#4A5468';
+  const castleLoC   = '#1A1F2E';
+
+  // Hillside — sloped base profile, rising right-to-left toward castle peak
+  for (let x = 0; x < 320; x++) {
+    // Parabolic hill — peak at x=180
+    const dx = (x - 180) / 160;
+    const peak = 62 - Math.round(Math.max(0, (1 - dx * dx)) * 52);
+    rect(ctx, x, peak, 1, 160 - peak, hillBase);
+    // Top rim highlight
+    px(ctx, x, peak, hillHi);
+    px(ctx, x, peak - 1, 'rgba(74,84,104,0.4)');
+  }
+
+  // Hill texture dither — tree / rock dots
+  for (let i = 0; i < 450; i++) {
+    const x = Math.floor(rng() * 320);
+    const yMin = 80 + Math.floor(rng() * 70);
+    const r = rng();
+    if (r < 0.5) px(ctx, x, yMin, hillLo);
+    else if (r < 0.85) px(ctx, x, yMin, hillHi);
+    else px(ctx, x, yMin, darken(hillBase, 0.2));
+  }
+
+  // Tiny tree dots along the ridge
+  for (let x = 20; x < 300; x += 6) {
+    const dx = (x - 180) / 160;
+    const peak = 62 - Math.round(Math.max(0, (1 - dx * dx)) * 52);
+    if (rng() < 0.7) {
+      rect(ctx, x, peak - 3, 2, 3, hillLo);
+      px(ctx, x, peak - 4, darken(hillLo, 0.2));
+    }
+  }
+
+  // ── Castle complex — stepped medieval profile atop hill ──
+  // Main block base (long horizontal palace)
+  const baseY = 32;
+  rect(ctx, 112, baseY, 136, 28, castleBody);
+  rect(ctx, 112, baseY, 136, 1, castleHiC);
+  rect(ctx, 112, baseY + 27, 136, 1, castleLoC);
+
+  // Stepped right wing (lower)
+  rect(ctx, 230, baseY + 8, 34, 20, castleBody);
+  rect(ctx, 230, baseY + 8, 34, 1, castleHiC);
+
+  // Stepped left wing
+  rect(ctx, 96, baseY + 6, 22, 22, castleBody);
+  rect(ctx, 96, baseY + 6, 22, 1, castleHiC);
+
+  // Central dome drum
+  const domeCx = 180;
+  rect(ctx, domeCx - 18, baseY - 10, 36, 12, castleBody);
+  rect(ctx, domeCx - 18, baseY - 10, 36, 1, castleHiC);
+
+  // Dome hemisphere
+  for (let dy = 0; dy < 14; dy++) {
+    const prog = dy / 14;
+    const w = Math.round(32 * Math.cos(prog * Math.PI * 0.5));
+    rect(ctx, domeCx - w / 2, baseY - 10 - dy - 1, w, 1, castleBody);
+  }
+  // Dome highlight strip (sun from left)
+  for (let dy = 2; dy < 12; dy += 2) {
+    const prog = dy / 14;
+    const w = Math.round(32 * Math.cos(prog * Math.PI * 0.5));
+    px(ctx, domeCx - w / 2 + 2, baseY - 10 - dy, castleHiC);
+  }
+  // Cupola on dome
+  rect(ctx, domeCx - 3, baseY - 28, 6, 4, castleBody);
+  rect(ctx, domeCx - 1, baseY - 34, 2, 6, castleBody);
+  px(ctx, domeCx, baseY - 36, castleHiC);
+
+  // Turret — right side of main block (tall thin)
+  const turretX = 220;
+  rect(ctx, turretX - 4, baseY - 18, 8, 22, castleBody);
+  rect(ctx, turretX - 4, baseY - 18, 1, 22, castleHiC);
+  rect(ctx, turretX + 3, baseY - 18, 1, 22, castleLoC);
+  // Turret conical roof
+  rect(ctx, turretX - 5, baseY - 20, 10, 2, castleLoC);
+  for (let dy = 0; dy < 7; dy++) {
+    const w = 8 - dy;
+    rect(ctx, turretX - Math.floor(w / 2), baseY - 20 - dy - 1, w, 1, castleLoC);
+  }
+  px(ctx, turretX, baseY - 28, castleHiC);
+
+  // Secondary shorter turret — left
+  const tur2X = 128;
+  rect(ctx, tur2X - 3, baseY - 12, 6, 16, castleBody);
+  rect(ctx, tur2X - 3, baseY - 12, 1, 16, castleHiC);
+  // Flat crenellation cap
+  for (let i = 0; i < 3; i++) {
+    rect(ctx, tur2X - 3 + i * 2, baseY - 14, 1, 2, castleBody);
+  }
+
+  // Crenellations along main roof
+  for (let x = 112; x < 248; x += 6) {
+    rect(ctx, x, baseY - 2, 3, 2, castleBody);
+  }
+
+  // Window arch grooves on facade
+  for (let x = 120; x < 244; x += 8) {
+    rect(ctx, x, baseY + 10, 1, 14, castleLoC);
+    px(ctx, x + 3, baseY + 8, castleHiC);
+  }
+
+  // Faint lit window specks (warm evening glow hint)
+  for (let i = 0; i < 20; i++) {
+    const wx = 116 + Math.floor(rng() * 130);
+    const wy = baseY + 14 + Math.floor(rng() * 10);
+    if (rng() < 0.55) px(ctx, wx, wy, '#F6D48A');
+  }
+
+  c.refresh();
+}
+
+// 23. Castle glow — 320×160 warm uplight, matches castleHill dims (additive)
+function generateCastleGlow(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.castleGlow, 320, 160);
+  if (!c) return;
+  const ctx = c.context;
+
+  // Radial-ish warm uplight centered under the castle dome (x=180, y=45 from top).
+  // Do a soft alpha falloff via nested rectangles + dither.
+  const glowCx = 180;
+  const glowCy = 48;
+  const maxR = 150;
+
+  // Dither a warm #FFCC88 outward with decaying alpha.
+  // We draw via pixel-scan, sampling alpha from radial distance.
+  const rng = seededRandom(SEED.castleGlow);
+  for (let y = 0; y < 160; y++) {
+    for (let x = 0; x < 320; x++) {
+      const dx = x - glowCx;
+      const dy = y - glowCy;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > maxR) continue;
+      // Falloff curve: stronger near center, soft at edges.
+      const t = 1 - d / maxR;
+      const a = t * t * 0.55;
+      // Dither: draw only a fraction of pixels at this alpha strength to avoid
+      // a solid gradient block. Density scales with t.
+      if (rng() < t * 0.7) {
+        px(ctx, x, y, `rgba(255,204,136,${a.toFixed(3)})`);
+      }
+    }
+  }
+
+  // Bright core — small concentrated dither under the dome
+  for (let dy = -14; dy <= 14; dy++) {
+    for (let dx = -22; dx <= 22; dx++) {
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > 22) continue;
+      if (rng() < 0.45) {
+        const a = (1 - d / 22) * 0.35;
+        px(ctx, glowCx + dx, glowCy + dy, `rgba(255,230,170,${a.toFixed(3)})`);
+      }
+    }
+  }
+
+  // Uplight beams — vertical faint streaks projecting upward from rooftops
+  for (let i = 0; i < 6; i++) {
+    const bx = 130 + Math.floor(rng() * 100);
+    for (let y = 20; y < 60; y++) {
+      if (rng() < 0.5) {
+        const a = ((60 - y) / 60) * 0.25;
+        px(ctx, bx, y, `rgba(255,214,150,${a.toFixed(3)})`);
+      }
+    }
+  }
+
+  c.refresh();
+}
+
+// 24. Thermal arch pillar — 48×120 marble column with capital + base
+function generateThermalArchPillar(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.thermalArchPillar, 48, 120);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.thermalArchPillar);
+
+  const marble    = '#E8DFC6';
+  const marbleHi  = '#F4ECDA';
+  const marbleLo  = '#B8AC90';
+  const marbleShade = '#90846C';
+  const veinColor = '#A89A7E';
+
+  // Ground-contact shadow
+  rect(ctx, 4, 117, 40, 3, 'rgba(0,0,0,0.3)');
+
+  // Base plinth — wide footing
+  rect(ctx, 4, 108, 40, 8, marbleLo);
+  rect(ctx, 4, 108, 40, 1, marble);
+  rect(ctx, 4, 115, 40, 1, marbleShade);
+  // Base step
+  rect(ctx, 6, 104, 36, 4, marble);
+  rect(ctx, 6, 104, 36, 1, marbleHi);
+  rect(ctx, 6, 107, 36, 1, marbleLo);
+
+  // Shaft — 22px wide, centered, with slight taper cues via vertical shading
+  const shaftX = 13;
+  const shaftW = 22;
+  const shaftTop = 16;
+  const shaftBot = 104;
+  rect(ctx, shaftX, shaftTop, shaftW, shaftBot - shaftTop, marble);
+  // Left sunlit edge
+  rect(ctx, shaftX, shaftTop, 1, shaftBot - shaftTop, marbleHi);
+  rect(ctx, shaftX + 1, shaftTop, 1, shaftBot - shaftTop, lighten(marble, 0.05));
+  // Right shade edge
+  rect(ctx, shaftX + shaftW - 2, shaftTop, 1, shaftBot - shaftTop, marbleLo);
+  rect(ctx, shaftX + shaftW - 1, shaftTop, 1, shaftBot - shaftTop, marbleShade);
+
+  // Vertical dithering — marble veining feel
+  for (let y = shaftTop + 2; y < shaftBot - 2; y += 2) {
+    for (let x = shaftX + 2; x < shaftX + shaftW - 2; x += 3) {
+      if (rng() < 0.18) px(ctx, x, y, marbleHi);
+      if (rng() < 0.12) px(ctx, x + 1, y, marbleLo);
+    }
+  }
+  // A few longer vein streaks
+  for (let i = 0; i < 5; i++) {
+    const vx = shaftX + 3 + Math.floor(rng() * (shaftW - 6));
+    const vy = shaftTop + 4 + Math.floor(rng() * (shaftBot - shaftTop - 16));
+    const len = 6 + Math.floor(rng() * 8);
+    for (let j = 0; j < len; j++) {
+      px(ctx, vx + (j % 2), vy + j, veinColor);
+    }
+  }
+
+  // Fluting — 3 vertical grooves down the shaft
+  for (let i = 1; i < 4; i++) {
+    const gx = shaftX + Math.round((shaftW / 4) * i);
+    for (let y = shaftTop + 4; y < shaftBot - 4; y += 2) {
+      px(ctx, gx, y, marbleLo);
+    }
+  }
+
+  // Capital — flared top (Doric-ish)
+  rect(ctx, 8, 12, 32, 4, marble);
+  rect(ctx, 8, 12, 32, 1, marbleHi);
+  rect(ctx, 8, 15, 32, 1, marbleLo);
+  rect(ctx, 6, 8, 36, 4, marbleLo);
+  rect(ctx, 6, 8, 36, 1, marble);
+  rect(ctx, 6, 11, 36, 1, marbleShade);
+  // Echinus curve (small ovolo)
+  rect(ctx, 10, 4, 28, 4, marble);
+  rect(ctx, 10, 4, 28, 1, marbleHi);
+  rect(ctx, 10, 7, 28, 1, marbleLo);
+  // Abacus (flat top slab)
+  rect(ctx, 8, 0, 32, 4, marbleHi);
+  rect(ctx, 8, 0, 32, 1, lighten(marbleHi, 0.15));
+  rect(ctx, 8, 3, 32, 1, marbleLo);
+
+  c.refresh();
+}
+
+// 25. Thermal arch span — 120×40 arch connecting two pillars, keystone center
+function generateThermalArchSpan(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.thermalArchSpan, 120, 40);
+  if (!c) return;
+  const ctx = c.context;
+
+  const marble    = '#E8DFC6';
+  const marbleHi  = '#F4ECDA';
+  const marbleLo  = '#B8AC90';
+  const marbleShade = '#90846C';
+
+  // Draw half-ellipse arch curve, filled with marble block.
+  // The span is 120 wide × 40 tall; arch curves from (0,38) up to (60,2) and back.
+  const cx = 60;
+  const radX = 58;
+  const radY = 36;
+
+  for (let x = 0; x < 120; x++) {
+    const dx = (x - cx) / radX;
+    if (Math.abs(dx) > 1) continue;
+    const yTop = Math.round(radY * (1 - Math.sqrt(1 - dx * dx)));
+    rect(ctx, x, yTop, 1, 40 - yTop, marble);
+    // Inner (underside) edge darker
+    px(ctx, x, yTop, marbleHi);
+    px(ctx, x, yTop + 1, lighten(marble, 0.05));
+  }
+
+  // Block seam lines — voussoirs (arch stones) radiating from center
+  const stones = 9;
+  for (let i = 0; i < stones; i++) {
+    const ang = Math.PI - (i / (stones - 1)) * Math.PI;
+    const sx = Math.round(cx + Math.cos(ang) * radX);
+    const syTop = Math.round(radY - Math.sin(ang) * radY);
+    // Draw a short radial groove from arch underside inward (downward toward outer edge)
+    for (let j = 0; j < 6; j++) {
+      const px1 = Math.round(cx + Math.cos(ang) * (radX + j));
+      const py1 = Math.round(radY - Math.sin(ang) * (radY + j));
+      if (px1 >= 0 && px1 < 120 && py1 >= 0 && py1 < 40) {
+        px(ctx, px1, py1, marbleLo);
+      }
+    }
+    // Inner edge notch
+    px(ctx, sx, syTop + 1, marbleShade);
+  }
+
+  // Keystone — larger wedge at apex
+  rect(ctx, cx - 5, 0, 10, 8, marbleLo);
+  rect(ctx, cx - 4, 0, 8, 7, marble);
+  rect(ctx, cx - 4, 0, 8, 1, marbleHi);
+  rect(ctx, cx - 5, 7, 10, 1, marbleShade);
+  // Keystone ornament — small circular boss
+  px(ctx, cx, 3, marbleLo);
+  px(ctx, cx - 1, 3, marbleLo);
+  px(ctx, cx + 1, 3, marbleLo);
+  px(ctx, cx, 2, marbleHi);
+
+  // Springline shadow — where arch meets pillars
+  rect(ctx, 0, 36, 10, 4, marbleShade);
+  rect(ctx, 110, 36, 10, 4, marbleShade);
+
+  c.refresh();
+}
+
+// 26. Thermal pool surface — 320×160 turquoise with steam dither + wave rows
+function generateThermalPoolSurface(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.thermalPoolSurface, 320, 160);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.thermalPoolSurface);
+
+  const aquaDeep  = '#1A5A6A';
+  const aquaMid   = '#2A8A9A';
+  const aquaLight = '#3FB0C0';
+  const aquaHi    = '#78D4DE';
+  const aquaSteam = '#B8E8EE';
+
+  // Vertical gradient — deep at bottom, bright at top (steam-catching surface)
+  for (let y = 0; y < 160; y++) {
+    const t = y / 160;
+    let color: string;
+    if (t < 0.15)      color = aquaHi;
+    else if (t < 0.4)  color = aquaLight;
+    else if (t < 0.75) color = aquaMid;
+    else                color = aquaDeep;
+    rect(ctx, 0, y, 320, 1, color);
+  }
+
+  // Soft band transitions
+  rect(ctx, 0, 24, 320, 1, lighten(aquaHi, 0.12));
+  rect(ctx, 0, 64, 320, 1, aquaLight);
+  rect(ctx, 0, 120, 320, 1, darken(aquaMid, 0.15));
+
+  // Wave pattern — subtle horizontal sine ripple rows every 8px
+  for (let y = 4; y < 160; y += 8) {
+    const bandT = y / 160;
+    const waveC = bandT < 0.3 ? aquaHi : bandT < 0.7 ? aquaLight : aquaMid;
+    for (let x = 0; x < 320; x += 4) {
+      const phase = Math.sin((x / 320) * Math.PI * 6 + y * 0.3);
+      const offset = Math.round(phase * 1.5);
+      px(ctx, x, y + offset, waveC);
+      if (rng() < 0.4) px(ctx, x + 2, y + offset + 1, darken(waveC, 0.1));
+    }
+  }
+
+  // Ripple dither — density decreases with depth
+  for (let y = 0; y < 160; y += 2) {
+    const depthT = y / 160;
+    const density = depthT < 0.3 ? 0.32 : depthT < 0.6 ? 0.22 : 0.12;
+    const hi = depthT < 0.3 ? aquaHi : depthT < 0.6 ? aquaLight : aquaMid;
+    const lo = depthT < 0.3 ? aquaLight : depthT < 0.6 ? aquaMid : aquaDeep;
+    for (let x = 0; x < 320; x += 4) {
+      const ox = ((y / 2) % 2 === 0) ? 0 : 2;
+      if (rng() < density) {
+        px(ctx, (x + ox) % 320, y, hi);
+      }
+      if (rng() < density * 0.7) {
+        px(ctx, (x + ox + 1) % 320, y + 1, lo);
+      }
+    }
+  }
+
+  // Steam-highlight dither rows — scattered bright dots along top third
+  for (let i = 0; i < 90; i++) {
+    const sx = Math.floor(rng() * 320);
+    const sy = Math.floor(rng() * 50);
+    const len = 1 + Math.floor(rng() * 3);
+    for (let j = 0; j < len; j++) {
+      px(ctx, sx + j, sy, aquaSteam);
+    }
+  }
+
+  // Reflected-light vertical streaks (caustic columns)
+  for (let i = 0; i < 5; i++) {
+    const colX = 30 + Math.floor(rng() * 260);
+    for (let y = 0; y < 80; y++) {
+      if (rng() < 0.4) px(ctx, colX, y, lighten(aquaHi, 0.18));
+      if (rng() < 0.25) px(ctx, colX + 1, y, aquaHi);
+    }
+  }
+
+  c.refresh();
+}
+
+// 27. Thermal tile border — 32×32 seamless geometric mosaic
+function generateThermalTileBorder(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.thermalTileBorder, 32, 32);
+  if (!c) return;
+  const ctx = c.context;
+
+  // Mosaic palette
+  const baseA = '#D8C8A0';   // cream
+  const baseB = '#4A8090';   // teal
+  const baseC = '#A62E24';   // deep red accent
+  const grout = '#3A2E20';
+
+  // Grout background
+  rect(ctx, 0, 0, 32, 32, grout);
+
+  // 8×8 tile grid — 4×4 tiles per 32×32 asset.
+  // Alternate colors in a pattern that tiles seamlessly on all 4 edges.
+  // Pattern key (x and y in tile-coords 0..3):
+  //   corner tiles (all 4 corners) → baseA for vertical-axis symmetry on wrap
+  //   edge midpoints → baseB
+  //   center ring → baseC
+  // Use a deterministic formula so seams match.
+  for (let ty = 0; ty < 4; ty++) {
+    for (let tx = 0; tx < 4; tx++) {
+      const x = tx * 8;
+      const y = ty * 8;
+      // Modular pattern — matches on wrap (tx=0 and tx=4 would be identical)
+      const kx = tx % 4;
+      const ky = ty % 4;
+      let color = baseA;
+      // Diamond-in-grid: center 2x2 is baseC, surrounding ring is baseB, corners baseA
+      if ((kx === 1 || kx === 2) && (ky === 1 || ky === 2)) color = baseC;
+      else if (kx === 0 && ky === 0) color = baseA;
+      else if (kx === 3 && ky === 0) color = baseA;
+      else if (kx === 0 && ky === 3) color = baseA;
+      else if (kx === 3 && ky === 3) color = baseA;
+      else color = baseB;
+
+      // Tile body — 6×6 with 1px grout gap on all sides
+      rect(ctx, x + 1, y + 1, 6, 6, color);
+      // Top highlight
+      rect(ctx, x + 1, y + 1, 6, 1, lighten(color, 0.15));
+      // Bottom shade
+      rect(ctx, x + 1, y + 6, 6, 1, darken(color, 0.2));
+      // Left sunlit
+      rect(ctx, x + 1, y + 1, 1, 6, lighten(color, 0.08));
+      // Right shade
+      rect(ctx, x + 6, y + 1, 1, 6, darken(color, 0.12));
+
+      // Central dot accent for diamond-pattern visual anchor
+      if (color === baseC) {
+        px(ctx, x + 3, y + 3, lighten(baseC, 0.25));
+        px(ctx, x + 4, y + 4, lighten(baseC, 0.25));
+      }
+    }
+  }
+
+  c.refresh();
+}
+
+// 28. Ruinbar dance light — 64×64 white radial gradient (tinted at runtime)
+function generateRuinbarDanceLight(scene: Phaser.Scene): void {
+  const c = scene.textures.createCanvas(BP_PROP_KEYS.ruinbarDanceLight, 64, 64);
+  if (!c) return;
+  const ctx = c.context;
+  const rng = seededRandom(SEED.ruinbarDanceLight);
+
+  // Neutral white — caller applies setTint(0xFF77AA / 0x77DDFF / 0xCC88FF)
+  const cx = 32;
+  const cy = 32;
+  const maxR = 32;
+
+  // Radial falloff from center, dithered for pixel-art feel.
+  for (let y = 0; y < 64; y++) {
+    for (let x = 0; x < 64; x++) {
+      const dx = x - cx;
+      const dy = y - cy;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > maxR) continue;
+      const t = 1 - d / maxR;
+      // Quadratic falloff — bright core, soft edge
+      const a = t * t * 0.95;
+      // Dither density scales with t to keep edge soft rather than banded
+      if (rng() < 0.4 + t * 0.5) {
+        px(ctx, x, y, `rgba(255,255,255,${a.toFixed(3)})`);
+      }
+    }
+  }
+
+  // Bright solid core — small central disk for punch
+  for (let dy = -6; dy <= 6; dy++) {
+    for (let dx = -6; dx <= 6; dx++) {
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > 6) continue;
+      const a = (1 - d / 6) * 0.7;
+      px(ctx, cx + dx, cy + dy, `rgba(255,255,255,${a.toFixed(3)})`);
+    }
+  }
+
+  c.refresh();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // Master generator — invoked by PixelArtGenerator's chunked scheduler
 // ══════════════════════════════════════════════════════════════════════════
 
 export function generateBudapestWorldProps(scene: Phaser.Scene): void {
+  // Phase 1
   generateRoadSurface(scene);
   generateRoadDash(scene);
   generateStreetTree(scene);
@@ -1138,4 +2017,18 @@ export function generateBudapestWorldProps(scene: Phaser.Scene): void {
   generateLandmarkParliament(scene);
   generateLandmarkBasilica(scene);
   generateTramDanubeStrip(scene);
+
+  // Phase 2
+  generateDockStructure(scene);
+  generateNightBuilding(scene);
+  generateNightBuildingWindows(scene);
+  generatePixelBuildingDay(scene);
+  generatePixelBuildingWindows(scene);
+  generateCastleHill(scene);
+  generateCastleGlow(scene);
+  generateThermalArchPillar(scene);
+  generateThermalArchSpan(scene);
+  generateThermalPoolSurface(scene);
+  generateThermalTileBorder(scene);
+  generateRuinbarDanceLight(scene);
 }
