@@ -799,7 +799,7 @@ export class BudapestOverworldScene extends OverworldScene {
 
       case 'bp_tram_stop_north':
       case 'bp_tram_stop_south':
-        this.fadeToScene('BudapestTransportScene', { returnX: pos.x, returnY: pos.y });
+        this.fadeToScene('BudapestTransportScene', { returnX: pos.x, returnY: pos.y, returnScene: 'BudapestOverworldScene' });
         break;
 
       case 'bp_danube_cruise':

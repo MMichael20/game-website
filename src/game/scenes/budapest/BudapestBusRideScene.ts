@@ -6,6 +6,8 @@ import {
 import { loadGameState } from '../../systems/SaveSystem';
 import { OUTFIT_STYLES } from '../../rendering/PixelArtGenerator';
 import { generateBudapestCoupleSprites } from '../../rendering/BudapestTextures';
+import { BP_PROP_KEYS } from '../../rendering/BudapestWorldProps';
+import { seededRandom } from '../../rendering/pixelHelpers';
 import { audioManager } from '../../../audio/AudioManager';
 import { startScene } from '../sceneData';
 
@@ -21,6 +23,10 @@ export class BudapestBusRideScene extends Phaser.Scene {
     const h = this.cameras.main.height;
     const roadY = h * 0.78;
     const roadH = 50;
+
+    // Seeded RNG for deterministic per-prop jitter (trees, houses, railings,
+    // arrival buildings). Reused across all loops below.
+    const rng = seededRandom(12345);
 
     // ── Load outfit data and generate couple sprites ──────────────────
     const state = loadGameState();
@@ -40,25 +46,25 @@ export class BudapestBusRideScene extends Phaser.Scene {
     const countryside = this.add.image(w / 2, h * 0.45, 'bp-bus-countryside')
       .setDepth(1).setAlpha(1);
 
-    // Road surface
-    this.add.rectangle(w / 2, roadY, w, roadH, 0x555555).setDepth(5);
-    this.add.rectangle(w / 2, roadY - roadH / 2, w, 2, 0x777777).setDepth(6);
-    this.add.rectangle(w / 2, roadY + roadH / 2, w, 2, 0x777777).setDepth(6);
+    // Road surface — single scrolling tileSprite replaces the 3-rect stack
+    const roadSurface = this.add.tileSprite(w / 2, roadY, w, 96, BP_PROP_KEYS.roadSurface).setDepth(5);
+    this.tweens.add({ targets: roadSurface, tilePositionX: 2048, duration: 15000, ease: 'Linear', repeat: -1 });
 
-    // Scrolling road dashes
-    const dashes: Phaser.GameObjects.Rectangle[] = [];
+    // Scrolling road dashes — pixel-art dash segments
+    const dashes: Phaser.GameObjects.Image[] = [];
     for (let x = -20; x < w + 40; x += 36) {
-      dashes.push(this.add.rectangle(x, roadY, 16, 3, 0xffcc00).setDepth(7));
+      dashes.push(this.add.image(x, roadY, BP_PROP_KEYS.roadDash).setDepth(7));
     }
     this.tweens.add({ targets: dashes, x: '-=36', duration: 300, ease: 'Linear', repeat: -1 });
 
-    // Foreground trees (fast parallax)
-    const trees: Phaser.GameObjects.Rectangle[] = [];
+    // Foreground trees (fast parallax) — one image per tree, seeded jitter
+    const trees: Phaser.GameObjects.Image[] = [];
     for (let i = 0; i < 10; i++) {
       const tx = w + i * 140;
-      const trunk = this.add.rectangle(tx, roadY - roadH / 2 - 20, 6, 40, 0x5a3a1a).setDepth(8);
-      const canopy = this.add.circle(tx, roadY - roadH / 2 - 48, 16, 0x3a8a2a).setDepth(8);
-      trees.push(trunk, canopy as unknown as Phaser.GameObjects.Rectangle);
+      const jitter = Math.round((rng() - 0.5) * 24);
+      trees.push(
+        this.add.image(tx + jitter, roadY - roadH / 2 - 44, BP_PROP_KEYS.streetTree).setDepth(8),
+      );
     }
     const treeTween = this.tweens.add({
       targets: trees, x: `-=${w + 1600}`, duration: 18000, ease: 'Linear',
@@ -105,18 +111,14 @@ export class BudapestBusRideScene extends Phaser.Scene {
         targets: countryside, x: `-=${w * 0.3}`, duration: 14000, ease: 'Linear',
       });
 
-      // Midground houses (medium speed)
-      const houses: Phaser.GameObjects.Rectangle[] = [];
+      // Midground houses (medium speed) — one image per house, seeded jitter
+      const houses: Phaser.GameObjects.Image[] = [];
       for (let i = 0; i < 6; i++) {
         const hx = w + 60 + i * 180;
-        const hh = 30 + Math.random() * 20;
-        const houseColor = [0xCC9966, 0xBBAA88, 0xAA8877, 0xDDBB99][i % 4];
-        const house = this.add.rectangle(hx, roadY - roadH / 2 - hh / 2 - 4, 50, hh, houseColor).setDepth(3);
-        // Roof
-        const roof = this.add.rectangle(hx, roadY - roadH / 2 - hh - 4, 56, 8, 0x884422).setDepth(3);
-        // Window
-        const win = this.add.rectangle(hx, roadY - roadH / 2 - hh / 2, 8, 8, 0xFFEEAA).setDepth(4);
-        houses.push(house, roof, win);
+        const jitter = Math.round((rng() - 0.5) * 24);
+        houses.push(
+          this.add.image(hx + jitter, roadY - roadH / 2 - 40, BP_PROP_KEYS.countrysideHouse).setDepth(3),
+        );
       }
       this.tweens.add({
         targets: houses, x: `-=${w + 1200}`, duration: 12000, ease: 'Linear',
@@ -202,11 +204,13 @@ export class BudapestBusRideScene extends Phaser.Scene {
       // River visible below the road
       bg.setFillStyle(0x3388AA);
 
-      // Bridge railings scrolling across bottom
-      const railings: Phaser.GameObjects.Rectangle[] = [];
+      // Bridge railings scrolling across bottom — pixel-art iron posts, seeded jitter
+      const railings: Phaser.GameObjects.Image[] = [];
       for (let i = 0; i < 20; i++) {
-        const rail = this.add.rectangle(w + i * 40, roadY + roadH / 2 + 8, 4, 16, 0x888888).setDepth(9);
-        railings.push(rail);
+        const jitter = Math.round((rng() - 0.5) * 24);
+        railings.push(
+          this.add.image(w + i * 40 + jitter, roadY + roadH / 2 + 8 - 24, BP_PROP_KEYS.bridgeRailingPost).setDepth(9),
+        );
       }
       this.tweens.add({ targets: railings, x: `-=${w + 900}`, duration: 4000, ease: 'Linear' });
 
@@ -285,14 +289,13 @@ export class BudapestBusRideScene extends Phaser.Scene {
       // Slow down remaining scrolling elements
       treeTween.timeScale = 0.3;
 
-      // Dense arrival buildings
-      const arrivalBuildings: Phaser.GameObjects.Rectangle[] = [];
+      // Dense arrival buildings — pixel-art Pest tenements, one image per
+      const arrivalBuildings: Phaser.GameObjects.Image[] = [];
       for (let i = 0; i < 6; i++) {
         const bx = w + i * 60;
-        const bh = 70 + Math.random() * 40;
-        const color = [0xD4A574, 0xC4B494, 0xB4A484, 0xE4C594][i % 4];
-        const b = this.add.rectangle(bx, roadY - roadH / 2 - bh / 2, 50, bh, color).setDepth(3);
-        arrivalBuildings.push(b);
+        arrivalBuildings.push(
+          this.add.image(bx, roadY - roadH / 2 - 60, BP_PROP_KEYS.arrivalBuilding).setDepth(3),
+        );
       }
       this.tweens.add({
         targets: arrivalBuildings, x: `-=${w * 0.4}`, duration: 2000, ease: 'Sine.easeOut',

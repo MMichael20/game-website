@@ -8,6 +8,7 @@ import { generateDrivingTextures } from './DrivingTextures';
 import { generateHanaTextures } from './HanaTextures';
 import { generateSunBeachTextures } from './SunBeachTextures';
 import { generateBudapestTextures } from './BudapestTextures';
+import { generateBudapestWorldProps } from './BudapestWorldProps';
 import { px, rect, circle, darken, lighten, seededRandom, Ctx } from './pixelHelpers';
 
 // ── terrain ──────────────────────────────────────────────────────────────
@@ -2833,6 +2834,7 @@ const GEN_STEPS: GenStep[] = [
   { name: 'hana',               fn: generateHanaTextures },
   { name: 'sun-beach',          fn: generateSunBeachTextures },
   { name: 'budapest',           fn: generateBudapestTextures },
+  { name: 'budapest-world-props', fn: generateBudapestWorldProps },
   { name: 'exit-doors',         fn: generateExitDoorTextures },
 ];
 

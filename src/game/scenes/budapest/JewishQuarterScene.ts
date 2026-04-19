@@ -99,7 +99,7 @@ export class JewishQuarterScene extends OverworldScene {
         });
         break;
       case 'jq_tram_stop':
-        this.fadeToScene('BudapestTransportScene', { returnX: pos.x, returnY: pos.y });
+        this.fadeToScene('BudapestTransportScene', { returnX: pos.x, returnY: pos.y, returnScene: 'JewishQuarterScene' });
         break;
     }
   }

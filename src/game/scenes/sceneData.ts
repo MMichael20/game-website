@@ -42,6 +42,18 @@ export interface BudapestAirbnbReturnData {
   returnY?: number;
 }
 
+/**
+ * Payload for the BudapestTransportScene cutscene. `returnScene` names the
+ * overworld the player came from — required so "Go Back" from the departure
+ * board returns to the correct map. Validated loudly in init() (no silent
+ * default) so any unmigrated caller surfaces via the global crash overlay.
+ */
+export interface BudapestTransportSceneData {
+  returnX: number;
+  returnY: number;
+  returnScene: 'BudapestOverworldScene' | 'JewishQuarterScene';
+}
+
 /** Discriminated map of typed scene keys to their data payload shape. */
 export interface SceneDataMap {
   DressingRoomScene: DressingRoomData;
@@ -51,6 +63,7 @@ export interface SceneDataMap {
   JewishQuarterScene: OverworldReturnData;
   AirplaneCutscene: AirplaneCutsceneData;
   BudapestAirbnbScene: BudapestAirbnbReturnData;
+  BudapestTransportScene: BudapestTransportSceneData;
 }
 
 /**
