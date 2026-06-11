@@ -144,6 +144,16 @@ Window-seat framing, multi-layer parallax clouds, day fading to sunset over the 
 
 Maui map and arrival, turtle rescue, surf lesson, avatar customizer (two fixed, well-made sprites for the couple instead), Budapest remake, any port of remaining v1 scenes.
 
+## Assumptions & Decisions (auto mode log)
+
+- Spec user-review gate → user activated full auto ("FROM HERE ON ALL AUTO") — spec treated as approved as written, including the repo transition and four-stage gauntlet flagged for second look.
+- Art sourcing → chose Kenney RPG Urban Pack (world + characters) + Pixel UI Pack + Kenney Fonts, all CC0 — verified by downloading and visually inspecting during planning; characters have real 4-direction, 3-frame walk animations; packed tilesheet loads directly as a Phaser spritesheet (432x288, 27x18 frames, no spacing). Roguelike Modern City kept as reserve only (palette mismatch).
+- Tiled maps → replaced with typed TS map data (`MapDef` 2D arrays + legend) — agents cannot operate the Tiled GUI; arrays are reviewable and testable. Revisit Tiled when human map editing is wanted.
+- Couple photos → none exist in-repo for v2 yet; MemoryCard renders a styled fallback until Michael adds processed photos. `photos/` dir deferred.
+- Plan completeness → full inline code for foundation systems and algorithms; content scenes specified by contract + acceptance criteria + Playwright-screenshot iteration, because pixel layout must be tuned against the real assets visually.
+- Repo transition safety → v1 removal happens only on branch `v2-foundation` in a worktree; master keeps v1 intact, plus tag `v1-final`. No history rewrite, nothing destructive.
+- Working title → "Mahalo" (chosen during brainstorm, uncontested).
+
 ## Build order (high level)
 
 1. Repo reset + skeleton (boot, BaseScene, manifest, check pipeline, debug tools)
