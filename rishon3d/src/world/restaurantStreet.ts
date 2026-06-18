@@ -114,13 +114,45 @@ function restaurantSignLit(r: typeof RESTAURANTS[number]): THREE.BufferGeometry 
   return g;
 }
 
-// The bright ground-floor storefront glass panel, one per restaurant.
+// The ground-floor storefront glass panel, one per restaurant. Drawn slightly
+// proud of the wall; the glass material is semi-transparent so the warm interior
+// behind it reads through.
 function restaurantStorefront(r: typeof RESTAURANTS[number]): THREE.BufferGeometry {
   const hd = r.d / 2;
   const front = SHOP_Z + hd;
   const g = new THREE.BoxGeometry(r.w * 0.78, 2.4, 0.1);
   g.translate(r.x, 1.5, front + 0.06);
   return g;
+}
+
+// A warm emissive interior panel just behind the (semi-transparent) storefront
+// glass, so each shop reads as warm-lit inside rather than a flat bright panel.
+function restaurantInterior(r: typeof RESTAURANTS[number]): THREE.BufferGeometry {
+  const hd = r.d / 2;
+  const front = SHOP_Z + hd;
+  const g = new THREE.BoxGeometry(r.w * 0.74, 2.2, 0.04);
+  g.translate(r.x, 1.45, front + 0.035); // between the wall face and the glass
+  return g;
+}
+
+// A frame ring standing proud of the wall around the storefront opening, so the
+// glass reads as recessed behind it (the depth the reference storefronts show).
+function restaurantStorefrontFrame(r: typeof RESTAURANTS[number]): THREE.BufferGeometry[] {
+  const hd = r.d / 2;
+  const front = SHOP_Z + hd;
+  const z = front + 0.13;
+  const gw = r.w * 0.82, gh = 2.6, t = 0.16;
+  const out: THREE.BufferGeometry[] = [];
+  const mk = (w: number, h: number, x: number, y: number) => {
+    const g = new THREE.BoxGeometry(w, h, 0.12);
+    g.translate(x, y, z);
+    out.push(g);
+  };
+  mk(t, gh, r.x - gw / 2, 1.5);       // left jamb
+  mk(t, gh, r.x + gw / 2, 1.5);       // right jamb
+  mk(gw + t, t, r.x, 1.5 + gh / 2);   // head
+  mk(gw + t, t, r.x, 1.5 - gh / 2);   // sill
+  return out;
 }
 
 // The dark entrance door, one per restaurant (offset to one side of the glass).
@@ -271,6 +303,8 @@ export function makeRestaurantStreet(): THREE.Object3D {
   const doors: THREE.BufferGeometry[] = [];
   const signLits: THREE.BufferGeometry[] = [];
   const awnings: THREE.BufferGeometry[] = [];
+  const interiors: THREE.BufferGeometry[] = [];
+  const frames: THREE.BufferGeometry[] = [];
   for (const r of RESTAURANTS) {
     const box = new THREE.Mesh(
       mergeGeometries(restaurantSolids(r)),
@@ -284,12 +318,33 @@ export function makeRestaurantStreet(): THREE.Object3D {
     storefronts.push(restaurantStorefront(r));
     doors.push(restaurantDoor(r));
     signLits.push(restaurantSignLit(r));
+    interiors.push(restaurantInterior(r));
+    frames.push(...restaurantStorefrontFrame(r));
     awnings.push(...awningStripes(r.x, r.h - 2.0, SHOP_Z + r.d / 2 + 0.7, r.w * 0.92, r.awning));
   }
 
+  // warm-lit interior behind the glass + a proud frame ring around the opening.
+  const interior = new THREE.Mesh(
+    mergeGeometries(interiors),
+    new THREE.MeshStandardMaterial({ color: 0xf3c97a, emissive: 0xf0b85a, emissiveIntensity: 0.6 }),
+  );
+  interior.name = "interior";
+  group.add(interior);
+
+  const frame = new THREE.Mesh(
+    mergeGeometries(frames),
+    new THREE.MeshStandardMaterial({ color: PALETTE.frame }),
+  );
+  frame.castShadow = true;
+  frame.name = "storefrontFrame";
+  group.add(frame);
+
   const glass = new THREE.Mesh(
     mergeGeometries(storefronts),
-    new THREE.MeshStandardMaterial({ color: PALETTE.storefront, emissive: PALETTE.signLit, emissiveIntensity: 0.25 }),
+    new THREE.MeshStandardMaterial({
+      color: PALETTE.storefront, emissive: PALETTE.signLit, emissiveIntensity: 0.15,
+      transparent: true, opacity: 0.62, // semi-transparent so the warm interior reads through
+    }),
   );
   glass.name = "storefrontGlass";
   group.add(glass);
