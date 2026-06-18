@@ -8,6 +8,7 @@ import { RISHON_MAP } from "./world/worldData";
 import { Game } from "./game/Game";
 import { Menu } from "./ui/Menu";
 import { Hud } from "./ui/Hud";
+import { Minimap } from "./ui/Minimap";
 
 async function boot() {
   const container = document.getElementById("app")!;
@@ -21,14 +22,15 @@ async function boot() {
   const follow = new FollowCamera(engine.camera);
   const input = new Input();
   const hud = new Hud(container);
-  const game = new Game(engine.scene, physics, input, world, follow, engine.camera, hud);
+  const minimap = new Minimap(container, RISHON_MAP);
+  const game = new Game(engine.scene, physics, input, world, follow, engine.camera, hud, minimap);
 
   // step physics before game logic each frame
   engine.add({ update: (dt) => physics.step(dt) });
   engine.add(game);
   engine.add(follow);
 
-  hud.setHint("WASD / Arrows move - Mouse look - Scroll zoom - Space brake - E enter/exit - Esc pause");
+  hud.setHint("WASD / Arrows move - Mouse look - Scroll zoom - Space brake - E enter/exit - M map - Esc pause");
 
   // GTA-style camera: capture the pointer so mouse movement orbits the camera.
   const canvas = engine.renderer.domElement;
@@ -54,6 +56,7 @@ async function boot() {
     if (e.code === "Escape" && started) {
       if (engine["running"] ?? true) { input.clear(); engine.stop(); menu.showPause(); }
     }
+    if (e.code === "KeyM" && started) minimap.toggle();
   });
   window.addEventListener("blur", () => input.clear());
 }

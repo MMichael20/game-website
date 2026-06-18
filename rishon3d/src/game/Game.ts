@@ -10,10 +10,13 @@ import { Animal } from "../entities/Animal";
 import { NpcCar } from "../entities/NpcCar";
 import type { World } from "../world/World";
 import { nextMode, canEnter, type Mode } from "./InteractionSystem";
-import { buildingRects } from "./wander";
+import { buildingRects, type Rect } from "./wander";
 import { EntityManager } from "./EntityManager";
 import { planPopulations } from "./populate";
 import type { Hud } from "../ui/Hud";
+import type { Minimap } from "../ui/Minimap";
+import { safeExitPosition } from "./exit";
+import { formatSpeed } from "../ui/format";
 
 const ENTER_RADIUS = 3.5;
 
@@ -22,6 +25,8 @@ export class Game implements Tickable {
   private car: Car;
   private mode: Mode = "onFoot";
   private entities: EntityManager;
+  private rects: Rect[];
+  private bounds: number;
 
   constructor(
     scene: THREE.Scene,
@@ -31,11 +36,14 @@ export class Game implements Tickable {
     private follow: FollowCamera,
     camera: THREE.Camera,
     private hud: Hud,
+    private minimap: Minimap,
   ) {
     this.character = new Character(scene, physics, input, world.playerSpawn, camera);
     this.car = new Car(scene, physics, input, world.carSpawn);
     const rects = buildingRects(world.map.buildings, 1.5);
     const bounds = world.map.ground.size / 2 - 2;
+    this.rects = rects;
+    this.bounds = bounds;
     const palettes = [
       { skin: 0xe8b98a, shirt: 0x9b59b6, pants: 0x40313f },
       { skin: 0xf0c9a0, shirt: 0x27ae60, pants: 0x1e5c3a },
@@ -83,7 +91,8 @@ export class Game implements Tickable {
         this.follow.setTarget(this.car.object, 11, 1.4);
       } else {
         this.car.enabled = false;
-        this.character.setPosition(this.car.position.x + 2.5, this.car.position.z);
+        const exit = safeExitPosition(cPos, this.rects, this.bounds);
+        this.character.setPosition(exit.x, exit.z);
         this.character.object.visible = true;
         this.character.enabled = true;
         this.follow.setTarget(this.character.object, 10, 1.6);
@@ -98,6 +107,9 @@ export class Game implements Tickable {
     } else {
       this.hud.setPrompt(null);
     }
+
+    this.minimap.update(pPos, cPos, this.mode);
+    this.hud.setSpeed(this.mode === "driving" ? formatSpeed(this.car.speed) : null);
 
     this.character.update(dt);
     this.car.update(dt);
