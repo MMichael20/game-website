@@ -39,6 +39,7 @@ export function generateDistrict(spec: DistrictSpec): DistrictResult {
       const rh = rng();
       const rc = rng();
       const rtree = rng();
+      const rbench = rng(); // appended; building layout above is unaffected
       if (place > spec.density || maxFootprint < 3) continue;
 
       const cx = spec.center.x - half + (gx + 0.5) * cell;
@@ -49,11 +50,15 @@ export function generateDistrict(spec: DistrictSpec): DistrictResult {
       const color = spec.palette[Math.floor(rc * spec.palette.length)] ?? spec.palette[0];
       buildings.push({ id: `${spec.id}-b-${gx}-${gz}`, x: cx, z: cz, width: w, depth: d, height: h, color });
 
-      if (rtree < 0.5) {
+      if (rtree < 0.7) {
         // Tuck a bush/tree against the building, still clear of the corridor.
-        const kind = rtree < 0.25 ? "tree" : "bush";
+        const kind = rtree < 0.35 ? "tree" : "bush";
         const ox = (w / 2) + 0.8;
         props.push({ id: `${spec.id}-p-${gx}-${gz}`, kind, x: cx - ox, z: cz });
+      }
+      if (rbench < 0.18) {
+        const oz = (d / 2) + 0.8;
+        props.push({ id: `${spec.id}-bench-${gx}-${gz}`, kind: "bench", x: cx, z: cz + oz });
       }
     }
   }

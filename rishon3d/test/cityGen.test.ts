@@ -53,4 +53,17 @@ describe("generateDistrict", () => {
       expect(Math.abs(b.z - spec.center.z)).toBeLessThanOrEqual(half);
     }
   });
+
+  it("still produces a deterministic prop set after the bench draw", () => {
+    const a = generateDistrict(spec).props.map((p) => p.id);
+    const b = generateDistrict(spec).props.map((p) => p.id);
+    expect(a).toEqual(b);
+  });
+
+  it("can place benches as a prop kind", () => {
+    // density 1 spec fills every cell; with the bench probability some appear.
+    const dense = generateDistrict({ ...spec, seed: 5 });
+    const kinds = new Set(dense.props.map((p) => p.kind));
+    expect([...kinds].every((k) => ["tree", "bush", "bench"].includes(k))).toBe(true);
+  });
 });

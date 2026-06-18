@@ -1,4 +1,4 @@
-import { CORE_MAP, type RishonMap, type RoadDef } from "./rishonMap";
+import { CORE_MAP, type RishonMap, type RoadDef, type PropDef } from "./rishonMap";
 import type { DistrictSpec } from "./districts";
 import { generateDistrict } from "./cityGen";
 
@@ -27,10 +27,32 @@ function arterials(): RoadDef[] {
   ];
 }
 
+// Tree-line the arterials so the drives between districts feel alive.
+function roadsideTrees(): PropDef[] {
+  const out: PropDef[] = [];
+  const spacing = 8;
+  const flank = 5;
+  for (const a of arterials()) {
+    const n = Math.floor(a.length / spacing);
+    for (let i = 0; i <= n; i++) {
+      const t = -a.length / 2 + i * spacing;
+      if (a.horizontal) {
+        out.push({ id: `rt-${a.id}-${i}-a`, kind: "tree", x: a.x + t, z: a.z - flank });
+        out.push({ id: `rt-${a.id}-${i}-b`, kind: "tree", x: a.x + t, z: a.z + flank });
+      } else {
+        out.push({ id: `rt-${a.id}-${i}-a`, kind: "tree", x: a.x - flank, z: a.z + t });
+        out.push({ id: `rt-${a.id}-${i}-b`, kind: "tree", x: a.x + flank, z: a.z + t });
+      }
+    }
+  }
+  return out;
+}
+
 export function assembleMap(): RishonMap {
   const buildings = [...CORE_MAP.buildings];
   const roads = [...CORE_MAP.roads, ...arterials()];
   const props = [...CORE_MAP.props];
+  props.push(...roadsideTrees());
 
   for (const spec of DISTRICTS) {
     const r = generateDistrict(spec);

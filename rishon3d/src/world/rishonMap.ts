@@ -53,6 +53,10 @@ export const CORE_MAP: RishonMap = {
     { id: "l1", kind: "streetlight", x: 4, z: -8 }, { id: "l2", kind: "streetlight", x: -4, z: 8 },
     { id: "l3", kind: "streetlight", x: 4, z: 20 }, { id: "l4", kind: "streetlight", x: -4, z: -20 },
     { id: "l5", kind: "streetlight", x: 20, z: -4 }, { id: "l6", kind: "streetlight", x: -20, z: 4 },
+    { id: "bench-c1", kind: "bench", x: 6, z: -6 }, { id: "bench-c2", kind: "bench", x: -6, z: 6 },
+    { id: "bench-c3", kind: "bench", x: 16, z: 2 },
+    { id: "t9", kind: "tree", x: -16, z: 6 }, { id: "t10", kind: "tree", x: 16, z: -6 },
+    { id: "t11", kind: "tree", x: 0, z: 30 }, { id: "t12", kind: "tree", x: 0, z: -30 },
   ],
 };
 
