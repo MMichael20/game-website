@@ -40,6 +40,8 @@ export function generateDistrict(spec: DistrictSpec): DistrictResult {
       const rc = rng();
       const rtree = rng();
       const rbench = rng(); // appended; building layout above is unaffected
+      const rflower = rng(); // appended after rbench; earlier draws unaffected
+      const rtrash = rng();  // appended after rflower; earlier draws unaffected
       if (place > spec.density || maxFootprint < 3) continue;
 
       const cx = spec.center.x - half + (gx + 0.5) * cell;
@@ -59,6 +61,16 @@ export function generateDistrict(spec: DistrictSpec): DistrictResult {
       if (rbench < 0.18) {
         const oz = (d / 2) + 0.8;
         props.push({ id: `${spec.id}-bench-${gx}-${gz}`, kind: "bench", x: cx, z: cz + oz });
+      }
+      // A pop of color: a flower bed tucked beside the building, opposite the tree.
+      if (rflower < 0.3) {
+        const ox = (w / 2) + 0.8;
+        props.push({ id: `${spec.id}-flower-${gx}-${gz}`, kind: "flowerbed", x: cx + ox, z: cz });
+      }
+      // A trash can near the building corner for street realism.
+      if (rtrash < 0.16) {
+        const oz = (d / 2) + 0.8;
+        props.push({ id: `${spec.id}-trash-${gx}-${gz}`, kind: "trashcan", x: cx, z: cz - oz });
       }
     }
   }

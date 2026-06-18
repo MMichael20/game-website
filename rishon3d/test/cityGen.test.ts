@@ -64,7 +64,8 @@ describe("generateDistrict", () => {
     // density 1 spec fills every cell; with the bench probability some appear.
     const dense = generateDistrict({ ...spec, seed: 5 });
     const kinds = new Set(dense.props.map((p) => p.kind));
-    expect([...kinds].every((k) => ["tree", "bush", "bench"].includes(k))).toBe(true);
+    const allowed = ["tree", "bush", "bench", "flowerbed", "trashcan"];
+    expect([...kinds].every((k) => allowed.includes(k))).toBe(true);
     expect(kinds.has("bench")).toBe(true);
   });
 });

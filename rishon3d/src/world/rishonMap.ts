@@ -12,7 +12,9 @@ export interface RoadDef {
   id: string; x: number; z: number; length: number; horizontal: boolean;
 }
 
-export type PropKind = "tree" | "streetlight" | "bush" | "bench";
+export type PropKind =
+  | "tree" | "streetlight" | "bush" | "bench"
+  | "flowerbed" | "trashcan" | "planter";
 export interface PropDef { id: string; kind: PropKind; x: number; z: number }
 
 export interface RishonMap {
@@ -23,6 +25,43 @@ export interface RishonMap {
   carSpawn: Vec2;
   playerSpawn: Vec2;
   props: PropDef[];
+}
+
+// Seeded street furniture along the two core arterial sidewalks (main-h, cross-v).
+// Props live on the sidewalk band a hair beyond the off-road filter (5.5u from the
+// centerline > ROAD_W/2 + 1.5 = 4.5), so flowerbeds/trashcans/planters survive the
+// filterPropsOffRoads pass and line the walked street with color and greenery.
+function coreFurniture(seed = 73101): PropDef[] {
+  const out: PropDef[] = [];
+  const flank = 5.5;       // offset from the arterial centerline onto the sidewalk
+  const spacing = 9;       // stations along each arterial
+  const span = 54;         // reach along the arterial (core arterials are length 120)
+  // kind picked per station from a fixed cycle so the street reads varied but stable.
+  const cycle: PropKind[] = ["flowerbed", "trashcan", "planter", "flowerbed", "bench", "flowerbed"];
+  let n = 0;
+  for (const axis of ["h", "v"] as const) {
+    for (let t = -span; t <= span; t += spacing) {
+      for (const side of [-1, 1] as const) {
+        // jitter the station kind deterministically so both sides differ.
+        const pick = (Math.floor(seed / 7) + n * 3 + (side > 0 ? 2 : 0)) % cycle.length;
+        const kind = cycle[pick];
+        const a = flank * side + ((n % 2) - 0.5) * 0.4; // slight sidewalk-depth wobble
+        if (axis === "h") {
+          out.push({ id: `cf-h-${n}-${side}`, kind, x: t, z: a });
+        } else {
+          out.push({ id: `cf-v-${n}-${side}`, kind, x: a, z: t });
+        }
+        n++;
+      }
+    }
+  }
+  // A few extra lamps for night density, paired across the arterials.
+  const lampStations = [-36, -18, 18, 36];
+  lampStations.forEach((t, i) => {
+    out.push({ id: `cf-lh-${i}`, kind: "streetlight", x: t, z: flank });
+    out.push({ id: `cf-lv-${i}`, kind: "streetlight", x: flank, z: t });
+  });
+  return out;
 }
 
 export const CORE_MAP: RishonMap = {
@@ -59,6 +98,7 @@ export const CORE_MAP: RishonMap = {
     { id: "bench-c3", kind: "bench", x: 16, z: 2 },
     { id: "t9", kind: "tree", x: -16, z: 6 }, { id: "t10", kind: "tree", x: 16, z: -6 },
     { id: "t11", kind: "tree", x: 0, z: 30 }, { id: "t12", kind: "tree", x: 0, z: -30 },
+    ...coreFurniture(),
   ],
 };
 

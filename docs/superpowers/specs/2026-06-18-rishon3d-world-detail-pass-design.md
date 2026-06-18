@@ -160,3 +160,10 @@ voxel look). Texture is the right tool.
   4 file-disjoint subagents** (facades / sky+clouds / roads / furniture) — because palette
   is the only shared file; pre-extending it lets the rest run in parallel without edit
   conflicts in the single worktree.
+- Integrated build caught one `tsc` error → fixed `facade.ts` to allocate the pixel
+  buffer via `new Uint8Array(new ArrayBuffer(...))` typed `Uint8Array<ArrayBuffer>`
+  (matching `windows.ts`) — because `DataTexture` rejects `Uint8Array<ArrayBufferLike>`.
+- Visual pass: sky still read pale and clouds sparse vs the target → applied a bounded
+  atmosphere nudge (`turbidity 1.4→1.2`, `rayleigh 2.2→2.7`; clouds `height 34→30`,
+  `scale 0.8+1.8r → 1.4+2.0r`) and screenshot-confirmed a deeper saturated blue with
+  bolder clouds — kept exposure at 1.0 so the sky did not wash back out.

@@ -14,7 +14,7 @@ export function cloudPlacements(seed: number, count: number, spread: number, hei
     const x = (rng() * 2 - 1) * spread;
     const z = (rng() * 2 - 1) * spread;
     const y = height + (rng() * 2 - 1) * 10;
-    const scale = 0.8 + rng() * 1.8;
+    const scale = 1.4 + rng() * 2.0;
     out.push({ x, y, z, scale });
   }
   return out;
@@ -38,10 +38,13 @@ function cloudGeo(): THREE.BufferGeometry {
 }
 
 // Flat, always-bright white clouds (unlit), instanced for one draw call.
-export function makeClouds(seed = 7, count = 10): THREE.Object3D {
+// Height 34 keeps the band low above the skyline so the chunky puffs read in
+// frame from the street-level follow camera (was 75 = out of view); count 16
+// fills the saturated sky like the target art.
+export function makeClouds(seed = 7, count = 16): THREE.Object3D {
   const geo = cloudGeo();
   const mat = new THREE.MeshBasicMaterial({ color: PALETTE.cloud });
-  const placements = cloudPlacements(seed, count, 130, 75);
+  const placements = cloudPlacements(seed, count, 130, 30);
   const mesh = new THREE.InstancedMesh(geo, mat, placements.length);
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();

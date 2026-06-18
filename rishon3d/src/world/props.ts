@@ -34,13 +34,17 @@ function foliageGeo(): THREE.BufferGeometry {
 }
 
 // Deciduous: a chunky cluster of cubes. Tuples are [x, y, z, size].
+// Enlarged + raised to read as the bold, lush canopies in the target art
+// (design-example-city-walk / park-plaza): one big core cube wrapped by fat
+// lobes so the silhouette is a chunky bright-green blob, not a thin bush.
 export function deciduousCanopyBoxes(): [number, number, number, number][] {
   return [
-    [0, 2.3, 0, 2.0],
-    [1.0, 2.5, 0.3, 1.2],
-    [-0.9, 2.4, -0.4, 1.3],
-    [0.2, 3.1, -0.2, 1.4],
-    [-0.3, 2.0, 0.8, 1.1],
+    [0, 2.9, 0, 2.8],
+    [1.4, 3.0, 0.4, 1.7],
+    [-1.3, 2.9, -0.5, 1.8],
+    [0.3, 3.9, -0.3, 1.9],
+    [-0.4, 2.4, 1.1, 1.5],
+    [0.6, 2.4, -1.1, 1.5],
   ];
 }
 function deciduousGeo(): THREE.BufferGeometry {
@@ -83,6 +87,88 @@ function benchGeo(): THREE.BufferGeometry {
   });
 }
 const benchMat = () => getMaterial("benchMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }));
+
+// --- vertex-color helper: tint a box's vertices so several colors merge into
+// one geometry (one draw call) instead of one material per color. ---
+function tintedBox(w: number, h: number, d: number, x: number, y: number, z: number, hex: number): THREE.BufferGeometry {
+  const b = new THREE.BoxGeometry(w, h, d);
+  b.translate(x, y, z);
+  const c = new THREE.Color(hex);
+  const n = b.attributes.position.count;
+  const colors = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b; }
+  b.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  return b;
+}
+const vertexColorMat = (key: string) =>
+  getMaterial(key, () => new THREE.MeshStandardMaterial({ vertexColors: true }));
+
+// --- flowerbed: a low green base with a few bright dot-tops. The base is a
+// single green box (one draw call); the blossom dots merge into one vertex-
+// colored geometry (a second draw call) so the bed is 2 draw calls total. ---
+function flowerBaseGeo(): THREE.BufferGeometry {
+  return getGeometry("flowerBase", () => {
+    const g = new THREE.BoxGeometry(1.3, 0.3, 1.3);
+    g.translate(0, 0.15, 0);
+    return g;
+  });
+}
+// Blossom dot positions and their bright colors (deterministic, fixed layout).
+export function flowerDots(): { x: number; z: number; hex: number }[] {
+  return [
+    { x: -0.35, z: -0.35, hex: PALETTE.flowerYellow },
+    { x: 0.35, z: -0.3, hex: PALETTE.flowerRed },
+    { x: -0.3, z: 0.35, hex: PALETTE.flowerWhite },
+    { x: 0.35, z: 0.35, hex: PALETTE.flowerYellow },
+    { x: 0, z: 0, hex: PALETTE.flowerRed },
+  ];
+}
+function flowerDotsGeo(): THREE.BufferGeometry {
+  return getGeometry("flowerDots", () =>
+    mergeGeometries(flowerDots().map((d) => tintedBox(0.34, 0.34, 0.34, d.x, 0.45, d.z, d.hex))),
+  );
+}
+const flowerBaseMat = () => getMaterial("flowerBaseMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.flowerStem }));
+
+// --- trashcan: a small dark-green bin (single box, one draw call). ---
+function trashcanGeo(): THREE.BufferGeometry {
+  return getGeometry("trashcan", () => {
+    const body = new THREE.BoxGeometry(0.5, 0.8, 0.5); body.translate(0, 0.4, 0);
+    const lid = new THREE.BoxGeometry(0.58, 0.12, 0.58); lid.translate(0, 0.85, 0);
+    return mergeGeometries([body, lid]);
+  });
+}
+const trashcanMat = () => getMaterial("trashcanMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.trashCan }));
+
+// --- planter: a stone rim box with a clipped hedge top. Stone + hedge merge
+// into one vertex-colored geometry (one draw call). ---
+function planterGeo(): THREE.BufferGeometry {
+  return getGeometry("planter", () =>
+    mergeGeometries([
+      tintedBox(1.5, 0.5, 1.5, 0, 0.25, 0, PALETTE.planterStone), // stone rim base
+      tintedBox(1.2, 0.55, 1.2, 0, 0.72, 0, PALETTE.hedge),       // clipped hedge top
+    ]),
+  );
+}
+
+export function flowerbedInstances(props: PropDef[]): THREE.Object3D {
+  const group = new THREE.Group();
+  const pl = placementsFor(props, "flowerbed");
+  if (pl.length === 0) return group;
+  group.add(makeInstanced(flowerBaseGeo(), flowerBaseMat(), pl, 0));
+  group.add(makeInstanced(flowerDotsGeo(), vertexColorMat("flowerDotsMat"), pl, 0));
+  return group;
+}
+
+export function trashcanInstances(props: PropDef[]): THREE.Object3D {
+  const pl = placementsFor(props, "trashcan");
+  return makeInstanced(trashcanGeo(), trashcanMat(), pl, 0);
+}
+
+export function planterInstances(props: PropDef[]): THREE.Object3D {
+  const pl = placementsFor(props, "planter");
+  return makeInstanced(planterGeo(), vertexColorMat("planterMat"), pl, 0);
+}
 
 function placementsFor(props: PropDef[], kind: PropDef["kind"]): Placement[] {
   return props

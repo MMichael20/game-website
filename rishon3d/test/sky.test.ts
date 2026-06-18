@@ -42,4 +42,13 @@ describe("DAY", () => {
   it("keeps daytime window glow subtle", () => {
     expect(DAY.windowEmissiveIntensity).toBeLessThan(0.4);
   });
+  it("uses a clear, deeply-saturated blue sky (low turbidity, high rayleigh) but stays daytime", () => {
+    // Low turbidity -> little white haze at the horizon.
+    expect(DAY.turbidity).toBeLessThanOrEqual(2.5);
+    expect(DAY.turbidity).toBeGreaterThan(0);
+    // Higher rayleigh deepens/saturates the blue; bounded so it does not go
+    // navy/dusk (the Sky model goes very dark above ~4).
+    expect(DAY.rayleigh).toBeGreaterThanOrEqual(1.5);
+    expect(DAY.rayleigh).toBeLessThanOrEqual(3);
+  });
 });

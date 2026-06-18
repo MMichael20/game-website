@@ -2,11 +2,12 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { BuildingDef, RishonMap } from "./rishonMap";
 import { makeWindowTexture } from "./windows";
+import { gridFromDef, makeFacadeTexture } from "./facade";
 import { DAY } from "../core/sky";
 import { PALETTE } from "./palette";
 
-// One shared base window texture; cloned per building so each can tile its
-// windows at a believable size via texture.repeat.
+// One shared base window texture; kept for the subtle emissive "lit windows"
+// accent layered on top of the new albedo facade (a few panels glow).
 let WINDOW_TEX: THREE.DataTexture | null = null;
 function windowTexture(): THREE.DataTexture {
   if (!WINDOW_TEX) WINDOW_TEX = makeWindowTexture();
@@ -113,16 +114,34 @@ export function makeBuilding(def: BuildingDef): THREE.Object3D {
   }
 
   const geo = new THREE.BoxGeometry(def.width, def.height, def.depth);
-  const tex = windowTexture().clone();
-  tex.needsUpdate = true;
-  tex.repeat.set(Math.max(1, Math.round(def.width / 6)), Math.max(2, Math.round(def.height / 5)));
-  const mat = new THREE.MeshStandardMaterial({
-    color: def.color,
+
+  // Procedural ALBEDO facade: a readable window grid + ground-floor storefront
+  // + top cornice, mapped 1:1 across the box height so the storefront lands at
+  // the base. Cached by quantized key so the city collapses to a few textures.
+  const { cols, floors } = gridFromDef(def.width, def.height);
+  const facadeTex = makeFacadeTexture(cols, floors, { color: def.color, storefront: true });
+
+  // Side material: the facade map, lightly tinted by the body color so each
+  // building keeps its palette identity while sharing a cached texture. A subtle
+  // emissive accent (the old lit-window map, tiled) makes a few panels glow.
+  const emissiveTex = windowTexture().clone();
+  emissiveTex.needsUpdate = true;
+  emissiveTex.repeat.set(Math.max(1, cols), Math.max(2, floors - 2));
+  const facadeMat = new THREE.MeshStandardMaterial({
+    map: facadeTex,
+    color: new THREE.Color(def.color).lerp(new THREE.Color(0xffffff), 0.45), // gentle tint over the albedo grid
     emissive: DAY.windowEmissive,
-    emissiveMap: tex,
-    emissiveIntensity: DAY.windowEmissiveIntensity,
+    emissiveMap: emissiveTex,
+    emissiveIntensity: DAY.windowEmissiveIntensity * 0.6, // subtle, daytime
   });
-  const mesh = new THREE.Mesh(geo, mat);
+  const roofMat = new THREE.MeshStandardMaterial({ color: PALETTE.roofCap });
+  const bodyMat = new THREE.MeshStandardMaterial({ color: def.color });
+
+  // BoxGeometry material index order: 0=+X, 1=-X, 2=+Y(top), 3=-Y(bottom),
+  // 4=+Z, 5=-Z. Facade on the 4 sides, roof cap on top, body on bottom.
+  const mats: THREE.Material[] = [facadeMat, facadeMat, roofMat, bodyMat, facadeMat, facadeMat];
+
+  const mesh = new THREE.Mesh(geo, mats);
   mesh.position.set(def.x, def.height / 2, def.z);
   mesh.castShadow = true;
   mesh.receiveShadow = true;

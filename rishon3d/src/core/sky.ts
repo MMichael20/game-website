@@ -15,8 +15,8 @@ export function sunDirection(elevationDeg: number, azimuthDeg: number): THREE.Ve
 export const DAY = {
   sunElevationDeg: 58,     // high midday sun -> short, soft shadows
   sunAzimuthDeg: 135,      // SE, gives pleasant angled shadows
-  turbidity: 2,            // clear sky
-  rayleigh: 1.1,           // bright blue gradient, not hazy
+  turbidity: 1.2,          // very clear -> minimal white haze at the horizon
+  rayleigh: 2.7,           // deep, saturated blue gradient (still daytime, not navy)
   mieCoefficient: 0.005,
   mieDirectionalG: 0.8,
   exposure: 1.0,           // neutral; colors read at face value
