@@ -24,11 +24,11 @@ export const DUSK = {
   fogFar: 200,
   hemiSky: 0xffd9a8,
   hemiGround: 0x4a4036,
-  hemiIntensity: 0.45,
+  hemiIntensity: 0.6,
   sunColor: 0xffb060,     // warm golden key light
   sunIntensity: 2.4,
   ambientColor: 0x4a5a78, // cool sky fill
-  ambientIntensity: 0.3,
+  ambientIntensity: 0.4,
   windowEmissive: 0xffd27a,
   windowEmissiveIntensity: 0.45,
 } as const;
