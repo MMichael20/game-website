@@ -402,11 +402,55 @@ function hexToRgb(hex: number): [number, number, number] {
   return [(hex >> 16) & 0xff, (hex >> 8) & 0xff, hex & 0xff];
 }
 
-// One shared sidewalk-tile DataTexture; per-strip clones carry their own repeat
-// so each tile stays ~TILE_M regardless of strip length.
+function clampByte(v: number): number {
+  return Math.max(0, Math.min(255, Math.round(v)));
+}
+
+// Deterministic 0..1 hash for a paver cell (no RNG -> stable, node-testable).
+function cellHash(cx: number, cy: number): number {
+  return (Math.imul(cx + 1, 73856093) ^ Math.imul(cy + 1, 19349663)) >>> 0;
+}
+
+export const PAVER_CELLS = 4;      // cells per side of the repeating super-tile
+export const PAVER_SUPER_M = PAVER_CELLS * TILE_M; // world size of one super-tile
+
+// A PAVER_CELLS x PAVER_CELLS super-tile of pavers: each cell is the sidewalk
+// slab with grout along its top/left edges (so the grid stays seamless when the
+// super-tile repeats), but every cell carries a small deterministic tone jitter
+// and the occasional darker "worn" paver, so the pavement reads as laid stones
+// with wear rather than one flat slab. Pure RGBA (no canvas/DOM) -> unit-testable.
+// NOTE: left without an explicit colorSpace to match the existing sidewalk look.
+export function paverTilePattern(cells = PAVER_CELLS, cellPx = TILE_PX, grout = TILE_GROUT): Uint8Array<ArrayBuffer> {
+  const slab = hexToRgb(PALETTE.sidewalk);
+  const line = hexToRgb(PALETTE.sidewalkGrout);
+  const dim = cells * cellPx;
+  const data = new Uint8Array(new ArrayBuffer(dim * dim * 4));
+  for (let cy = 0; cy < cells; cy++) {
+    for (let cx = 0; cx < cells; cx++) {
+      const h = cellHash(cx, cy);
+      const worn = h % 7 === 0;
+      const f = worn ? 0.82 : 0.94 + ((h >> 3) % 13) / 100; // ~0.94..1.06, or 0.82 worn
+      const sr = clampByte(slab[0] * f), sg = clampByte(slab[1] * f), sb = clampByte(slab[2] * f);
+      for (let y = 0; y < cellPx; y++) {
+        for (let x = 0; x < cellPx; x++) {
+          const o = ((cy * cellPx + y) * dim + (cx * cellPx + x)) * 4;
+          const isGrout = x < grout || y < grout; // top/left edges -> seamless grid
+          data[o] = isGrout ? line[0] : sr;
+          data[o + 1] = isGrout ? line[1] : sg;
+          data[o + 2] = isGrout ? line[2] : sb;
+          data[o + 3] = 255;
+        }
+      }
+    }
+  }
+  return data;
+}
+
+// One shared paver super-tile DataTexture; per-strip clones carry their own
+// repeat so each paver stays ~TILE_M regardless of strip length.
 export function makeSidewalkTexture(): THREE.DataTexture {
-  const pixels = sidewalkTilePattern();
-  const tex = new THREE.DataTexture(pixels, TILE_PX, TILE_PX, THREE.RGBAFormat);
+  const dim = PAVER_CELLS * TILE_PX;
+  const tex = new THREE.DataTexture(paverTilePattern(), dim, dim, THREE.RGBAFormat);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.magFilter = THREE.NearestFilter;
@@ -415,27 +459,74 @@ export function makeSidewalkTexture(): THREE.DataTexture {
   return tex;
 }
 
+const GRAIN_PX = 16;   // texels per asphalt grain tile
+export const GRAIN_M = 2.5; // world size of one asphalt grain tile
+
+// Subtle asphalt grain: the road base color with a faint per-texel brightness
+// jitter plus the occasional lighter/darker fleck, so the large road surfaces
+// catch a little variation instead of reading as one dead-flat color. Pure RGBA.
+// Uses SRGB colorSpace so the base reads the same brightness as the old
+// material.color version it replaces.
+export function asphaltNoisePattern(px = GRAIN_PX): Uint8Array<ArrayBuffer> {
+  const base = hexToRgb(PALETTE.asphalt);
+  const data = new Uint8Array(new ArrayBuffer(px * px * 4));
+  for (let y = 0; y < px; y++) {
+    for (let x = 0; x < px; x++) {
+      const o = (y * px + x) * 4;
+      const h = (Math.imul(x + 1, 374761393) ^ Math.imul(y + 1, 668265263)) >>> 0;
+      let f = 0.94 + (h % 1000) / 1000 * 0.12; // 0.94..1.06 subtle
+      if (h % 29 === 0) f = 1.22;              // rare light fleck
+      else if (h % 19 === 0) f = 0.8;          // rare dark fleck
+      data[o] = clampByte(base[0] * f);
+      data[o + 1] = clampByte(base[1] * f);
+      data[o + 2] = clampByte(base[2] * f);
+      data[o + 3] = 255;
+    }
+  }
+  return data;
+}
+
+export function makeAsphaltTexture(): THREE.DataTexture {
+  const tex = new THREE.DataTexture(asphaltNoisePattern(), GRAIN_PX, GRAIN_PX, THREE.RGBAFormat);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  tex.colorSpace = THREE.SRGBColorSpace; // match the old material.color brightness
+  tex.needsUpdate = true;
+  return tex;
+}
+
 export function makeRoadNetwork(roads: RoadDef[]): THREE.Group {
   const group = new THREE.Group();
-  const asphalt = getMaterial("asphalt", () => new THREE.MeshStandardMaterial({ color: PALETTE.asphalt }));
+  // One base asphalt grain texture; each road clones it with a world-scaled
+  // repeat so the grain stays a consistent size on every road (one mesh per road
+  // either way, so this adds no draw calls).
+  const asphaltTex = makeAsphaltTexture();
 
   const tileTex = makeSidewalkTexture();
 
   for (const r of roads) {
     const w = r.horizontal ? r.length : ROAD_W;
     const d = r.horizontal ? ROAD_W : r.length;
-    const surf = new THREE.Mesh(getGeometry(`road-${w}x${d}`, () => new THREE.PlaneGeometry(w, d)), asphalt);
+    const atex = asphaltTex.clone();
+    atex.needsUpdate = true;
+    atex.repeat.set(Math.max(1, Math.round(w / GRAIN_M)), Math.max(1, Math.round(d / GRAIN_M)));
+    const surf = new THREE.Mesh(
+      getGeometry(`road-${w}x${d}`, () => new THREE.PlaneGeometry(w, d)),
+      new THREE.MeshStandardMaterial({ map: atex }),
+    );
     surf.rotation.x = -Math.PI / 2;
     surf.position.set(r.x, 0.02, r.z);
     surf.receiveShadow = true;
     group.add(surf);
 
     for (const s of sidewalkRects(r)) {
-      // Tile the sidewalk: clone the shared texture and set repeat per strip so
-      // each cell is ~TILE_M on a side along both axes.
+      // Tile the sidewalk: clone the shared paver super-tile and set repeat per
+      // strip so each super-tile (PAVER_CELLS pavers) stays ~PAVER_SUPER_M wide.
       const tex = tileTex.clone();
       tex.needsUpdate = true;
-      tex.repeat.set(Math.max(1, Math.round(s.w / TILE_M)), Math.max(1, Math.round(s.d / TILE_M)));
+      tex.repeat.set(Math.max(1, Math.round(s.w / PAVER_SUPER_M)), Math.max(1, Math.round(s.d / PAVER_SUPER_M)));
       const mat = new THREE.MeshStandardMaterial({ map: tex });
       const sw = new THREE.Mesh(getGeometry(`sidewalk-${s.w}x${s.d}`, () => new THREE.PlaneGeometry(s.w, s.d)), mat);
       sw.rotation.x = -Math.PI / 2;

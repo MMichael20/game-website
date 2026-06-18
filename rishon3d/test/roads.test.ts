@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   laneDashes, sidewalkRects, ROAD_W, curbRects, CURB_W,
   isCoreArterial, doubleYellowRects, crosswalkRects,
-  sidewalkTilePattern, YELLOW_LINE_W,
+  sidewalkTilePattern, paverTilePattern, asphaltNoisePattern, PAVER_CELLS, YELLOW_LINE_W,
   hashId, roadIntersections, stopLineRects, STOP_LINE_CLEAR, STOP_LINE_W,
   arrowKindFor, arrowPattern, laneArrows, ARROW_PX,
   hasParkingBays, parkingBayRects,
@@ -202,6 +202,51 @@ describe("sidewalkTilePattern", () => {
   it("is deterministic (same args → identical bytes)", () => {
     expect(Array.from(sidewalkTilePattern(16, 2)))
       .toEqual(Array.from(sidewalkTilePattern(16, 2)));
+  });
+});
+
+describe("paverTilePattern", () => {
+  const dim = PAVER_CELLS * 16;
+  it("produces an opaque RGBA super-tile of cells*cellPx per side", () => {
+    const data = paverTilePattern(PAVER_CELLS, 16);
+    expect(data.length).toBe(dim * dim * 4);
+    for (let i = 3; i < data.length; i += 4) expect(data[i]).toBe(255);
+  });
+  it("keeps the top-left grout grid (corner texel is grout)", () => {
+    const data = paverTilePattern(PAVER_CELLS, 16, 2);
+    const groutR = (PALETTE.sidewalkGrout >> 16) & 0xff;
+    expect(data[0]).toBe(groutR);
+  });
+  it("varies paver tone across cells (not one flat slab)", () => {
+    const data = paverTilePattern(PAVER_CELLS, 16, 2);
+    // sample the center texel of each cell; collect distinct red values.
+    const reds = new Set<number>();
+    for (let cy = 0; cy < PAVER_CELLS; cy++) {
+      for (let cx = 0; cx < PAVER_CELLS; cx++) {
+        const x = cx * 16 + 8, y = cy * 16 + 8;
+        reds.add(data[(y * dim + x) * 4]);
+      }
+    }
+    expect(reds.size).toBeGreaterThan(1); // tone jitter present
+  });
+  it("is deterministic", () => {
+    expect(Array.from(paverTilePattern(PAVER_CELLS, 16)))
+      .toEqual(Array.from(paverTilePattern(PAVER_CELLS, 16)));
+  });
+});
+
+describe("asphaltNoisePattern", () => {
+  it("produces an opaque RGBA tile and is deterministic", () => {
+    const a = asphaltNoisePattern(16);
+    expect(a.length).toBe(16 * 16 * 4);
+    for (let i = 3; i < a.length; i += 4) expect(a[i]).toBe(255);
+    expect(Array.from(asphaltNoisePattern(16))).toEqual(Array.from(a));
+  });
+  it("carries brightness variation across texels (not one flat color)", () => {
+    const a = asphaltNoisePattern(16);
+    const reds = new Set<number>();
+    for (let i = 0; i < a.length; i += 4) reds.add(a[i]);
+    expect(reds.size).toBeGreaterThan(1);
   });
 });
 
