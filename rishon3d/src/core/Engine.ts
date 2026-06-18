@@ -50,6 +50,11 @@ export class Engine {
     sun.position.copy(sunPosition(120));
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
+    // Bias tuned for the lowered (grazing) afternoon sun to avoid shadow acne and
+    // peter-panning without detaching contact shadows from their casters.
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.02;
+    sun.shadow.camera.near = 1;
     const s = 100;
     sun.shadow.camera.left = -s; sun.shadow.camera.right = s;
     sun.shadow.camera.top = s; sun.shadow.camera.bottom = -s;

@@ -32,9 +32,11 @@ describe("sunPosition", () => {
 });
 
 describe("DAY", () => {
-  it("puts the sun high for midday", () => {
-    expect(DAY.sunElevationDeg).toBeGreaterThan(40);
-    expect(DAY.sunElevationDeg).toBeLessThanOrEqual(90);
+  it("lowers the sun into the afternoon for readable form (not flat midday)", () => {
+    // A grazing-ish afternoon key gives longer soft shadows and directional
+    // contrast so voxel forms read, while staying bright and sunny (not dusk).
+    expect(DAY.sunElevationDeg).toBeGreaterThanOrEqual(30);
+    expect(DAY.sunElevationDeg).toBeLessThanOrEqual(50);
   });
   it("uses ~1.0 exposure (bright, not the dark dusk look)", () => {
     expect(DAY.exposure).toBeGreaterThanOrEqual(0.9);
