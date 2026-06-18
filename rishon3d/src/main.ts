@@ -9,6 +9,7 @@ import { Game } from "./game/Game";
 import { Menu } from "./ui/Menu";
 import { Hud } from "./ui/Hud";
 import { Minimap } from "./ui/Minimap";
+import { makeHumanoid } from "./entities/Humanoid";
 
 async function boot() {
   const container = document.getElementById("app")!;
@@ -39,6 +40,27 @@ async function boot() {
     const tz = parseFloat(viewMatch[2]);
     engine.camera.position.set(tx, 40, tz + 50);
     engine.camera.lookAt(tx, 6, tz);
+    engine.start();
+    return;
+  }
+
+  // DEV-only character preview: #char shows humanoids (front / side / back) for
+  // inspecting the model (face, hair, backpack) without driving the camera.
+  if (import.meta.env.DEV && location.hash.startsWith("#char")) {
+    const palettes = [
+      { skin: 0xf0c9a0, shirt: 0x2e6fb0, pants: 0x274060 }, // player
+      { skin: 0xe0b48a, shirt: 0x7a4a9a, pants: 0x303848 },
+      { skin: 0xc98a5a, shirt: 0xc0392b, pants: 0x2a2a30 },
+    ];
+    const yaws = [0, Math.PI / 2, Math.PI]; // front, side, back
+    palettes.forEach((p, i) => {
+      const h = makeHumanoid(p);
+      h.group.position.set((i - 1) * 1.7, 0, 0);
+      h.group.rotation.y = yaws[i];
+      engine.scene.add(h.group);
+    });
+    engine.camera.position.set(0, 1.4, 4.2);
+    engine.camera.lookAt(0, 1.15, 0);
     engine.start();
     return;
   }

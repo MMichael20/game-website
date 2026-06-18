@@ -1,9 +1,15 @@
 // rishon3d/test/humanoid.test.ts
 import { describe, it, expect } from "vitest";
 import * as THREE from "three";
-import { makeHumanoid, animateWalk } from "../src/entities/Humanoid";
+import { makeHumanoid, animateWalk, hairColorFor, HAIR_COLORS } from "../src/entities/Humanoid";
 
 const palette = { skin: 0xf0c9a0, shirt: 0x2e6fb0, pants: 0x274060 };
+
+function meshCount(o: THREE.Object3D): number {
+  let n = 0;
+  o.traverse((c) => { if ((c as THREE.Mesh).isMesh) n++; });
+  return n;
+}
 
 describe("makeHumanoid", () => {
   it("builds a blocky head (box geometry), not a sphere", () => {
@@ -15,6 +21,22 @@ describe("makeHumanoid", () => {
   it("includes a backpack on the character", () => {
     const { group } = makeHumanoid(palette);
     expect(group.getObjectByName("backpack")).toBeTruthy();
+  });
+  it("gives the head a face (eyes + mouth) and hair as children", () => {
+    const { group } = makeHumanoid(palette);
+    const head = group.getObjectByName("head") as THREE.Mesh;
+    // base head + 2 eyes + mouth + hair (crown + fringe + tufts) = several children
+    expect(meshCount(head)).toBeGreaterThanOrEqual(8);
+  });
+  it("structures the backpack with a body, pocket and two straps", () => {
+    const { group } = makeHumanoid(palette);
+    const pack = group.getObjectByName("backpack") as THREE.Object3D;
+    expect(meshCount(pack)).toBeGreaterThanOrEqual(4);
+  });
+  it("derives a deterministic hair color when none is supplied, but honors an explicit one", () => {
+    expect(HAIR_COLORS).toContain(hairColorFor(palette));
+    expect(hairColorFor(palette)).toBe(hairColorFor(palette));
+    expect(hairColorFor({ ...palette, hair: 0x123456 })).toBe(0x123456);
   });
   it("exposes swinging limbs via animateWalk", () => {
     const { limbs } = makeHumanoid(palette);
