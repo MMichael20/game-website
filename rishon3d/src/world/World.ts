@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Physics, RAPIER } from "../core/Physics";
 import { makeBuilding, makeGround, makeRoad } from "./builders";
+import { makeTree, makeStreetLight } from "./props";
 import type { RishonMap } from "./rishonMap";
 
 export class World {
@@ -25,6 +26,20 @@ export class World {
         RAPIER.ColliderDesc.cuboid(b.width / 2, b.height / 2, b.depth / 2),
         body,
       );
+    }
+
+    let lightBudget = 6;
+    for (const p of map.props) {
+      if (p.kind === "tree") scene.add(makeTree(p));
+      else {
+        const sl = makeStreetLight(p);
+        scene.add(sl);
+        if (lightBudget-- > 0) {
+          const glow = new THREE.PointLight(0xffb24d, 8, 16, 2);
+          glow.position.set(p.x, 3.4, p.z);
+          scene.add(glow);
+        }
+      }
     }
   }
 

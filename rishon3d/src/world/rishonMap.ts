@@ -10,6 +10,9 @@ export interface RoadDef {
   id: string; x: number; z: number; length: number; horizontal: boolean;
 }
 
+export type PropKind = "tree" | "streetlight";
+export interface PropDef { id: string; kind: PropKind; x: number; z: number }
+
 export interface RishonMap {
   ground: { size: number };
   buildings: BuildingDef[];
@@ -17,6 +20,7 @@ export interface RishonMap {
   npcSpawns: Vec2[];
   carSpawn: Vec2;
   playerSpawn: Vec2;
+  props: PropDef[];
 }
 
 export const RISHON_MAP: RishonMap = {
@@ -36,12 +40,20 @@ export const RISHON_MAP: RishonMap = {
     { id: "b7", x: -8, z: -36, width: 11, depth: 11, height: 10, color: 0x90a0b5 },
   ],
   npcSpawns: [
-    { x: 8, z: 6 },
-    { x: -6, z: 4 },
-    { x: 4, z: -10 },
+    { x: 8, z: 6 }, { x: -6, z: 4 }, { x: 4, z: -10 },
+    { x: -12, z: -4 }, { x: 12, z: 10 }, { x: -2, z: 16 },
   ],
   carSpawn: { x: 6, z: 14 },
   playerSpawn: { x: 0, z: 4 },
+  props: [
+    { id: "t1", kind: "tree", x: 10, z: -4 }, { id: "t2", kind: "tree", x: -10, z: 2 },
+    { id: "t3", kind: "tree", x: 24, z: -2 }, { id: "t4", kind: "tree", x: -26, z: 10 },
+    { id: "t5", kind: "tree", x: 2, z: 22 }, { id: "t6", kind: "tree", x: -2, z: -22 },
+    { id: "t7", kind: "tree", x: 22, z: 20 }, { id: "t8", kind: "tree", x: -22, z: -22 },
+    { id: "l1", kind: "streetlight", x: 4, z: -8 }, { id: "l2", kind: "streetlight", x: -4, z: 8 },
+    { id: "l3", kind: "streetlight", x: 4, z: 20 }, { id: "l4", kind: "streetlight", x: -4, z: -20 },
+    { id: "l5", kind: "streetlight", x: 20, z: -4 }, { id: "l6", kind: "streetlight", x: -20, z: 4 },
+  ],
 };
 
 export function validateMap(map: RishonMap): string[] {
@@ -54,5 +66,6 @@ export function validateMap(map: RishonMap): string[] {
   if (!inBounds(map.carSpawn)) errors.push("carSpawn out of bounds");
   if (!inBounds(map.playerSpawn)) errors.push("playerSpawn out of bounds");
   map.npcSpawns.forEach((s, i) => { if (!inBounds(s)) errors.push(`npcSpawn ${i} out of bounds`); });
+  map.props.forEach((p) => { if (!inBounds(p)) errors.push(`prop ${p.id} out of bounds`); });
   return errors;
 }
