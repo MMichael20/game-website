@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { Sky } from "three/examples/jsm/objects/Sky.js";
+import { DUSK, sunPosition } from "./sky";
 
 export interface Tickable { update(dt: number): void }
 
@@ -12,9 +14,22 @@ export class Engine {
   private readonly onResize = () => this.resize();
 
   constructor(private container: HTMLElement) {
-    const haze = new THREE.Color(0xe7c9a0);
-    this.scene.background = haze;
-    this.scene.fog = new THREE.Fog(haze, 55, 190);
+    const sunDir = sunPosition(1);
+
+    // Sky dome: physically-based Rayleigh/Mie sunset glow, replaces the flat
+    // background color. Driven entirely by DUSK so sky + lights stay in sync.
+    const sky = new Sky();
+    sky.scale.setScalar(10000);
+    const u = sky.material.uniforms;
+    u.turbidity.value = DUSK.turbidity;
+    u.rayleigh.value = DUSK.rayleigh;
+    u.mieCoefficient.value = DUSK.mieCoefficient;
+    u.mieDirectionalG.value = DUSK.mieDirectionalG;
+    u.sunPosition.value.copy(sunDir);
+    this.scene.add(sky);
+
+    // Warm haze so distant districts melt into the horizon glow.
+    this.scene.fog = new THREE.Fog(DUSK.fogColor, DUSK.fogNear, DUSK.fogFar);
 
     this.camera = new THREE.PerspectiveCamera(60, this.aspect(), 0.1, 1000);
     this.camera.position.set(0, 8, 14);
@@ -24,20 +39,22 @@ export class Engine {
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = DUSK.exposure;
     container.appendChild(this.renderer.domElement);
 
-    const hemi = new THREE.HemisphereLight(0xffe6c2, 0x4a4036, 0.7);
+    const hemi = new THREE.HemisphereLight(DUSK.hemiSky, DUSK.hemiGround, DUSK.hemiIntensity);
     this.scene.add(hemi);
-    const sun = new THREE.DirectionalLight(0xffd2a1, 2.2);
-    sun.position.set(38, 26, 16);
+    const sun = new THREE.DirectionalLight(DUSK.sunColor, DUSK.sunIntensity);
+    sun.position.copy(sunPosition(120)); // far, along the sun direction -> long shadows
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    const s = 80;
+    const s = 100; // widened for the long dusk shadows
     sun.shadow.camera.left = -s; sun.shadow.camera.right = s;
     sun.shadow.camera.top = s; sun.shadow.camera.bottom = -s;
-    sun.shadow.camera.far = 200;
+    sun.shadow.camera.far = 400;
     this.scene.add(sun);
-    this.scene.add(new THREE.AmbientLight(0x335066, 0.25));
+    this.scene.add(new THREE.AmbientLight(DUSK.ambientColor, DUSK.ambientIntensity));
 
     window.addEventListener("resize", this.onResize);
   }
