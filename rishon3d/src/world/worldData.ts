@@ -1,7 +1,7 @@
 import { CORE_MAP, type RishonMap, type RoadDef, type PropDef } from "./rishonMap";
 import type { DistrictSpec } from "./districts";
 import { generateDistrict } from "./cityGen";
-import { filterPropsOffRoads } from "./roadClear";
+import { filterPropsOffRoads, filterBuildingsOffRoads } from "./roadClear";
 import { parkProps } from "./park";
 
 // Four satellite districts arranged around the hand-authored downtown core.
@@ -66,7 +66,7 @@ export function assembleMap(): RishonMap {
 
   return {
     ground: CORE_MAP.ground,
-    buildings,
+    buildings: filterBuildingsOffRoads(buildings, roads, 0.5, 0),
     roads,
     props: filterPropsOffRoads(props, roads, 1.5),
     npcSpawns: CORE_MAP.npcSpawns,

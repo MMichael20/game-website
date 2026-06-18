@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { assembleMap, DISTRICTS } from "../src/world/worldData";
 import { validateMap } from "../src/world/rishonMap";
-import { roadRects } from "../src/world/roadClear";
+import { roadRects, rectsOverlap } from "../src/world/roadClear";
 import { pointInRects } from "../src/game/wander";
 
 describe("assembleMap", () => {
@@ -35,6 +35,18 @@ describe("assembleMap", () => {
 
   it("declares at least three districts", () => {
     expect(DISTRICTS.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps every building off every road", () => {
+    const corridors = roadRects(map.roads, 0); // the actual road surfaces
+    const onRoad = map.buildings.filter((b) => {
+      const br = {
+        minX: b.x - b.width / 2, maxX: b.x + b.width / 2,
+        minZ: b.z - b.depth / 2, maxZ: b.z + b.depth / 2,
+      };
+      return corridors.some((r) => rectsOverlap(br, r));
+    });
+    expect(onRoad).toEqual([]);
   });
 
   it("keeps trees/bushes/benches out of road corridors", () => {

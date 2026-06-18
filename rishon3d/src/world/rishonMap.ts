@@ -35,9 +35,9 @@ export const CORE_MAP: RishonMap = {
     { id: "b2", x: -16, z: -16, width: 12, depth: 8, height: 16, color: 0x6d7a91 },
     { id: "b3", x: 18, z: -14, width: 9, depth: 11, height: 9, color: 0xa3b0c2 },
     { id: "b4", x: 34, z: 8, width: 8, depth: 8, height: 20, color: 0x7c8aa0 },
-    { id: "b5", x: -34, z: -6, width: 14, depth: 10, height: 7, color: 0x99a6ba },
-    { id: "b6", x: 6, z: 36, width: 10, depth: 9, height: 14, color: 0x828fa6 },
-    { id: "b7", x: -8, z: -36, width: 11, depth: 11, height: 10, color: 0x90a0b5 },
+    { id: "b5", x: -38, z: -12, width: 14, depth: 10, height: 7, color: 0x99a6ba },
+    { id: "b6", x: 12, z: 36, width: 10, depth: 9, height: 14, color: 0x828fa6 },
+    { id: "b7", x: -14, z: -36, width: 11, depth: 11, height: 10, color: 0x90a0b5 },
   ],
   npcSpawns: [
     { x: 8, z: 6 }, { x: -6, z: 4 }, { x: 4, z: -10 },
