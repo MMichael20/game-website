@@ -109,6 +109,23 @@ export function facadePattern(
   // Whole facade starts as the wall field.
   fillRect(data, w, 0, 0, w, h, wall);
 
+  // Subtle stucco grain on the wall field, applied BEFORE windows/cornice/
+  // storefront are drawn over it, so the visible wall margins read as textured
+  // plaster instead of one flat slab. Deterministic per pixel via a hash of
+  // (x,y,seed) so it does NOT consume the window `rng` (keeps the window grid —
+  // and the facade tests — byte-identical to before except for wall pixels).
+  const wr = Math.round(wall.r * 255), wg = Math.round(wall.g * 255), wb = Math.round(wall.b * 255);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const hsh = (Math.imul(x + 1, 0x1f1f1f) ^ Math.imul(y + 1, 0x2d2d2d) ^ Math.imul(seed | 1, 0x9e3779b1)) >>> 0;
+      const j = 0.94 + (hsh % 13) / 100; // 0.94..1.06 brightness jitter
+      const o = (y * w + x) * 4;
+      data[o] = Math.max(0, Math.min(255, Math.round(wr * j)));
+      data[o + 1] = Math.max(0, Math.min(255, Math.round(wg * j)));
+      data[o + 2] = Math.max(0, Math.min(255, Math.round(wb * j)));
+    }
+  }
+
   // Floor 0 (bottom) is the storefront/entry when requested; floor f-1 (top) is
   // the cornice. The remaining middle floors carry the standard window grid.
   const corniceFloor = f - 1;
