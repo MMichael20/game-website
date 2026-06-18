@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { assembleMap, DISTRICTS } from "../src/world/worldData";
 import { validateMap } from "../src/world/rishonMap";
+import { roadRects } from "../src/world/roadClear";
+import { pointInRects } from "../src/game/wander";
 
 describe("assembleMap", () => {
   const map = assembleMap();
@@ -33,5 +35,13 @@ describe("assembleMap", () => {
 
   it("declares at least three districts", () => {
     expect(DISTRICTS.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps trees/bushes/benches out of road corridors", () => {
+    const corridors = roadRects(map.roads, 1.5);
+    const onRoad = map.props.filter(
+      (p) => p.kind !== "streetlight" && pointInRects({ x: p.x, z: p.z }, corridors),
+    );
+    expect(onRoad).toEqual([]);
   });
 });
