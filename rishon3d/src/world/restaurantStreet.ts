@@ -3,8 +3,9 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { makeInstanced, type Placement } from "./InstancedProps";
 import { PALETTE } from "./palette";
-import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
+import { makeSidewalkTexture, makeAsphaltTexture, PAVER_SUPER_M, GRAIN_M, ROAD_W } from "./roads";
 import { makeStreetLight, treeInstances } from "./props";
+import { makeCarBody } from "../entities/carMesh";
 import type { PropDef } from "./rishonMap";
 
 // A short, lively restaurant promenade in the open SE corner of the map. Center
@@ -275,9 +276,85 @@ const CHAIR_OFFSETS: [number, number][] = [
   [0.85, 0], [-0.85, 0], [0, 0.85], [0, -0.85],
 ];
 
+// The street that the promenade fronts onto: an E-W asphalt road just south of
+// the seating, with curbs, a double-yellow center line, a crosswalk aligned with
+// the patio, and a paver sidewalk on the far side. This is what turns the
+// isolated tile pad into an embedded city street.
+const ROAD_Z = CZ + 14;       // road centerline, south of the seating band
+const STREET_LEN = 54;        // road length along x (spans the promenade + margins)
+const FAR_WALK_D = 4;         // depth of the sidewalk across the road
+
+function makeStreetBlock(): THREE.Object3D {
+  const g = new THREE.Group();
+  g.name = "street";
+
+  // asphalt road
+  const atex = makeAsphaltTexture();
+  atex.repeat.set(Math.max(1, Math.round(STREET_LEN / GRAIN_M)), Math.max(1, Math.round(ROAD_W / GRAIN_M)));
+  const road = new THREE.Mesh(new THREE.BoxGeometry(STREET_LEN, 0.12, ROAD_W), new THREE.MeshStandardMaterial({ map: atex }));
+  road.position.set(CX, 0.06, ROAD_Z);
+  road.receiveShadow = true;
+  g.add(road);
+
+  // raised curbs on both edges
+  for (const s of [-1, 1]) {
+    const curb = new THREE.Mesh(new THREE.BoxGeometry(STREET_LEN, 0.16, 0.3), new THREE.MeshStandardMaterial({ color: PALETTE.curb }));
+    curb.position.set(CX, 0.08, ROAD_Z + s * (ROAD_W / 2 + 0.15));
+    curb.receiveShadow = true;
+    g.add(curb);
+  }
+
+  // double-yellow center line
+  const ylMat = new THREE.MeshStandardMaterial({ color: PALETTE.yellowLine });
+  for (const s of [-1, 1]) {
+    const yl = new THREE.Mesh(new THREE.BoxGeometry(STREET_LEN, 0.02, 0.16), ylMat);
+    yl.position.set(CX, 0.13, ROAD_Z + s * 0.17);
+    g.add(yl);
+  }
+
+  // crosswalk bands aligned with the patio center (the player crosses here)
+  const bandMat = new THREE.MeshStandardMaterial({ color: PALETTE.crosswalk });
+  const bands: THREE.BufferGeometry[] = [];
+  for (let i = -3; i <= 3; i++) {
+    const b = new THREE.BoxGeometry(0.45, 0.02, ROAD_W - 0.2);
+    b.translate(CX + i * 0.85, 0.13, ROAD_Z);
+    bands.push(b);
+  }
+  g.add(new THREE.Mesh(mergeGeometries(bands), bandMat));
+
+  // paver sidewalk on the far side of the road
+  const paver = makeSidewalkTexture();
+  paver.repeat.set(Math.max(1, Math.round(STREET_LEN / PAVER_SUPER_M)), Math.max(1, Math.round(FAR_WALK_D / PAVER_SUPER_M)));
+  const farWalk = new THREE.Mesh(new THREE.BoxGeometry(STREET_LEN, 0.12, FAR_WALK_D), new THREE.MeshStandardMaterial({ map: paver }));
+  farWalk.position.set(CX, 0.06, ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D / 2);
+  farWalk.receiveShadow = true;
+  g.add(farWalk);
+
+  return g;
+}
+
+// Parked cars along the near curb, length-wise to the road (a quiet, lived-in
+// street signal). Deterministic colors + positions.
+function makeParkedCars(): THREE.Object3D {
+  const g = new THREE.Group();
+  const colors = [0xd94f4f, 0x4f7fd9, 0xe0b23a, 0x4faf6a, 0xc9c9c9];
+  const carZ = ROAD_Z - ROAD_W / 2 + 1.0; // near (patio-side) lane, against the curb
+  const xs = [CX - 22, CX - 13, CX + 11, CX + 20]; // leave the crosswalk clear
+  xs.forEach((x, i) => {
+    const car = makeCarBody({ bodyColor: colors[i % colors.length], withWheels: true });
+    car.position.set(x, 0.55, carZ);
+    car.rotation.y = Math.PI / 2; // length runs along x (parallel to the curb)
+    g.add(car);
+  });
+  return g;
+}
+
 export function makeRestaurantStreet(): THREE.Object3D {
   const group = new THREE.Group();
   group.name = "restaurantStreet";
+
+  group.add(makeStreetBlock());
+  group.add(makeParkedCars());
 
   // --- promenade slab: a paved plaza textured with the shared paver super-tile
   // so it reads as laid stones (matching the sidewalks), tiled to plaza size. ---
