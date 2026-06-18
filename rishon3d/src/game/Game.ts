@@ -17,6 +17,8 @@ import type { Hud } from "../ui/Hud";
 import type { Minimap } from "../ui/Minimap";
 import { safeExitPosition } from "./exit";
 import { formatSpeed } from "../ui/format";
+import { Taxi } from "../entities/Taxi";
+import { nextTaxiPhase, type TaxiPhase } from "./taxi";
 
 const ENTER_RADIUS = 3.5;
 
@@ -27,6 +29,10 @@ export class Game implements Tickable {
   private entities: EntityManager;
   private rects: Rect[];
   private bounds: number;
+  private taxi: Taxi;
+  private taxiPhase: TaxiPhase = "idle";
+  private pickup = { x: 0, z: 0 };
+  private dropoff = { x: 0, z: 0 };
 
   constructor(
     scene: THREE.Scene,
@@ -44,6 +50,8 @@ export class Game implements Tickable {
     const bounds = world.map.ground.size / 2 - 2;
     this.rects = rects;
     this.bounds = bounds;
+    this.taxi = new Taxi(scene);
+    this.dropoff = { x: world.playerSpawn.x, z: world.playerSpawn.z };
     const palettes = [
       { skin: 0xe8b98a, shirt: 0x9b59b6, pants: 0x40313f },
       { skin: 0xf0c9a0, shirt: 0x27ae60, pants: 0x1e5c3a },
@@ -78,11 +86,46 @@ export class Game implements Tickable {
 
   update(dt: number): void {
     const ePressed = this.input.justPressed("KeyE");
+    const tPressed = this.input.justPressed("KeyT");
     const pPos = { x: this.character.position.x, z: this.character.position.z };
     const cPos = { x: this.car.position.x, z: this.car.position.z };
-    const newMode = nextMode(this.mode, ePressed, pPos, cPos, ENTER_RADIUS);
 
-    if (newMode !== this.mode) {
+    // --- Taxi phase machine ---
+    let taxiConsumedE = false;
+    if (this.taxiPhase === "idle") {
+      if (tPressed && this.mode === "onFoot") {
+        this.taxiPhase = nextTaxiPhase("idle", "call");
+        this.pickup = { x: pPos.x, z: pPos.z };
+        this.taxi.spawnAt({ x: pPos.x + 25, z: pPos.z });
+      }
+    } else if (this.taxiPhase === "toPickup") {
+      if (this.taxi.driveTo(this.pickup, dt)) this.taxiPhase = nextTaxiPhase("toPickup", "arrivedPickup");
+    } else if (this.taxiPhase === "waiting") {
+      const near = Math.hypot(pPos.x - this.taxi.position.x, pPos.z - this.taxi.position.z) <= 4.5;
+      if (ePressed && near && this.mode === "onFoot") {
+        this.taxiPhase = nextTaxiPhase("waiting", "ride");
+        taxiConsumedE = true;
+        this.character.enabled = false;
+        this.character.object.visible = false;
+        this.follow.setTarget(this.taxi.object, 12, 1.6);
+      }
+    } else if (this.taxiPhase === "toDropoff") {
+      if (this.taxi.driveTo(this.dropoff, dt)) {
+        this.taxiPhase = nextTaxiPhase("toDropoff", "arrivedDropoff");
+        const exit = safeExitPosition(this.taxi.position, this.rects, this.bounds);
+        this.character.setPosition(exit.x, exit.z);
+        this.character.object.visible = true;
+        this.character.enabled = true;
+        this.follow.setTarget(this.character.object, 10, 1.6);
+        this.taxi.setVisible(false);
+      }
+    }
+    const riding = this.taxiPhase === "toDropoff";
+
+    // --- Own car enter/exit (suppressed while riding a taxi or when E was consumed) ---
+    const eForCar = ePressed && !taxiConsumedE && !riding;
+    const newMode = nextMode(this.mode, eForCar, pPos, cPos, ENTER_RADIUS);
+    if (!riding && newMode !== this.mode) {
       this.mode = newMode;
       if (this.mode === "driving") {
         this.character.enabled = false;
@@ -99,21 +142,28 @@ export class Game implements Tickable {
       }
     }
 
-    // prompt
-    if (this.mode === "onFoot" && canEnter("onFoot", pPos, cPos, ENTER_RADIUS)) {
+    // --- HUD prompt ---
+    if (this.taxiPhase === "toPickup") {
+      this.hud.setPrompt("Taxi arriving...");
+    } else if (this.taxiPhase === "waiting") {
+      this.hud.setPrompt("Press E to ride");
+    } else if (this.taxiPhase === "toDropoff") {
+      this.hud.setPrompt("Riding...");
+    } else if (this.mode === "onFoot" && canEnter("onFoot", pPos, cPos, ENTER_RADIUS)) {
       this.hud.setPrompt("Press E to drive");
     } else if (this.mode === "driving") {
       this.hud.setPrompt("Press E to exit");
+    } else if (this.mode === "onFoot") {
+      this.hud.setPrompt("Press T for taxi");
     } else {
       this.hud.setPrompt(null);
     }
 
-    this.minimap.update(pPos, cPos, this.mode);
-    this.hud.setSpeed(this.mode === "driving" ? formatSpeed(this.car.speed) : null);
-
     this.character.update(dt);
     this.car.update(dt);
     this.entities.update(dt);
+    this.minimap.update(pPos, cPos, this.mode);
+    this.hud.setSpeed(this.mode === "driving" ? formatSpeed(this.car.speed) : null);
     this.input.endFrame();
   }
 }
