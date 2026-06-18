@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { RISHON_MAP, validateMap } from "../src/world/rishonMap";
+import { CORE_MAP as RISHON_MAP, validateMap } from "../src/world/rishonMap";
 
 describe("RISHON_MAP", () => {
   it("is valid", () => {

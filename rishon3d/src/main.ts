@@ -3,7 +3,8 @@ import { Input } from "./core/Input";
 import { Physics } from "./core/Physics";
 import { FollowCamera } from "./core/FollowCamera";
 import { World } from "./world/World";
-import { RISHON_MAP, validateMap } from "./world/rishonMap";
+import { validateMap } from "./world/rishonMap";
+import { RISHON_MAP } from "./world/worldData";
 import { Game } from "./game/Game";
 import { Menu } from "./ui/Menu";
 import { Hud } from "./ui/Hud";
@@ -27,13 +28,27 @@ async function boot() {
   engine.add(game);
   engine.add(follow);
 
-  hud.setHint("WASD / Arrows move - Space brake - E enter/exit - Esc pause");
+  hud.setHint("WASD / Arrows move - Mouse look - Scroll zoom - Space brake - E enter/exit - Esc pause");
+
+  // GTA-style camera: capture the pointer so mouse movement orbits the camera.
+  const canvas = engine.renderer.domElement;
+  const lockPointer = () => {
+    const p = canvas.requestPointerLock?.() as unknown as Promise<void> | undefined;
+    if (p && typeof p.catch === "function") p.catch(() => {}); // ignore lock rejections (e.g. headless)
+  };
 
   const menu = new Menu(container);
   let started = false;
-  const begin = () => { menu.hide(); engine.start(); started = true; };
+  const begin = () => { menu.hide(); engine.start(); started = true; lockPointer(); };
   menu.onStart(begin);
   menu.showTitle();
+
+  // Re-acquire pointer lock if the user clicks back into the canvas while playing.
+  canvas.addEventListener("click", () => { if (started) lockPointer(); });
+  window.addEventListener("mousemove", (e) => {
+    if (document.pointerLockElement === canvas) follow.addOrbit(e.movementX, e.movementY);
+  });
+  window.addEventListener("wheel", (e) => { if (started) follow.zoom(e.deltaY); }, { passive: true });
 
   window.addEventListener("keydown", (e) => {
     if (e.code === "Escape" && started) {

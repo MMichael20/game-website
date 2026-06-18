@@ -23,8 +23,8 @@ export interface RishonMap {
   props: PropDef[];
 }
 
-export const RISHON_MAP: RishonMap = {
-  ground: { size: 120 },
+export const CORE_MAP: RishonMap = {
+  ground: { size: 280 },
   roads: [
     { id: "main-h", x: 0, z: 0, length: 120, horizontal: true },
     { id: "cross-v", x: 0, z: 0, length: 120, horizontal: false },
