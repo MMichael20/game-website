@@ -12,8 +12,9 @@ export class Engine {
   private readonly onResize = () => this.resize();
 
   constructor(private container: HTMLElement) {
-    this.scene.background = new THREE.Color(0x87b8e0);
-    this.scene.fog = new THREE.Fog(0x87b8e0, 60, 180);
+    const haze = new THREE.Color(0xe7c9a0);
+    this.scene.background = haze;
+    this.scene.fog = new THREE.Fog(haze, 55, 190);
 
     this.camera = new THREE.PerspectiveCamera(60, this.aspect(), 0.1, 1000);
     this.camera.position.set(0, 8, 14);
@@ -25,10 +26,10 @@ export class Engine {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(this.renderer.domElement);
 
-    const hemi = new THREE.HemisphereLight(0xbfe3ff, 0x55503a, 0.9);
+    const hemi = new THREE.HemisphereLight(0xffe6c2, 0x4a4036, 0.7);
     this.scene.add(hemi);
-    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-    sun.position.set(30, 50, 20);
+    const sun = new THREE.DirectionalLight(0xffd2a1, 2.2);
+    sun.position.set(38, 26, 16);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     const s = 80;
@@ -36,6 +37,7 @@ export class Engine {
     sun.shadow.camera.top = s; sun.shadow.camera.bottom = -s;
     sun.shadow.camera.far = 200;
     this.scene.add(sun);
+    this.scene.add(new THREE.AmbientLight(0x335066, 0.25));
 
     window.addEventListener("resize", this.onResize);
   }
