@@ -3,19 +3,20 @@ import type { DistrictSpec } from "./districts";
 import { generateDistrict } from "./cityGen";
 import { filterPropsOffRoads, filterBuildingsOffRoads } from "./roadClear";
 import { parkProps } from "./park";
+import { DISTRICT_PALETTES } from "./palette";
 
 // Four satellite districts arranged around the hand-authored downtown core.
 // Centers/sizes chosen to sit inside the 280-unit ground with margin and not
 // overlap the core (which spans roughly +/-40 around the origin).
 export const DISTRICTS: DistrictSpec[] = [
   { id: "north", center: { x: 0, z: -95 }, size: 60, blocks: 4, seed: 101,
-    palette: [0x9aa7b8, 0x7c8aa0, 0x6d7a91], minHeight: 8, maxHeight: 22, density: 0.85 },
+    palette: DISTRICT_PALETTES.north, minHeight: 8, maxHeight: 22, density: 0.85 },
   { id: "east", center: { x: 95, z: 0 }, size: 60, blocks: 4, seed: 202,
-    palette: [0xb0a08a, 0xc2b29a, 0x99876b], minHeight: 6, maxHeight: 16, density: 0.8 },
+    palette: DISTRICT_PALETTES.east, minHeight: 6, maxHeight: 16, density: 0.8 },
   { id: "south", center: { x: 0, z: 95 }, size: 60, blocks: 5, seed: 303,
-    palette: [0x99a6ba, 0x828fa6, 0x90a0b5], minHeight: 7, maxHeight: 14, density: 0.75 },
+    palette: DISTRICT_PALETTES.south, minHeight: 7, maxHeight: 14, density: 0.75 },
   { id: "west", center: { x: -95, z: 0 }, size: 60, blocks: 4, seed: 404,
-    palette: [0xa3b0c2, 0x8d99ae, 0x7c8aa0], minHeight: 10, maxHeight: 24, density: 0.85 },
+    palette: DISTRICT_PALETTES.west, minHeight: 10, maxHeight: 24, density: 0.85 },
 ];
 
 // Wide arterial roads from the origin out to each district center so the

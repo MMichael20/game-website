@@ -1,3 +1,5 @@
+import { BUILDING_COLORS, PALETTE } from "./palette";
+
 export interface Vec2 { x: number; z: number }
 
 export interface BuildingDef {
@@ -30,14 +32,14 @@ export const CORE_MAP: RishonMap = {
     { id: "cross-v", x: 0, z: 0, length: 120, horizontal: false },
   ],
   buildings: [
-    { id: "house", x: 14, z: 14, width: 8, depth: 8, height: 5, color: 0xd98c5f, isHouse: true },
-    { id: "b1", x: -18, z: 12, width: 10, depth: 10, height: 12, color: 0x8d99ae },
-    { id: "b2", x: -16, z: -16, width: 12, depth: 8, height: 16, color: 0x6d7a91 },
-    { id: "b3", x: 18, z: -14, width: 9, depth: 11, height: 9, color: 0xa3b0c2 },
-    { id: "b4", x: 34, z: 8, width: 8, depth: 8, height: 20, color: 0x7c8aa0 },
-    { id: "b5", x: -38, z: -12, width: 14, depth: 10, height: 7, color: 0x99a6ba },
-    { id: "b6", x: 12, z: 36, width: 10, depth: 9, height: 14, color: 0x828fa6 },
-    { id: "b7", x: -14, z: -36, width: 11, depth: 11, height: 10, color: 0x90a0b5 },
+    { id: "house", x: 14, z: 14, width: 8, depth: 8, height: 5, color: PALETTE.houseBody, isHouse: true },
+    { id: "b1", x: -18, z: 12, width: 10, depth: 10, height: 12, color: BUILDING_COLORS[0] },
+    { id: "b2", x: -16, z: -16, width: 12, depth: 8, height: 16, color: BUILDING_COLORS[3] },
+    { id: "b3", x: 18, z: -14, width: 9, depth: 11, height: 9, color: BUILDING_COLORS[1] },
+    { id: "b4", x: 34, z: 8, width: 8, depth: 8, height: 20, color: BUILDING_COLORS[3] },
+    { id: "b5", x: -38, z: -12, width: 14, depth: 10, height: 7, color: BUILDING_COLORS[2] },
+    { id: "b6", x: 12, z: 36, width: 10, depth: 9, height: 14, color: BUILDING_COLORS[5] },
+    { id: "b7", x: -14, z: -36, width: 11, depth: 11, height: 10, color: BUILDING_COLORS[4] },
   ],
   npcSpawns: [
     { x: 8, z: 6 }, { x: -6, z: 4 }, { x: 4, z: -10 },

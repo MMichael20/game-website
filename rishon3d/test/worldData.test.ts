@@ -3,6 +3,7 @@ import { assembleMap, DISTRICTS } from "../src/world/worldData";
 import { validateMap } from "../src/world/rishonMap";
 import { roadRects, rectsOverlap } from "../src/world/roadClear";
 import { pointInRects } from "../src/game/wander";
+import { DISTRICT_PALETTES } from "../src/world/palette";
 
 describe("assembleMap", () => {
   const map = assembleMap();
@@ -55,5 +56,14 @@ describe("assembleMap", () => {
       (p) => p.kind !== "streetlight" && pointInRects({ x: p.x, z: p.z }, corridors),
     );
     expect(onRoad).toEqual([]);
+  });
+});
+
+describe("district palettes use the saturated palette", () => {
+  it("each district's palette matches the shared palette module", () => {
+    for (const d of DISTRICTS) {
+      expect(DISTRICT_PALETTES[d.id]).toBeTruthy();
+      expect(d.palette).toEqual(DISTRICT_PALETTES[d.id]);
+    }
   });
 });

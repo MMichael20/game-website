@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { BuildingDef, RishonMap } from "./rishonMap";
 import { makeWindowTexture } from "./windows";
 import { DAY } from "../core/sky";
+import { PALETTE } from "./palette";
 
 // One shared base window texture; cloned per building so each can tile its
 // windows at a believable size via texture.repeat.
@@ -26,9 +27,9 @@ export function makeBuilding(def: BuildingDef): THREE.Object3D {
     const group = new THREE.Group();
     group.position.set(def.x, 0, def.z);
 
-    // warm cream-colored body
+    // body color comes from the map (palette-driven)
     const bodyGeo = new THREE.BoxGeometry(def.width, def.height, def.depth);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf0c98a });
+    const bodyMat = new THREE.MeshStandardMaterial({ color: def.color });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.position.y = def.height / 2;
     body.castShadow = true;
@@ -39,7 +40,7 @@ export function makeBuilding(def: BuildingDef): THREE.Object3D {
     const roofRadius = Math.max(def.width, def.depth) * 0.72;
     const roofHeight = def.height * 0.6;
     const roofGeo = new THREE.ConeGeometry(roofRadius, roofHeight, 4);
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0xb03a2e });
+    const roofMat = new THREE.MeshStandardMaterial({ color: PALETTE.houseRoof });
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.y = def.height + roofHeight / 2;
     roof.rotation.y = Math.PI / 4; // align flat faces with walls
