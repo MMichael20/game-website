@@ -7,23 +7,25 @@ const CAR_Y = 0.5;
 const SPEED = 11;
 const TURN = 2.6;
 
-// A hailable yellow taxi. Kinematic + decorative (no physics body); Game drives
-// it toward a target each frame via driveTo().
-export class Taxi {
+// The player's own car arriving when summoned from the phone. Kinematic +
+// decorative (no physics body); Game drives it toward the player via driveTo().
+// Colored to match the drivable Car so it reads as "your car pulling up"; on
+// entry the real physics Car is teleported to this car's pose.
+export class RideCar {
   readonly object = new THREE.Group();
   private pos: Vec2 = { x: 0, z: 0 };
-  private heading = 0;
+  private head = 0;
 
   constructor(scene: THREE.Scene) {
     const body = new THREE.Mesh(
-      getGeometry("npcCarBody", () => new THREE.BoxGeometry(1.7, 0.6, 3.4)),
-      getMaterial("taxiBodyMat", () => new THREE.MeshStandardMaterial({ color: 0xf2c200, metalness: 0.3, roughness: 0.5 })),
+      getGeometry("rideCarBody", () => new THREE.BoxGeometry(1.8, 0.6, 3.6)),
+      getMaterial("rideCarBodyMat", () => new THREE.MeshStandardMaterial({ color: 0xc0392b, metalness: 0.3, roughness: 0.5 })),
     );
     body.position.y = CAR_Y;
     body.castShadow = true;
     const cabin = new THREE.Mesh(
-      getGeometry("npcCarCabin", () => new THREE.BoxGeometry(1.4, 0.5, 1.6)),
-      getMaterial("taxiCabinMat", () => new THREE.MeshStandardMaterial({ color: 0x222831 })),
+      getGeometry("rideCarCabin", () => new THREE.BoxGeometry(1.5, 0.5, 1.8)),
+      getMaterial("rideCarCabinMat", () => new THREE.MeshStandardMaterial({ color: 0x222831 })),
     );
     cabin.position.set(0, CAR_Y + 0.5, -0.2);
     this.object.add(body, cabin);
@@ -32,10 +34,11 @@ export class Taxi {
   }
 
   get position(): Vec2 { return this.pos; }
+  get heading(): number { return this.head; }
 
   spawnAt(p: Vec2): void {
     this.pos = { x: p.x, z: p.z };
-    this.heading = 0;
+    this.head = 0;
     this.object.position.set(p.x, 0, p.z);
     this.object.rotation.y = 0;
     this.object.visible = true;
@@ -44,9 +47,9 @@ export class Taxi {
   setVisible(v: boolean): void { this.object.visible = v; }
 
   driveTo(target: Vec2, dt: number): boolean {
-    const r = stepToward(this.pos, this.heading, target, SPEED, dt, TURN);
+    const r = stepToward(this.pos, this.head, target, SPEED, dt, TURN);
     this.pos = r.pos;
-    this.heading = r.heading;
+    this.head = r.heading;
     this.object.position.set(r.pos.x, 0, r.pos.z);
     this.object.rotation.y = r.heading;
     return r.arrived;

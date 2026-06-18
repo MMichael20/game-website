@@ -18,6 +18,11 @@ export class Character implements Tickable {
   private phase = 0;
   private tmp = new THREE.Vector3();
   private velY = 0;
+  // Set by setPosition(); consumed on the next update() frame. Needed because
+  // setNextKinematicTranslation() doesn't update body.translation() until the
+  // physics step runs, so without this the teleport gets overwritten by the
+  // same-frame update() reading the stale (pre-teleport) translation.
+  private teleportTo: { x: number; y: number; z: number } | null = null;
 
   constructor(
     scene: THREE.Scene,
@@ -49,6 +54,8 @@ export class Character implements Tickable {
   setPosition(x: number, z: number): void {
     this.body.setNextKinematicTranslation({ x, y: 1.0, z });
     this.object.position.set(x, 0, z);
+    this.teleportTo = { x, y: 1.0, z };
+    this.velY = 0;
   }
 
   update(dt: number): void {
@@ -87,7 +94,11 @@ export class Character implements Tickable {
 
     this.controller.computeColliderMovement(this.collider, desired);
     const corrected = this.controller.computedMovement();
-    const t = this.body.translation();
+    // On the frame after a teleport, body.translation() is still the stale
+    // pre-teleport position (setNextKinematicTranslation applies on the physics
+    // step), so use the teleport target as the base to avoid snapping back.
+    const t = this.teleportTo ?? this.body.translation();
+    this.teleportTo = null;
     const nx = t.x + corrected.x, ny = t.y + corrected.y, nz = t.z + corrected.z;
     this.body.setNextKinematicTranslation({ x: nx, y: ny, z: nz });
     this.object.position.set(nx, ny - 1.0, nz);

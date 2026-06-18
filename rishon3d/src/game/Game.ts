@@ -17,9 +17,9 @@ import type { Hud } from "../ui/Hud";
 import type { Minimap } from "../ui/Minimap";
 import { safeExitPosition } from "./exit";
 import { formatSpeed } from "../ui/format";
-import { Taxi } from "../entities/Taxi";
+import { RideCar } from "../entities/RideCar";
 import { nextTaxiPhase, type TaxiPhase } from "./taxi";
-import { PARK } from "../world/park";
+import { Phone } from "../ui/Phone";
 
 const ENTER_RADIUS = 3.5;
 
@@ -30,10 +30,10 @@ export class Game implements Tickable {
   private entities: EntityManager;
   private rects: Rect[];
   private bounds: number;
-  private taxi: Taxi;
-  private taxiPhase: TaxiPhase = "idle";
+  private summon: RideCar;
+  private summonPhase: TaxiPhase = "idle";
   private pickup = { x: 0, z: 0 };
-  private dropoff = { x: 0, z: 0 };
+  private phone: Phone;
 
   constructor(
     scene: THREE.Scene,
@@ -44,6 +44,8 @@ export class Game implements Tickable {
     camera: THREE.Camera,
     private hud: Hud,
     private minimap: Minimap,
+    container: HTMLElement,
+    private lockPointer: () => void,
   ) {
     this.character = new Character(scene, physics, input, world.playerSpawn, camera);
     this.car = new Car(scene, physics, input, world.carSpawn);
@@ -51,8 +53,9 @@ export class Game implements Tickable {
     const bounds = world.map.ground.size / 2 - 2;
     this.rects = rects;
     this.bounds = bounds;
-    this.taxi = new Taxi(scene);
-    this.dropoff = { x: PARK.x, z: PARK.z }; // taxis take you to the park
+    this.summon = new RideCar(scene);
+    this.phone = new Phone(container);
+    this.phone.onCallCar(() => this.callCar());
     const palettes = [
       { skin: 0xe8b98a, shirt: 0x9b59b6, pants: 0x40313f },
       { skin: 0xf0c9a0, shirt: 0x27ae60, pants: 0x1e5c3a },
@@ -85,63 +88,71 @@ export class Game implements Tickable {
     this.follow.setTarget(this.character.object, 10, 1.6);
   }
 
+  get phoneOpen(): boolean { return this.phone.isOpen; }
+  closePhone(): void { this.phone.close(); this.lockPointer(); }
+
+  // Called from the phone's "Call Car" app: your own car drives to you.
+  private callCar(): void {
+    this.phone.close();
+    this.lockPointer();
+    if (this.summonPhase !== "idle" || this.mode !== "onFoot") return;
+    const p = { x: this.character.position.x, z: this.character.position.z };
+    this.pickup = { x: p.x, z: p.z };
+    this.summon.spawnAt(safeExitPosition({ x: p.x + 25, z: p.z }, this.rects, this.bounds));
+    this.summonPhase = nextTaxiPhase("idle", "call"); // -> "toPickup"
+  }
+
   update(dt: number): void {
+    // While the phone is up, freeze gameplay; P (or Esc, via main) closes it.
+    if (this.phone.isOpen) {
+      if (this.input.justPressed("KeyP")) this.closePhone();
+      this.input.endFrame();
+      return;
+    }
+
     const ePressed = this.input.justPressed("KeyE");
-    const tPressed = this.input.justPressed("KeyT");
     const pPos = { x: this.character.position.x, z: this.character.position.z };
     const cPos = { x: this.car.position.x, z: this.car.position.z };
 
-    // --- Taxi phase machine ---
-    let taxiConsumedE = false;
-    if (this.taxiPhase === "idle") {
-      if (tPressed && this.mode === "onFoot") {
-        this.taxiPhase = nextTaxiPhase("idle", "call");
-        this.pickup = { x: pPos.x, z: pPos.z };
-        this.taxi.spawnAt(safeExitPosition({ x: pPos.x + 25, z: pPos.z }, this.rects, this.bounds));
+    // Open the phone (on foot only).
+    if (this.input.justPressed("KeyP") && this.mode === "onFoot") {
+      this.phone.open();
+      this.input.endFrame();
+      return;
+    }
+
+    // --- Summoned car: your own car drives to you, then you get in and drive it ---
+    let summonConsumedE = false;
+    if (this.summonPhase === "toPickup") {
+      if (this.summon.driveTo(this.pickup, dt)) {
+        this.summonPhase = nextTaxiPhase("toPickup", "arrivedPickup"); // -> "waiting"
       }
-    } else if (this.taxiPhase === "toPickup") {
-      if (tPressed) {
-        this.taxiPhase = nextTaxiPhase(this.taxiPhase, "cancel");
-        this.taxi.setVisible(false);
-      } else if (this.taxi.driveTo(this.pickup, dt)) {
-        this.taxiPhase = nextTaxiPhase("toPickup", "arrivedPickup");
-      }
-    } else if (this.taxiPhase === "waiting") {
-      if (tPressed) {
-        this.taxiPhase = nextTaxiPhase(this.taxiPhase, "cancel");
-        this.taxi.setVisible(false);
-      }
-      const near = Math.hypot(pPos.x - this.taxi.position.x, pPos.z - this.taxi.position.z) <= 4.5;
-      if (this.taxiPhase === "waiting" && ePressed && near && this.mode === "onFoot") {
-        this.taxiPhase = nextTaxiPhase("waiting", "ride");
-        taxiConsumedE = true;
+    } else if (this.summonPhase === "waiting") {
+      const near = Math.hypot(pPos.x - this.summon.position.x, pPos.z - this.summon.position.z) <= 5;
+      if (ePressed && near && this.mode === "onFoot") {
+        // Hand off from the kinematic stand-in to the real drivable car at its pose.
+        this.car.teleportTo(this.summon.position.x, this.summon.position.z, this.summon.heading);
+        this.summon.setVisible(false);
+        this.summonPhase = "idle";
+        summonConsumedE = true;
+        this.mode = "driving";
         this.character.enabled = false;
         this.character.object.visible = false;
-        this.follow.setTarget(this.taxi.object, 12, 1.6);
-      }
-    } else if (this.taxiPhase === "toDropoff") {
-      if (this.taxi.driveTo(this.dropoff, dt)) {
-        this.taxiPhase = nextTaxiPhase("toDropoff", "arrivedDropoff");
-        const exit = safeExitPosition(this.taxi.position, this.rects, this.bounds);
-        this.character.setPosition(exit.x, exit.z);
-        this.character.object.visible = true;
-        this.character.enabled = true;
-        this.follow.setTarget(this.character.object, 10, 1.6);
-        this.taxi.setVisible(false);
+        this.car.enabled = true;
+        this.follow.setTarget(this.car.object, 11, 1.4);
       }
     }
-    const riding = this.taxiPhase === "toDropoff";
 
-    // --- Own car enter/exit (suppressed while riding a taxi or when E was consumed) ---
-    const eForCar = ePressed && !taxiConsumedE && !riding;
+    // --- Own car enter/exit (walk-up), suppressed when E was consumed by the summon ---
+    const eForCar = ePressed && !summonConsumedE;
     const newMode = nextMode(this.mode, eForCar, pPos, cPos, ENTER_RADIUS);
-    if (!riding && newMode !== this.mode) {
+    if (newMode !== this.mode) {
       this.mode = newMode;
       if (this.mode === "driving") {
-        // Driving off cancels any pending taxi so it isn't stranded (soft-lock).
-        if (this.taxiPhase === "toPickup" || this.taxiPhase === "waiting") {
-          this.taxiPhase = nextTaxiPhase(this.taxiPhase, "cancel");
-          this.taxi.setVisible(false);
+        // Driving off cancels a pending summon so it isn't left stranded.
+        if (this.summonPhase === "toPickup" || this.summonPhase === "waiting") {
+          this.summonPhase = "idle";
+          this.summon.setVisible(false);
         }
         this.character.enabled = false;
         this.character.object.visible = false;
@@ -158,18 +169,16 @@ export class Game implements Tickable {
     }
 
     // --- HUD prompt ---
-    if (this.taxiPhase === "toPickup") {
-      this.hud.setPrompt("Taxi arriving...");
-    } else if (this.taxiPhase === "waiting") {
-      this.hud.setPrompt("Press E to ride");
-    } else if (this.taxiPhase === "toDropoff") {
-      this.hud.setPrompt("Riding...");
+    if (this.summonPhase === "toPickup") {
+      this.hud.setPrompt("Your car is on its way...");
+    } else if (this.summonPhase === "waiting") {
+      this.hud.setPrompt("Press E to get in");
     } else if (this.mode === "onFoot" && canEnter("onFoot", pPos, cPos, ENTER_RADIUS)) {
       this.hud.setPrompt("Press E to drive");
     } else if (this.mode === "driving") {
       this.hud.setPrompt("Press E to exit");
     } else if (this.mode === "onFoot") {
-      this.hud.setPrompt("Press T for taxi");
+      this.hud.setPrompt("Press P for phone");
     } else {
       this.hud.setPrompt(null);
     }

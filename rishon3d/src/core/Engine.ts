@@ -71,7 +71,12 @@ export class Engine {
     this.composer.setSize(w, h);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     // UnrealBloomPass(resolution, strength, radius, threshold) — tuned for tasteful dusk glow.
-    const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.8, 0.6, 0.5);
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(w, h),
+      DUSK.bloomStrength,
+      DUSK.bloomRadius,
+      DUSK.bloomThreshold,
+    );
     this.composer.addPass(bloom);
     this.composer.addPass(new OutputPass());
 

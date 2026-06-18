@@ -46,7 +46,7 @@ export class Menu {
       '<p class="r3d-tag">Drive and wander a living city at golden hour.</p>',
       '<div class="r3d-legend">',
       "<span><b>WASD</b>Move</span><span><b>Mouse</b>Look</span>",
-      "<span><b>E</b>Drive / Exit</span><span><b>T</b>Call taxi</span>",
+      "<span><b>E</b>Drive / Exit</span><span><b>P</b>Phone</span>",
       "<span><b>M</b>Map</span><span><b>Space</b>Brake</span>",
       "<span><b>Esc</b>Pause</span>",
       "</div>",

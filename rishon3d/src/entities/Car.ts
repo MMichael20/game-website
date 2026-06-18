@@ -77,6 +77,18 @@ export class Car implements Tickable {
     return Math.hypot(v.x, v.z);
   }
 
+  // Place the car at a spot/heading (used when a summoned car "arrives" and the
+  // player gets in). Zeroes velocity so it doesn't inherit stale momentum.
+  teleportTo(x: number, z: number, yaw: number): void {
+    _q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    this.body.setTranslation({ x, y: 1.0, z }, true);
+    this.body.setRotation({ x: _q.x, y: _q.y, z: _q.z, w: _q.w }, true);
+    this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    this.object.position.set(x, 1.0, z);
+    this.object.quaternion.copy(_q);
+  }
+
   update(dt: number): void {
     const accel = this.input.isDown("KeyW") || this.input.isDown("ArrowUp");
     const reverse = this.input.isDown("KeyS") || this.input.isDown("ArrowDown");

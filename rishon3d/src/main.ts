@@ -23,21 +23,21 @@ async function boot() {
   const input = new Input();
   const hud = new Hud(container);
   const minimap = new Minimap(container, RISHON_MAP);
-  const game = new Game(engine.scene, physics, input, world, follow, engine.camera, hud, minimap);
-
-  // step physics before game logic each frame
-  engine.add({ update: (dt) => physics.step(dt) });
-  engine.add(game);
-  engine.add(follow);
-
-  hud.setHint("WASD / Arrows move - Mouse look - Scroll zoom - Space brake - E enter/exit - T taxi - M map - Esc pause");
-
   // GTA-style camera: capture the pointer so mouse movement orbits the camera.
   const canvas = engine.renderer.domElement;
   const lockPointer = () => {
     const p = canvas.requestPointerLock?.() as unknown as Promise<void> | undefined;
     if (p && typeof p.catch === "function") p.catch(() => {}); // ignore lock rejections (e.g. headless)
   };
+
+  const game = new Game(engine.scene, physics, input, world, follow, engine.camera, hud, minimap, container, lockPointer);
+
+  // step physics before game logic each frame
+  engine.add({ update: (dt) => physics.step(dt) });
+  engine.add(game);
+  engine.add(follow);
+
+  hud.setHint("WASD / Arrows move - Mouse look - Scroll zoom - Space brake - E enter/exit - P phone - M map - Esc pause");
 
   const menu = new Menu(container);
   let started = false;
@@ -54,6 +54,7 @@ async function boot() {
 
   window.addEventListener("keydown", (e) => {
     if (e.code === "Escape" && started) {
+      if (game.phoneOpen) { game.closePhone(); return; }
       if (engine["running"] ?? true) { input.clear(); engine.stop(); menu.showPause(); }
     }
     if (e.code === "KeyM" && started) minimap.toggle();
