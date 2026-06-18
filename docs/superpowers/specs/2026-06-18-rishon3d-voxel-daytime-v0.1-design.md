@@ -230,4 +230,42 @@ New/changed files:
 - Awnings + curbs: in v0.1 (decided).
 - Static rail: in v0.1, first to cut if fiddly (decided).
 - Trash cans/planters: optional, drop first if time is tight (decided).
+
+## Assumptions & Decisions (autonomous build log)
+
+Forks resolved during the autonomous run (auto mode: decide + log):
+
+- Pre-existing WIP in the worktree → committed it as a checkpoint (`b08e308`,
+  taxi→phone-ride refactor) before starting — because the baseline built and all
+  110 unit tests passed, and the WIP overlapped my target files; a checkpoint
+  gives a clean base and keeps the user's work separate from mine in history.
+- Worktree isolation → reused the existing `worktree-3d-spike` worktree (master
+  never touched) rather than nesting a new one — already isolated.
+- `DUSK` config → renamed to `DAY` with midday values — because a constant named
+  DUSK holding daytime values is misleading; churn is small (Engine, builders,
+  sky.test).
+- Tone mapping → `THREE.NeutralToneMapping` at exposure 1.0, fallback
+  `NoToneMapping` if the types lack it — drops ACES desaturation while taming the
+  bright sky.
+- Bloom → removed; render directly via `renderer.render` (no `EffectComposer`) —
+  daytime needs no glow; code is easy to restore later.
+- Fog → dropped entirely for v0.1 — keeps distant districts crisp/colorful.
+- Materials → kept `MeshStandardMaterial` (its defaults metalness 0 / roughness 1
+  are already matte); only removed the cars' explicit `metalness: 0.3`. No blanket
+  Lambert swap — the glossy realism came from ACES + low fill light, not the
+  materials; avoids wide churn/risk.
+- Clouds → static (no drift) for v0.1, `MeshBasicMaterial` (always-bright flat
+  white), instanced — simplest faithful result.
+- Curbs → no collider; accepted that curb strips visually cross at intersections
+  in v0.1 (kept low, `CURB_H` 0.12) — refine later.
+- Awnings → placed on the building's +z face (not road-facing), ~45% of
+  buildings, red/blue chosen by a hash of the building id — simple + deterministic.
+- Rail → placed at x=130 (clear of districts which span ±125 within the ±140
+  ground); static, no collider; first to cut if placement is fiddly.
+- Trash cans/planters → omitted from the plan (YAGNI; deferred per spec).
+- Daytime windows → kept a subtle cool window emissive (0.18) rather than off, so
+  building window grids stay faintly visible; proper daytime window albedo
+  deferred.
+- Execution mode → self-selected subagent-driven-development (auto mode skips the
+  execution-choice prompt).
 ```
