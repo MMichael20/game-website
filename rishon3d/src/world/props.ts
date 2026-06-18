@@ -3,42 +3,75 @@ import type { PropDef } from "./rishonMap";
 import { getGeometry, getMaterial } from "./assets";
 import { makeInstanced, type Placement } from "./InstancedProps";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { PALETTE } from "./palette";
 
 // --- shared geometries (vertical offset baked in so one transform places the prop) ---
 function trunkGeo(): THREE.BufferGeometry {
   return getGeometry("trunk", () => {
-    const g = new THREE.CylinderGeometry(0.18, 0.24, 1.4, 8);
+    const g = new THREE.BoxGeometry(0.5, 1.4, 0.5);
     g.translate(0, 0.7, 0);
     return g;
   });
 }
+
+// Conifer: a stepped pyramid of green cubes (wide bottom, narrow top).
+export function coniferCanopyBoxes(): { y: number; s: number }[] {
+  return [
+    { y: 1.7, s: 2.2 },
+    { y: 2.5, s: 1.6 },
+    { y: 3.2, s: 1.0 },
+  ];
+}
 function foliageGeo(): THREE.BufferGeometry {
-  return getGeometry("foliage", () => {
-    const g = new THREE.ConeGeometry(1.1, 2.2, 9);
-    g.translate(0, 2.2, 0);
-    return g;
+  return getGeometry("foliageVoxel", () => {
+    const boxes = coniferCanopyBoxes().map(({ y, s }) => {
+      const b = new THREE.BoxGeometry(s, 0.9, s);
+      b.translate(0, y, 0);
+      return b;
+    });
+    return mergeGeometries(boxes);
   });
 }
+
+// Deciduous: a chunky cluster of cubes. Tuples are [x, y, z, size].
+export function deciduousCanopyBoxes(): [number, number, number, number][] {
+  return [
+    [0, 2.3, 0, 2.0],
+    [1.0, 2.5, 0.3, 1.2],
+    [-0.9, 2.4, -0.4, 1.3],
+    [0.2, 3.1, -0.2, 1.4],
+    [-0.3, 2.0, 0.8, 1.1],
+  ];
+}
 function deciduousGeo(): THREE.BufferGeometry {
-  return getGeometry("foliageDecid", () => {
-    const g = new THREE.SphereGeometry(1.2, 10, 8);
-    g.scale(1, 1.1, 1);
-    g.translate(0, 2.3, 0);
-    return g;
+  return getGeometry("foliageDecidVoxel", () => {
+    const boxes = deciduousCanopyBoxes().map(([x, y, z, s]) => {
+      const b = new THREE.BoxGeometry(s, s, s);
+      b.translate(x, y, z);
+      return b;
+    });
+    return mergeGeometries(boxes);
   });
 }
 function bushGeo(): THREE.BufferGeometry {
-  return getGeometry("bush", () => {
-    const g = new THREE.SphereGeometry(0.7, 8, 6);
-    g.scale(1, 0.7, 1);
-    g.translate(0, 0.5, 0);
-    return g;
+  return getGeometry("bushVoxel", () => {
+    const specs: [number, number, number, number][] = [
+      [0, 0.45, 0, 0.9],
+      [0.5, 0.4, 0.2, 0.6],
+      [-0.45, 0.4, -0.2, 0.6],
+    ];
+    const boxes = specs.map(([x, y, z, s]) => {
+      const b = new THREE.BoxGeometry(s, s, s);
+      b.translate(x, y, z);
+      return b;
+    });
+    return mergeGeometries(boxes);
   });
 }
-const trunkMat = () => getMaterial("trunkMat", () => new THREE.MeshStandardMaterial({ color: 0x6b4a2b }));
-const foliageMat = () => getMaterial("foliageMat", () => new THREE.MeshStandardMaterial({ color: 0x3f7d3a }));
-const deciduousMat = () => getMaterial("foliageDecidMat", () => new THREE.MeshStandardMaterial({ color: 0x5a9e4a }));
-const bushMat = () => getMaterial("bushMat", () => new THREE.MeshStandardMaterial({ color: 0x4f8c46 }));
+const trunkMat = () => getMaterial("trunkMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.trunk }));
+const foliageMat = () => getMaterial("foliageMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.leaf }));
+const deciduousMat = () => getMaterial("foliageDecidMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.leafDeep }));
+const bushMat = () => getMaterial("bushMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.bush }));
 
 function benchGeo(): THREE.BufferGeometry {
   return getGeometry("bench", () => {
@@ -49,7 +82,7 @@ function benchGeo(): THREE.BufferGeometry {
     return mergeGeometries([seat, back, legL, legR]);
   });
 }
-const benchMat = () => getMaterial("benchMat", () => new THREE.MeshStandardMaterial({ color: 0x8a5a2b }));
+const benchMat = () => getMaterial("benchMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }));
 
 function placementsFor(props: PropDef[], kind: PropDef["kind"]): Placement[] {
   return props
@@ -89,14 +122,14 @@ export function makeStreetLight(def: PropDef): THREE.Object3D {
   g.position.set(def.x, 0, def.z);
   const pole = new THREE.Mesh(
     getGeometry("slPole", () => new THREE.CylinderGeometry(0.08, 0.1, 3.4, 8)),
-    getMaterial("slPoleMat", () => new THREE.MeshStandardMaterial({ color: 0x2b2b30 })),
+    getMaterial("slPoleMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.lampPole })),
   );
   pole.position.y = 1.7; pole.castShadow = true;
   const lamp = new THREE.Mesh(
-    getGeometry("slLamp", () => new THREE.BoxGeometry(0.4, 0.18, 0.4)),
-    getMaterial("slLampMat", () => new THREE.MeshStandardMaterial({ color: 0xffd98a, emissive: 0xffb24d, emissiveIntensity: 1.2 })),
+    getGeometry("slLamp", () => new THREE.BoxGeometry(0.5, 0.5, 0.5)),
+    getMaterial("slLampMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.lantern, emissive: PALETTE.lanternGlow, emissiveIntensity: 1.4 })),
   );
-  lamp.position.y = 3.5;
+  lamp.position.y = 3.4;
   g.add(pole, lamp);
   return g;
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as THREE from "three";
-import { treeSpecies, treeInstances, benchInstances } from "../src/world/props";
+import { treeSpecies, treeInstances, benchInstances, coniferCanopyBoxes, deciduousCanopyBoxes } from "../src/world/props";
 import type { PropDef } from "../src/world/rishonMap";
 
 describe("treeSpecies", () => {
@@ -39,5 +39,19 @@ describe("benchInstances", () => {
     ];
     const mesh = benchInstances(props) as THREE.InstancedMesh;
     expect(mesh.count).toBe(2);
+  });
+});
+
+describe("voxel canopies", () => {
+  it("conifer canopy is a stack that narrows toward the top", () => {
+    const layers = coniferCanopyBoxes();
+    expect(layers.length).toBeGreaterThanOrEqual(3);
+    for (let i = 1; i < layers.length; i++) {
+      expect(layers[i].y).toBeGreaterThan(layers[i - 1].y); // higher
+      expect(layers[i].s).toBeLessThan(layers[i - 1].s);    // narrower
+    }
+  });
+  it("deciduous canopy is a multi-cube cluster", () => {
+    expect(deciduousCanopyBoxes().length).toBeGreaterThanOrEqual(4);
   });
 });
