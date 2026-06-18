@@ -97,13 +97,22 @@ export class Game implements Tickable {
       if (tPressed && this.mode === "onFoot") {
         this.taxiPhase = nextTaxiPhase("idle", "call");
         this.pickup = { x: pPos.x, z: pPos.z };
-        this.taxi.spawnAt({ x: pPos.x + 25, z: pPos.z });
+        this.taxi.spawnAt(safeExitPosition({ x: pPos.x + 25, z: pPos.z }, this.rects, this.bounds));
       }
     } else if (this.taxiPhase === "toPickup") {
-      if (this.taxi.driveTo(this.pickup, dt)) this.taxiPhase = nextTaxiPhase("toPickup", "arrivedPickup");
+      if (tPressed) {
+        this.taxiPhase = nextTaxiPhase(this.taxiPhase, "cancel");
+        this.taxi.setVisible(false);
+      } else if (this.taxi.driveTo(this.pickup, dt)) {
+        this.taxiPhase = nextTaxiPhase("toPickup", "arrivedPickup");
+      }
     } else if (this.taxiPhase === "waiting") {
+      if (tPressed) {
+        this.taxiPhase = nextTaxiPhase(this.taxiPhase, "cancel");
+        this.taxi.setVisible(false);
+      }
       const near = Math.hypot(pPos.x - this.taxi.position.x, pPos.z - this.taxi.position.z) <= 4.5;
-      if (ePressed && near && this.mode === "onFoot") {
+      if (this.taxiPhase === "waiting" && ePressed && near && this.mode === "onFoot") {
         this.taxiPhase = nextTaxiPhase("waiting", "ride");
         taxiConsumedE = true;
         this.character.enabled = false;
@@ -129,6 +138,11 @@ export class Game implements Tickable {
     if (!riding && newMode !== this.mode) {
       this.mode = newMode;
       if (this.mode === "driving") {
+        // Driving off cancels any pending taxi so it isn't stranded (soft-lock).
+        if (this.taxiPhase === "toPickup" || this.taxiPhase === "waiting") {
+          this.taxiPhase = nextTaxiPhase(this.taxiPhase, "cancel");
+          this.taxi.setVisible(false);
+        }
         this.character.enabled = false;
         this.character.object.visible = false;
         this.car.enabled = true;

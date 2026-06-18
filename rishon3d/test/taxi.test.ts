@@ -13,6 +13,12 @@ describe("nextTaxiPhase", () => {
     expect(nextTaxiPhase("toPickup", "call")).toBe("toPickup");
     expect(nextTaxiPhase("toDropoff", "call")).toBe("toDropoff");
   });
+  it("cancels a pending taxi back to idle but never mid-ride", () => {
+    expect(nextTaxiPhase("toPickup", "cancel")).toBe("idle");
+    expect(nextTaxiPhase("waiting", "cancel")).toBe("idle");
+    expect(nextTaxiPhase("toDropoff", "cancel")).toBe("toDropoff");
+    expect(nextTaxiPhase("idle", "cancel")).toBe("idle");
+  });
 });
 
 describe("stepToward", () => {

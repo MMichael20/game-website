@@ -112,6 +112,7 @@ export class Engine {
   dispose(): void {
     this.stop();
     window.removeEventListener("resize", this.onResize);
+    this.composer.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
