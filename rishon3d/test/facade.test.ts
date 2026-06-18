@@ -159,3 +159,159 @@ describe("makeFacadeTexture + cache", () => {
     expect(facadeCacheSize() - before).toBeLessThan(12);
   });
 });
+
+// ---- typed facades (ground-floor identities) ---------------------------
+
+// Count pixels matching a target color across a horizontal scanline at row y.
+function countRow(data: Uint8Array, w: number, y: number, hex: number, tol = 3): number {
+  let n = 0;
+  for (let x = 0; x < w; x++) if (near(px(data, w, x, y), rgbOf(hex), tol)) n++;
+  return n;
+}
+// Count pixels matching a target color across the WHOLE facade.
+function countAll(data: Uint8Array, w: number, h: number, hex: number, tol = 3): number {
+  let n = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (near(px(data, w, x, y), rgbOf(hex), tol)) n++;
+  return n;
+}
+
+describe("typed facades — per-type determinism", () => {
+  const types = ["shop", "restaurant", "apartment", "office"] as const;
+  for (const t of types) {
+    it(`is deterministic for type=${t} (same args -> same bytes)`, () => {
+      const a = facadePattern(5, 7, 11, { color: 0x808080, type: t });
+      const b = facadePattern(5, 7, 11, { color: 0x808080, type: t });
+      expect(Array.from(a)).toEqual(Array.from(b));
+    });
+  }
+
+  it("differs between types (shop vs office body grid)", () => {
+    const shop = facadePattern(5, 7, 11, { color: 0x808080, type: "shop" });
+    const office = facadePattern(5, 7, 11, { color: 0x808080, type: "office" });
+    expect(Array.from(shop)).not.toEqual(Array.from(office));
+  });
+});
+
+describe("typed facades — sign band (shop + restaurant)", () => {
+  const cols = 4, floors = 5, cell = 6;
+  const { w, h } = facadeSize(cols, floors, cell);
+
+  it("shop draws a cool sign band across the top of the base band", () => {
+    const data = facadePattern(cols, floors, 3, { color: 0x808080, cell, type: "shop" });
+    // sign band sits at the top of floor 0 (just under the first body floor).
+    const lintelH = Math.max(1, Math.floor(cell * 0.28));
+    const y = cell - 1; // inside the sign band
+    expect(countRow(data, w, y, PALETTE.signCool)).toBeGreaterThan(w * 0.5);
+    expect(lintelH).toBeGreaterThan(0);
+  });
+
+  it("restaurant draws a warm sign band (signWarm) with a lit accent", () => {
+    const data = facadePattern(cols, floors, 3, { color: 0x808080, cell, type: "restaurant" });
+    const y = cell - 1; // top of the base band
+    expect(countRow(data, w, y, PALETTE.signWarm) + countRow(data, w, y, PALETTE.signLit))
+      .toBeGreaterThan(w * 0.5);
+    // a lit (amber) accent stripe is present somewhere in the band
+    expect(countAll(data, w, h, PALETTE.signLit)).toBeGreaterThan(0);
+  });
+});
+
+describe("typed facades — office curtain wall", () => {
+  const cols = 5, floors = 7, cell = 6;
+  const { w, h } = facadeSize(cols, floors, cell);
+  const data = facadePattern(cols, floors, 9, { color: 0x808080, cell, type: "office" });
+
+  it("uses officeGlass as the dominant body-grid panel color (uniform)", () => {
+    const office = countAll(data, w, h, PALETTE.officeGlass);
+    // office curtain glass should dominate the cool default window glass.
+    const coolGlass = countAll(data, w, h, PALETTE.glass) + countAll(data, w, h, PALETTE.glassDark);
+    expect(office).toBeGreaterThan(coolGlass);
+    expect(office).toBeGreaterThan(0);
+  });
+
+  it("body floors are uniform: every body floor has the same office glass count", () => {
+    // sample the middle of each body floor and confirm the office-glass count
+    // is identical across them (no random light/dark mix like shop).
+    const counts: number[] = [];
+    for (let row = 1; row < floors - 1; row++) {
+      const y = row * cell + Math.floor(cell / 2);
+      counts.push(countRow(data, w, y, PALETTE.officeGlass));
+    }
+    expect(counts.length).toBeGreaterThan(1);
+    for (const c of counts) expect(c).toBe(counts[0]);
+  });
+});
+
+describe("typed facades — apartment grid", () => {
+  const cols = 5, floors = 7, cell = 6;
+  const { w, h } = facadeSize(cols, floors, cell);
+  const apt = facadePattern(cols, floors, 5, { color: 0x808080, cell, type: "apartment" });
+  const shop = facadePattern(cols, floors, 5, { color: 0x808080, cell, type: "shop" });
+
+  it("has NO big bright storefront glass band at the base", () => {
+    const y = Math.floor(cell * 0.4); // inside floor 0
+    expect(countRow(apt, w, y, PALETTE.storefront)).toBe(0);
+  });
+
+  it("repeats windows on the ground floor too (apartment grid is full-height)", () => {
+    // apartment fills its base with a plain plinth + door (no storefront glass),
+    // but the floors ABOVE carry the regular grid down to floor 1 with no
+    // sparse gaps. Count window glass rows present vs the sparse shop.
+    let aptWindowFloors = 0, shopWindowFloors = 0;
+    for (let row = 1; row < floors - 1; row++) {
+      const y = row * cell + Math.floor(cell / 2);
+      const aptGlass = countRow(apt, w, y, PALETTE.glass) + countRow(apt, w, y, PALETTE.glassDark);
+      const shopGlass = countRow(shop, w, y, PALETTE.glass) + countRow(shop, w, y, PALETTE.glassDark);
+      if (aptGlass > 0) aptWindowFloors++;
+      if (shopGlass > 0) shopWindowFloors++;
+    }
+    // apartment fills every body floor with windows; shop may skip cells but
+    // apartment's window-glass coverage is at least as dense per row.
+    expect(aptWindowFloors).toBe(floors - 2);
+    expect(aptWindowFloors).toBeGreaterThanOrEqual(shopWindowFloors);
+  });
+
+  it("has more total window panels (denser grid) than the sparse shop body", () => {
+    const aptGlass = countAll(apt, w, h, PALETTE.glass) + countAll(apt, w, h, PALETTE.glassDark);
+    const shopGlass = countAll(shop, w, h, PALETTE.glass) + countAll(shop, w, h, PALETTE.glassDark);
+    expect(aptGlass).toBeGreaterThan(shopGlass);
+  });
+});
+
+describe("typed facades — door in the base/entry row", () => {
+  const cols = 4, floors = 5, cell = 6;
+  const { w } = facadeSize(cols, floors, cell);
+  const types = ["shop", "restaurant", "apartment", "office"] as const;
+  for (const t of types) {
+    it(`type=${t} marks a facadeDoor in the base row`, () => {
+      const data = facadePattern(cols, floors, 4, { color: 0x808080, cell, type: t });
+      // scan the lower-middle of floor 0 for the dark door notch
+      const y = Math.floor(cell * 0.4);
+      expect(countRow(data, w, y, PALETTE.facadeDoor)).toBeGreaterThan(0);
+    });
+  }
+});
+
+describe("typed facades — cache differentiates types", () => {
+  it("gives each type a distinct cache key", () => {
+    const keys = new Set([
+      facadeCacheKey(4, 6, 0x808080, true, "shop"),
+      facadeCacheKey(4, 6, 0x808080, true, "restaurant"),
+      facadeCacheKey(4, 6, 0x808080, true, "apartment"),
+      facadeCacheKey(4, 6, 0x808080, true, "office"),
+    ]);
+    expect(keys.size).toBe(4);
+  });
+
+  it("returns DISTINCT cached textures for different types", () => {
+    const a = makeFacadeTexture(4, 6, { color: 0x6aa9c9, type: "office" });
+    const b = makeFacadeTexture(4, 6, { color: 0x6aa9c9, type: "apartment" });
+    expect(a).not.toBe(b);
+  });
+
+  it("defaults type to shop (back-compatible key + texture)", () => {
+    expect(facadeCacheKey(4, 6, 0x808080, true)).toBe(facadeCacheKey(4, 6, 0x808080, true, "shop"));
+    const def = makeFacadeTexture(7, 8, { color: 0x123456 });
+    const shop = makeFacadeTexture(7, 8, { color: 0x123456, type: "shop" });
+    expect(def).toBe(shop);
+  });
+});
