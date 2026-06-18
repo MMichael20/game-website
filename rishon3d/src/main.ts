@@ -34,12 +34,19 @@ async function boot() {
   // DEV-only aerial screenshot mode: open with #view=<x>,<z> to park the camera
   // over (x,z) and render the static scene (no follow/game), for inspecting
   // distant landmarks (airport, restaurant street, transit station).
-  const viewMatch = location.hash.match(/^#view=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  // #view=<x>,<z>[,<height>][,<dist>] — optional height/dist allow a close
+  // ground-level 3/4 framing (e.g. #view=95,103,8,18) for inspecting props, not
+  // just the default high aerial (40,50) used for distant landmarks.
+  const viewMatch = location.hash.match(
+    /^#view=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?(?:,(\d+(?:\.\d+)?))?/,
+  );
   if (import.meta.env.DEV && viewMatch) {
     const tx = parseFloat(viewMatch[1]);
     const tz = parseFloat(viewMatch[2]);
-    engine.camera.position.set(tx, 40, tz + 50);
-    engine.camera.lookAt(tx, 6, tz);
+    const h = viewMatch[3] ? parseFloat(viewMatch[3]) : 40;
+    const dist = viewMatch[4] ? parseFloat(viewMatch[4]) : 50;
+    engine.camera.position.set(tx, h, tz + dist);
+    engine.camera.lookAt(tx, h <= 15 ? 2 : 6, tz);
     engine.start();
     return;
   }
