@@ -160,3 +160,23 @@ accumulator function, plus existing `wander`, `cameraMath`, `InteractionSystem`.
 - Physics stability → chose a **fixed-timestep accumulator (1/60)** over the current
   variable clamped step for smoother, deterministic vehicle motion.
 - Did NOT merge or deploy — work stays on `worktree-3d-spike` per auto-mode rules.
+
+### Execution-phase decisions (auto-mode log, added during build)
+
+- Execution mechanism → chose **one implementer subagent per part (A/B/C)** instead
+  of per-task, because the plan carried complete copy-ready code (transcription, not
+  design) and tasks within a part are sequential and share files. Controller ran the
+  real verification gate (full `npm test` + `npm run build`) after each part.
+- Transient vitest "writeFile" errors on Windows first-run → diagnosed as a vitest
+  result-writer FS race (not a test failure); confirmed green on a clean re-run.
+- Final whole-branch review (opus) → APPROVE, no Critical/Important code bugs.
+  Acted on its findings:
+  - Committed the pre-existing uncommitted orbit-camera work
+    (`FollowCamera.ts`, `cameraMath.ts`, `cameraMath.test.ts`) that `Game.ts` now
+    depends on, so the branch builds from a clean checkout.
+  - Fixed agents being able to start inside a building (resample against building
+    rects in `planPopulations`).
+  - Routed NPC cars onto the district perimeter road (`size/2 - 1.5`) instead of
+    cutting through the building grid.
+- Final verification: 58 unit tests, `vite build`, and the Playwright smoke test all
+  pass. Branch handed back unmerged for review.
