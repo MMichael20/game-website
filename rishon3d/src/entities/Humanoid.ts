@@ -23,25 +23,37 @@ export function makeHumanoid(palette: HumanoidPalette): Humanoid {
   const group = new THREE.Group();
 
   const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 0.7, 0.28),
+    new THREE.BoxGeometry(0.55, 0.72, 0.3),
     new THREE.MeshStandardMaterial({ color: palette.shirt }),
   );
+  torso.name = "torso";
   torso.position.y = 1.15; torso.castShadow = true;
   group.add(torso);
 
+  // Blocky cube head (Roblox-ish, slightly oversized).
   const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 14, 14),
+    new THREE.BoxGeometry(0.44, 0.44, 0.44),
     new THREE.MeshStandardMaterial({ color: palette.skin }),
   );
-  head.position.y = 1.72; head.castShadow = true;
+  head.name = "head";
+  head.position.y = 1.78; head.castShadow = true;
   group.add(head);
+
+  // Backpack box on the torso back (-z).
+  const backpack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.44, 0.56, 0.22),
+    new THREE.MeshStandardMaterial({ color: 0x8a6b4a }),
+  );
+  backpack.name = "backpack";
+  backpack.position.set(0, 1.16, -0.24); backpack.castShadow = true;
+  group.add(backpack);
 
   // legs hinge at hip (y ~0.9), length 0.9 -> feet near 0
   const leftLeg = limb(0.2, 0.9, 0.22, palette.pants, 0.9, -0.14);
   const rightLeg = limb(0.2, 0.9, 0.22, palette.pants, 0.9, 0.14);
   // arms hinge at shoulder (y ~1.45), length 0.65
-  const leftArm = limb(0.16, 0.65, 0.18, palette.shirt, 1.45, -0.33);
-  const rightArm = limb(0.16, 0.65, 0.18, palette.shirt, 1.45, 0.33);
+  const leftArm = limb(0.16, 0.65, 0.18, palette.shirt, 1.45, -0.35);
+  const rightArm = limb(0.16, 0.65, 0.18, palette.shirt, 1.45, 0.35);
   group.add(leftLeg, rightLeg, leftArm, rightArm);
 
   return { group, limbs: { leftLeg, rightLeg, leftArm, rightArm } };
