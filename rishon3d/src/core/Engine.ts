@@ -1,9 +1,7 @@
 // rishon3d/src/core/Engine.ts
 import * as THREE from "three";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
-import type { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { DAY, sunPosition } from "./sky";
-import { createComposer, resizeComposer } from "./postfx";
 
 export interface Tickable { update(dt: number): void }
 
@@ -11,7 +9,6 @@ export class Engine {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   readonly renderer: THREE.WebGLRenderer;
-  private composer: EffectComposer;
   private clock = new THREE.Clock();
   private tickables: Tickable[] = [];
   private running = false;
@@ -31,9 +28,8 @@ export class Engine {
     u.sunPosition.value.copy(sunDir);
     this.scene.add(sky);
 
-    // Subtle sky-matched haze so the far skyline recedes in layers while the
-    // playable street stays vivid (density is low; tuned in DAY).
-    this.scene.fog = new THREE.FogExp2(DAY.fogColor, DAY.fogDensity);
+    // No fog: distant districts stay crisp and colorful in the daytime look.
+    this.scene.fog = null;
 
     this.camera = new THREE.PerspectiveCamera(60, this.aspect(), 0.1, 1000);
     this.camera.position.set(0, 8, 14);
@@ -54,24 +50,12 @@ export class Engine {
     sun.position.copy(sunPosition(120));
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    // Bias tuned for the lowered (grazing) afternoon sun to avoid shadow acne and
-    // peter-panning without detaching contact shadows from their casters.
-    sun.shadow.bias = -0.0005;
-    sun.shadow.normalBias = 0.02;
-    sun.shadow.camera.near = 1;
     const s = 100;
     sun.shadow.camera.left = -s; sun.shadow.camera.right = s;
     sun.shadow.camera.top = s; sun.shadow.camera.bottom = -s;
     sun.shadow.camera.far = 400;
     this.scene.add(sun);
     this.scene.add(new THREE.AmbientLight(DAY.ambientColor, DAY.ambientIntensity));
-
-    // Post-processing pipeline (GTAO grounding + bloom + SMAA). Shared with the
-    // dev turnaround via core/postfx so both render through one chain.
-    this.composer = createComposer(
-      this.renderer, this.scene, this.camera,
-      container.clientWidth, container.clientHeight,
-    );
 
     window.addEventListener("resize", this.onResize);
   }
@@ -97,14 +81,13 @@ export class Engine {
   private frame(): void {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     for (const t of this.tickables) t.update(dt);
-    this.composer.render(dt);
+    this.renderer.render(this.scene, this.camera);
   }
 
   private resize(): void {
     this.camera.aspect = this.aspect();
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    resizeComposer(this.composer, this.container.clientWidth, this.container.clientHeight);
   }
 
   dispose(): void {
