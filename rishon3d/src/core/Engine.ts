@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
 import { DUSK, sunPosition } from "./sky";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 
 export interface Tickable { update(dt: number): void }
 
@@ -8,6 +12,7 @@ export class Engine {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   readonly renderer: THREE.WebGLRenderer;
+  private composer: EffectComposer;
   private clock = new THREE.Clock();
   private tickables: Tickable[] = [];
   private running = false;
@@ -56,6 +61,20 @@ export class Engine {
     this.scene.add(sun);
     this.scene.add(new THREE.AmbientLight(DUSK.ambientColor, DUSK.ambientIntensity));
 
+    // Postprocessing: subtle bloom so lit windows / streetlights / sun glow at dusk.
+    // RenderPass -> UnrealBloomPass -> OutputPass; OutputPass applies tone mapping
+    // (reads renderer.toneMapping/exposure), so tone mapping is NOT double-applied.
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.setPixelRatio(this.renderer.getPixelRatio());
+    this.composer.setSize(w, h);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    // UnrealBloomPass(resolution, strength, radius, threshold) — tuned for tasteful dusk glow.
+    const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.6, 0.5, 0.55);
+    this.composer.addPass(bloom);
+    this.composer.addPass(new OutputPass());
+
     window.addEventListener("resize", this.onResize);
   }
 
@@ -80,13 +99,14 @@ export class Engine {
   private frame(): void {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     for (const t of this.tickables) t.update(dt);
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   }
 
   private resize(): void {
     this.camera.aspect = this.aspect();
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.composer.setSize(this.container.clientWidth, this.container.clientHeight);
   }
 
   dispose(): void {
