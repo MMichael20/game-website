@@ -60,7 +60,6 @@ export class Car implements Tickable {
         new THREE.CylinderGeometry(0.35, 0.35, 0.3, 16),
         new THREE.MeshStandardMaterial({ color: 0x111111 }),
       );
-      wheel.rotation.z = Math.PI / 2;
       wheel.castShadow = true;
       this.object.add(wheel);
       this.wheelMeshes.push(wheel);
@@ -106,6 +105,11 @@ export class Car implements Tickable {
       const conn = this.vehicle.wheelChassisConnectionPointCs(i);
       const susp = this.vehicle.wheelSuspensionLength(i) ?? 0;
       if (conn) this.wheelMeshes[i].position.set(conn.x, conn.y - susp, conn.z);
+
+      // Compose wheel rotation: axle alignment (PI/2 around Z) + spin around axle (X) + steer around Y
+      const spin = this.vehicle.wheelRotation(i) ?? 0;
+      const steer = this.vehicle.wheelSteering(i) ?? 0;
+      this.wheelMeshes[i].rotation.set(spin, steer, Math.PI / 2, "YXZ");
     }
   }
 }

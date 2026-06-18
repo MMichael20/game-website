@@ -14,6 +14,7 @@ export class Character implements Tickable {
   private collider: RAPIER.Collider;
   private controller: RAPIER.KinematicCharacterController;
   private tmp = new THREE.Vector3();
+  private velY = 0;
 
   constructor(
     scene: THREE.Scene,
@@ -63,7 +64,8 @@ export class Character implements Tickable {
     // camera-relative input direction on XZ plane
     const forward = this.tmp.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
     forward.y = 0; forward.normalize();
-    const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize().negate();
+    // cross(forward, up) with right-hand rule: when forward = -Z, result = +X (screen-right). No negate needed.
+    const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
     const move = new THREE.Vector3();
     if (this.input.isDown("KeyW") || this.input.isDown("ArrowUp")) move.add(forward);
@@ -71,10 +73,18 @@ export class Character implements Tickable {
     if (this.input.isDown("KeyA") || this.input.isDown("ArrowLeft")) move.sub(right);
     if (this.input.isDown("KeyD") || this.input.isDown("ArrowRight")) move.add(right);
 
-    let desired = { x: 0, y: -9.81 * dt, z: 0 };
+    // Integrate vertical velocity; reset to 0 when grounded (evaluated after previous frame's computeColliderMovement)
+    if (this.controller.computedGrounded()) {
+      this.velY = 0;
+    } else {
+      this.velY += -9.81 * dt;
+    }
+    const gravityDy = this.velY * dt;
+
+    let desired = { x: 0, y: gravityDy, z: 0 };
     if (move.lengthSq() > 0) {
       move.normalize().multiplyScalar(SPEED * dt);
-      desired = { x: move.x, y: -9.81 * dt, z: move.z };
+      desired = { x: move.x, y: gravityDy, z: move.z };
       this.object.rotation.y = Math.atan2(move.x, move.z);
     }
 
