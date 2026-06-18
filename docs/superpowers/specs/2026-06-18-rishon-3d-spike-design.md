@@ -106,6 +106,16 @@ No faked green. If verification fails after honest debugging, STOP and report (a
 - NPCs → chose **static figures, no AI** — because near-zero content per the brief.
 - Controls → chose **desktop keyboard only**; touch controls noted as later work — because spike is judged on the user's machine first.
 - Testing → chose **vitest for pure logic + Playwright headless smoke for the integrated app** — because rendering/physics can't be meaningfully unit-tested, but boot/render/no-errors is real evidence.
+- Execution shape → chose **cohesive sequential implementer waves (not one fresh subagent per single task)** — because the 11 files are small and tightly coupled and the Rapier API had to be used consistently from its real typings; each wave got a controller diff review, the physics/vehicle code got a dedicated reviewer, and the whole branch got a final review.
+- Smoke test WebGL → chose **swiftshader launch args** (`--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`) — because headless Chromium needs a software GL backend to give Three.js a WebGL context; assertions were NOT weakened.
+- Final-review Important items → chose to **fix the two that affect the evaluation experience** (clear input on pause/blur; distinct house landmark using the existing `isHouse` flag) and **defer GPU-disposal paths** to a logged follow-up — because the spike is a single-page throwaway that never unmounts, so disposal is gold-plating until/unless it becomes the real app.
+
+## 8. Remaining follow-ups (logged, not done — for if the 3D direction is greenlit)
+- Add `dispose()` to entities (Character/Car/Npc/World) before this becomes a mounted view in the real app (GPU memory).
+- Car right-side wheel spin sign is cosmetically reversed; tune per-side.
+- `RoadDef` has no `width` field (builder hardcodes 6); add when roads of varying width are needed.
+- Character `tmp` scratch Vector3 is shared; pool consistently or not at all.
+- Touch/mobile controls; geographically accurate Rishon; asset packs; NPC AI/traffic; audio; day/night.
 
 ## 7. What Remains After the Spike (not in scope, for later decision)
 
