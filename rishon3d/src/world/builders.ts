@@ -1,5 +1,15 @@
 import * as THREE from "three";
 import type { BuildingDef, RishonMap, RoadDef } from "./rishonMap";
+import { makeWindowTexture } from "./windows";
+import { DUSK } from "../core/sky";
+
+// One shared base window texture; cloned per building so each can tile its
+// windows at a believable size via texture.repeat.
+let WINDOW_TEX: THREE.DataTexture | null = null;
+function windowTexture(): THREE.DataTexture {
+  if (!WINDOW_TEX) WINDOW_TEX = makeWindowTexture();
+  return WINDOW_TEX;
+}
 
 export function makeGround(map: RishonMap): THREE.Mesh {
   const geo = new THREE.PlaneGeometry(map.ground.size, map.ground.size);
@@ -51,7 +61,15 @@ export function makeBuilding(def: BuildingDef): THREE.Object3D {
   }
 
   const geo = new THREE.BoxGeometry(def.width, def.height, def.depth);
-  const mat = new THREE.MeshStandardMaterial({ color: def.color });
+  const tex = windowTexture().clone();
+  tex.needsUpdate = true;
+  tex.repeat.set(Math.max(1, Math.round(def.width / 3)), Math.max(1, Math.round(def.height / 3)));
+  const mat = new THREE.MeshStandardMaterial({
+    color: def.color,
+    emissive: DUSK.windowEmissive,
+    emissiveMap: tex,
+    emissiveIntensity: DUSK.windowEmissiveIntensity,
+  });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(def.x, def.height / 2, def.z);
   mesh.castShadow = true;
