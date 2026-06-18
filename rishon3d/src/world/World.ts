@@ -5,10 +5,12 @@ import { treeInstances, bushInstances, makeStreetLight, benchInstances } from ".
 import type { RishonMap } from "./rishonMap";
 import { makeRoadNetwork } from "./roads";
 import { planParkedCars, parkedCarInstances } from "./parkedCars";
+import { makeParkGround } from "./park";
 
 export class World {
   constructor(scene: THREE.Scene, physics: Physics, public readonly map: RishonMap) {
     scene.add(makeGround(map));
+    scene.add(makeParkGround());
     scene.add(makeRoadNetwork(map.roads));
 
     // ground collider (thin fixed cuboid at y=0)

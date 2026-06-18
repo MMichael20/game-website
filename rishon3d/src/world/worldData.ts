@@ -2,6 +2,7 @@ import { CORE_MAP, type RishonMap, type RoadDef, type PropDef } from "./rishonMa
 import type { DistrictSpec } from "./districts";
 import { generateDistrict } from "./cityGen";
 import { filterPropsOffRoads } from "./roadClear";
+import { parkProps } from "./park";
 
 // Four satellite districts arranged around the hand-authored downtown core.
 // Centers/sizes chosen to sit inside the 280-unit ground with margin and not
@@ -54,6 +55,7 @@ export function assembleMap(): RishonMap {
   const roads = [...CORE_MAP.roads, ...arterials()];
   const props = [...CORE_MAP.props];
   props.push(...roadsideTrees());
+  props.push(...parkProps());
 
   for (const spec of DISTRICTS) {
     const r = generateDistrict(spec);
