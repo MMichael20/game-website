@@ -3,7 +3,7 @@ import { mulberry32 } from "./rng";
 
 // Deterministic grid of windows: a warm-lit subset glows, the rest are dark.
 // Pure pixel data (no canvas/DOM) so it is unit-testable under node.
-export function windowPattern(cols: number, rows: number, seed: number): Uint8Array {
+export function windowPattern(cols: number, rows: number, seed: number): Uint8Array<ArrayBuffer> {
   const rng = mulberry32(seed);
   const data = new Uint8Array(new ArrayBuffer(cols * rows * 4));
   for (let i = 0; i < cols * rows; i++) {
@@ -18,7 +18,7 @@ export function windowPattern(cols: number, rows: number, seed: number): Uint8Ar
 }
 
 export function makeWindowTexture(cols = 8, rows = 8, seed = 1337): THREE.DataTexture {
-  const pixels = windowPattern(cols, rows, seed) as unknown as Uint8Array<ArrayBuffer>;
+  const pixels = windowPattern(cols, rows, seed);
   const tex = new THREE.DataTexture(pixels, cols, rows, THREE.RGBAFormat);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;

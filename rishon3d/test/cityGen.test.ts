@@ -65,5 +65,6 @@ describe("generateDistrict", () => {
     const dense = generateDistrict({ ...spec, seed: 5 });
     const kinds = new Set(dense.props.map((p) => p.kind));
     expect([...kinds].every((k) => ["tree", "bush", "bench"].includes(k))).toBe(true);
+    expect(kinds.has("bench")).toBe(true);
   });
 });

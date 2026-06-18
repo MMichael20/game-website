@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { BuildingDef, RishonMap, RoadDef } from "./rishonMap";
+import type { BuildingDef, RishonMap } from "./rishonMap";
 import { makeWindowTexture } from "./windows";
 import { DUSK } from "../core/sky";
 
@@ -20,17 +20,6 @@ export function makeGround(map: RishonMap): THREE.Mesh {
   return mesh;
 }
 
-export function makeRoad(def: RoadDef): THREE.Mesh {
-  const w = def.horizontal ? def.length : 6;
-  const d = def.horizontal ? 6 : def.length;
-  const geo = new THREE.PlaneGeometry(w, d);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x3a3a40 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.position.set(def.x, 0.02, def.z);
-  mesh.receiveShadow = true;
-  return mesh;
-}
 
 export function makeBuilding(def: BuildingDef): THREE.Object3D {
   if (def.isHouse) {
