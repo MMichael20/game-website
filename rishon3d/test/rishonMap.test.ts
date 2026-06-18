@@ -23,4 +23,8 @@ describe("RISHON_MAP", () => {
     const bad = { ...RISHON_MAP, buildings: [...RISHON_MAP.buildings, RISHON_MAP.buildings[0]] };
     expect(validateMap(bad).length).toBeGreaterThan(0);
   });
+  it("validateMap rejects an NPC spawn inside a building footprint", () => {
+    const bad = { ...RISHON_MAP, npcSpawns: [{ x: 14, z: 14 }] };
+    expect(validateMap(bad).length).toBeGreaterThan(0);
+  });
 });

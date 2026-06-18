@@ -41,7 +41,7 @@ export const RISHON_MAP: RishonMap = {
   ],
   npcSpawns: [
     { x: 8, z: 6 }, { x: -6, z: 4 }, { x: 4, z: -10 },
-    { x: -12, z: -4 }, { x: 12, z: 10 }, { x: -2, z: 16 },
+    { x: -12, z: -4 }, { x: 12, z: 6 }, { x: -2, z: 16 },
   ],
   carSpawn: { x: 6, z: 14 },
   playerSpawn: { x: 0, z: 4 },
@@ -67,5 +67,18 @@ export function validateMap(map: RishonMap): string[] {
   if (!inBounds(map.playerSpawn)) errors.push("playerSpawn out of bounds");
   map.npcSpawns.forEach((s, i) => { if (!inBounds(s)) errors.push(`npcSpawn ${i} out of bounds`); });
   map.props.forEach((p) => { if (!inBounds(p)) errors.push(`prop ${p.id} out of bounds`); });
+  const SPAWN_MARGIN = 2.0;
+  map.npcSpawns.forEach((s, i) => {
+    for (const b of map.buildings) {
+      const minX = b.x - b.width / 2 - SPAWN_MARGIN;
+      const maxX = b.x + b.width / 2 + SPAWN_MARGIN;
+      const minZ = b.z - b.depth / 2 - SPAWN_MARGIN;
+      const maxZ = b.z + b.depth / 2 + SPAWN_MARGIN;
+      if (s.x >= minX && s.x <= maxX && s.z >= minZ && s.z <= maxZ) {
+        errors.push(`npcSpawn ${i} inside building ${b.id}`);
+        break;
+      }
+    }
+  });
   return errors;
 }
