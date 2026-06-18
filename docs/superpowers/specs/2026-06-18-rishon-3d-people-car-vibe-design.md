@@ -61,5 +61,12 @@ Keep the Iteration 1 boundaries. New pure-logic seams are unit-tested; visual/ph
 - Props collision -> chose **cosmetic, no colliders** this iteration — to keep scope tight; can add trunk/pole colliders later.
 - Streetlight lights -> chose **emissive lamp heads + a small capped number of cheap non-shadow point lights** — to suggest lit lamps without a shadow-map cost per lamp.
 
+## 5b. Post-build decisions (auto-mode log, added during execution)
+
+- Car grip -> `setWheelFrictionSlip` exists in the installed Rapier build, so it WAS used at 2.0 (final tuning: forward force 65, reverse 0.7x, friction 2.0). Tunable.
+- Final review CRITICAL fix -> NPC spawn `(12,10)` was inside the house footprint within the 1.5 wander margin, freezing that NPC. Fixed by moving the spawn to `(12,6)` AND adding a `validateMap` footprint guard (margin 2.0 > runtime 1.5) so an in-building spawn is now reported invalid and can't regress. (commit dd725d9)
+- Visual verification -> drove a headless browser, clicked Start, screenshotted: confirmed limbed humanoids animating, trees/streetlights, golden-hour mood. The only console noise is a harmless `favicon.ico` 404.
+- Deferred (logged): wander validates the target endpoint, not the path, so an NPC can stutter for a frame or two near a wall before re-picking (self-recovers); add a favicon to silence the 404; prop colliders; audio.
+
 ## 6. Out of scope / later
 Audio (engine + ambient), prop colliders, NPC reactions to player/car, traffic, day/night cycle control, mobile/touch, geographically accurate Rishon, asset packs. Each its own follow-up.
