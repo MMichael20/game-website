@@ -9,6 +9,8 @@ import { makeParkGround } from "./park";
 import { makeClouds } from "./clouds";
 import { makeRail } from "./rail";
 import { makeStreetFurniture } from "./streetFurniture";
+import { makeAirport } from "./airport";
+import { makeRestaurantStreet } from "./restaurantStreet";
 
 export class World {
   constructor(scene: THREE.Scene, physics: Physics, public readonly map: RishonMap) {
@@ -17,6 +19,8 @@ export class World {
     scene.add(makeRoadNetwork(map.roads));
     scene.add(makeClouds());
     scene.add(makeRail());
+    scene.add(makeAirport());
+    scene.add(makeRestaurantStreet());
 
     // ground collider (thin fixed cuboid at y=0)
     const half = map.ground.size / 2;

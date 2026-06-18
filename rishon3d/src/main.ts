@@ -30,6 +30,19 @@ async function boot() {
     if (p && typeof p.catch === "function") p.catch(() => {}); // ignore lock rejections (e.g. headless)
   };
 
+  // DEV-only aerial screenshot mode: open with #view=<x>,<z> to park the camera
+  // over (x,z) and render the static scene (no follow/game), for inspecting
+  // distant landmarks (airport, restaurant street, transit station).
+  const viewMatch = location.hash.match(/^#view=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (import.meta.env.DEV && viewMatch) {
+    const tx = parseFloat(viewMatch[1]);
+    const tz = parseFloat(viewMatch[2]);
+    engine.camera.position.set(tx, 40, tz + 50);
+    engine.camera.lookAt(tx, 6, tz);
+    engine.start();
+    return;
+  }
+
   const game = new Game(engine.scene, physics, input, world, follow, engine.camera, hud, minimap, container, lockPointer);
 
   // step physics before game logic each frame
