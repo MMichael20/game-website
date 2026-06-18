@@ -10,7 +10,7 @@ export interface RoadDef {
   id: string; x: number; z: number; length: number; horizontal: boolean;
 }
 
-export type PropKind = "tree" | "streetlight";
+export type PropKind = "tree" | "streetlight" | "bush";
 export interface PropDef { id: string; kind: PropKind; x: number; z: number }
 
 export interface RishonMap {
