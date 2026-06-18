@@ -3,6 +3,7 @@ import { Physics, RAPIER } from "../core/Physics";
 import type { Input } from "../core/Input";
 import type { Tickable } from "../core/Engine";
 import type { Vec2 } from "../world/rishonMap";
+import { makeCarBody } from "./carMesh";
 
 const ENGINE_FORCE = 350;
 const BRAKE = 12;
@@ -17,7 +18,6 @@ export class Car implements Tickable {
 
   private body: RAPIER.RigidBody;
   private vehicle: RAPIER.DynamicRayCastVehicleController;
-  private chassis: THREE.Mesh;
   private wheelMeshes: THREE.Mesh[] = [];
 
   constructor(
@@ -26,18 +26,7 @@ export class Car implements Tickable {
     private input: Input,
     spawn: Vec2,
   ) {
-    this.chassis = new THREE.Mesh(
-      new THREE.BoxGeometry(1.8, 0.6, 3.6),
-      new THREE.MeshStandardMaterial({ color: 0xc0392b, metalness: 0.3, roughness: 0.5 }),
-    );
-    this.chassis.castShadow = true;
-    const cabin = new THREE.Mesh(
-      new THREE.BoxGeometry(1.5, 0.5, 1.8),
-      new THREE.MeshStandardMaterial({ color: 0x222831 }),
-    );
-    cabin.position.set(0, 0.5, -0.2);
-    this.chassis.add(cabin);
-    this.object.add(this.chassis);
+    this.object.add(makeCarBody({ bodyColor: 0xc0392b, withWheels: false }));
     scene.add(this.object);
 
     this.body = physics.world.createRigidBody(

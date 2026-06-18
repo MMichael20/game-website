@@ -37,12 +37,13 @@ export function planParkedCars(map: RishonMap, seed: number, max: number): Place
 
 function parkedCarGeo(): THREE.BufferGeometry {
   return getGeometry("parkedCar", () => {
-    const body = new THREE.BoxGeometry(1.7, 0.55, 3.4); body.translate(0, 0.5, 0);
-    const cabin = new THREE.BoxGeometry(1.4, 0.45, 1.6); cabin.translate(0, 0.95, -0.2);
-    return mergeGeometries([body, cabin]);
+    const body = new THREE.BoxGeometry(1.8, 0.5, 3.6); body.translate(0, 0.5, 0);
+    const glass = new THREE.BoxGeometry(1.5, 0.46, 1.9); glass.translate(0, 0.98, -0.2);
+    const roof = new THREE.BoxGeometry(1.6, 0.16, 1.7); roof.translate(0, 1.29, -0.2);
+    return mergeGeometries([body, glass, roof]);
   });
 }
-const parkedCarMat = () => getMaterial("parkedCarMat", () => new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.3, roughness: 0.6 }));
+const parkedCarMat = () => getMaterial("parkedCarMat", () => new THREE.MeshStandardMaterial({ color: 0x8b94a3, metalness: 0, roughness: 0.85 }));
 
 export function parkedCarInstances(placements: Placement[]): THREE.Object3D {
   return makeInstanced(parkedCarGeo(), parkedCarMat(), placements, 0);

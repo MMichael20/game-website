@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { Vec2 } from "../world/rishonMap";
 import { stepToward } from "../game/taxi";
-import { getGeometry, getMaterial } from "../world/assets";
+import { makeCarBody } from "./carMesh";
 
 const CAR_Y = 0.5;
 const SPEED = 11;
@@ -17,18 +17,9 @@ export class RideCar {
   private head = 0;
 
   constructor(scene: THREE.Scene) {
-    const body = new THREE.Mesh(
-      getGeometry("rideCarBody", () => new THREE.BoxGeometry(1.8, 0.6, 3.6)),
-      getMaterial("rideCarBodyMat", () => new THREE.MeshStandardMaterial({ color: 0xc0392b, metalness: 0.3, roughness: 0.5 })),
-    );
-    body.position.y = CAR_Y;
-    body.castShadow = true;
-    const cabin = new THREE.Mesh(
-      getGeometry("rideCarCabin", () => new THREE.BoxGeometry(1.5, 0.5, 1.8)),
-      getMaterial("rideCarCabinMat", () => new THREE.MeshStandardMaterial({ color: 0x222831 })),
-    );
-    cabin.position.set(0, CAR_Y + 0.5, -0.2);
-    this.object.add(body, cabin);
+    const car = makeCarBody({ bodyColor: 0xc0392b, withWheels: true });
+    car.position.y = CAR_Y;
+    this.object.add(car);
     this.object.visible = false;
     scene.add(this.object);
   }

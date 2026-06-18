@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { Agent } from "../game/EntityManager";
 import type { Vec2 } from "../world/rishonMap";
 import { advanceAlong, type FollowState } from "../game/pathFollow";
-import { getGeometry, getMaterial } from "../world/assets";
+import { makeCarBody } from "./carMesh";
 
 const CAR_Y = 0.5;
 
@@ -16,17 +16,9 @@ export class NpcCar implements Agent {
 
   constructor(scene: THREE.Scene, private route: Vec2[], color: number, speed = 7) {
     this.speed = speed;
-    const body = new THREE.Mesh(
-      getGeometry("npcCarBody", () => new THREE.BoxGeometry(1.7, 0.6, 3.4)),
-      getMaterial(`npcCarMat-${color}`, () => new THREE.MeshStandardMaterial({ color, metalness: 0.3, roughness: 0.6 })),
-    );
-    body.position.y = CAR_Y; body.castShadow = true;
-    const cabin = new THREE.Mesh(
-      getGeometry("npcCarCabin", () => new THREE.BoxGeometry(1.4, 0.5, 1.6)),
-      getMaterial("npcCarCabinMat", () => new THREE.MeshStandardMaterial({ color: 0x222831 })),
-    );
-    cabin.position.set(0, CAR_Y + 0.5, -0.2);
-    this.object.add(body, cabin);
+    const car = makeCarBody({ bodyColor: color, withWheels: true });
+    car.position.y = CAR_Y;
+    this.object.add(car);
 
     const start = route[0] ?? { x: 0, z: 0 };
     this.object.position.set(start.x, 0, start.z);
