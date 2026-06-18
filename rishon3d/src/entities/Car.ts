@@ -4,7 +4,7 @@ import type { Input } from "../core/Input";
 import type { Tickable } from "../core/Engine";
 import type { Vec2 } from "../world/rishonMap";
 
-const ENGINE_FORCE = 28;
+const ENGINE_FORCE = 65;
 const BRAKE = 4;
 const MAX_STEER = 0.5;
 
@@ -56,6 +56,7 @@ export class Car implements Tickable {
       const idx = this.wheelMeshes.length;
       this.vehicle.setWheelSuspensionStiffness(idx, 24);
       this.vehicle.setWheelMaxSuspensionTravel(idx, 0.3);
+      this.vehicle.setWheelFrictionSlip(idx, 2.0);
       const wheel = new THREE.Mesh(
         new THREE.CylinderGeometry(0.35, 0.35, 0.3, 16),
         new THREE.MeshStandardMaterial({ color: 0x111111 }),
@@ -78,7 +79,7 @@ export class Car implements Tickable {
     let engine = 0;
     if (this.enabled) {
       if (accel) engine = ENGINE_FORCE;
-      else if (reverse) engine = -ENGINE_FORCE * 0.6;
+      else if (reverse) engine = -ENGINE_FORCE * 0.7;
     }
     let steer = 0;
     if (this.enabled) {
