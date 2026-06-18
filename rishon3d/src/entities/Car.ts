@@ -4,8 +4,8 @@ import type { Input } from "../core/Input";
 import type { Tickable } from "../core/Engine";
 import type { Vec2 } from "../world/rishonMap";
 
-const ENGINE_FORCE = 65;
-const BRAKE = 4;
+const ENGINE_FORCE = 350;
+const BRAKE = 12;
 const MAX_STEER = 0.5;
 
 export class Car implements Tickable {
