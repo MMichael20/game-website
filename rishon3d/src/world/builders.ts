@@ -52,7 +52,7 @@ export function makeBuilding(def: BuildingDef): THREE.Object3D {
   const geo = new THREE.BoxGeometry(def.width, def.height, def.depth);
   const tex = windowTexture().clone();
   tex.needsUpdate = true;
-  tex.repeat.set(Math.max(1, Math.round(def.width / 3)), Math.max(1, Math.round(def.height / 3)));
+  tex.repeat.set(Math.max(1, Math.round(def.width / 6)), Math.max(2, Math.round(def.height / 5)));
   const mat = new THREE.MeshStandardMaterial({
     color: def.color,
     emissive: DUSK.windowEmissive,

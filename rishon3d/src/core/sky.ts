@@ -18,7 +18,7 @@ export const DUSK = {
   rayleigh: 2.5,
   mieCoefficient: 0.008,
   mieDirectionalG: 0.82,
-  exposure: 0.5,          // sub-1 -> "a bit dark but sun still out"
+  exposure: 0.62,         // sub-1 -> "a bit dark but sun still out"
   fogColor: 0xe8a262,     // warm dusk haze matching the horizon glow
   fogNear: 50,
   fogFar: 200,
@@ -30,7 +30,7 @@ export const DUSK = {
   ambientColor: 0x4a5a78, // cool sky fill
   ambientIntensity: 0.3,
   windowEmissive: 0xffd27a,
-  windowEmissiveIntensity: 0.9,
+  windowEmissiveIntensity: 0.45,
 } as const;
 
 export function sunPosition(distance: number): THREE.Vector3 {

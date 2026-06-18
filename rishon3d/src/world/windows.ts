@@ -8,7 +8,7 @@ export function windowPattern(cols: number, rows: number, seed: number): Uint8Ar
   const data = new Uint8Array(new ArrayBuffer(cols * rows * 4));
   for (let i = 0; i < cols * rows; i++) {
     const o = i * 4;
-    if (rng() < 0.45) {
+    if (rng() < 0.14) {
       data[o] = 255; data[o + 1] = 210; data[o + 2] = 130; data[o + 3] = 255;
     } else {
       data[o] = 12; data[o + 1] = 12; data[o + 2] = 16; data[o + 3] = 255;
