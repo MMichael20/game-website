@@ -2,10 +2,10 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 // Roblox/voxel "City Traveler" avatar, built to the reference turnaround + notes:
-// spiky block hair (a few small meshes on a cube head), a blue jacket torso with
-// darker side panels and a thin white front shirt, a brown backpack (rear box +
-// two front straps), skin cuffs/hands, navy legs and chunky black shoes, and a
-// simple face of dark rectangles on the front only.
+// a full rounded curly block-hair mop on a cube head, a blue open jacket over a
+// wide white tee with two brown backpack straps set wide on the chest, a brown
+// backpack (rear box + pocket + top grab-handle), skin cuffs/hands, navy legs and
+// chunky black shoes, and a simple smiling face of dark rectangles on the front.
 export interface HumanoidPalette { skin: number; shirt: number; pants: number; hair?: number }
 export interface HumanoidLimbs {
   leftLeg: THREE.Object3D; rightLeg: THREE.Object3D;
@@ -61,38 +61,72 @@ function limb(
   return pivot;
 }
 
-// Spiky block hair: a crown slab, a back patch, and a few stepped front spikes
-// (~7 blocks total), merged to one geometry. Sits on top of the cube head.
+// Deterministic 0..1 hash so curl sizes vary across the mop but stay identical
+// for every NPC (no RNG -> stable crowds and tests).
+function hash01(x: number, z: number): number {
+  const n = Math.sin(x * 91.7 + z * 47.3) * 43758.5453;
+  return n - Math.floor(n);
+}
+
+// Full rounded "curly" voxel mop: a bumpy dome of small cubes over the crown plus
+// a skirt down the sides and back, leaving the face clear. Per-cube size jitter
+// makes the surface read as curls rather than a smooth cap. Merged to one
+// geometry; sits on top of the cube head.
 function hairGeometry(): THREE.BufferGeometry {
   const cubes: THREE.BufferGeometry[] = [];
   const add = (w: number, h: number, d: number, x: number, y: number, z: number) => {
     const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); cubes.push(g);
   };
-  add(0.48, 0.18, 0.48, 0, 0.24, 0);       // crown slab on top
-  add(0.46, 0.16, 0.16, 0, 0.12, -0.2);    // hair down the back
-  // stepped front spikes (taller toward the middle)
-  add(0.14, 0.16, 0.16, -0.14, 0.34, 0.12);
-  add(0.14, 0.22, 0.16, 0.0, 0.36, 0.14);
-  add(0.14, 0.16, 0.16, 0.14, 0.34, 0.12);
-  add(0.13, 0.13, 0.13, -0.08, 0.4, -0.02);
-  add(0.13, 0.13, 0.13, 0.09, 0.41, -0.04);
+  // Solid base shell so no scalp ever shows through the curls: a crown cap, a
+  // back slab (nape to crown), and two side slabs, all overlapping so there is no
+  // seam. Only the front face is left open.
+  add(0.50, 0.22, 0.50, 0, 0.24, 0);                                      // crown cap
+  add(0.50, 0.44, 0.16, 0, 0.02, -0.24);                                  // back of head
+  for (const sx of [-0.25, 0.25]) add(0.14, 0.40, 0.42, sx, 0.04, -0.04); // temples / sides
+
+  // Bumpy curl cubes over the shell for a curly, lifted texture. Gaps between
+  // these are fine now -- the shell behind them fills any scalp.
+  const cols = [-0.26, -0.13, 0, 0.13, 0.26];
+  for (const x of cols) for (const z of cols) {
+    const j = hash01(x, z), k = hash01(z, x);
+    const y = 0.36 - 0.8 * (x * x + z * z);
+    const s = 0.14 + 0.07 * j;
+    add(s, 0.16 + 0.06 * j, s, x + (k - 0.5) * 0.05, y + (k - 0.5) * 0.04, z + (j - 0.5) * 0.05);
+  }
+  // A few taller crown pops for a rounded, lifted top (not a flat helmet).
+  add(0.16, 0.16, 0.16, -0.06, 0.48, 0.0);
+  add(0.15, 0.15, 0.15, 0.08, 0.47, -0.05);
+  add(0.14, 0.14, 0.14, 0.0, 0.49, 0.08);
+  // Lower curls hanging over the temples and nape (front row skipped: face open).
+  for (const x of cols) for (const z of cols) {
+    if (Math.max(Math.abs(x), Math.abs(z)) < 0.26) continue;
+    if (z > 0.13) continue;
+    const j = hash01(x + 5.1, z - 3.7);
+    add(0.15 + 0.04 * j, 0.22 + 0.07 * j, 0.15 + 0.04 * j, x * 1.04, 0.06 - 0.03 * j, z * 1.04);
+  }
   return mergeGeometries(cubes);
 }
 
-// Eyes + a small mouth, tiny dark rectangles on the head's +Z front face only.
+// Eyes + an upturned smile, tiny dark rectangles on the head's +Z front face only.
+// The smile is a centre bar plus two raised corner pixels so it reads friendly,
+// not the flat neutral line of the previous build.
 function addFace(head: THREE.Mesh): void {
   const ink = new THREE.MeshStandardMaterial({ color: INK });
   const fz = 0.225;
   for (const ex of [-0.1, 0.1]) {
-    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.09, 0.02), ink);
-    eye.position.set(ex, 0.03, fz); head.add(eye);
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.08, 0.02), ink);
+    eye.position.set(ex, 0.04, fz); head.add(eye);
   }
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.04, 0.02), ink);
-  mouth.position.set(0, -0.13, fz); head.add(mouth);
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.035, 0.02), ink);
+  mouth.position.set(0, -0.14, fz); head.add(mouth);
+  for (const cx of [-0.075, 0.075]) {
+    const corner = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.02), ink);
+    corner.position.set(cx, -0.115, fz); head.add(corner);
+  }
 }
 
-// Brown backpack: a rear box, a back pocket, and two front shoulder straps
-// (kept visible from the side and back). One named group.
+// Brown backpack: a rear box, a back pocket, a top grab-handle, and two front
+// shoulder straps set wide so the white tee reads between them. One named group.
 function makeBackpack(): THREE.Group {
   const pack = new THREE.Group();
   pack.name = "backpack";
@@ -102,8 +136,10 @@ function makeBackpack(): THREE.Group {
   body.position.set(0, 1.16, -0.3); body.castShadow = true; pack.add(body);
   const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.06), dark);
   pocket.position.set(0, 1.04, -0.44); pack.add(pocket);
-  for (const sx of [-0.17, 0.17]) {
-    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.56, 0.06), brown);
+  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.07), brown);
+  handle.position.set(0, 1.5, -0.34); handle.castShadow = true; pack.add(handle);
+  for (const sx of [-0.2, 0.2]) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.56, 0.06), brown);
     strap.position.set(sx, 1.17, 0.17); strap.castShadow = true; pack.add(strap);
   }
   return pack;
@@ -127,15 +163,17 @@ export function makeHumanoid(palette: HumanoidPalette): Humanoid {
     const panel = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.72, 0.34), darkMat);
     panel.position.set(sx, 1.15, 0); panel.castShadow = true; group.add(panel);
   }
-  for (const lx of [-0.12, 0.12]) {
-    const lapel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.62, 0.04), darkMat);
-    lapel.position.set(lx, 1.16, 0.16); group.add(lapel);
+  // Open-jacket edges: thin dark strips flanking a wide white tee, so the front
+  // reads as "blue jacket open over a white shirt" rather than a busy stripe.
+  for (const lx of [-0.15, 0.15]) {
+    const lapel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.62, 0.04), darkMat);
+    lapel.position.set(lx, 1.16, 0.164); group.add(lapel);
   }
   const shirt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.6, 0.04),
+    new THREE.BoxGeometry(0.26, 0.6, 0.04),
     new THREE.MeshStandardMaterial({ color: WHITE_TEE }),
   );
-  shirt.name = "shirt"; shirt.position.set(0, 1.15, 0.165); group.add(shirt);
+  shirt.name = "shirt"; shirt.position.set(0, 1.15, 0.161); group.add(shirt);
 
   // Head + ears + face + spiky hair.
   const head = new THREE.Mesh(

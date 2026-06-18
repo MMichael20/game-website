@@ -31,7 +31,9 @@ export class Character implements Tickable {
     spawn: Vec2,
     private camera: THREE.Camera,
   ) {
-    const h = makeHumanoid({ skin: 0xf0c9a0, shirt: 0x2e6fb0, pants: 0x274060 });
+    // Explicit warm medium-brown hair to match the City Traveler reference (the
+    // deterministic fallback color happens to land near-black for this palette).
+    const h = makeHumanoid({ skin: 0xf0c9a0, shirt: 0x2e6fb0, pants: 0x274060, hair: 0x4a3526 });
     this.object.add(h.group);
     this.limbs = h.limbs;
     this.object.position.set(spawn.x, 0, spawn.z);

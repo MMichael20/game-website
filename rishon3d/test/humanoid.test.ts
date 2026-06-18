@@ -22,11 +22,11 @@ describe("makeHumanoid", () => {
     const { group } = makeHumanoid(palette);
     expect(group.getObjectByName("backpack")).toBeTruthy();
   });
-  it("gives the head a face (eyes + mouth) and spiky hair as children", () => {
+  it("gives the head a face (eyes + smile) and curly hair as children", () => {
     const { group } = makeHumanoid(palette);
     const head = group.getObjectByName("head") as THREE.Mesh;
     expect(group.getObjectByName("hair")).toBeTruthy();
-    // base head + 2 ears + 2 eyes + mouth + hair = several meshes
+    // base head + 2 ears + 2 eyes + 3 smile pieces + hair = several meshes
     expect(meshCount(head)).toBeGreaterThanOrEqual(6);
   });
   it("dresses the torso as a jacket over a white shirt", () => {

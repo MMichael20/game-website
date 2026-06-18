@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Character Turnaround</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #dedede; overflow: hidden; font-family: system-ui, sans-serif; }
+      #app { width: 100vw; height: 100vh; }
+      .labels { position: fixed; top: 14px; left: 0; right: 0; display: flex; justify-content: space-around; pointer-events: none; }
+      .labels span { font-weight: 800; color: #333; letter-spacing: 2px; font-size: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="labels"><span>FRONT</span><span>LEFT</span><span>BACK</span><span>RIGHT</span></div>
+    <div id="app"></div>
+    <script type="module" src="/src/turnaround.ts"></script>
+  </body>
+</html>
