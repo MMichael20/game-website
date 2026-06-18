@@ -24,8 +24,8 @@ export const PALETTE = {
   parkPath: 0xcdbb95,
   // props
   trunk: 0x8a5a2b,
-  leaf: 0x4caf3f,
-  leafDeep: 0x3f9a36,
+  leaf: 0x5cc24a,
+  leafDeep: 0x49ab3c,
   bush: 0x57b04a,
   benchWood: 0xa9692f,
   lampPole: 0x2b2b30,
@@ -41,6 +41,25 @@ export const PALETTE = {
   // rail
   railConcrete: 0xb9b6ae,
   railDeck: 0x9aa0a6,
+  // building facades (window grid + storefront + trim)
+  glass: 0x8fb8d8,        // cool window glass
+  glassDark: 0x5e88a8,    // shaded glass panel
+  frame: 0xe8e6df,        // light mullion / window frame
+  storefront: 0x9fd0e8,   // bright ground-floor glass
+  cornice: 0xb9b4a8,      // top trim band
+  roofCap: 0x9a958c,      // flat roof top
+  // streets
+  crosswalk: 0xf3ecd0,    // crosswalk stripe (warm white)
+  yellowLine: 0xf2c14e,   // double-yellow center line
+  sidewalkGrout: 0xa9a79f, // tile grout lines on sidewalks
+  // street furniture
+  flowerStem: 0x4f9a3a,   // flower-bed base green
+  flowerYellow: 0xf2c14e,
+  flowerRed: 0xe0524a,
+  flowerWhite: 0xf3efe6,
+  trashCan: 0x2f6b4a,     // dark-green bin
+  hedge: 0x4f9a3a,        // clipped planter hedge
+  planterStone: 0xbdb7a8, // planter rim
 } as const;
 
 // Saturated building bodies for the hand-authored core buildings.
