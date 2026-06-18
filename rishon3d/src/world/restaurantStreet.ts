@@ -185,6 +185,45 @@ function umbrellaGeo(): THREE.BufferGeometry {
   return mergeGeometries(parts);
 }
 
+// A long wooden planter box packed with a green hedge and bright blossoms — the
+// foreground detail that lines the reference patio. Wood rim + green fill +
+// blossom cubes all merge into one vertex-colored geometry (one instanced draw).
+function planterBoxGeo(): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [];
+  parts.push(tintedBox(1.8, 0.5, 0.7, 0, 0.25, 0, PALETTE.benchWood)); // wooden box body
+  parts.push(tintedBox(1.62, 0.28, 0.54, 0, 0.55, 0, PALETTE.hedge));  // green fill, inset
+  // a scatter of blossoms poking above the hedge (fixed, deterministic layout).
+  const blossoms: [number, number, number][] = [
+    [-0.62, 0.02, PALETTE.flowerRed],
+    [-0.24, -0.08, PALETTE.flowerYellow],
+    [0.12, 0.08, PALETTE.flowerWhite],
+    [0.48, -0.04, PALETTE.flowerYellow],
+    [0.66, 0.1, PALETTE.flowerRed],
+  ];
+  for (const [bx, bz, hex] of blossoms) {
+    parts.push(tintedBox(0.16, 0.2, 0.16, bx, 0.74, bz, hex));
+  }
+  return mergeGeometries(parts);
+}
+
+// Planter placements: a row along the street-facing edge of the promenade and a
+// row at the storefront bases, skipping the central pickup stand. Deterministic.
+function planterPlacements(): Placement[] {
+  const out: Placement[] = [];
+  // street-edge row (in front of the seating, toward the open promenade)
+  for (let i = 0; i < 7; i++) {
+    const x = CX - 18 + i * 6;
+    if (Math.abs(x - CX) < 2) continue; // leave the pickup stand clear
+    out.push({ x, z: CZ + 9.2 });
+  }
+  // storefront-base row (planters hugging the building fronts)
+  for (const r of RESTAURANTS) {
+    out.push({ x: r.x - r.w * 0.3, z: SHOP_Z + r.d / 2 + 1.4 });
+    out.push({ x: r.x + r.w * 0.3, z: SHOP_Z + r.d / 2 + 1.4 });
+  }
+  return out;
+}
+
 // Fixed seating cluster centers along the promenade (between the buildings and
 // the street). One cluster roughly per restaurant, plus a couple between them.
 function seatClusters(): { x: number; z: number }[] {
@@ -291,6 +330,9 @@ export function makeRestaurantStreet(): THREE.Object3D {
   group.add(makeInstanced(tableGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }), tablePl, 0));
   group.add(makeInstanced(chairGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }), chairPl, 0));
   group.add(makeInstanced(umbrellaGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), umbrellaPl, 0));
+
+  // flower planters lining the patio (one vertex-colored instanced draw).
+  group.add(makeInstanced(planterBoxGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), planterPlacements(), 0));
 
   // --- menu board + delivery/pickup marker: a small bespoke stand at the
   // RESTAURANT anchor. A post holds a warm-signed board (the menu); a lit cap

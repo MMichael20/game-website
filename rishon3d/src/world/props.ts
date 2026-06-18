@@ -114,13 +114,17 @@ function flowerBaseGeo(): THREE.BufferGeometry {
   });
 }
 // Blossom dot positions and their bright colors (deterministic, fixed layout).
+// A denser scatter so the bed reads as many individual flowers, not a few dots.
 export function flowerDots(): { x: number; z: number; hex: number }[] {
   return [
-    { x: -0.35, z: -0.35, hex: PALETTE.flowerYellow },
-    { x: 0.35, z: -0.3, hex: PALETTE.flowerRed },
-    { x: -0.3, z: 0.35, hex: PALETTE.flowerWhite },
-    { x: 0.35, z: 0.35, hex: PALETTE.flowerYellow },
-    { x: 0, z: 0, hex: PALETTE.flowerRed },
+    { x: -0.4, z: -0.4, hex: PALETTE.flowerYellow },
+    { x: 0.05, z: -0.42, hex: PALETTE.flowerRed },
+    { x: 0.42, z: -0.3, hex: PALETTE.flowerWhite },
+    { x: -0.42, z: 0.05, hex: PALETTE.flowerRed },
+    { x: 0, z: 0, hex: PALETTE.flowerYellow },
+    { x: 0.4, z: 0.1, hex: PALETTE.flowerYellow },
+    { x: -0.3, z: 0.4, hex: PALETTE.flowerWhite },
+    { x: 0.3, z: 0.42, hex: PALETTE.flowerRed },
   ];
 }
 function flowerDotsGeo(): THREE.BufferGeometry {
@@ -143,12 +147,22 @@ const trashcanMat = () => getMaterial("trashcanMat", () => new THREE.MeshStandar
 // --- planter: a stone rim box with a clipped hedge top. Stone + hedge merge
 // into one vertex-colored geometry (one draw call). ---
 function planterGeo(): THREE.BufferGeometry {
-  return getGeometry("planter", () =>
-    mergeGeometries([
+  return getGeometry("planter", () => {
+    const parts: THREE.BufferGeometry[] = [
       tintedBox(1.5, 0.5, 1.5, 0, 0.25, 0, PALETTE.planterStone), // stone rim base
       tintedBox(1.2, 0.55, 1.2, 0, 0.72, 0, PALETTE.hedge),       // clipped hedge top
-    ]),
-  );
+    ];
+    // bright blossoms poking above the hedge so the planter reads as flowering.
+    const blossoms: [number, number, number][] = [
+      [-0.35, -0.35, PALETTE.flowerRed],
+      [0.35, -0.3, PALETTE.flowerYellow],
+      [-0.3, 0.35, PALETTE.flowerWhite],
+      [0.35, 0.35, PALETTE.flowerYellow],
+      [0, 0, PALETTE.flowerRed],
+    ];
+    for (const [bx, bz, hex] of blossoms) parts.push(tintedBox(0.22, 0.24, 0.22, bx, 1.02, bz, hex));
+    return mergeGeometries(parts);
+  });
 }
 
 export function flowerbedInstances(props: PropDef[]): THREE.Object3D {
