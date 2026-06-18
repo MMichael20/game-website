@@ -51,14 +51,14 @@ export function makeRoadNetwork(roads: RoadDef[]): THREE.Group {
   for (const r of roads) {
     const w = r.horizontal ? r.length : ROAD_W;
     const d = r.horizontal ? ROAD_W : r.length;
-    const surf = new THREE.Mesh(new THREE.PlaneGeometry(w, d), asphalt);
+    const surf = new THREE.Mesh(getGeometry(`road-${w}x${d}`, () => new THREE.PlaneGeometry(w, d)), asphalt);
     surf.rotation.x = -Math.PI / 2;
     surf.position.set(r.x, 0.02, r.z);
     surf.receiveShadow = true;
     group.add(surf);
 
     for (const s of sidewalkRects(r)) {
-      const sw = new THREE.Mesh(new THREE.PlaneGeometry(s.w, s.d), concrete);
+      const sw = new THREE.Mesh(getGeometry(`sidewalk-${s.w}x${s.d}`, () => new THREE.PlaneGeometry(s.w, s.d)), concrete);
       sw.rotation.x = -Math.PI / 2;
       sw.position.set(s.x, 0.015, s.z); // just below the asphalt to avoid z-fight at edges
       sw.receiveShadow = true;
