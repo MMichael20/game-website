@@ -6,12 +6,14 @@ import type { RishonMap } from "./rishonMap";
 import { makeRoadNetwork } from "./roads";
 import { planParkedCars, parkedCarInstances } from "./parkedCars";
 import { makeParkGround } from "./park";
+import { makeClouds } from "./clouds";
 
 export class World {
   constructor(scene: THREE.Scene, physics: Physics, public readonly map: RishonMap) {
     scene.add(makeGround(map));
     scene.add(makeParkGround());
     scene.add(makeRoadNetwork(map.roads));
+    scene.add(makeClouds());
 
     // ground collider (thin fixed cuboid at y=0)
     const half = map.ground.size / 2;
