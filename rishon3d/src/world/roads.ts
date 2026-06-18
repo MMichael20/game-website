@@ -65,8 +65,8 @@ export function sidewalkRects(road: RoadDef): Rect[] {
 
 export function makeRoadNetwork(roads: RoadDef[]): THREE.Group {
   const group = new THREE.Group();
-  const asphalt = getMaterial("asphalt", () => new THREE.MeshStandardMaterial({ color: 0x33333a }));
-  const concrete = getMaterial("concrete", () => new THREE.MeshStandardMaterial({ color: 0x8c8a86 }));
+  const asphalt = getMaterial("asphalt", () => new THREE.MeshStandardMaterial({ color: PALETTE.asphalt }));
+  const concrete = getMaterial("concrete", () => new THREE.MeshStandardMaterial({ color: PALETTE.sidewalk }));
 
   for (const r of roads) {
     const w = r.horizontal ? r.length : ROAD_W;
@@ -109,7 +109,7 @@ export function makeRoadNetwork(roads: RoadDef[]): THREE.Group {
       g.rotateX(-Math.PI / 2); // lie flat; long axis along +z
       return g;
     });
-    const dashMat = getMaterial("laneDashMat", () => new THREE.MeshStandardMaterial({ color: 0xf2e9c0 }));
+    const dashMat = getMaterial("laneDashMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.laneLine }));
     const mesh = makeInstanced(dashGeo, dashMat, dashes, 0.03); // above asphalt
     mesh.castShadow = false;
     group.add(mesh);

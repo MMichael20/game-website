@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { BuildingDef, RishonMap } from "./rishonMap";
 import { makeWindowTexture } from "./windows";
 import { DAY } from "../core/sky";
@@ -45,25 +46,37 @@ function stripeTexture(color: number): THREE.DataTexture {
   return t;
 }
 
-// A sloped striped awning slab over the +z face of a building.
-function makeAwning(def: BuildingDef, color: number): THREE.Mesh {
-  const w = Math.min(def.width * 0.92, 8);
-  const tex = stripeTexture(color).clone();
-  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(Math.max(2, Math.round(w / 1.2)), 1);
-  tex.needsUpdate = true;
-  const mat = new THREE.MeshStandardMaterial({ map: tex });
-  const awn = new THREE.Mesh(new THREE.BoxGeometry(w, 0.18, 1.4), mat);
-  const y = Math.min(2.7, def.height - 0.6);
-  awn.position.set(def.x, y, def.z + def.depth / 2 + 0.6);
-  awn.rotation.x = -0.32; // slope down toward the street
-  awn.castShadow = true;
-  return awn;
+// All shop awnings merged into ONE mesh per stripe color (not one mesh per
+// building), so the whole city's awnings cost two draw calls + two shared
+// textures. The slope is baked into each slab's geometry so they can merge.
+export function makeAwnings(buildings: BuildingDef[]): THREE.Object3D {
+  const group = new THREE.Group();
+  const byColor = new Map<number, THREE.BufferGeometry[]>();
+  for (const def of buildings) {
+    if (def.isHouse) continue;
+    const a = awningStyle(def.id);
+    if (!a.show) continue;
+    const w = Math.min(def.width * 0.92, 8);
+    const g = new THREE.BoxGeometry(w, 0.18, 1.4);
+    g.rotateX(-0.32); // slope down toward the street (baked so slabs can merge)
+    const y = Math.min(2.7, def.height - 0.6);
+    g.translate(def.x, y, def.z + def.depth / 2 + 0.6);
+    const list = byColor.get(a.color) ?? [];
+    list.push(g);
+    byColor.set(a.color, list);
+  }
+  for (const [color, geos] of byColor) {
+    const mat = new THREE.MeshStandardMaterial({ map: stripeTexture(color) });
+    const mesh = new THREE.Mesh(mergeGeometries(geos), mat);
+    mesh.castShadow = true;
+    group.add(mesh);
+  }
+  return group;
 }
 
 export function makeGround(map: RishonMap): THREE.Mesh {
   const geo = new THREE.PlaneGeometry(map.ground.size, map.ground.size);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x5a7d4f });
+  const mat = new THREE.MeshStandardMaterial({ color: PALETTE.grass });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.rotation.x = -Math.PI / 2;
   mesh.receiveShadow = true;
@@ -113,11 +126,5 @@ export function makeBuilding(def: BuildingDef): THREE.Object3D {
   mesh.position.set(def.x, def.height / 2, def.z);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
-
-  const a = awningStyle(def.id);
-  if (!a.show) return mesh;
-  const group = new THREE.Group();
-  group.add(mesh);
-  group.add(makeAwning(def, a.color));
-  return group;
+  return mesh;
 }

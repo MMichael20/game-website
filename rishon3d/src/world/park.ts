@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { PropDef } from "./rishonMap";
 import { mulberry32 } from "./rng";
 import { getGeometry, getMaterial } from "./assets";
+import { PALETTE } from "./palette";
 
 export const PARK = { x: -58, z: 58, size: 34 };
 
@@ -27,7 +28,7 @@ export function makeParkGround(): THREE.Object3D {
   const g = new THREE.Group();
   const grass = new THREE.Mesh(
     getGeometry(`parkGrass-${PARK.size}`, () => new THREE.PlaneGeometry(PARK.size, PARK.size)),
-    getMaterial("parkGrassMat", () => new THREE.MeshStandardMaterial({ color: 0x4a7a3a })),
+    getMaterial("parkGrassMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.parkGrass })),
   );
   grass.rotation.x = -Math.PI / 2;
   grass.position.set(PARK.x, 0.03, PARK.z);
@@ -35,7 +36,7 @@ export function makeParkGround(): THREE.Object3D {
   g.add(grass);
   const path = new THREE.Mesh(
     getGeometry(`parkPath-${PARK.size}`, () => new THREE.PlaneGeometry(PARK.size, 3)),
-    getMaterial("parkPathMat", () => new THREE.MeshStandardMaterial({ color: 0xb8a888 })),
+    getMaterial("parkPathMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.parkPath })),
   );
   path.rotation.x = -Math.PI / 2;
   path.position.set(PARK.x, 0.04, PARK.z);

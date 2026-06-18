@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Physics, RAPIER } from "../core/Physics";
-import { makeBuilding, makeGround } from "./builders";
+import { makeBuilding, makeGround, makeAwnings } from "./builders";
 import { treeInstances, bushInstances, makeStreetLight, benchInstances } from "./props";
 import type { RishonMap } from "./rishonMap";
 import { makeRoadNetwork } from "./roads";
@@ -36,6 +36,7 @@ export class World {
       );
     }
 
+    scene.add(makeAwnings(map.buildings));
     scene.add(treeInstances(map.props));
     scene.add(bushInstances(map.props));
     scene.add(benchInstances(map.props));
