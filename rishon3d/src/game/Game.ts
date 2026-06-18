@@ -85,7 +85,7 @@ export class Game implements Tickable {
     });
     this.car.enabled = false;
     this.character.enabled = true;
-    this.follow.setTarget(this.character.object, 10, 1.6);
+    this.follow.setTarget(this.character.object, 12.5, 1.6);
   }
 
   get phoneOpen(): boolean { return this.phone.isOpen; }
@@ -139,7 +139,7 @@ export class Game implements Tickable {
         this.character.enabled = false;
         this.character.object.visible = false;
         this.car.enabled = true;
-        this.follow.setTarget(this.car.object, 11, 1.4);
+        this.follow.setTarget(this.car.object, 14, 1.5);
       }
     }
 
@@ -157,14 +157,14 @@ export class Game implements Tickable {
         this.character.enabled = false;
         this.character.object.visible = false;
         this.car.enabled = true;
-        this.follow.setTarget(this.car.object, 11, 1.4);
+        this.follow.setTarget(this.car.object, 14, 1.5);
       } else {
         this.car.enabled = false;
         const exit = safeExitPosition(cPos, this.rects, this.bounds);
         this.character.setPosition(exit.x, exit.z);
         this.character.object.visible = true;
         this.character.enabled = true;
-        this.follow.setTarget(this.character.object, 10, 1.6);
+        this.follow.setTarget(this.character.object, 12.5, 1.6);
       }
     }
 

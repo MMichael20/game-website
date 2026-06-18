@@ -14,10 +14,13 @@ export class Minimap {
 
   constructor(container: HTMLElement, private map: RishonMap) {
     this.worldSize = map.ground.size;
+    // Backing store stays at SIZE (crisp); CSS scales the displayed size down to
+    // game-UI scale (~138px desktop, responsive on narrow viewports).
     this.canvas.width = SIZE;
     this.canvas.height = SIZE;
     this.canvas.style.cssText =
-      "position:fixed;right:12px;top:12px;width:180px;height:180px;border-radius:8px;" +
+      "position:fixed;right:12px;top:12px;width:clamp(116px,12vw,144px);height:clamp(116px,12vw,144px);" +
+      "border-radius:8px;" +
       "border:2px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.5);z-index:6;";
     container.appendChild(this.canvas);
     this.ctx = this.canvas.getContext("2d");

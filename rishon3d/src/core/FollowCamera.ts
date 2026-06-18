@@ -4,7 +4,7 @@ import { cameraOffset, clampPitch } from "./cameraMath";
 
 const SENSITIVITY = 0.0026; // radians per pixel of mouse movement
 const MIN_DIST = 4;
-const MAX_DIST = 18;
+const MAX_DIST = 20; // headroom for the pulled-back driving distance (14) + zoom-out
 
 // Third-person orbit camera (GTA-style): mouse orbits yaw/pitch around the
 // target, scroll zooms. Movement code reads camera.quaternion, so on-foot
@@ -13,7 +13,7 @@ export class FollowCamera implements Tickable {
   private target?: THREE.Object3D;
   private yaw = 0;
   private pitch = 0.5;
-  private distance = 10;
+  private distance = 12.5; // matches the on-foot default; pulled back so props stop filling the frame
   private lookHeight = 1.6;
   private desired = new THREE.Vector3();
   private lookAtPoint = new THREE.Vector3();

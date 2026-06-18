@@ -207,15 +207,15 @@ export function makeStreetLight(def: PropDef): THREE.Object3D {
   const g = new THREE.Group();
   g.position.set(def.x, 0, def.z);
   const pole = new THREE.Mesh(
-    getGeometry("slPole", () => new THREE.CylinderGeometry(0.08, 0.1, 3.4, 8)),
+    getGeometry("slPole", () => new THREE.CylinderGeometry(0.06, 0.08, 3.0, 8)),
     getMaterial("slPoleMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.lampPole })),
   );
-  pole.position.y = 1.7; pole.castShadow = true;
+  pole.position.y = 1.5; pole.castShadow = true;
   const lamp = new THREE.Mesh(
-    getGeometry("slLamp", () => new THREE.BoxGeometry(0.5, 0.5, 0.5)),
+    getGeometry("slLamp", () => new THREE.BoxGeometry(0.34, 0.34, 0.34)),
     getMaterial("slLampMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.lantern, emissive: PALETTE.lanternGlow, emissiveIntensity: 1.4 })),
   );
-  lamp.position.y = 3.4;
+  lamp.position.y = 3.0;
   g.add(pole, lamp);
   return g;
 }

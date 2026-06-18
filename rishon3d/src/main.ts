@@ -37,7 +37,14 @@ async function boot() {
   engine.add(game);
   engine.add(follow);
 
-  hud.setHint("WASD / Arrows move - Mouse look - Scroll zoom - Space brake - E enter/exit - P phone - M map - Esc pause");
+  hud.setChips([
+    ["WASD", "Move"],
+    ["Mouse", "Look"],
+    ["E", "Drive"],
+    ["P", "Phone"],
+    ["M", "Map"],
+    ["Esc", "Pause"],
+  ]);
 
   const menu = new Menu(container);
   let started = false;
