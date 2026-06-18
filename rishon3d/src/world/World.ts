@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Physics, RAPIER } from "../core/Physics";
 import { makeBuilding, makeGround, makeRoad } from "./builders";
-import { makeTree, makeStreetLight } from "./props";
+import { treeInstances, bushInstances, makeStreetLight } from "./props";
 import type { RishonMap } from "./rishonMap";
 
 export class World {
@@ -28,17 +28,18 @@ export class World {
       );
     }
 
+    scene.add(treeInstances(map.props));
+    scene.add(bushInstances(map.props));
+
     let lightBudget = 6;
     for (const p of map.props) {
-      if (p.kind === "tree") scene.add(makeTree(p));
-      else {
-        const sl = makeStreetLight(p);
-        scene.add(sl);
-        if (lightBudget-- > 0) {
-          const glow = new THREE.PointLight(0xffb24d, 8, 16, 2);
-          glow.position.set(p.x, 3.4, p.z);
-          scene.add(glow);
-        }
+      if (p.kind !== "streetlight") continue;
+      const sl = makeStreetLight(p);
+      scene.add(sl);
+      if (lightBudget-- > 0) {
+        const glow = new THREE.PointLight(0xffb24d, 8, 16, 2);
+        glow.position.set(p.x, 3.4, p.z);
+        scene.add(glow);
       }
     }
   }
