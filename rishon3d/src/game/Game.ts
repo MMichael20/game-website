@@ -6,9 +6,13 @@ import type { Physics } from "../core/Physics";
 import { Character } from "../entities/Character";
 import { Car } from "../entities/Car";
 import { Npc } from "../entities/Npc";
+import { Animal } from "../entities/Animal";
+import { NpcCar } from "../entities/NpcCar";
 import type { World } from "../world/World";
 import { nextMode, canEnter, type Mode } from "./InteractionSystem";
 import { buildingRects } from "./wander";
+import { EntityManager } from "./EntityManager";
+import { planPopulations } from "./populate";
 import type { Hud } from "../ui/Hud";
 
 const ENTER_RADIUS = 3.5;
@@ -17,7 +21,7 @@ export class Game implements Tickable {
   private character: Character;
   private car: Car;
   private mode: Mode = "onFoot";
-  private npcs: Npc[] = [];
+  private entities: EntityManager;
 
   constructor(
     scene: THREE.Scene,
@@ -40,12 +44,28 @@ export class Game implements Tickable {
       { skin: 0xe8b98a, shirt: 0xc0392b, pants: 0x5a1f1a },
       { skin: 0xf0c9a0, shirt: 0xf1c40f, pants: 0x6b5a12 },
     ];
+    this.entities = new EntityManager(() => camera.position, 140);
+
+    // Hand-authored downtown NPCs (kept for character).
     world.npcSpawns.forEach((s, i) => {
-      this.npcs.push(new Npc(scene, s, palettes[i % palettes.length], { bounds, rects }));
+      this.entities.add(new Npc(scene, s, palettes[i % palettes.length], { bounds, rects }));
+    });
+
+    // Procedurally placed life across the whole city.
+    const pop = planPopulations(world.map, 1234, { pedestrians: 28, cats: 8, dogs: 8 });
+    pop.pedestrians.forEach((s, i) => {
+      this.entities.add(new Npc(scene, s, palettes[i % palettes.length], { bounds, rects }));
+    });
+    pop.cats.forEach((s) => this.entities.add(new Animal(scene, s, "cat", { bounds, rects })));
+    pop.dogs.forEach((s) => this.entities.add(new Animal(scene, s, "dog", { bounds, rects })));
+
+    const carColors = [0x2980b9, 0xf1c40f, 0x27ae60, 0xe67e22, 0x8e44ad, 0xecf0f1];
+    pop.carRoutes.forEach((route, i) => {
+      this.entities.add(new NpcCar(scene, route, carColors[i % carColors.length], 6 + (i % 3)));
     });
     this.car.enabled = false;
     this.character.enabled = true;
-    this.follow.setTarget(this.character.object, new THREE.Vector3(0, 6, 9));
+    this.follow.setTarget(this.character.object, 10, 1.6);
   }
 
   update(dt: number): void {
@@ -60,13 +80,13 @@ export class Game implements Tickable {
         this.character.enabled = false;
         this.character.object.visible = false;
         this.car.enabled = true;
-        this.follow.setTarget(this.car.object, new THREE.Vector3(0, 5, 9));
+        this.follow.setTarget(this.car.object, 11, 1.4);
       } else {
         this.car.enabled = false;
         this.character.setPosition(this.car.position.x + 2.5, this.car.position.z);
         this.character.object.visible = true;
         this.character.enabled = true;
-        this.follow.setTarget(this.character.object, new THREE.Vector3(0, 6, 9));
+        this.follow.setTarget(this.character.object, 10, 1.6);
       }
     }
 
@@ -81,7 +101,7 @@ export class Game implements Tickable {
 
     this.character.update(dt);
     this.car.update(dt);
-    for (const n of this.npcs) n.update(dt);
+    this.entities.update(dt);
     this.input.endFrame();
   }
 }
