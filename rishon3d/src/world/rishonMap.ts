@@ -1,0 +1,58 @@
+export interface Vec2 { x: number; z: number }
+
+export interface BuildingDef {
+  id: string; x: number; z: number;
+  width: number; depth: number; height: number;
+  color: number; isHouse?: boolean;
+}
+
+export interface RoadDef {
+  id: string; x: number; z: number; length: number; horizontal: boolean;
+}
+
+export interface RishonMap {
+  ground: { size: number };
+  buildings: BuildingDef[];
+  roads: RoadDef[];
+  npcSpawns: Vec2[];
+  carSpawn: Vec2;
+  playerSpawn: Vec2;
+}
+
+export const RISHON_MAP: RishonMap = {
+  ground: { size: 120 },
+  roads: [
+    { id: "main-h", x: 0, z: 0, length: 120, horizontal: true },
+    { id: "cross-v", x: 0, z: 0, length: 120, horizontal: false },
+  ],
+  buildings: [
+    { id: "house", x: 14, z: 14, width: 8, depth: 8, height: 5, color: 0xd98c5f, isHouse: true },
+    { id: "b1", x: -18, z: 12, width: 10, depth: 10, height: 12, color: 0x8d99ae },
+    { id: "b2", x: -16, z: -16, width: 12, depth: 8, height: 16, color: 0x6d7a91 },
+    { id: "b3", x: 18, z: -14, width: 9, depth: 11, height: 9, color: 0xa3b0c2 },
+    { id: "b4", x: 34, z: 8, width: 8, depth: 8, height: 20, color: 0x7c8aa0 },
+    { id: "b5", x: -34, z: -6, width: 14, depth: 10, height: 7, color: 0x99a6ba },
+    { id: "b6", x: 6, z: 36, width: 10, depth: 9, height: 14, color: 0x828fa6 },
+    { id: "b7", x: -8, z: -36, width: 11, depth: 11, height: 10, color: 0x90a0b5 },
+  ],
+  npcSpawns: [
+    { x: 8, z: 6 },
+    { x: -6, z: 4 },
+    { x: 4, z: -10 },
+  ],
+  carSpawn: { x: 6, z: 14 },
+  playerSpawn: { x: 0, z: 4 },
+};
+
+export function validateMap(map: RishonMap): string[] {
+  const errors: string[] = [];
+  const ids = map.buildings.map((b) => b.id);
+  if (new Set(ids).size !== ids.length) errors.push("duplicate building ids");
+  if (map.buildings.filter((b) => b.isHouse).length !== 1) errors.push("must have exactly one house");
+  const half = map.ground.size / 2;
+  const inBounds = (p: Vec2) => Math.abs(p.x) <= half && Math.abs(p.z) <= half;
+  if (!inBounds(map.carSpawn)) errors.push("carSpawn out of bounds");
+  if (!inBounds(map.playerSpawn)) errors.push("playerSpawn out of bounds");
+  map.npcSpawns.forEach((s, i) => { if (!inBounds(s)) errors.push(`npcSpawn ${i} out of bounds`); });
+  return errors;
+}
