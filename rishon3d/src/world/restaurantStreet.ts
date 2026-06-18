@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { makeInstanced, type Placement } from "./InstancedProps";
 import { PALETTE } from "./palette";
+import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
 
 // A short, lively restaurant promenade in the open SE corner of the map. Center
 // ~(95,95) is clear of both the E district (z in [-30,30]) and the S district
@@ -56,18 +57,27 @@ function awningStripes(x: number, y: number, z: number, w: number, color: number
   const cols = 6;
   const colW = w / cols;
   const out: THREE.BufferGeometry[] = [];
-  for (let i = 0; i < cols; i++) {
-    const hex = i % 2 === 0 ? color : PALETTE.awningStripe;
-    const g = new THREE.BoxGeometry(colW, 0.18, 1.8);
-    g.rotateX(-0.34); // slope down toward the street (baked so slabs merge)
-    g.translate(x - w / 2 + colW * (i + 0.5), y, z);
-    // tint after the transform so the stripe color is baked per-column.
+  const tint = (g: THREE.BufferGeometry, hex: number) => {
     const c = new THREE.Color(hex);
     const n = g.attributes.position.count;
     const colors = new Float32Array(n * 3);
     for (let v = 0; v < n; v++) { colors[v * 3] = c.r; colors[v * 3 + 1] = c.g; colors[v * 3 + 2] = c.b; }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     out.push(g);
+  };
+  for (let i = 0; i < cols; i++) {
+    const hex = i % 2 === 0 ? color : PALETTE.awningStripe;
+    const cxw = x - w / 2 + colW * (i + 0.5);
+    // sloped top slab (baked rotation so all slabs merge into one mesh).
+    const slab = new THREE.BoxGeometry(colW, 0.18, 1.8);
+    slab.rotateX(-0.34); // slope down toward the street
+    slab.translate(cxw, y, z);
+    tint(slab, hex);
+    // hanging front valance: a short vertical striped flap at the slab's low edge,
+    // the detail that makes a flat awning read as a real fabric canopy.
+    const valance = new THREE.BoxGeometry(colW, 0.36, 0.08);
+    valance.translate(cxw, y - 0.42, z + 0.85);
+    tint(valance, hex);
   }
   return out;
 }
@@ -120,23 +130,59 @@ function restaurantDoor(r: typeof RESTAURANTS[number]): THREE.BufferGeometry {
   return g;
 }
 
-// --- outdoor seating: a small round-ish table topped chair set. Built once as
-// a shared geometry and instanced across the seating band. ---
+// --- outdoor seating: a square table on four legs + chairs on four legs. Built
+// once as shared geometry and instanced across the seating band. ---
 function tableGeo(): THREE.BufferGeometry {
-  const top = new THREE.BoxGeometry(1.0, 0.12, 1.0); top.translate(0, 0.9, 0);
-  const post = new THREE.BoxGeometry(0.18, 0.9, 0.18); post.translate(0, 0.45, 0);
-  return mergeGeometries([top, post]);
+  const parts: THREE.BufferGeometry[] = [];
+  const top = new THREE.BoxGeometry(1.1, 0.12, 1.1); top.translate(0, 0.9, 0);
+  parts.push(top);
+  for (const sx of [-0.45, 0.45]) for (const sz of [-0.45, 0.45]) {
+    const leg = new THREE.BoxGeometry(0.1, 0.9, 0.1); leg.translate(sx, 0.45, sz);
+    parts.push(leg);
+  }
+  return mergeGeometries(parts);
 }
 function chairGeo(): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [];
   const seat = new THREE.BoxGeometry(0.5, 0.1, 0.5); seat.translate(0, 0.5, 0);
   const back = new THREE.BoxGeometry(0.5, 0.5, 0.1); back.translate(0, 0.74, -0.2);
-  return mergeGeometries([seat, back]);
+  parts.push(seat, back);
+  for (const sx of [-0.2, 0.2]) for (const sz of [-0.2, 0.2]) {
+    const leg = new THREE.BoxGeometry(0.08, 0.5, 0.08); leg.translate(sx, 0.25, sz);
+    parts.push(leg);
+  }
+  return mergeGeometries(parts);
 }
-// Umbrella: a slim pole topped by a flat red canopy, shading each table.
+// Umbrella: a slim pole topped by a stepped red/white striped parasol canopy.
+// Stripes are baked as vertex colors so every umbrella shares one geometry +
+// one vertexColors material (still a single instanced draw).
 function umbrellaGeo(): THREE.BufferGeometry {
+  const tint = (g: THREE.BufferGeometry, hex: number) => {
+    const c = new THREE.Color(hex);
+    const n = g.attributes.position.count;
+    const colors = new Float32Array(n * 3);
+    for (let v = 0; v < n; v++) { colors[v * 3] = c.r; colors[v * 3 + 1] = c.g; colors[v * 3 + 2] = c.b; }
+    g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    return g;
+  };
+  const parts: THREE.BufferGeometry[] = [];
   const pole = new THREE.BoxGeometry(0.12, 2.4, 0.12); pole.translate(0, 1.2, 0);
-  const canopy = new THREE.BoxGeometry(2.4, 0.14, 2.4); canopy.translate(0, 2.4, 0);
-  return mergeGeometries([pole, canopy]);
+  parts.push(tint(pole, PALETTE.benchWood));
+  // stepped pyramid: shrinking square rings, alternating canopy color / white,
+  // so it reads as a sloped striped parasol rather than a flat slab.
+  const rings: [number, number, number][] = [
+    [2.4, 2.30, PALETTE.awningRed],
+    [1.85, 2.40, PALETTE.awningStripe],
+    [1.3, 2.50, PALETTE.awningRed],
+    [0.75, 2.60, PALETTE.awningStripe],
+  ];
+  for (const [s, ry, hex] of rings) {
+    const ring = new THREE.BoxGeometry(s, 0.12, s); ring.translate(0, ry, 0);
+    parts.push(tint(ring, hex));
+  }
+  const finial = new THREE.BoxGeometry(0.16, 0.2, 0.16); finial.translate(0, 2.72, 0);
+  parts.push(tint(finial, PALETTE.awningRed));
+  return mergeGeometries(parts);
 }
 
 // Fixed seating cluster centers along the promenade (between the buildings and
@@ -160,23 +206,20 @@ export function makeRestaurantStreet(): THREE.Object3D {
   const group = new THREE.Group();
   group.name = "restaurantStreet";
 
-  // --- promenade slab: a paved plaza with a tile feel (a base sidewalk slab
-  // plus a slightly inset grout-toned border so it reads as laid pavers). ---
+  // --- promenade slab: a paved plaza textured with the shared paver super-tile
+  // so it reads as laid stones (matching the sidewalks), tiled to plaza size. ---
+  const paver = makeSidewalkTexture();
+  paver.repeat.set(
+    Math.max(1, Math.round(PROM_W / PAVER_SUPER_M)),
+    Math.max(1, Math.round(PROM_D / PAVER_SUPER_M)),
+  );
   const promBase = new THREE.Mesh(
     new THREE.BoxGeometry(PROM_W, 0.12, PROM_D),
-    new THREE.MeshStandardMaterial({ color: PALETTE.sidewalk }),
+    new THREE.MeshStandardMaterial({ map: paver }),
   );
   promBase.position.set(CX, 0.06, CZ);
   promBase.receiveShadow = true;
   group.add(promBase);
-
-  const promInset = new THREE.Mesh(
-    new THREE.BoxGeometry(PROM_W - 3, 0.14, PROM_D - 3),
-    new THREE.MeshStandardMaterial({ color: PALETTE.sidewalkGrout }),
-  );
-  promInset.position.set(CX, 0.07, CZ);
-  promInset.receiveShadow = true;
-  group.add(promInset);
 
   // --- restaurant buildings: each restaurant's solid voxel parts merge into
   // one vertex-colored mesh; the warm glass / door / sign-lit / awning use
@@ -247,7 +290,7 @@ export function makeRestaurantStreet(): THREE.Object3D {
   });
   group.add(makeInstanced(tableGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }), tablePl, 0));
   group.add(makeInstanced(chairGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }), chairPl, 0));
-  group.add(makeInstanced(umbrellaGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.awningRed }), umbrellaPl, 0));
+  group.add(makeInstanced(umbrellaGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), umbrellaPl, 0));
 
   // --- menu board + delivery/pickup marker: a small bespoke stand at the
   // RESTAURANT anchor. A post holds a warm-signed board (the menu); a lit cap
