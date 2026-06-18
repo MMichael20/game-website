@@ -27,7 +27,7 @@ async function boot() {
   engine.add(game);
   engine.add(follow);
 
-  hud.setHint("WASD / Arrows move - E enter/exit - Esc pause");
+  hud.setHint("WASD / Arrows move - Space brake - E enter/exit - Esc pause");
 
   const menu = new Menu(container);
   let started = false;
