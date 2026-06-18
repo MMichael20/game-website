@@ -1,5 +1,6 @@
+// rishon3d/test/sky.test.ts
 import { describe, it, expect } from "vitest";
-import { sunDirection, sunPosition, DUSK } from "../src/core/sky";
+import { sunDirection, sunPosition, DAY } from "../src/core/sky";
 
 describe("sunDirection", () => {
   it("points east at azimuth 90, horizon elevation", () => {
@@ -8,18 +9,15 @@ describe("sunDirection", () => {
     expect(v.y).toBeCloseTo(0, 5);
     expect(v.z).toBeCloseTo(0, 5);
   });
-
   it("points north (+Z) at azimuth 0, horizon elevation", () => {
     const v = sunDirection(0, 0);
     expect(v.z).toBeCloseTo(1, 5);
     expect(v.x).toBeCloseTo(0, 5);
   });
-
   it("points straight up at elevation 90", () => {
     const v = sunDirection(90, 123);
     expect(v.y).toBeCloseTo(1, 5);
   });
-
   it("returns a unit vector", () => {
     const v = sunDirection(33, 217);
     expect(v.length()).toBeCloseTo(1, 6);
@@ -33,13 +31,15 @@ describe("sunPosition", () => {
   });
 });
 
-describe("DUSK", () => {
-  it("keeps the sun low but above the horizon (golden hour)", () => {
-    expect(DUSK.sunElevationDeg).toBeGreaterThan(0);
-    expect(DUSK.sunElevationDeg).toBeLessThan(15);
+describe("DAY", () => {
+  it("puts the sun high for midday", () => {
+    expect(DAY.sunElevationDeg).toBeGreaterThan(40);
+    expect(DAY.sunElevationDeg).toBeLessThanOrEqual(90);
   });
-  it("uses sub-1 exposure so it reads a bit dark", () => {
-    expect(DUSK.exposure).toBeGreaterThan(0);
-    expect(DUSK.exposure).toBeLessThan(1);
+  it("uses ~1.0 exposure (bright, not the dark dusk look)", () => {
+    expect(DAY.exposure).toBeGreaterThanOrEqual(0.9);
+  });
+  it("keeps daytime window glow subtle", () => {
+    expect(DAY.windowEmissiveIntensity).toBeLessThan(0.4);
   });
 });

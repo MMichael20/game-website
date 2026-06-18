@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { BuildingDef, RishonMap } from "./rishonMap";
 import { makeWindowTexture } from "./windows";
-import { DUSK } from "../core/sky";
+import { DAY } from "../core/sky";
 
 // One shared base window texture; cloned per building so each can tile its
 // windows at a believable size via texture.repeat.
@@ -55,9 +55,9 @@ export function makeBuilding(def: BuildingDef): THREE.Object3D {
   tex.repeat.set(Math.max(1, Math.round(def.width / 6)), Math.max(2, Math.round(def.height / 5)));
   const mat = new THREE.MeshStandardMaterial({
     color: def.color,
-    emissive: DUSK.windowEmissive,
+    emissive: DAY.windowEmissive,
     emissiveMap: tex,
-    emissiveIntensity: DUSK.windowEmissiveIntensity,
+    emissiveIntensity: DAY.windowEmissiveIntensity,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(def.x, def.height / 2, def.z);

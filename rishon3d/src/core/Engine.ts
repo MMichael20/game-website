@@ -1,10 +1,7 @@
+// rishon3d/src/core/Engine.ts
 import * as THREE from "three";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
-import { DUSK, sunPosition } from "./sky";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { DAY, sunPosition } from "./sky";
 
 export interface Tickable { update(dt: number): void }
 
@@ -12,7 +9,6 @@ export class Engine {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   readonly renderer: THREE.WebGLRenderer;
-  private composer: EffectComposer;
   private clock = new THREE.Clock();
   private tickables: Tickable[] = [];
   private running = false;
@@ -21,20 +17,19 @@ export class Engine {
   constructor(private container: HTMLElement) {
     const sunDir = sunPosition(1);
 
-    // Sky dome: physically-based Rayleigh/Mie sunset glow, replaces the flat
-    // background color. Driven entirely by DUSK so sky + lights stay in sync.
+    // Sky dome: physically-based scattering tuned to a bright clear midday.
     const sky = new Sky();
     sky.scale.setScalar(10000);
     const u = sky.material.uniforms;
-    u.turbidity.value = DUSK.turbidity;
-    u.rayleigh.value = DUSK.rayleigh;
-    u.mieCoefficient.value = DUSK.mieCoefficient;
-    u.mieDirectionalG.value = DUSK.mieDirectionalG;
+    u.turbidity.value = DAY.turbidity;
+    u.rayleigh.value = DAY.rayleigh;
+    u.mieCoefficient.value = DAY.mieCoefficient;
+    u.mieDirectionalG.value = DAY.mieDirectionalG;
     u.sunPosition.value.copy(sunDir);
     this.scene.add(sky);
 
-    // Warm haze so distant districts melt into the horizon glow.
-    this.scene.fog = new THREE.Fog(DUSK.fogColor, DUSK.fogNear, DUSK.fogFar);
+    // No fog: distant districts stay crisp and colorful in the daytime look.
+    this.scene.fog = null;
 
     this.camera = new THREE.PerspectiveCamera(60, this.aspect(), 0.1, 1000);
     this.camera.position.set(0, 8, 14);
@@ -44,41 +39,23 @@ export class Engine {
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = DUSK.exposure;
+    // Neutral tone mapping keeps saturated flat colors punchy (no ACES desat).
+    this.renderer.toneMapping = THREE.NeutralToneMapping;
+    this.renderer.toneMappingExposure = DAY.exposure;
     container.appendChild(this.renderer.domElement);
 
-    const hemi = new THREE.HemisphereLight(DUSK.hemiSky, DUSK.hemiGround, DUSK.hemiIntensity);
+    const hemi = new THREE.HemisphereLight(DAY.hemiSky, DAY.hemiGround, DAY.hemiIntensity);
     this.scene.add(hemi);
-    const sun = new THREE.DirectionalLight(DUSK.sunColor, DUSK.sunIntensity);
-    sun.position.copy(sunPosition(120)); // far, along the sun direction -> long shadows
+    const sun = new THREE.DirectionalLight(DAY.sunColor, DAY.sunIntensity);
+    sun.position.copy(sunPosition(120));
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    const s = 100; // widened for the long dusk shadows
+    const s = 100;
     sun.shadow.camera.left = -s; sun.shadow.camera.right = s;
     sun.shadow.camera.top = s; sun.shadow.camera.bottom = -s;
     sun.shadow.camera.far = 400;
     this.scene.add(sun);
-    this.scene.add(new THREE.AmbientLight(DUSK.ambientColor, DUSK.ambientIntensity));
-
-    // Postprocessing: subtle bloom so lit windows / streetlights / sun glow at dusk.
-    // RenderPass -> UnrealBloomPass -> OutputPass; OutputPass applies tone mapping
-    // (reads renderer.toneMapping/exposure), so tone mapping is NOT double-applied.
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    this.composer = new EffectComposer(this.renderer);
-    this.composer.setPixelRatio(this.renderer.getPixelRatio());
-    this.composer.setSize(w, h);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
-    // UnrealBloomPass(resolution, strength, radius, threshold) — tuned for tasteful dusk glow.
-    const bloom = new UnrealBloomPass(
-      new THREE.Vector2(w, h),
-      DUSK.bloomStrength,
-      DUSK.bloomRadius,
-      DUSK.bloomThreshold,
-    );
-    this.composer.addPass(bloom);
-    this.composer.addPass(new OutputPass());
+    this.scene.add(new THREE.AmbientLight(DAY.ambientColor, DAY.ambientIntensity));
 
     window.addEventListener("resize", this.onResize);
   }
@@ -104,20 +81,18 @@ export class Engine {
   private frame(): void {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     for (const t of this.tickables) t.update(dt);
-    this.composer.render();
+    this.renderer.render(this.scene, this.camera);
   }
 
   private resize(): void {
     this.camera.aspect = this.aspect();
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    this.composer.setSize(this.container.clientWidth, this.container.clientHeight);
   }
 
   dispose(): void {
     this.stop();
     window.removeEventListener("resize", this.onResize);
-    this.composer.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
