@@ -1,7 +1,9 @@
 // rishon3d/src/core/Engine.ts
 import * as THREE from "three";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
+import type { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { DAY, sunPosition } from "./sky";
+import { createComposer, resizeComposer } from "./postfx";
 
 export interface Tickable { update(dt: number): void }
 
@@ -9,6 +11,7 @@ export class Engine {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   readonly renderer: THREE.WebGLRenderer;
+  private composer: EffectComposer;
   private clock = new THREE.Clock();
   private tickables: Tickable[] = [];
   private running = false;
@@ -28,8 +31,9 @@ export class Engine {
     u.sunPosition.value.copy(sunDir);
     this.scene.add(sky);
 
-    // No fog: distant districts stay crisp and colorful in the daytime look.
-    this.scene.fog = null;
+    // Subtle sky-matched haze so the far skyline recedes in layers while the
+    // playable street stays vivid (density is low; tuned in DAY).
+    this.scene.fog = new THREE.FogExp2(DAY.fogColor, DAY.fogDensity);
 
     this.camera = new THREE.PerspectiveCamera(60, this.aspect(), 0.1, 1000);
     this.camera.position.set(0, 8, 14);
@@ -62,6 +66,13 @@ export class Engine {
     this.scene.add(sun);
     this.scene.add(new THREE.AmbientLight(DAY.ambientColor, DAY.ambientIntensity));
 
+    // Post-processing pipeline (GTAO grounding + bloom + SMAA). Shared with the
+    // dev turnaround via core/postfx so both render through one chain.
+    this.composer = createComposer(
+      this.renderer, this.scene, this.camera,
+      container.clientWidth, container.clientHeight,
+    );
+
     window.addEventListener("resize", this.onResize);
   }
 
@@ -86,13 +97,14 @@ export class Engine {
   private frame(): void {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     for (const t of this.tickables) t.update(dt);
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render(dt);
   }
 
   private resize(): void {
     this.camera.aspect = this.aspect();
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    resizeComposer(this.composer, this.container.clientWidth, this.container.clientHeight);
   }
 
   dispose(): void {

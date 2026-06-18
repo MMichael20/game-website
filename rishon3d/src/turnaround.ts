@@ -4,6 +4,7 @@
 import * as THREE from "three";
 import { makeHumanoid } from "./entities/Humanoid";
 import { DAY, sunPosition } from "./core/sky";
+import { createComposer } from "./core/postfx";
 
 const app = document.getElementById("app")!;
 const scene = new THREE.Scene();
@@ -51,11 +52,15 @@ xs.forEach((x, i) => {
   scene.add(group);
 });
 
-function draw(): void { renderer.render(scene, camera); }
+// Render through the shared post-processing pipeline (GTAO + bloom + SMAA) so the
+// turnaround preview matches the in-game look exactly.
+const composer = createComposer(renderer, scene, camera, window.innerWidth, window.innerHeight);
+function draw(): void { composer.render(0); }
 draw();
 addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
   draw();
 });
