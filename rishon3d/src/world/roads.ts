@@ -91,6 +91,258 @@ export function crosswalkRects(road: RoadDef): Rect[] {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Intersections & deterministic per-road identity
+// ---------------------------------------------------------------------------
+
+// FNV-1a style string hash → unsigned 32-bit. Deterministic, no Math.random,
+// so the same road id always yields the same variation (arrow type, parking
+// gating, etc.). Mirrors the deterministic-seed style in rishonMap.coreFurniture.
+export function hashId(id: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+// Half-length span of a road along its long axis, as a [min,max] on that axis.
+function axisSpan(road: RoadDef): [number, number] {
+  const c = road.horizontal ? road.x : road.z;
+  return [c - road.length / 2, c + road.length / 2];
+}
+
+export interface Intersection { x: number; z: number }
+
+// All points where a horizontal road crosses a vertical road, deduped by
+// rounded position. Pure + deterministic: iterate roads in input order, only
+// horizontal-vs-vertical pairs, keep the crossing if each road's cross-axis
+// coordinate falls inside the other road's long-axis span. This is the basis
+// for stop lines and lane arrows (markings only appear at real junctions).
+export function roadIntersections(roads: RoadDef[]): Intersection[] {
+  const hs = roads.filter((r) => r.horizontal);
+  const vs = roads.filter((r) => !r.horizontal);
+  const seen = new Set<string>();
+  const out: Intersection[] = [];
+  for (const h of hs) {
+    const [hx0, hx1] = axisSpan(h); // h spans x in [hx0,hx1] at z = h.z
+    for (const v of vs) {
+      const [vz0, vz1] = axisSpan(v); // v spans z in [vz0,vz1] at x = v.x
+      // crossing at (v.x, h.z): v.x must lie on h, h.z must lie on v.
+      if (v.x < hx0 - 1e-6 || v.x > hx1 + 1e-6) continue;
+      if (h.z < vz0 - 1e-6 || h.z > vz1 + 1e-6) continue;
+      const key = `${Math.round(v.x * 100)}:${Math.round(h.z * 100)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ x: v.x, z: h.z });
+    }
+  }
+  return out;
+}
+
+export const STOP_LINE_W = 0.5;  // thickness of the stop bar along the road
+export const STOP_LINE_CLEAR = ROAD_W / 2 + CROSSWALK_STRIPE_GAP +
+  4 * (CROSSWALK_STRIPE_W + CROSSWALK_STRIPE_GAP) + STOP_LINE_W / 2; // just past the crosswalk bands
+
+// Stop-line bars across each approach of a road at the intersections it passes
+// through, sitting just OUTSIDE the crosswalk bands (which reach ROAD_W/2 +
+// gap + 4*period along the approach). Two bars per intersection the road
+// crosses (one each side), each spanning the road's running-lane half-width so
+// it reads as a stop bar, not a full-width band. Pure + deterministic.
+export function stopLineRects(road: RoadDef, intersections: Intersection[]): Rect[] {
+  const out: Rect[] = [];
+  const halfLen = road.length / 2;
+  for (const it of intersections) {
+    // does this intersection lie on this road?
+    if (road.horizontal) {
+      if (Math.abs(it.z - road.z) > 1e-6) continue;
+      if (Math.abs(it.x - road.x) > halfLen + 1e-6) continue;
+    } else {
+      if (Math.abs(it.x - road.x) > 1e-6) continue;
+      if (Math.abs(it.z - road.z) > halfLen + 1e-6) continue;
+    }
+    for (const side of [-1, 1] as const) {
+      const t = side * STOP_LINE_CLEAR;
+      if (road.horizontal) {
+        const cx = it.x + t;
+        if (Math.abs(cx - road.x) > halfLen + 1e-6) continue;
+        // half-width bar on the approaching (right-hand) lane of this side
+        const laneOff = (side > 0 ? 1 : -1) * ROAD_W / 4;
+        out.push({ x: cx, z: road.z + laneOff, w: STOP_LINE_W, d: ROAD_W / 2 });
+      } else {
+        const cz = it.z + t;
+        if (Math.abs(cz - road.z) > halfLen + 1e-6) continue;
+        const laneOff = (side > 0 ? -1 : 1) * ROAD_W / 4;
+        out.push({ x: road.x + laneOff, z: cz, w: ROAD_W / 2, d: STOP_LINE_W });
+      }
+    }
+  }
+  return out;
+}
+
+export const ARROW_PX = 16; // texels per side of the arrow glyph texture
+
+export type ArrowKind = "straight" | "left" | "right";
+
+// Pick an arrow kind for one approach deterministically from the road id and a
+// per-approach index, so a road's approaches read varied but stable. Most
+// approaches get a straight arrow; some get a turn arrow.
+export function arrowKindFor(roadId: string, approachIndex: number): ArrowKind {
+  const h = hashId(`${roadId}#${approachIndex}`);
+  const m = h % 4;
+  if (m === 0) return "left";
+  if (m === 1) return "right";
+  return "straight"; // 2/4 chance straight, dominant
+}
+
+// Pure-data RGBA glyph for a blocky lane arrow pointing along +rows (toward the
+// top of the texture). White arrow on transparent; a shaft plus a chevron head,
+// with a left/right kink for turn arrows. Mirrors sidewalkTilePattern's
+// node-testable, canvas-free style. transparent where alpha = 0.
+export function arrowPattern(kind: ArrowKind, px = ARROW_PX): Uint8Array<ArrayBuffer> {
+  const ink = hexToRgb(PALETTE.laneLine);
+  const data = new Uint8Array(new ArrayBuffer(px * px * 4));
+  const set = (x: number, y: number) => {
+    if (x < 0 || y < 0 || x >= px || y >= px) return;
+    const o = (y * px + x) * 4;
+    data[o] = ink[0]; data[o + 1] = ink[1]; data[o + 2] = ink[2]; data[o + 3] = 255;
+  };
+  const cx = Math.floor(px / 2);
+  const shaftHalf = Math.max(1, Math.round(px * 0.09));
+  const headRows = Math.round(px * 0.42); // top portion is the head
+  // shaft (lower 2/3), straight up the centre.
+  for (let y = headRows; y < px; y++) {
+    for (let x = cx - shaftHalf; x <= cx + shaftHalf; x++) set(x, y);
+  }
+  // arrow head: a filled triangle widening toward the base of the head.
+  for (let y = 0; y < headRows; y++) {
+    const half = Math.round((y / headRows) * (px * 0.34));
+    for (let x = cx - half; x <= cx + half; x++) set(x, y);
+  }
+  if (kind !== "straight") {
+    // bend the shaft sideways at the bottom so it reads as a turn arrow:
+    // add a horizontal stub toward the turn direction near the base.
+    const dir = kind === "left" ? -1 : 1;
+    const baseY = px - 1 - shaftHalf;
+    const reach = Math.round(px * 0.3);
+    for (let i = 0; i <= reach; i++) {
+      const x = cx + dir * i;
+      for (let yy = baseY - shaftHalf; yy <= baseY + shaftHalf; yy++) set(x, yy);
+    }
+  }
+  return data;
+}
+
+// Placement of a lane arrow on one approach of a road toward an intersection.
+// `rotationY` orients the glyph (which is authored pointing along +z toward the
+// texture top) so it points INTO the intersection along the approach.
+export interface ArrowPlacement { x: number; z: number; rotationY: number; kind: ArrowKind }
+
+export const ARROW_BACK = STOP_LINE_CLEAR + 3; // distance back from the junction
+
+// Lane arrows on the approaches to the intersections a road crosses. Only the
+// longer roads (length >= minLength) get arrows, so they read as the wider/core
+// streets the spec calls for; short district streets stay clean. Deterministic
+// arrow kind per approach via arrowKindFor. One arrow per approach, set back
+// from the junction in the right-hand running lane.
+export function laneArrows(
+  road: RoadDef,
+  intersections: Intersection[],
+  minLength = 80,
+): ArrowPlacement[] {
+  if (road.length < minLength) return [];
+  const out: ArrowPlacement[] = [];
+  const halfLen = road.length / 2;
+  let approach = 0;
+  for (const it of intersections) {
+    if (road.horizontal) {
+      if (Math.abs(it.z - road.z) > 1e-6) continue;
+      if (Math.abs(it.x - road.x) > halfLen + 1e-6) continue;
+    } else {
+      if (Math.abs(it.x - road.x) > 1e-6) continue;
+      if (Math.abs(it.z - road.z) > halfLen + 1e-6) continue;
+    }
+    for (const side of [-1, 1] as const) {
+      // approach origin is the junction; the arrow sits ARROW_BACK away on the
+      // approach side and points toward the junction (-side along the axis).
+      const pos = (road.horizontal ? it.x : it.z) + side * ARROW_BACK;
+      const onAxis = road.horizontal ? road.x : road.z;
+      if (Math.abs(pos - onAxis) > halfLen + 1e-6) continue;
+      const laneOff = (road.horizontal
+        ? (side > 0 ? 1 : -1)
+        : (side > 0 ? -1 : 1)) * ROAD_W / 4;
+      const kind = arrowKindFor(road.id, approach);
+      // glyph points along +z by default; rotate so its tip faces the junction.
+      let rot: number;
+      if (road.horizontal) {
+        // junction is toward -side in x; +z glyph → rotate -90deg points +x.
+        rot = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+        out.push({ x: pos, z: road.z + laneOff, rotationY: rot, kind });
+      } else {
+        rot = side > 0 ? Math.PI : 0;
+        out.push({ x: road.x + laneOff, z: pos, rotationY: rot, kind });
+      }
+      approach++;
+    }
+  }
+  return out;
+}
+
+export const PARKING_BAY_LEN = 5.5;  // one bay along the curb
+export const PARKING_BAY_GAP = 1.0;  // gap between bays
+export const PARKING_LINE_W = 0.12;  // painted bay-line thickness
+export const PARKING_BAY_DEPTH = 2.2; // bay reach from the curb inward
+
+// Does a non-core road get parking bays? Deterministic subset: every road whose
+// id-hash mod 3 is 0, and never the core arterials (they keep their clean
+// painted treatment). Pure so the gating is unit-testable.
+export function hasParkingBays(road: RoadDef): boolean {
+  if (isCoreArterial(road)) return false;
+  return hashId(road.id) % 3 === 0;
+}
+
+// Painted bay outlines along the sidewalk-adjacent edge of a qualifying road.
+// Each bay is drawn as three thin white rects (two ticks perpendicular to the
+// curb + one line parallel to it), segmented along the curb on BOTH edges.
+// Pure + deterministic; merged by the caller.
+export function parkingBayRects(road: RoadDef): Rect[] {
+  if (!hasParkingBays(road)) return [];
+  const period = PARKING_BAY_LEN + PARKING_BAY_GAP;
+  const count = Math.max(0, Math.floor(road.length / period));
+  const span = count * period;
+  const start = -span / 2 + PARKING_BAY_GAP + PARKING_BAY_LEN / 2;
+  // bay strip sits just inside the curb: from ROAD_W/2 inward by PARKING_BAY_DEPTH.
+  const edgeMid = ROAD_W / 2 - PARKING_BAY_DEPTH;
+  const out: Rect[] = [];
+  for (const sideSign of [-1, 1] as const) {
+    for (let i = 0; i < count; i++) {
+      const t = start + i * period;
+      // inner divider line, parallel to the curb, one per bay run handled via ticks:
+      if (road.horizontal) {
+        const zEdge = road.z + sideSign * edgeMid;
+        // parallel line along the bay
+        out.push({ x: road.x + t, z: zEdge, w: PARKING_BAY_LEN, d: PARKING_LINE_W });
+        // two perpendicular ticks bounding the bay
+        for (const e of [-1, 1] as const) {
+          const tx = road.x + t + e * PARKING_BAY_LEN / 2;
+          const zc = road.z + sideSign * (ROAD_W / 2 - PARKING_BAY_DEPTH / 2);
+          out.push({ x: tx, z: zc, w: PARKING_LINE_W, d: PARKING_BAY_DEPTH });
+        }
+      } else {
+        const xEdge = road.x + sideSign * edgeMid;
+        out.push({ x: xEdge, z: road.z + t, w: PARKING_LINE_W, d: PARKING_BAY_LEN });
+        for (const e of [-1, 1] as const) {
+          const tz = road.z + t + e * PARKING_BAY_LEN / 2;
+          const xc = road.x + sideSign * (ROAD_W / 2 - PARKING_BAY_DEPTH / 2);
+          out.push({ x: xc, z: tz, w: PARKING_BAY_DEPTH, d: PARKING_LINE_W });
+        }
+      }
+    }
+  }
+  return out;
+}
+
 export const CURB_W = 0.3;
 export const CURB_H = 0.12;
 
@@ -240,6 +492,75 @@ export function makeRoadNetwork(roads: RoadDef[]): THREE.Group {
     const yellow = new THREE.Mesh(mergeGeometries(yellowGeos), yellowMat);
     yellow.castShadow = false; yellow.receiveShadow = true;
     group.add(yellow);
+  }
+
+  // Intersections drive stop lines + lane arrows. Computed once from the whole
+  // network so junctions between any horizontal/vertical pair are marked.
+  const intersections = roadIntersections(roads);
+
+  // Stop-line bars just outside the crosswalk at each approach, merged into one
+  // mesh. Painted with the crosswalk (warm-white) color, a hair above the
+  // crosswalk layer so they never z-fight.
+  const stopGeos: THREE.BufferGeometry[] = [];
+  for (const r of roads) {
+    for (const s of stopLineRects(r, intersections)) {
+      const g = new THREE.PlaneGeometry(s.w, s.d);
+      g.rotateX(-Math.PI / 2);
+      g.translate(s.x, 0.033, s.z); // above the crosswalk bands
+      stopGeos.push(g);
+    }
+  }
+  if (stopGeos.length) {
+    const stopMat = getMaterial("crosswalkMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.crosswalk }));
+    const stop = new THREE.Mesh(mergeGeometries(stopGeos), stopMat);
+    stop.castShadow = false; stop.receiveShadow = true;
+    group.add(stop);
+  }
+
+  // Lane arrows on the approaches to junctions, on the longer roads only. One
+  // instanced draw per arrow kind (shared per-kind DataTexture quad).
+  const arrowsByKind: Record<ArrowKind, Placement[]> = { straight: [], left: [], right: [] };
+  for (const r of roads) {
+    for (const a of laneArrows(r, intersections)) {
+      arrowsByKind[a.kind].push({ x: a.x, z: a.z, rotationY: a.rotationY });
+    }
+  }
+  for (const kind of ["straight", "left", "right"] as const) {
+    const places = arrowsByKind[kind];
+    if (!places.length) continue;
+    const geo = getGeometry(`laneArrow-${kind}`, () => {
+      const g = new THREE.PlaneGeometry(2.2, 2.8);
+      g.rotateX(-Math.PI / 2); // lie flat; glyph top points along +z
+      return g;
+    });
+    const mat = getMaterial(`laneArrowMat-${kind}`, () => {
+      const tex = new THREE.DataTexture(arrowPattern(kind), ARROW_PX, ARROW_PX, THREE.RGBAFormat);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.needsUpdate = true;
+      return new THREE.MeshStandardMaterial({ map: tex, transparent: true });
+    });
+    const mesh = makeInstanced(geo, mat, places, 0.034); // above stop lines
+    mesh.castShadow = false; mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+
+  // Parking-bay outlines along a deterministic subset of non-core roads,
+  // merged into one mesh painted with the lane-line color.
+  const bayGeos: THREE.BufferGeometry[] = [];
+  for (const r of roads) {
+    for (const b of parkingBayRects(r)) {
+      const g = new THREE.PlaneGeometry(b.w, b.d);
+      g.rotateX(-Math.PI / 2);
+      g.translate(b.x, 0.03, b.z);
+      bayGeos.push(g);
+    }
+  }
+  if (bayGeos.length) {
+    const bayMat = getMaterial("laneDashMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.laneLine }));
+    const bays = new THREE.Mesh(mergeGeometries(bayGeos), bayMat);
+    bays.castShadow = false; bays.receiveShadow = true;
+    group.add(bays);
   }
 
   // White center-line dashes for the non-core roads, in a single instanced draw.

@@ -3,6 +3,9 @@ import {
   laneDashes, sidewalkRects, ROAD_W, curbRects, CURB_W,
   isCoreArterial, doubleYellowRects, crosswalkRects,
   sidewalkTilePattern, YELLOW_LINE_W,
+  hashId, roadIntersections, stopLineRects, STOP_LINE_CLEAR, STOP_LINE_W,
+  arrowKindFor, arrowPattern, laneArrows, ARROW_PX,
+  hasParkingBays, parkingBayRects,
 } from "../src/world/roads";
 import { PALETTE } from "../src/world/palette";
 import type { RoadDef } from "../src/world/rishonMap";
@@ -11,6 +14,9 @@ const hRoad: RoadDef = { id: "h", x: 0, z: 10, length: 40, horizontal: true };
 const vRoad: RoadDef = { id: "v", x: -5, z: 0, length: 40, horizontal: false };
 const mainH: RoadDef = { id: "main-h", x: 0, z: 0, length: 120, horizontal: true };
 const crossV: RoadDef = { id: "cross-v", x: 0, z: 0, length: 120, horizontal: false };
+
+// The two core arterials cross at the origin → exactly one intersection.
+const coreNet: RoadDef[] = [mainH, crossV];
 
 describe("laneDashes", () => {
   it("emits evenly spaced dashes along a horizontal road's x axis", () => {
@@ -196,5 +202,211 @@ describe("sidewalkTilePattern", () => {
   it("is deterministic (same args → identical bytes)", () => {
     expect(Array.from(sidewalkTilePattern(16, 2)))
       .toEqual(Array.from(sidewalkTilePattern(16, 2)));
+  });
+});
+
+describe("hashId", () => {
+  it("is deterministic and unsigned 32-bit", () => {
+    const a = hashId("main-h");
+    expect(a).toBe(hashId("main-h"));
+    expect(Number.isInteger(a)).toBe(true);
+    expect(a).toBeGreaterThanOrEqual(0);
+    expect(a).toBeLessThanOrEqual(0xffffffff);
+  });
+  it("distinguishes different ids", () => {
+    expect(hashId("main-h")).not.toBe(hashId("cross-v"));
+    expect(hashId("north-rh-0")).not.toBe(hashId("north-rh-1"));
+  });
+});
+
+describe("roadIntersections", () => {
+  it("finds the single core crossing at the origin", () => {
+    const it = roadIntersections(coreNet);
+    expect(it.length).toBe(1);
+    expect(it[0].x).toBeCloseTo(0, 6);
+    expect(it[0].z).toBeCloseTo(0, 6);
+  });
+
+  it("finds every horizontal/vertical crossing within span and dedups", () => {
+    const grid: RoadDef[] = [
+      { id: "h0", x: 0, z: -10, length: 40, horizontal: true },
+      { id: "h1", x: 0, z: 10, length: 40, horizontal: true },
+      { id: "v0", x: -10, z: 0, length: 40, horizontal: false },
+      { id: "v1", x: 10, z: 0, length: 40, horizontal: false },
+    ];
+    const its = roadIntersections(grid);
+    expect(its.length).toBe(4); // 2 h x 2 v
+    // dedup: duplicate roads at the same spot don't add crossings
+    const dup = roadIntersections([...grid, { ...grid[0], id: "h0b" }]);
+    expect(dup.length).toBe(4);
+  });
+
+  it("ignores roads that do not overlap", () => {
+    const far: RoadDef[] = [
+      { id: "h", x: 0, z: 0, length: 10, horizontal: true },     // x in [-5,5]
+      { id: "v", x: 50, z: 0, length: 10, horizontal: false },   // x = 50, off the road
+    ];
+    expect(roadIntersections(far)).toEqual([]);
+  });
+
+  it("is deterministic", () => {
+    expect(roadIntersections(coreNet)).toEqual(roadIntersections(coreNet));
+  });
+});
+
+describe("stopLineRects", () => {
+  const its = roadIntersections(coreNet);
+
+  it("emits two bars (one per side) for a road through one intersection", () => {
+    const r = stopLineRects(mainH, its);
+    expect(r.length).toBe(2);
+  });
+
+  it("places bars just outside the crosswalk on each approach", () => {
+    const r = stopLineRects(mainH, its);
+    const xs = r.map((s) => s.x).sort((a, b) => a - b);
+    expect(xs[0]).toBeCloseTo(-STOP_LINE_CLEAR, 6);
+    expect(xs[1]).toBeCloseTo(STOP_LINE_CLEAR, 6);
+    expect(STOP_LINE_CLEAR).toBeGreaterThan(ROAD_W / 2);
+    // bar is a thin half-width bar across the running lane
+    for (const s of r) {
+      expect(s.w).toBeCloseTo(STOP_LINE_W, 6);
+      expect(s.d).toBeCloseTo(ROAD_W / 2, 6);
+    }
+  });
+
+  it("orients bars across a vertical core road", () => {
+    const r = stopLineRects(crossV, its);
+    const zs = r.map((s) => s.z).sort((a, b) => a - b);
+    expect(zs[0]).toBeCloseTo(-STOP_LINE_CLEAR, 6);
+    expect(zs[1]).toBeCloseTo(STOP_LINE_CLEAR, 6);
+    for (const s of r) {
+      expect(s.d).toBeCloseTo(STOP_LINE_W, 6);
+      expect(s.w).toBeCloseTo(ROAD_W / 2, 6);
+    }
+  });
+
+  it("emits nothing for a road that misses every intersection", () => {
+    expect(stopLineRects(hRoad, its)).toEqual([]); // z=10 ≠ any crossing
+  });
+
+  it("is deterministic", () => {
+    expect(stopLineRects(mainH, its)).toEqual(stopLineRects(mainH, its));
+  });
+});
+
+describe("arrowKindFor", () => {
+  it("returns a valid arrow kind", () => {
+    for (let i = 0; i < 10; i++) {
+      expect(["straight", "left", "right"]).toContain(arrowKindFor("main-h", i));
+    }
+  });
+  it("is deterministic per (road, approach)", () => {
+    expect(arrowKindFor("main-h", 0)).toBe(arrowKindFor("main-h", 0));
+    expect(arrowKindFor("cross-v", 3)).toBe(arrowKindFor("cross-v", 3));
+  });
+  it("varies across approaches / roads (not all identical)", () => {
+    const kinds = new Set<string>();
+    for (let i = 0; i < 8; i++) kinds.add(arrowKindFor("main-h", i));
+    for (let i = 0; i < 8; i++) kinds.add(arrowKindFor("cross-v", i));
+    expect(kinds.size).toBeGreaterThan(1);
+  });
+});
+
+describe("arrowPattern", () => {
+  it("produces RGBA pixels of the requested size", () => {
+    const data = arrowPattern("straight", ARROW_PX);
+    expect(data.length).toBe(ARROW_PX * ARROW_PX * 4);
+  });
+  it("paints opaque white ink and leaves transparent background", () => {
+    const data = arrowPattern("straight");
+    const inkR = (PALETTE.laneLine >> 16) & 0xff;
+    let ink = 0, clear = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 255) { ink++; expect(data[i]).toBe(inkR); }
+      else if (data[i + 3] === 0) clear++;
+    }
+    expect(ink).toBeGreaterThan(0);
+    expect(clear).toBeGreaterThan(0);
+  });
+  it("turn arrows differ from the straight glyph", () => {
+    const s = Array.from(arrowPattern("straight"));
+    const l = Array.from(arrowPattern("left"));
+    const r = Array.from(arrowPattern("right"));
+    expect(l).not.toEqual(s);
+    expect(r).not.toEqual(s);
+    expect(l).not.toEqual(r); // left/right are mirror-ish, not identical
+  });
+  it("is deterministic", () => {
+    expect(Array.from(arrowPattern("left"))).toEqual(Array.from(arrowPattern("left")));
+  });
+});
+
+describe("laneArrows", () => {
+  const its = roadIntersections(coreNet);
+
+  it("paints arrows on long core roads, one per approach", () => {
+    const a = laneArrows(mainH, its);
+    expect(a.length).toBe(2); // both approaches to the single junction
+    for (const p of a) {
+      // arrow sits in a running lane (offset from the centerline by ROAD_W/4)
+      expect(Math.abs(p.z - mainH.z)).toBeCloseTo(ROAD_W / 4, 6);
+      expect(Math.abs(p.x)).toBeGreaterThan(ROAD_W / 2); // set back from the junction
+      expect(["straight", "left", "right"]).toContain(p.kind);
+    }
+    // one approach on each side of the junction
+    expect(a.some((p) => p.x > 0)).toBe(true);
+    expect(a.some((p) => p.x < 0)).toBe(true);
+  });
+
+  it("gates short roads out (only wider/core roads get arrows)", () => {
+    const shortNet: RoadDef[] = [
+      { id: "sh", x: 0, z: 0, length: 30, horizontal: true },
+      { id: "sv", x: 0, z: 0, length: 30, horizontal: false },
+    ];
+    const sits = roadIntersections(shortNet);
+    expect(laneArrows(shortNet[0], sits)).toEqual([]);
+    // but a long road still qualifies
+    expect(laneArrows(mainH, its).length).toBeGreaterThan(0);
+  });
+
+  it("is deterministic", () => {
+    expect(laneArrows(mainH, its)).toEqual(laneArrows(mainH, its));
+  });
+});
+
+describe("hasParkingBays / parkingBayRects", () => {
+  it("never marks the core arterials", () => {
+    expect(hasParkingBays(mainH)).toBe(false);
+    expect(hasParkingBays(crossV)).toBe(false);
+    expect(parkingBayRects(mainH)).toEqual([]);
+  });
+
+  it("gates a deterministic subset of non-core roads (hash % 3 === 0)", () => {
+    const sample: RoadDef[] = Array.from({ length: 30 }, (_, i) => ({
+      id: `north-rh-${i}`, x: 0, z: i, length: 60, horizontal: true,
+    }));
+    const gated = sample.filter(hasParkingBays);
+    expect(gated.length).toBeGreaterThan(0);
+    expect(gated.length).toBeLessThan(sample.length); // a subset, not all
+    for (const r of sample) expect(hasParkingBays(r)).toBe(hashId(r.id) % 3 === 0);
+  });
+
+  it("emits bay rects on both edges of a qualifying road", () => {
+    // find a qualifying id deterministically
+    const road = { id: "north-rh-0", x: 0, z: 0, length: 60, horizontal: true } as RoadDef;
+    if (!hasParkingBays(road)) return; // skip if this id happens not to qualify
+    const rects = parkingBayRects(road);
+    expect(rects.length).toBeGreaterThan(0);
+    const zs = rects.map((b) => b.z);
+    expect(zs.some((z) => z > 0)).toBe(true);
+    expect(zs.some((z) => z < 0)).toBe(true);
+    // all bays sit inside the asphalt, near the curb
+    for (const b of rects) expect(Math.abs(b.z)).toBeLessThanOrEqual(ROAD_W / 2 + 1e-6);
+  });
+
+  it("is deterministic", () => {
+    const road = { id: "east-rv-3", x: 5, z: 0, length: 60, horizontal: false } as RoadDef;
+    expect(parkingBayRects(road)).toEqual(parkingBayRects(road));
   });
 });

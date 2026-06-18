@@ -8,6 +8,7 @@ import { planParkedCars, parkedCarInstances } from "./parkedCars";
 import { makeParkGround } from "./park";
 import { makeClouds } from "./clouds";
 import { makeRail } from "./rail";
+import { makeStreetFurniture } from "./streetFurniture";
 
 export class World {
   constructor(scene: THREE.Scene, physics: Physics, public readonly map: RishonMap) {
@@ -43,6 +44,7 @@ export class World {
     scene.add(flowerbedInstances(map.props));
     scene.add(trashcanInstances(map.props));
     scene.add(planterInstances(map.props));
+    scene.add(makeStreetFurniture(map));
     scene.add(parkedCarInstances(planParkedCars(map, 4242, 40)));
 
     let lightBudget = 12;
