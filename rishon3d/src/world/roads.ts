@@ -1,7 +1,9 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { RoadDef } from "./rishonMap";
 import { getGeometry, getMaterial } from "./assets";
 import { makeInstanced, type Placement } from "./InstancedProps";
+import { PALETTE } from "./palette";
 
 export const ROAD_W = 6;
 const SIDEWALK_W = 1.6;
@@ -26,6 +28,24 @@ export function laneDashes(road: RoadDef): Placement[] {
     }
   }
   return out;
+}
+
+export const CURB_W = 0.3;
+export const CURB_H = 0.12;
+
+// Thin raised strips just outside each asphalt edge.
+export function curbRects(road: RoadDef): Rect[] {
+  const off = ROAD_W / 2 + CURB_W / 2;
+  if (road.horizontal) {
+    return [
+      { x: road.x, z: road.z - off, w: road.length, d: CURB_W },
+      { x: road.x, z: road.z + off, w: road.length, d: CURB_W },
+    ];
+  }
+  return [
+    { x: road.x - off, z: road.z, w: CURB_W, d: road.length },
+    { x: road.x + off, z: road.z, w: CURB_W, d: road.length },
+  ];
 }
 
 // Two concrete strips flanking the asphalt.
@@ -64,6 +84,21 @@ export function makeRoadNetwork(roads: RoadDef[]): THREE.Group {
       sw.receiveShadow = true;
       group.add(sw);
     }
+  }
+
+  const curbGeos: THREE.BufferGeometry[] = [];
+  for (const r of roads) {
+    for (const c of curbRects(r)) {
+      const g = new THREE.BoxGeometry(c.w, CURB_H, c.d);
+      g.translate(c.x, CURB_H / 2, c.z);
+      curbGeos.push(g);
+    }
+  }
+  if (curbGeos.length) {
+    const curbMat = getMaterial("curbMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.curb }));
+    const curb = new THREE.Mesh(mergeGeometries(curbGeos), curbMat);
+    curb.receiveShadow = true; curb.castShadow = false;
+    group.add(curb);
   }
 
   // All center-line dashes in a single instanced draw.

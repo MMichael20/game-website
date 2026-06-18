@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { laneDashes, sidewalkRects, ROAD_W } from "../src/world/roads";
+import { laneDashes, sidewalkRects, ROAD_W, curbRects, CURB_W } from "../src/world/roads";
 import type { RoadDef } from "../src/world/rishonMap";
 
 const hRoad: RoadDef = { id: "h", x: 0, z: 10, length: 40, horizontal: true };
@@ -41,5 +41,25 @@ describe("sidewalkRects", () => {
     const offs = r.map((s) => s.x - vRoad.x).sort((a, b) => a - b);
     expect(offs[0]).toBeCloseTo(-offs[1], 6);
     for (const s of r) expect(s.d).toBeCloseTo(vRoad.length, 6);
+  });
+});
+
+describe("curbRects", () => {
+  it("runs a thin strip just outside each asphalt edge of a horizontal road", () => {
+    const r = curbRects(hRoad);
+    expect(r.length).toBe(2);
+    const offs = r.map((c) => c.z - hRoad.z).sort((a, b) => a - b);
+    expect(offs[0]).toBeCloseTo(-offs[1], 6);
+    expect(Math.abs(offs[0])).toBeGreaterThan(ROAD_W / 2);
+    for (const c of r) {
+      expect(c.w).toBeCloseTo(hRoad.length, 6); // spans the road length
+      expect(c.d).toBeCloseTo(CURB_W, 6);       // thin across
+    }
+  });
+  it("runs along x for a vertical road", () => {
+    const r = curbRects(vRoad);
+    const offs = r.map((c) => c.x - vRoad.x).sort((a, b) => a - b);
+    expect(offs[0]).toBeCloseTo(-offs[1], 6);
+    for (const c of r) expect(c.d).toBeCloseTo(vRoad.length, 6);
   });
 });
