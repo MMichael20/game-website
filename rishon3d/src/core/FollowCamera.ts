@@ -12,8 +12,8 @@ const MAX_DIST = 20; // headroom for the pulled-back driving distance (14) + zoo
 export class FollowCamera implements Tickable {
   private target?: THREE.Object3D;
   private yaw = 0;
-  private pitch = 0.5;
-  private distance = 12.5; // matches the on-foot default; pulled back so props stop filling the frame
+  private pitch = 0.34; // lower, street-level starting angle (props read at player scale)
+  private distance = 8; // matches the on-foot default; close enough to walk the street
   private lookHeight = 1.6;
   private desired = new THREE.Vector3();
   private lookAtPoint = new THREE.Vector3();

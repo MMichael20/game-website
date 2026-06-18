@@ -85,7 +85,7 @@ export class Game implements Tickable {
     });
     this.car.enabled = false;
     this.character.enabled = true;
-    this.follow.setTarget(this.character.object, 12.5, 1.6);
+    this.follow.setTarget(this.character.object, 8, 1.6);
   }
 
   get phoneOpen(): boolean { return this.phone.isOpen; }
@@ -164,7 +164,7 @@ export class Game implements Tickable {
         this.character.setPosition(exit.x, exit.z);
         this.character.object.visible = true;
         this.character.enabled = true;
-        this.follow.setTarget(this.character.object, 12.5, 1.6);
+        this.follow.setTarget(this.character.object, 8, 1.6);
       }
     }
 
