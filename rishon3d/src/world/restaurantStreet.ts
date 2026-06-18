@@ -4,6 +4,8 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { makeInstanced, type Placement } from "./InstancedProps";
 import { PALETTE } from "./palette";
 import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
+import { makeStreetLight, treeInstances } from "./props";
+import type { PropDef } from "./rishonMap";
 
 // A short, lively restaurant promenade in the open SE corner of the map. Center
 // ~(95,95) is clear of both the E district (z in [-30,30]) and the S district
@@ -333,6 +335,23 @@ export function makeRestaurantStreet(): THREE.Object3D {
 
   // flower planters lining the patio (one vertex-colored instanced draw).
   group.add(makeInstanced(planterBoxGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), planterPlacements(), 0));
+
+  // lamp posts around the promenade (reuse the city street-light prop) so the
+  // patio has the warm lanterns the reference shows.
+  const lamps: PropDef[] = [
+    { id: "rl-1", kind: "streetlight", x: CX - 21, z: CZ + 9 },
+    { id: "rl-2", kind: "streetlight", x: CX - 7, z: CZ + 10 },
+    { id: "rl-3", kind: "streetlight", x: CX + 7, z: CZ + 10 },
+    { id: "rl-4", kind: "streetlight", x: CX + 21, z: CZ + 9 },
+  ];
+  for (const l of lamps) group.add(makeStreetLight(l));
+
+  // leafy trees flanking the promenade for greenery.
+  group.add(treeInstances([
+    { id: "rt-1", kind: "tree", x: CX - 24, z: CZ + 6 },
+    { id: "rt-2", kind: "tree", x: CX + 24, z: CZ + 6 },
+    { id: "rt-3", kind: "tree", x: CX - 24, z: CZ - 2 },
+  ]));
 
   // --- menu board + delivery/pickup marker: a small bespoke stand at the
   // RESTAURANT anchor. A post holds a warm-signed board (the menu); a lit cap
