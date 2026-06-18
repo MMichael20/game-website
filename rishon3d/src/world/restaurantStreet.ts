@@ -2,11 +2,12 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { makeInstanced, type Placement } from "./InstancedProps";
-import { PALETTE } from "./palette";
+import { PALETTE, BUILDING_COLORS } from "./palette";
 import { makeSidewalkTexture, makeAsphaltTexture, PAVER_SUPER_M, GRAIN_M, ROAD_W } from "./roads";
 import { makeStreetLight, treeInstances } from "./props";
+import { makeBuilding } from "./builders";
 import { makeCarBody } from "../entities/carMesh";
-import type { PropDef } from "./rishonMap";
+import type { PropDef, BuildingDef } from "./rishonMap";
 
 // A short, lively restaurant promenade in the open SE corner of the map. Center
 // ~(95,95) is clear of both the E district (z in [-30,30]) and the S district
@@ -349,10 +350,56 @@ function makeParkedCars(): THREE.Object3D {
   return g;
 }
 
+// Infill buildings that pack the block so the restaurant reads as embedded in a
+// dense street rather than floating in grass: a retail row across the road
+// (rotated to face the street), buildings flanking the promenade ends, and a
+// taller background row behind. Reuses the city building maker (facades, doors,
+// parapets) so they match the rest of the city.
+function makeInfillBuildings(): THREE.Object3D {
+  const g = new THREE.Group();
+  const farFront = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D; // front line of the far row
+
+  // far side of the road: a retail row facing the street (rotated to face -Z).
+  const far = [
+    { x: CX - 20, w: 9, d: 8, h: 9, c: BUILDING_COLORS[0] },
+    { x: CX - 7, w: 8, d: 8, h: 7, c: BUILDING_COLORS[4] },
+    { x: CX + 7, w: 9, d: 8, h: 11, c: BUILDING_COLORS[1] },
+    { x: CX + 20, w: 8, d: 8, h: 8, c: BUILDING_COLORS[5] },
+  ];
+  far.forEach((b, i) => {
+    const def: BuildingDef = { id: `rfar-${i}`, x: b.x, z: farFront + b.d / 2, width: b.w, depth: b.d, height: b.h, color: b.c };
+    const bld = makeBuilding(def);
+    bld.rotation.y = Math.PI; // front (+Z) turns to face the road
+    g.add(bld);
+  });
+
+  // flanking the promenade ends, continuing the restaurant row (face +Z).
+  const flank = [
+    { x: CX - 27, w: 8, d: 8, h: 10, c: BUILDING_COLORS[2] },
+    { x: CX + 27, w: 8, d: 8, h: 12, c: BUILDING_COLORS[6] },
+  ];
+  flank.forEach((b, i) => {
+    g.add(makeBuilding({ id: `rflank-${i}`, x: b.x, z: SHOP_Z, width: b.w, depth: b.d, height: b.h, color: b.c }));
+  });
+
+  // background row behind the restaurants (north), taller, for skyline depth.
+  const bg = [
+    { x: CX - 14, w: 10, d: 8, h: 16, c: BUILDING_COLORS[3] },
+    { x: CX + 2, w: 9, d: 8, h: 20, c: BUILDING_COLORS[3] },
+    { x: CX + 16, w: 10, d: 8, h: 14, c: BUILDING_COLORS[7] },
+  ];
+  bg.forEach((b, i) => {
+    g.add(makeBuilding({ id: `rbg-${i}`, x: b.x, z: SHOP_Z - 11, width: b.w, depth: b.d, height: b.h, color: b.c }));
+  });
+
+  return g;
+}
+
 export function makeRestaurantStreet(): THREE.Object3D {
   const group = new THREE.Group();
   group.name = "restaurantStreet";
 
+  group.add(makeInfillBuildings());
   group.add(makeStreetBlock());
   group.add(makeParkedCars());
 
