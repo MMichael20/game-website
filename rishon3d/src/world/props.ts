@@ -22,14 +22,19 @@ export function coniferCanopyBoxes(): { y: number; s: number }[] {
     { y: 3.2, s: 1.0 },
   ];
 }
+// Two-tone green ramp by height: deep green low/inner, bright green high/outer,
+// so a canopy reads as a lit crown over a shaded base instead of a flat blob.
+function greenRamp(y: number, minY: number, maxY: number): number {
+  const t = maxY > minY ? (y - minY) / (maxY - minY) : 1;
+  return new THREE.Color(PALETTE.leafDeep).lerp(new THREE.Color(PALETTE.leaf), 0.2 + 0.8 * t).getHex();
+}
+
 function foliageGeo(): THREE.BufferGeometry {
   return getGeometry("foliageVoxel", () => {
-    const boxes = coniferCanopyBoxes().map(({ y, s }) => {
-      const b = new THREE.BoxGeometry(s, 0.9, s);
-      b.translate(0, y, 0);
-      return b;
-    });
-    return mergeGeometries(boxes);
+    const boxes = coniferCanopyBoxes();
+    const ys = boxes.map((b) => b.y);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    return mergeGeometries(boxes.map(({ y, s }) => tintedBox(s, 0.9, s, 0, y, 0, greenRamp(y, minY, maxY))));
   });
 }
 
@@ -49,12 +54,10 @@ export function deciduousCanopyBoxes(): [number, number, number, number][] {
 }
 function deciduousGeo(): THREE.BufferGeometry {
   return getGeometry("foliageDecidVoxel", () => {
-    const boxes = deciduousCanopyBoxes().map(([x, y, z, s]) => {
-      const b = new THREE.BoxGeometry(s, s, s);
-      b.translate(x, y, z);
-      return b;
-    });
-    return mergeGeometries(boxes);
+    const boxes = deciduousCanopyBoxes();
+    const ys = boxes.map((b) => b[1]);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    return mergeGeometries(boxes.map(([x, y, z, s]) => tintedBox(s, s, s, x, y, z, greenRamp(y, minY, maxY))));
   });
 }
 function bushGeo(): THREE.BufferGeometry {
@@ -73,8 +76,6 @@ function bushGeo(): THREE.BufferGeometry {
   });
 }
 const trunkMat = () => getMaterial("trunkMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.trunk }));
-const foliageMat = () => getMaterial("foliageMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.leaf }));
-const deciduousMat = () => getMaterial("foliageDecidMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.leafDeep }));
 const bushMat = () => getMaterial("bushMat", () => new THREE.MeshStandardMaterial({ color: PALETTE.bush }));
 
 function benchGeo(): THREE.BufferGeometry {
@@ -202,8 +203,8 @@ export function treeInstances(props: PropDef[]): THREE.Object3D {
   group.add(makeInstanced(trunkGeo(), trunkMat(), pl, 0));
   const conifer = pl.filter((_, i) => treeSpecies(i) === 0);
   const decid = pl.filter((_, i) => treeSpecies(i) === 1);
-  if (conifer.length) group.add(makeInstanced(foliageGeo(), foliageMat(), conifer, 0));
-  if (decid.length) group.add(makeInstanced(deciduousGeo(), deciduousMat(), decid, 0));
+  if (conifer.length) group.add(makeInstanced(foliageGeo(), vertexColorMat("foliageVCMat"), conifer, 0));
+  if (decid.length) group.add(makeInstanced(deciduousGeo(), vertexColorMat("foliageVCMat"), decid, 0));
   return group;
 }
 
