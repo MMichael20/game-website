@@ -3,6 +3,7 @@ import { Physics, RAPIER } from "../core/Physics";
 import type { Input } from "../core/Input";
 import type { Tickable } from "../core/Engine";
 import type { Vec2 } from "../world/rishonMap";
+import { makeHumanoid, animateWalk, type HumanoidLimbs } from "./Humanoid";
 
 const SPEED = 8;
 
@@ -13,6 +14,8 @@ export class Character implements Tickable {
   private body: RAPIER.RigidBody;
   private collider: RAPIER.Collider;
   private controller: RAPIER.KinematicCharacterController;
+  private limbs: HumanoidLimbs;
+  private phase = 0;
   private tmp = new THREE.Vector3();
   private velY = 0;
 
@@ -23,19 +26,9 @@ export class Character implements Tickable {
     spawn: Vec2,
     private camera: THREE.Camera,
   ) {
-    const mesh = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.4, 1.0, 4, 8),
-      new THREE.MeshStandardMaterial({ color: 0x2e6fb0 }),
-    );
-    mesh.position.y = 0.9;
-    mesh.castShadow = true;
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.3, 12, 12),
-      new THREE.MeshStandardMaterial({ color: 0xf0c9a0 }),
-    );
-    head.position.y = 1.75;
-    head.castShadow = true;
-    this.object.add(mesh, head);
+    const h = makeHumanoid({ skin: 0xf0c9a0, shirt: 0x2e6fb0, pants: 0x274060 });
+    this.object.add(h.group);
+    this.limbs = h.limbs;
     this.object.position.set(spawn.x, 0, spawn.z);
     scene.add(this.object);
 
@@ -86,6 +79,10 @@ export class Character implements Tickable {
       move.normalize().multiplyScalar(SPEED * dt);
       desired = { x: move.x, y: gravityDy, z: move.z };
       this.object.rotation.y = Math.atan2(move.x, move.z);
+      this.phase += SPEED * dt * 6;
+      animateWalk(this.limbs, this.phase, 0.6);
+    } else {
+      animateWalk(this.limbs, this.phase, 0);
     }
 
     this.controller.computeColliderMovement(this.collider, desired);
