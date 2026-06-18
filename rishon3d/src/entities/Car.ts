@@ -7,6 +7,9 @@ import type { Vec2 } from "../world/rishonMap";
 const ENGINE_FORCE = 350;
 const BRAKE = 12;
 const MAX_STEER = 0.5;
+const REVERSE_MAX = 8; // m/s — cap on how fast the car may travel in reverse
+const _q = new THREE.Quaternion();
+const _fwd = new THREE.Vector3();
 
 export class Car implements Tickable {
   readonly object = new THREE.Group();
@@ -69,6 +72,11 @@ export class Car implements Tickable {
 
   get position(): THREE.Vector3 { return this.object.position; }
 
+  get speed(): number {
+    const v = this.body.linvel();
+    return Math.hypot(v.x, v.z);
+  }
+
   update(dt: number): void {
     const accel = this.input.isDown("KeyW") || this.input.isDown("ArrowUp");
     const reverse = this.input.isDown("KeyS") || this.input.isDown("ArrowDown");
@@ -76,10 +84,19 @@ export class Car implements Tickable {
     const right = this.input.isDown("KeyD") || this.input.isDown("ArrowRight");
     const braking = this.input.isDown("Space");
 
+    // Signed speed along the car's forward axis (+z is forward).
+    const rot = this.body.rotation();
+    _q.set(rot.x, rot.y, rot.z, rot.w);
+    _fwd.set(0, 0, 1).applyQuaternion(_q);
+    const vel = this.body.linvel();
+    const along = vel.x * _fwd.x + vel.z * _fwd.z;
+
     let engine = 0;
     if (this.enabled) {
       if (accel) engine = ENGINE_FORCE;
-      else if (reverse) engine = -ENGINE_FORCE * 0.7;
+      // Reverse pushes back, and still works as a brake while moving forward,
+      // but stops adding force once we're already reversing faster than the cap.
+      else if (reverse && along > -REVERSE_MAX) engine = -ENGINE_FORCE * 0.7;
     }
     let steer = 0;
     if (this.enabled) {
