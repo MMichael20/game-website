@@ -4,6 +4,7 @@ import { makeBuilding, makeGround } from "./builders";
 import { treeInstances, bushInstances, makeStreetLight, benchInstances } from "./props";
 import type { RishonMap } from "./rishonMap";
 import { makeRoadNetwork } from "./roads";
+import { planParkedCars, parkedCarInstances } from "./parkedCars";
 
 export class World {
   constructor(scene: THREE.Scene, physics: Physics, public readonly map: RishonMap) {
@@ -32,6 +33,7 @@ export class World {
     scene.add(treeInstances(map.props));
     scene.add(bushInstances(map.props));
     scene.add(benchInstances(map.props));
+    scene.add(parkedCarInstances(planParkedCars(map, 4242, 40)));
 
     let lightBudget = 12;
     for (const p of map.props) {
