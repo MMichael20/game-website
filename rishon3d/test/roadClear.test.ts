@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { roadRects, filterPropsOffRoads } from "../src/world/roadClear";
-import type { RoadDef, PropDef } from "../src/world/rishonMap";
+import { roadRects, filterPropsOffRoads, rectsOverlap, filterBuildingsOffRoads } from "../src/world/roadClear";
+import type { RoadDef, PropDef, BuildingDef } from "../src/world/rishonMap";
 
 const vRoad: RoadDef = { id: "v", x: 0, z: 0, length: 120, horizontal: false };
 const hRoad: RoadDef = { id: "h", x: 0, z: 0, length: 120, horizontal: true };
@@ -36,5 +36,22 @@ describe("filterPropsOffRoads", () => {
     const a = filterPropsOffRoads(props, [vRoad], 1.5);
     const b = filterPropsOffRoads(props, [vRoad], 1.5);
     expect(a).toEqual(b);
+  });
+});
+
+describe("rectsOverlap", () => {
+  it("detects overlap and separation", () => {
+    expect(rectsOverlap({ minX: 0, maxX: 2, minZ: 0, maxZ: 2 }, { minX: 1, maxX: 3, minZ: 1, maxZ: 3 })).toBe(true);
+    expect(rectsOverlap({ minX: 0, maxX: 2, minZ: 0, maxZ: 2 }, { minX: 5, maxX: 6, minZ: 5, maxZ: 6 })).toBe(false);
+  });
+});
+
+describe("filterBuildingsOffRoads", () => {
+  // vRoad corridor: x in [-3.5, 3.5] at margin 0.5
+  const onRoad: BuildingDef = { id: "on", x: 0, z: 20, width: 8, depth: 8, height: 10, color: 0x888888 };
+  const offRoad: BuildingDef = { id: "off", x: 40, z: 20, width: 8, depth: 8, height: 10, color: 0x888888 };
+  it("removes a building overlapping a road, keeps one clear of it", () => {
+    const out = filterBuildingsOffRoads([onRoad, offRoad], [vRoad], 0.5, 0).map((b) => b.id);
+    expect(out).toEqual(["off"]);
   });
 });

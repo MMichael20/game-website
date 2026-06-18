@@ -1,4 +1,4 @@
-import type { RoadDef, PropDef } from "./rishonMap";
+import type { RoadDef, PropDef, BuildingDef } from "./rishonMap";
 import { type Rect, pointInRects } from "../game/wander";
 import { ROAD_W } from "./roads";
 
@@ -18,4 +18,26 @@ export function roadRects(roads: RoadDef[], margin: number): Rect[] {
 export function filterPropsOffRoads(props: PropDef[], roads: RoadDef[], margin: number): PropDef[] {
   const rects = roadRects(roads, margin);
   return props.filter((p) => p.kind === "streetlight" || !pointInRects({ x: p.x, z: p.z }, rects));
+}
+
+// Axis-aligned bounding-box overlap.
+export function rectsOverlap(a: Rect, b: Rect): boolean {
+  return a.minX <= b.maxX && a.maxX >= b.minX && a.minZ <= b.maxZ && a.maxZ >= b.minZ;
+}
+
+// Drops any building whose footprint (+buildingMargin) overlaps a road corridor
+// (roadRects at roadMargin). Guarantees no building sits on a road.
+export function filterBuildingsOffRoads(
+  buildings: BuildingDef[], roads: RoadDef[], roadMargin: number, buildingMargin: number,
+): BuildingDef[] {
+  const rrects = roadRects(roads, roadMargin);
+  return buildings.filter((b) => {
+    const br: Rect = {
+      minX: b.x - b.width / 2 - buildingMargin,
+      maxX: b.x + b.width / 2 + buildingMargin,
+      minZ: b.z - b.depth / 2 - buildingMargin,
+      maxZ: b.z + b.depth / 2 + buildingMargin,
+    };
+    return !rrects.some((r) => rectsOverlap(br, r));
+  });
 }
