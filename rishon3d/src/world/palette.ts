@@ -48,6 +48,14 @@ export const PALETTE = {
   storefront: 0x9fd0e8,   // bright ground-floor glass
   cornice: 0xb9b4a8,      // top trim band
   roofCap: 0x9a958c,      // flat roof top
+  // facade purpose (typed ground-floor identities)
+  facadeDoor: 0x4a3b2e,   // dark entrance door
+  officeGlass: 0x6f97b8,  // cooler uniform office curtain-wall glass
+  signWarm: 0xd9533b,     // restaurant sign band (warm)
+  signCool: 0x2f7fb0,     // shop/office sign band (cool)
+  signLit: 0xffd98a,      // lit sign text/glow
+  balconyRail: 0x8c8780,  // apartment balcony box/rail
+  entryPad: 0xb4afa4,     // concrete entry pad at the door
   // streets
   crosswalk: 0xf3ecd0,    // crosswalk stripe (warm white)
   yellowLine: 0xf2c14e,   // double-yellow center line
