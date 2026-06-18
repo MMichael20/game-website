@@ -10,8 +10,12 @@ test("boots, starts, renders a canvas with no console errors", async ({ page }) 
   await page.waitForTimeout(1500); // let physics init + a few frames run
 
   // Engine renders one WebGL canvas; the minimap overlay adds a second 2D canvas.
-  const canvas = page.locator("canvas");
-  expect(await canvas.count()).toBeGreaterThanOrEqual(1);
+  await expect(page.locator("canvas")).toHaveCount(2);
+  const hasGL = await page.evaluate(() => {
+    const cs = [...document.querySelectorAll("canvas")];
+    return cs.some((c) => !!((c as HTMLCanvasElement).getContext("webgl2") || (c as HTMLCanvasElement).getContext("webgl")));
+  });
+  expect(hasGL).toBe(true);
 
   expect(errors, `console errors:\n${errors.join("\n")}`).toEqual([]);
 });
