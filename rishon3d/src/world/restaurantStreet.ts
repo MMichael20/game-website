@@ -73,15 +73,14 @@ function awningStripes(x: number, y: number, z: number, w: number, color: number
   for (let i = 0; i < cols; i++) {
     const hex = i % 2 === 0 ? color : PALETTE.awningStripe;
     const cxw = x - w / 2 + colW * (i + 0.5);
-    // sloped top slab (baked rotation so all slabs merge into one mesh).
-    const slab = new THREE.BoxGeometry(colW, 0.18, 1.8);
+    // bold, chunky sloped top slab (baked rotation so all slabs merge).
+    const slab = new THREE.BoxGeometry(colW, 0.26, 2.1);
     slab.rotateX(-0.34); // slope down toward the street
     slab.translate(cxw, y, z);
     tint(slab, hex);
-    // hanging front valance: a short vertical striped flap at the slab's low edge,
-    // the detail that makes a flat awning read as a real fabric canopy.
-    const valance = new THREE.BoxGeometry(colW, 0.36, 0.08);
-    valance.translate(cxw, y - 0.42, z + 0.85);
+    // tall hanging front valance: the chunky flap that reads as a fabric canopy.
+    const valance = new THREE.BoxGeometry(colW, 0.5, 0.1);
+    valance.translate(cxw, y - 0.5, z + 1.0);
     tint(valance, hex);
   }
   return out;
@@ -167,32 +166,35 @@ function restaurantDoor(r: typeof RESTAURANTS[number]): THREE.BufferGeometry {
   return g;
 }
 
-// --- outdoor seating: a square table on four legs + chairs on four legs. Built
-// once as shared geometry and instanced across the seating band. ---
+// --- outdoor seating: a chunky NPC-scale table (thick top, four legs, tabletop
+// items) and a chunky chair. Built once and instanced across the seating band. ---
+// The table is vertex-colored so the wood + a white plate + cup + condiment read
+// as set dressing in one instanced draw.
 function tableGeo(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
-  const top = new THREE.BoxGeometry(1.1, 0.12, 1.1); top.translate(0, 0.9, 0);
-  parts.push(top);
-  for (const sx of [-0.45, 0.45]) for (const sz of [-0.45, 0.45]) {
-    const leg = new THREE.BoxGeometry(0.1, 0.9, 0.1); leg.translate(sx, 0.45, sz);
-    parts.push(leg);
+  parts.push(tintedBox(1.4, 0.16, 1.4, 0, 0.96, 0, PALETTE.benchWood)); // thick top
+  for (const sx of [-0.58, 0.58]) for (const sz of [-0.58, 0.58]) {
+    parts.push(tintedBox(0.14, 0.96, 0.14, sx, 0.48, sz, PALETTE.benchWood)); // chunky legs
   }
+  // tabletop items so the table reads as occupied/lived-in.
+  parts.push(tintedBox(0.4, 0.06, 0.4, -0.28, 1.07, 0.12, 0xf3efe6)); // white plate
+  parts.push(tintedBox(0.18, 0.26, 0.18, 0.3, 1.17, -0.18, 0xd94f4f)); // red cup/bottle
+  parts.push(tintedBox(0.14, 0.2, 0.14, 0.08, 1.14, 0.28, 0xf2c14e));  // yellow condiment
   return mergeGeometries(parts);
 }
 function chairGeo(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
-  const seat = new THREE.BoxGeometry(0.5, 0.1, 0.5); seat.translate(0, 0.5, 0);
-  const back = new THREE.BoxGeometry(0.5, 0.5, 0.1); back.translate(0, 0.74, -0.2);
+  const seat = new THREE.BoxGeometry(0.56, 0.13, 0.56); seat.translate(0, 0.55, 0);
+  const back = new THREE.BoxGeometry(0.56, 0.62, 0.13); back.translate(0, 0.86, -0.22);
   parts.push(seat, back);
-  for (const sx of [-0.2, 0.2]) for (const sz of [-0.2, 0.2]) {
-    const leg = new THREE.BoxGeometry(0.08, 0.5, 0.08); leg.translate(sx, 0.25, sz);
+  for (const sx of [-0.23, 0.23]) for (const sz of [-0.23, 0.23]) {
+    const leg = new THREE.BoxGeometry(0.1, 0.55, 0.1); leg.translate(sx, 0.275, sz);
     parts.push(leg);
   }
   return mergeGeometries(parts);
 }
-// Umbrella: a slim pole topped by a stepped red/white striped parasol canopy.
-// Stripes are baked as vertex colors so every umbrella shares one geometry +
-// one vertexColors material (still a single instanced draw).
+// Umbrella: a pole topped by a big stepped red/white striped parasol that
+// actually shades the table. Stripes baked as vertex colors -> one instanced draw.
 function umbrellaGeo(): THREE.BufferGeometry {
   const tint = (g: THREE.BufferGeometry, hex: number) => {
     const c = new THREE.Color(hex);
@@ -203,43 +205,55 @@ function umbrellaGeo(): THREE.BufferGeometry {
     return g;
   };
   const parts: THREE.BufferGeometry[] = [];
-  const pole = new THREE.BoxGeometry(0.12, 2.4, 0.12); pole.translate(0, 1.2, 0);
+  const pole = new THREE.BoxGeometry(0.14, 2.7, 0.14); pole.translate(0, 1.35, 0);
   parts.push(tint(pole, PALETTE.benchWood));
-  // stepped pyramid: shrinking square rings, alternating canopy color / white,
-  // so it reads as a sloped striped parasol rather than a flat slab.
+  // big stepped pyramid canopy, alternating canopy color / white.
   const rings: [number, number, number][] = [
-    [2.4, 2.30, PALETTE.awningRed],
-    [1.85, 2.40, PALETTE.awningStripe],
-    [1.3, 2.50, PALETTE.awningRed],
-    [0.75, 2.60, PALETTE.awningStripe],
+    [3.0, 2.55, PALETTE.awningRed],
+    [2.3, 2.67, PALETTE.awningStripe],
+    [1.6, 2.79, PALETTE.awningRed],
+    [0.9, 2.91, PALETTE.awningStripe],
   ];
   for (const [s, ry, hex] of rings) {
-    const ring = new THREE.BoxGeometry(s, 0.12, s); ring.translate(0, ry, 0);
+    const ring = new THREE.BoxGeometry(s, 0.13, s); ring.translate(0, ry, 0);
     parts.push(tint(ring, hex));
   }
-  const finial = new THREE.BoxGeometry(0.16, 0.2, 0.16); finial.translate(0, 2.72, 0);
+  const finial = new THREE.BoxGeometry(0.18, 0.22, 0.18); finial.translate(0, 3.03, 0);
   parts.push(tint(finial, PALETTE.awningRed));
   return mergeGeometries(parts);
 }
 
-// A long wooden planter box packed with a green hedge and bright blossoms — the
-// foreground detail that lines the reference patio. Wood rim + green fill +
-// blossom cubes all merge into one vertex-colored geometry (one instanced draw).
+// A readable blocky flower: a green stem with a chunky colored head, sized to
+// read from gameplay distance (not a tiny dot). Sits on top of the soil at sy.
+function flowerSprig(x: number, z: number, hex: number, h: number, sy: number): THREE.BufferGeometry[] {
+  return [
+    tintedBox(0.07, h, 0.07, x, sy + h / 2, z, PALETTE.flowerStem), // stem
+    tintedBox(0.26, 0.24, 0.26, x, sy + h + 0.08, z, hex),          // flower head
+  ];
+}
+
+// A CHUNKY, player-scale wooden flower planter: a waist-high wooden box with
+// thick sides, dark soil, dense green leaf clumps and readable blocky flowers
+// (stems + heads). Everything merges into one vertex-colored geometry so a whole
+// row of planters is a single instanced draw. Replaces the old "tiny box + dots".
 function planterBoxGeo(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
-  parts.push(tintedBox(1.8, 0.5, 0.7, 0, 0.25, 0, PALETTE.benchWood)); // wooden box body
-  parts.push(tintedBox(1.62, 0.28, 0.54, 0, 0.55, 0, PALETTE.hedge));  // green fill, inset
-  // a scatter of blossoms poking above the hedge (fixed, deterministic layout).
-  const blossoms: [number, number, number][] = [
-    [-0.62, 0.02, PALETTE.flowerRed],
-    [-0.24, -0.08, PALETTE.flowerYellow],
-    [0.12, 0.08, PALETTE.flowerWhite],
-    [0.48, -0.04, PALETTE.flowerYellow],
-    [0.66, 0.1, PALETTE.flowerRed],
+  const soilY = 0.66;
+  parts.push(tintedBox(2.0, 0.72, 0.92, 0, 0.36, 0, PALETTE.benchWood));   // wooden box body
+  parts.push(tintedBox(2.04, 0.14, 0.96, 0, 0.72, 0, 0x6b4a2a));           // top wooden rim
+  parts.push(tintedBox(1.8, 0.2, 0.74, 0, soilY, 0, 0x3a2a1c));            // dark soil inset
+  // dense green leaf clumps on the soil
+  const clumps: [number, number][] = [[-0.72, 0], [-0.32, 0.14], [0.06, -0.12], [0.46, 0.12], [0.8, -0.04]];
+  for (const [cx, cz] of clumps) parts.push(tintedBox(0.5, 0.42, 0.5, cx, 0.92, cz, PALETTE.hedge));
+  // readable blocky flowers (stem + head), varied heights and colors.
+  const blooms: [number, number, number, number][] = [
+    [-0.62, -0.12, PALETTE.flowerRed, 0.34],
+    [-0.22, 0.12, PALETTE.flowerWhite, 0.46],
+    [0.16, -0.14, PALETTE.flowerYellow, 0.36],
+    [0.54, 0.1, PALETTE.flowerRed, 0.44],
+    [0.84, -0.06, PALETTE.flowerYellow, 0.32],
   ];
-  for (const [bx, bz, hex] of blossoms) {
-    parts.push(tintedBox(0.16, 0.2, 0.16, bx, 0.74, bz, hex));
-  }
+  for (const [bx, bz, hex, h] of blooms) parts.push(...flowerSprig(bx, bz, hex, h, 0.84));
   return mergeGeometries(parts);
 }
 
@@ -563,7 +577,7 @@ export function makeRestaurantStreet(): THREE.Object3D {
       chairPl.push({ x: c.x + dx, z: c.z + dz, rotationY, scale: 1 - (ci % 2) * 0.04 });
     });
   });
-  group.add(makeInstanced(tableGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }), tablePl, 0));
+  group.add(makeInstanced(tableGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), tablePl, 0));
   group.add(makeInstanced(chairGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }), chairPl, 0));
   group.add(makeInstanced(umbrellaGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), umbrellaPl, 0));
 
