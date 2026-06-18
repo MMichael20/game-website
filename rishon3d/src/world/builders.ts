@@ -22,7 +22,34 @@ export function makeRoad(def: RoadDef): THREE.Mesh {
   return mesh;
 }
 
-export function makeBuilding(def: BuildingDef): THREE.Mesh {
+export function makeBuilding(def: BuildingDef): THREE.Object3D {
+  if (def.isHouse) {
+    const group = new THREE.Group();
+    group.position.set(def.x, 0, def.z);
+
+    // warm cream-colored body
+    const bodyGeo = new THREE.BoxGeometry(def.width, def.height, def.depth);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf0c98a });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = def.height / 2;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
+
+    // terracotta-red pitched roof (cone approximation)
+    const roofRadius = Math.max(def.width, def.depth) * 0.72;
+    const roofHeight = def.height * 0.6;
+    const roofGeo = new THREE.ConeGeometry(roofRadius, roofHeight, 4);
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0xb03a2e });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = def.height + roofHeight / 2;
+    roof.rotation.y = Math.PI / 4; // align flat faces with walls
+    roof.castShadow = true;
+    group.add(roof);
+
+    return group;
+  }
+
   const geo = new THREE.BoxGeometry(def.width, def.height, def.depth);
   const mat = new THREE.MeshStandardMaterial({ color: def.color });
   const mesh = new THREE.Mesh(geo, mat);

@@ -37,9 +37,10 @@ async function boot() {
 
   window.addEventListener("keydown", (e) => {
     if (e.code === "Escape" && started) {
-      if (engine["running"] ?? true) { engine.stop(); menu.showPause(); }
+      if (engine["running"] ?? true) { input.clear(); engine.stop(); menu.showPause(); }
     }
   });
+  window.addEventListener("blur", () => input.clear());
 }
 
 boot();

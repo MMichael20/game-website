@@ -28,6 +28,7 @@ export class Input {
   isDown(code: string): boolean { return this.down.has(code); }
   justPressed(code: string): boolean { return this.pressed.has(code); }
   endFrame(): void { this.pressed.clear(); }
+  clear(): void { this.down.clear(); this.pressed.clear(); }
 
   dispose(): void {
     this.target.removeEventListener?.("keydown", this.onDown);
