@@ -30,7 +30,7 @@ async function boot() {
   engine.add(game);
   engine.add(follow);
 
-  hud.setHint("WASD / Arrows move - Mouse look - E enter/exit - T taxi - M map - Esc pause");
+  hud.setHint("WASD / Arrows move - Mouse look - Scroll zoom - Space brake - E enter/exit - T taxi - M map - Esc pause");
 
   // GTA-style camera: capture the pointer so mouse movement orbits the camera.
   const canvas = engine.renderer.domElement;

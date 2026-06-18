@@ -19,6 +19,7 @@ import { safeExitPosition } from "./exit";
 import { formatSpeed } from "../ui/format";
 import { Taxi } from "../entities/Taxi";
 import { nextTaxiPhase, type TaxiPhase } from "./taxi";
+import { PARK } from "../world/park";
 
 const ENTER_RADIUS = 3.5;
 
@@ -51,7 +52,7 @@ export class Game implements Tickable {
     this.rects = rects;
     this.bounds = bounds;
     this.taxi = new Taxi(scene);
-    this.dropoff = { x: world.playerSpawn.x, z: world.playerSpawn.z };
+    this.dropoff = { x: PARK.x, z: PARK.z }; // taxis take you to the park
     const palettes = [
       { skin: 0xe8b98a, shirt: 0x9b59b6, pants: 0x40313f },
       { skin: 0xf0c9a0, shirt: 0x27ae60, pants: 0x1e5c3a },
