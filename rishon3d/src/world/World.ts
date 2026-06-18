@@ -1,13 +1,14 @@
 import * as THREE from "three";
 import { Physics, RAPIER } from "../core/Physics";
-import { makeBuilding, makeGround, makeRoad } from "./builders";
+import { makeBuilding, makeGround } from "./builders";
 import { treeInstances, bushInstances, makeStreetLight } from "./props";
 import type { RishonMap } from "./rishonMap";
+import { makeRoadNetwork } from "./roads";
 
 export class World {
   constructor(scene: THREE.Scene, physics: Physics, public readonly map: RishonMap) {
     scene.add(makeGround(map));
-    for (const r of map.roads) scene.add(makeRoad(r));
+    scene.add(makeRoadNetwork(map.roads));
 
     // ground collider (thin fixed cuboid at y=0)
     const half = map.ground.size / 2;
