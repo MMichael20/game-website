@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PATRON_OBSTACLES, resolveObstacles } from "../src/world/obstacles";
+import { ROAD_W } from "../src/world/roads";
 import {
   HOUSE, RESTAURANTS, SHOP_Z,
   INDOOR_TABLES, INDOOR_CHAIR_DX, INDOOR_TABLE_SEATS, INDOOR_DINER_SEATS,
@@ -128,9 +129,10 @@ describe("Task 11: real park", () => {
     }
   });
 
-  it("park region is south of the road (z > 109) and does not overlap the road corridor", () => {
-    const ROAD_Z = 109;
+  it("park region is south of the road and does not overlap the road corridor", () => {
+    const ROAD_Z = 109; // road centre z
     const northEdge = PARK_CENTER.z - PARK_D / 2;
-    expect(northEdge).toBeGreaterThan(ROAD_Z);
+    // Park north edge must clear the road's south edge (centre + half-width)
+    expect(northEdge).toBeGreaterThan(ROAD_Z + ROAD_W / 2);
   });
 });

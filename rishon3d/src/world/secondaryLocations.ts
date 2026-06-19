@@ -48,15 +48,25 @@ export function secondaryPropObstacles(): Rect[] {
   out.push(...makeBenchBinLamp({ x: cx + 6, z: cz + 2.0, faceYaw: 0 }).obstacles);
 
   // Tree fill (deterministic, seed=11) — build the same avoid list as makeRealPark
-  // to get the same footprints as what was placed
+  // using the ACTUAL kit obstacle footprints so trees exactly avoid real props.
   const grassRegion: FillRegion = {
     minX: cx - PARK_W / 2, maxX: cx + PARK_W / 2,
     minZ: cz - PARK_D / 2, maxZ: cz + PARK_D / 2,
   };
-  const fountainRect = rectAround(cx, cz, 2.2 * 2, 2.2 * 2, 0.3);
+  // Derive avoid rects from the same kit calls used in makeRealPark (DRY — no hand-coded sizes)
+  const fountainObs = makeFountainKit({ x: cx, z: cz, r: 1.1 }).obstacles;
+  const picnicObs = makePicnicKit({ x: cx, z: cz + 4.5 }).obstacles;
+  const bblNW_Obs = makeBenchBinLamp({ x: cx - 6, z: cz - 4.5, faceYaw: Math.PI }).obstacles;
+  const bblNE_Obs = makeBenchBinLamp({ x: cx + 6, z: cz - 4.5, faceYaw: Math.PI }).obstacles;
+  const bblSW_Obs = makeBenchBinLamp({ x: cx - 6, z: cz + 2.0, faceYaw: 0 }).obstacles;
+  const bblSE_Obs = makeBenchBinLamp({ x: cx + 6, z: cz + 2.0, faceYaw: 0 }).obstacles;
   const pathHRect = rectAround(cx, cz, PARK_W, 2.5, 0.1);   // horizontal path strip
   const pathVRect = rectAround(cx, cz, 2.5, PARK_D, 0.1);   // vertical path strip
-  const avoidForFill: Rect[] = [fountainRect, pathHRect, pathVRect];
+  const avoidForFill: Rect[] = [
+    ...fountainObs, ...picnicObs,
+    ...bblNW_Obs, ...bblNE_Obs, ...bblSW_Obs, ...bblSE_Obs,
+    pathHRect, pathVRect,
+  ];
   const { obstacles: treeObs } = fillSurface(grassRegion, "grass", 11, avoidForFill);
   out.push(...treeObs);
 
@@ -265,15 +275,21 @@ export function makeRealPark(): THREE.Object3D {
   // Faces north (faceYaw = 0) toward the street; placed on the horizontal path.
   group.add(makeBenchMesh(PARK_BENCH.x, PARK_BENCH.z, 0));
 
-  // ---- grass fill: flowers, bushes, trees — avoid paths + fountain ----
+  // ---- grass fill: flowers, bushes, trees — avoid paths + kit footprints ----
+  // Build avoid list from the ACTUAL kit obstacles above (DRY — no hand-coded sizes).
+  // This ensures tree placement exactly matches secondaryPropObstacles() avoid list.
   const grassRegion: FillRegion = {
     minX: cx - W / 2, maxX: cx + W / 2,
     minZ: cz - D / 2, maxZ: cz + D / 2,
   };
-  const fountainRect = rectAround(cx, cz, 2.2 * 2, 2.2 * 2, 0.3);
-  const pathHRect = rectAround(cx, cz, W, 2.5, 0.1);
-  const pathVRect = rectAround(cx, cz, 2.5, D, 0.1);
-  const fill = fillSurface(grassRegion, "grass", 11, [fountainRect, pathHRect, pathVRect]);
+  const fillPathH = rectAround(cx, cz, W, 2.5, 0.1);
+  const fillPathV = rectAround(cx, cz, 2.5, D, 0.1);
+  const fillAvoid: Rect[] = [
+    ...fountain.obstacles, ...picnic.obstacles,
+    ...bblNW.obstacles, ...bblNE.obstacles, ...bblSW.obstacles, ...bblSE.obstacles,
+    fillPathH, fillPathV,
+  ];
+  const fill = fillSurface(grassRegion, "grass", 11, fillAvoid);
   fill.object.name = "parkGreenery";
   group.add(fill.object);
 
