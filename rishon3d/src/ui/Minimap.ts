@@ -1,6 +1,10 @@
 import type { RishonMap } from "../world/rishonMap";
-import { POIS } from "../world/districtPois";
+import { locationPois } from "../world/locations";
 import { worldToMinimap, worldRectToMinimap } from "./minimapMath";
+
+// POI markers drive from the location-registry projection (deep-equal to
+// districtPois.POIS), so adding a location adds a marker with no further wiring.
+const POIS = locationPois();
 
 const SIZE = 180;
 

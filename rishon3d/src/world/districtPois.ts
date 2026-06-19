@@ -179,6 +179,20 @@ export const PATIO_WALK_Z = ANCHOR_Z + 2.0;            // 105: patio-side walkin
 export const FAR_WALK_Z = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D / 2; // far sidewalk
 
 // The POI table consumed by the minimap legend + the interaction prompts.
+//
+// This stays a literal here (the placement source of truth, rishon3d rule 2) and
+// is the SHAPE the location registry projects to: `locations.ts` builds
+// `LOCATIONS` from the SAME anchors above and `locations.locationPois()` is a
+// DERIVED PROJECTION that deep-equals this array (pinned by locations.test.ts).
+// Live consumers (Minimap, interactions, Game) read the registry projection so
+// that adding a location is a single data entry; this literal remains for the
+// existing districtPois importers + as the deep-equal contract.
+//
+// IMPORT-CYCLE NOTE: districtPois must NOT import locations. The dependency runs
+// one way only (locations -> districtPois for anchors/types), which keeps both
+// the older rishonMap -> districtPois -> roads -> rishonMap chain broken AND
+// avoids a districtPois <-> locations init-order trap (locations reading these
+// anchors while districtPois is still mid-initialisation).
 export const POIS: Poi[] = [
   { kind: "restaurant", id: "restaurant", label: "Restaurant", glyph: "R", color: "#e0524a",
     x: RESTAURANT_DOOR.x, z: RESTAURANT_DOOR.z, r: 4.5 },

@@ -20,9 +20,13 @@ import { RideCar } from "../entities/RideCar";
 import { nextTaxiPhase, type TaxiPhase } from "./taxi";
 import { Phone } from "../ui/Phone";
 import { DebugOverlay } from "../ui/DebugOverlay";
-import { POIS } from "../world/districtPois";
+import { locationPois } from "../world/locations";
 
 const ENTER_RADIUS = 3.5;
+
+// Nearest-POI HUD anchor reads the location-registry projection (deep-equal to
+// districtPois.POIS), keeping the registry the single source for on-foot prompts.
+const POIS = locationPois();
 
 export class Game implements Tickable {
   private character: Character;

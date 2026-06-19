@@ -10,6 +10,7 @@ import { RESTAURANTS, SHOP_Z, HOUSE, TAXI_CAR, type Vec2 } from "./districtPois"
 import { INFILL_FOOTPRINTS, PARKED_CAR_SPOTS, restaurantPropObstacles } from "./restaurantStreet";
 import { secondaryPropObstacles } from "./secondaryLocations";
 import { residentialPropObstacles } from "./residential";
+import { allLocationObstacles } from "./locations";
 import { rectAround, type Rect } from "../game/wander";
 
 const M = 0.25; // keep-clear band so NPCs graze rather than touch
@@ -36,6 +37,10 @@ export const PATRON_OBSTACLES: Rect[] = [
   ...restaurantPropObstacles(),
   ...secondaryPropObstacles(),
   ...residentialPropObstacles(),
+  // Additive registry hook: solid footprints declared directly on a LocationDef.
+  // Empty for the current locations (their solids come from the spreads above),
+  // so this changes nothing today; it lets a FUTURE location ship its own.
+  ...allLocationObstacles(),
 ];
 
 // If `pos` is inside any obstacle rect, push it out to the nearest edge (smallest
