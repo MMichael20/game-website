@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import { Engine } from "./core/Engine";
 import { Input } from "./core/Input";
 import { Physics } from "./core/Physics";
@@ -10,6 +11,7 @@ import { Menu } from "./ui/Menu";
 import { Hud } from "./ui/Hud";
 import { Minimap } from "./ui/Minimap";
 import { makeHumanoid } from "./entities/Humanoid";
+import { OBJECT_LIBRARY, tintedMesh } from "./world/objects";
 
 async function boot() {
   const container = document.getElementById("app")!;
@@ -68,6 +70,44 @@ async function boot() {
     });
     engine.camera.position.set(0, 1.4, 4.2);
     engine.camera.lookAt(0, 1.15, 0);
+    engine.start();
+    return;
+  }
+
+  // DEV-only object-library catalog: #objects lays out every reusable object
+  // (with recolored variants) on pedestals so the library can be inspected at a
+  // glance. Static scene (no follow/game), mirrors the #char preview.
+  if (import.meta.env.DEV && location.hash.startsWith("#objects")) {
+    // hide the city (built before the route checks) so the catalog reads against
+    // a clean backdrop; keep the lights so the objects are lit.
+    engine.scene.children.forEach((c) => {
+      if (!(c as THREE.Object3D & { isLight?: boolean }).isLight) c.visible = false;
+    });
+    const COL = 1.9, ROW = 2.4;
+    const maxCols = Math.max(...OBJECT_LIBRARY.map((e) => e.variants.length));
+    OBJECT_LIBRARY.forEach((entry, ri) => {
+      entry.variants.forEach((v, vi) => {
+        const mesh = tintedMesh(v.geo());
+        const box = new THREE.Box3().setFromObject(mesh);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        const s = 1.4 / maxDim;
+        mesh.scale.setScalar(s);
+        const x = (vi - (maxCols - 1) / 2) * COL;
+        const z = (ri - (OBJECT_LIBRARY.length - 1) / 2) * ROW;
+        const ped = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.62, 0.72, 0.3, 16),
+          new THREE.MeshStandardMaterial({ color: 0xece8df }),
+        );
+        ped.position.set(x, 0.15, z);
+        ped.receiveShadow = true;
+        engine.scene.add(ped);
+        mesh.position.set(x, 0.3 - box.min.y * s, z);
+        engine.scene.add(mesh);
+      });
+    });
+    engine.camera.position.set(0, 7.5, OBJECT_LIBRARY.length * ROW * 0.7 + 6);
+    engine.camera.lookAt(0, 0.6, 0);
     engine.start();
     return;
   }

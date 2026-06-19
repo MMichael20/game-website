@@ -66,9 +66,17 @@ export function disc(
 }
 
 // Merge an array of pre-tinted geometries into one. Disposes the parts.
+// Primitives differ in indexing (BoxGeometry is indexed, IcosahedronGeometry is
+// not), and mergeGeometries() refuses to mix the two — so normalize every part
+// to non-indexed first. Vertex color/position/normal attributes survive.
 export function mergeTinted(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
-  const merged = mergeGeometries(parts, false);
-  for (const p of parts) p.dispose();
+  const flat = parts.map((p) => {
+    const f = p.index ? p.toNonIndexed() : p;
+    if (f !== p) p.dispose();
+    return f;
+  });
+  const merged = mergeGeometries(flat, false);
+  for (const f of flat) f.dispose();
   if (!merged) throw new Error("mergeTinted: no geometry to merge");
   return merged;
 }
