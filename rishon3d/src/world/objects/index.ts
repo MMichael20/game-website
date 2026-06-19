@@ -14,6 +14,7 @@ import { makeIceCream, ICE_CREAM_PRESETS } from "./iceCream";
 import { makeDrinkCup, DRINK_PRESETS } from "./drinkCup";
 import { makeUmbrella } from "./umbrella";
 import { makePhone, PHONE_SCREENS } from "./phone";
+import { makeGlassFrame, GLASS_PRESETS } from "./glass";
 import { FROSTING, SPONGE, GLAZE, DRINK } from "./objectPalette";
 
 export * from "./voxel";
@@ -26,6 +27,7 @@ export * from "./iceCream";
 export * from "./drinkCup";
 export * from "./umbrella";
 export * from "./phone";
+export * from "./glass";
 
 export interface ObjectVariant { label: string; geo: () => THREE.BufferGeometry }
 export interface ObjectEntry { name: string; variants: ObjectVariant[] }
@@ -64,4 +66,10 @@ export const OBJECT_LIBRARY: ObjectEntry[] = [
     { label: "blue", geo: () => makeUmbrella({ colorA: 0x2980b9 }) },
   ] },
   { name: "phone", variants: PHONE_SCREENS.slice(0, 4).map((c, i) => ({ label: `phone ${i}`, geo: () => makePhone({ screenColor: c }) })) },
+  { name: "glass", variants: [
+    { label: "storefront", geo: () => makeGlassFrame(GLASS_PRESETS.storefront) },
+    { label: "office",     geo: () => makeGlassFrame(GLASS_PRESETS.office) },
+    { label: "house",      geo: () => makeGlassFrame(GLASS_PRESETS.house) },
+    { label: "door",       geo: () => makeGlassFrame(GLASS_PRESETS.door) },
+  ] },
 ];

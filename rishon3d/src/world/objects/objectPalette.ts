@@ -70,3 +70,12 @@ export const LEAF = 0x57b04a;
 // Plant pots
 export const POT_TERRACOTTA = 0xc5703a;
 export const POT_SOIL = 0x3a2a1c;
+
+// Glass panels (storefront windows, office facades, doors)
+export const GLASS = {
+  pane:        0xc8e0f0,  // light sky-blue tint for glass
+  frame:       0x6a8a9e,  // grey-blue aluminium frame
+  highlight:   0xe8f4fc,  // bright reflective strip baked near top of frame
+  silhouette:  0x1a2a38,  // dim interior shadow plane
+  handleColor: 0x8aabcc,  // door handle bar
+} as const;
