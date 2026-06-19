@@ -3,47 +3,32 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { makeInstanced, type Placement } from "./InstancedProps";
 import { PALETTE, BUILDING_COLORS } from "./palette";
-import { makeSidewalkTexture, makeAsphaltTexture, PAVER_SUPER_M, GRAIN_M, ROAD_W } from "./roads";
+import { makeSidewalkTexture, makeAsphaltTexture, PAVER_SUPER_M, GRAIN_M } from "./roads";
 import { makeStreetLight, treeInstances, trashcanInstances } from "./props";
 import { makeBuilding } from "./builders";
 import { makeCarBody } from "../entities/carMesh";
 import { makeHumanoid, type HumanoidPalette } from "../entities/Humanoid";
 import type { PropDef, BuildingDef } from "./rishonMap";
+import { makeRestaurantInterior } from "./restaurantInterior";
+import { makePhoneShop, makePocketPark, makeTaxiPickup } from "./secondaryLocations";
+import {
+  CX, CZ, PROM_W, PROM_D, SHOP_Z, SEAT_Z, ROAD_Z, STREET_LEN, FAR_WALK_D, ROAD_W,
+  RESTAURANTS, seatClusters, CHAIR_OFFSETS, PICKUP_STAND, shopFront, type RestaurantSpec,
+} from "./districtPois";
 
-// A short, lively restaurant promenade in the open SE corner of the map. Center
-// ~(95,95) is clear of both the E district (z in [-30,30]) and the S district
-// (x in [-30,30]). Self-contained, deterministic (fixed layout, no rng), and
-// merged/instanced so the whole landmark stays at a handful of draw calls. The
-// builder returns a Group anchored at the origin with world-space geometry, so
-// the World can add it directly.
-
-// Promenade center + footprint (the paved plaza the restaurants line).
-const CX = 95; // promenade center x
-const CZ = 95; // promenade center z
-const PROM_W = 44; // span along x (the row of restaurants)
-const PROM_D = 22; // depth along z (storefronts -> seating -> street edge)
-
-// Restaurants sit along the north edge (lower z); seating + the street run
-// south of them (higher z) so the awnings face the open promenade.
-const SHOP_Z = CZ - 6; // building front line
-const SEAT_Z = CZ + 2; // outdoor seating band
-const ANCHOR_Z = CZ + 8; // pickup marker / menu stand band
-
-// Three bespoke restaurants spaced evenly along the promenade. Each entry fixes
-// the box footprint/height and which warm awning color it wears so the row
-// reads as a deterministic mix (red / blue / red).
-const RESTAURANTS: { x: number; w: number; d: number; h: number; awning: number }[] = [
-  { x: CX - 15, w: 8, d: 8, h: 6, awning: PALETTE.awningRed },
-  { x: CX, w: 9, d: 8, h: 9, awning: PALETTE.awningBlue },
-  { x: CX + 15, w: 8, d: 8, h: 7, awning: PALETTE.awningRed },
-];
+// A short, lively restaurant promenade in the open SE corner of the map. The
+// block now reads as a small playable slice: an enterable open restaurant with a
+// furnished interior, a walk-in phone shop, a taxi pickup and a pocket park, all
+// fronting a paved plaza + street. Self-contained, deterministic (fixed layout,
+// no rng), merged/instanced so the whole landmark stays at a handful of draw
+// calls. The builder returns a Group anchored at the origin with world-space
+// geometry, so the World can add it directly.
 
 // Gameplay anchor: the delivery/pickup marker stand position, in the SE region.
-export const RESTAURANT = { x: CX, z: ANCHOR_Z };
+export const RESTAURANT = { x: PICKUP_STAND.x, z: PICKUP_STAND.z };
 
 // --- vertex-color helper: tint a box's vertices so several colors merge into
-// one geometry (one draw call) instead of one material per color. Mirrors the
-// helper in props.ts. ---
+// one geometry (one draw call) instead of one material per color. ---
 function tintedBox(w: number, h: number, d: number, x: number, y: number, z: number, hex: number): THREE.BufferGeometry {
   const b = new THREE.BoxGeometry(w, h, d);
   b.translate(x, y, z);
@@ -56,8 +41,7 @@ function tintedBox(w: number, h: number, d: number, x: number, y: number, z: num
 }
 
 // Striped awning slab: a sloped box whose top alternates color / white columns
-// via vertex colors, so several awnings (any color) merge into ONE mesh. Width
-// `w` along x, sloping down toward the promenade (+Z). Built in world space.
+// via vertex colors, so several awnings (any color) merge into ONE mesh.
 function awningStripes(x: number, y: number, z: number, w: number, color: number): THREE.BufferGeometry[] {
   const cols = 6;
   const colW = w / cols;
@@ -73,12 +57,10 @@ function awningStripes(x: number, y: number, z: number, w: number, color: number
   for (let i = 0; i < cols; i++) {
     const hex = i % 2 === 0 ? color : PALETTE.awningStripe;
     const cxw = x - w / 2 + colW * (i + 0.5);
-    // bold, chunky sloped top slab (baked rotation so all slabs merge).
     const slab = new THREE.BoxGeometry(colW, 0.26, 2.1);
-    slab.rotateX(-0.34); // slope down toward the street
+    slab.rotateX(-0.34);
     slab.translate(cxw, y, z);
     tint(slab, hex);
-    // tall hanging front valance: the chunky flap that reads as a fabric canopy.
     const valance = new THREE.BoxGeometry(colW, 0.5, 0.1);
     valance.translate(cxw, y - 0.5, z + 1.0);
     tint(valance, hex);
@@ -86,62 +68,44 @@ function awningStripes(x: number, y: number, z: number, w: number, color: number
   return out;
 }
 
-// One restaurant box's solid voxel parts (body + sign band + parapet rim),
-// merged into a single vertex-colored geometry per restaurant. The warm
-// storefront, door and awning are emitted separately (different materials).
-function restaurantSolids(r: typeof RESTAURANTS[number]): THREE.BufferGeometry[] {
-  const hd = r.d / 2;
-  const front = SHOP_Z + hd; // +Z face (toward the promenade)
-  const out: THREE.BufferGeometry[] = [];
-
-  // body: a warm sandy box, sitting on the ground.
-  out.push(tintedBox(r.w, r.h, r.d, r.x, r.h / 2, SHOP_Z, PALETTE.houseBody));
-
-  // sign band: a warm strip across the upper storefront, just proud of the wall.
+// Sign band + parapet rim trim for a restaurant box (warm strip + flat-roof cap).
+function restaurantTrim(r: RestaurantSpec): THREE.BufferGeometry[] {
+  const front = shopFront(r.d);
   const bandY = r.h - 1.1;
-  out.push(tintedBox(r.w * 0.9, 0.9, 0.2, r.x, bandY, front + 0.1, PALETTE.signWarm));
-
-  // parapet rim: a thin cornice box capping the flat roof.
-  out.push(tintedBox(r.w, 0.5, r.d, r.x, r.h + 0.25, SHOP_Z, PALETTE.cornice));
-
-  return out;
+  return [
+    tintedBox(r.w * 0.9, 0.9, 0.2, r.x, bandY, front + 0.1, PALETTE.signWarm), // sign band
+    tintedBox(r.w, 0.5, r.d, r.x, r.h + 0.25, SHOP_Z, PALETTE.cornice),         // parapet rim
+  ];
 }
 
-// The glowing sign text/dot on the sign band (lit accent), one per restaurant.
-function restaurantSignLit(r: typeof RESTAURANTS[number]): THREE.BufferGeometry {
-  const hd = r.d / 2;
-  const front = SHOP_Z + hd;
+// The solid body box of a (closed) restaurant.
+function restaurantBody(r: RestaurantSpec): THREE.BufferGeometry {
+  return tintedBox(r.w, r.h, r.d, r.x, r.h / 2, SHOP_Z, PALETTE.houseBody);
+}
+
+function restaurantSignLit(r: RestaurantSpec): THREE.BufferGeometry {
+  const front = shopFront(r.d);
   const g = new THREE.BoxGeometry(r.w * 0.55, 0.4, 0.12);
   g.translate(r.x, r.h - 1.1, front + 0.22);
   return g;
 }
 
-// The ground-floor storefront glass panel, one per restaurant. Drawn slightly
-// proud of the wall; the glass material is semi-transparent so the warm interior
-// behind it reads through.
-function restaurantStorefront(r: typeof RESTAURANTS[number]): THREE.BufferGeometry {
-  const hd = r.d / 2;
-  const front = SHOP_Z + hd;
+function restaurantStorefront(r: RestaurantSpec): THREE.BufferGeometry {
+  const front = shopFront(r.d);
   const g = new THREE.BoxGeometry(r.w * 0.78, 2.4, 0.1);
   g.translate(r.x, 1.5, front + 0.06);
   return g;
 }
 
-// A warm emissive interior panel just behind the (semi-transparent) storefront
-// glass, so each shop reads as warm-lit inside rather than a flat bright panel.
-function restaurantInterior(r: typeof RESTAURANTS[number]): THREE.BufferGeometry {
-  const hd = r.d / 2;
-  const front = SHOP_Z + hd;
+function restaurantInteriorPanel(r: RestaurantSpec): THREE.BufferGeometry {
+  const front = shopFront(r.d);
   const g = new THREE.BoxGeometry(r.w * 0.74, 2.2, 0.04);
-  g.translate(r.x, 1.45, front + 0.035); // between the wall face and the glass
+  g.translate(r.x, 1.45, front + 0.035);
   return g;
 }
 
-// A frame ring standing proud of the wall around the storefront opening, so the
-// glass reads as recessed behind it (the depth the reference storefronts show).
-function restaurantStorefrontFrame(r: typeof RESTAURANTS[number]): THREE.BufferGeometry[] {
-  const hd = r.d / 2;
-  const front = SHOP_Z + hd;
+function restaurantStorefrontFrame(r: RestaurantSpec): THREE.BufferGeometry[] {
+  const front = shopFront(r.d);
   const z = front + 0.13;
   const gw = r.w * 0.82, gh = 2.6, t = 0.16;
   const out: THREE.BufferGeometry[] = [];
@@ -150,36 +114,30 @@ function restaurantStorefrontFrame(r: typeof RESTAURANTS[number]): THREE.BufferG
     g.translate(x, y, z);
     out.push(g);
   };
-  mk(t, gh, r.x - gw / 2, 1.5);       // left jamb
-  mk(t, gh, r.x + gw / 2, 1.5);       // right jamb
-  mk(gw + t, t, r.x, 1.5 + gh / 2);   // head
-  mk(gw + t, t, r.x, 1.5 - gh / 2);   // sill
+  mk(t, gh, r.x - gw / 2, 1.5);
+  mk(t, gh, r.x + gw / 2, 1.5);
+  mk(gw + t, t, r.x, 1.5 + gh / 2);
+  mk(gw + t, t, r.x, 1.5 - gh / 2);
   return out;
 }
 
-// The dark entrance door, one per restaurant (offset to one side of the glass).
-function restaurantDoor(r: typeof RESTAURANTS[number]): THREE.BufferGeometry {
-  const hd = r.d / 2;
-  const front = SHOP_Z + hd;
+function restaurantDoor(r: RestaurantSpec): THREE.BufferGeometry {
+  const front = shopFront(r.d);
   const g = new THREE.BoxGeometry(1.2, 2.4, 0.14);
   g.translate(r.x + r.w * 0.28, 1.2, front + 0.08);
   return g;
 }
 
-// --- outdoor seating: a chunky NPC-scale table (thick top, four legs, tabletop
-// items) and a chunky chair. Built once and instanced across the seating band. ---
-// The table is vertex-colored so the wood + a white plate + cup + condiment read
-// as set dressing in one instanced draw.
+// --- outdoor seating geometries (chunky NPC-scale table, chair, umbrella) -----
 function tableGeo(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
-  parts.push(tintedBox(1.4, 0.16, 1.4, 0, 0.96, 0, PALETTE.benchWood)); // thick top
+  parts.push(tintedBox(1.4, 0.16, 1.4, 0, 0.96, 0, PALETTE.benchWood));
   for (const sx of [-0.58, 0.58]) for (const sz of [-0.58, 0.58]) {
-    parts.push(tintedBox(0.14, 0.96, 0.14, sx, 0.48, sz, PALETTE.benchWood)); // chunky legs
+    parts.push(tintedBox(0.14, 0.96, 0.14, sx, 0.48, sz, PALETTE.benchWood));
   }
-  // tabletop items so the table reads as occupied/lived-in.
-  parts.push(tintedBox(0.4, 0.06, 0.4, -0.28, 1.07, 0.12, 0xf3efe6)); // white plate
-  parts.push(tintedBox(0.18, 0.26, 0.18, 0.3, 1.17, -0.18, 0xd94f4f)); // red cup/bottle
-  parts.push(tintedBox(0.14, 0.2, 0.14, 0.08, 1.14, 0.28, 0xf2c14e));  // yellow condiment
+  parts.push(tintedBox(0.4, 0.06, 0.4, -0.28, 1.07, 0.12, 0xf3efe6));
+  parts.push(tintedBox(0.18, 0.26, 0.18, 0.3, 1.17, -0.18, 0xd94f4f));
+  parts.push(tintedBox(0.14, 0.2, 0.14, 0.08, 1.14, 0.28, 0xf2c14e));
   return mergeGeometries(parts);
 }
 function chairGeo(): THREE.BufferGeometry {
@@ -193,8 +151,6 @@ function chairGeo(): THREE.BufferGeometry {
   }
   return mergeGeometries(parts);
 }
-// Umbrella: a pole topped by a big stepped red/white striped parasol that
-// actually shades the table. Stripes baked as vertex colors -> one instanced draw.
 function umbrellaGeo(): THREE.BufferGeometry {
   const tint = (g: THREE.BufferGeometry, hex: number) => {
     const c = new THREE.Color(hex);
@@ -207,7 +163,6 @@ function umbrellaGeo(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
   const pole = new THREE.BoxGeometry(0.14, 2.7, 0.14); pole.translate(0, 1.35, 0);
   parts.push(tint(pole, PALETTE.benchWood));
-  // big stepped pyramid canopy, alternating canopy color / white.
   const rings: [number, number, number][] = [
     [3.0, 2.55, PALETTE.awningRed],
     [2.3, 2.67, PALETTE.awningStripe],
@@ -223,29 +178,23 @@ function umbrellaGeo(): THREE.BufferGeometry {
   return mergeGeometries(parts);
 }
 
-// A readable blocky flower: a green stem with a chunky colored head, sized to
-// read from gameplay distance (not a tiny dot). Sits on top of the soil at sy.
 function flowerSprig(x: number, z: number, hex: number, h: number, sy: number): THREE.BufferGeometry[] {
   return [
-    tintedBox(0.07, h, 0.07, x, sy + h / 2, z, PALETTE.flowerStem), // stem
-    tintedBox(0.26, 0.24, 0.26, x, sy + h + 0.08, z, hex),          // flower head
+    tintedBox(0.07, h, 0.07, x, sy + h / 2, z, PALETTE.flowerStem),
+    tintedBox(0.26, 0.24, 0.26, x, sy + h + 0.08, z, hex),
   ];
 }
 
-// A CHUNKY, player-scale wooden flower planter: a waist-high wooden box with
-// thick sides, dark soil, dense green leaf clumps and readable blocky flowers
-// (stems + heads). Everything merges into one vertex-colored geometry so a whole
-// row of planters is a single instanced draw. Replaces the old "tiny box + dots".
+// A CHUNKY, player-scale wooden flower planter (wooden box, dark soil, dense
+// green leaf clumps, readable blocky flowers); merges to one instanced draw.
 function planterBoxGeo(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
   const soilY = 0.66;
-  parts.push(tintedBox(2.0, 0.72, 0.92, 0, 0.36, 0, PALETTE.benchWood));   // wooden box body
-  parts.push(tintedBox(2.04, 0.14, 0.96, 0, 0.72, 0, 0x6b4a2a));           // top wooden rim
-  parts.push(tintedBox(1.8, 0.2, 0.74, 0, soilY, 0, 0x3a2a1c));            // dark soil inset
-  // dense green leaf clumps on the soil
+  parts.push(tintedBox(2.0, 0.72, 0.92, 0, 0.36, 0, PALETTE.benchWood));
+  parts.push(tintedBox(2.04, 0.14, 0.96, 0, 0.72, 0, 0x6b4a2a));
+  parts.push(tintedBox(1.8, 0.2, 0.74, 0, soilY, 0, 0x3a2a1c));
   const clumps: [number, number][] = [[-0.72, 0], [-0.32, 0.14], [0.06, -0.12], [0.46, 0.12], [0.8, -0.04]];
   for (const [cx, cz] of clumps) parts.push(tintedBox(0.5, 0.42, 0.5, cx, 0.92, cz, PALETTE.hedge));
-  // readable blocky flowers (stem + head), varied heights and colors.
   const blooms: [number, number, number, number][] = [
     [-0.62, -0.12, PALETTE.flowerRed, 0.34],
     [-0.22, 0.12, PALETTE.flowerWhite, 0.46],
@@ -258,53 +207,27 @@ function planterBoxGeo(): THREE.BufferGeometry {
 }
 
 // Planter placements: a row along the street-facing edge of the promenade and a
-// row at the storefront bases, skipping the central pickup stand. Deterministic.
+// row at the storefront bases, skipping the central entrance lane.
 function planterPlacements(): Placement[] {
   const out: Placement[] = [];
-  // street-edge row (in front of the seating, toward the open promenade)
   for (let i = 0; i < 7; i++) {
     const x = CX - 18 + i * 6;
-    if (Math.abs(x - CX) < 2) continue; // leave the pickup stand clear
+    if (Math.abs(x - CX) < 4) continue; // leave the entrance / pickup lane clear
     out.push({ x, z: CZ + 9.2 });
   }
-  // storefront-base row (planters hugging the building fronts)
   for (const r of RESTAURANTS) {
-    out.push({ x: r.x - r.w * 0.3, z: SHOP_Z + r.d / 2 + 1.4 });
-    out.push({ x: r.x + r.w * 0.3, z: SHOP_Z + r.d / 2 + 1.4 });
+    out.push({ x: r.x - r.w * 0.3, z: shopFront(r.d) + 1.4 });
+    out.push({ x: r.x + r.w * 0.3, z: shopFront(r.d) + 1.4 });
   }
   return out;
 }
 
-// Fixed seating cluster centers along the promenade (between the buildings and
-// the street). One cluster roughly per restaurant, plus a couple between them.
-function seatClusters(): { x: number; z: number }[] {
-  const out: { x: number; z: number }[] = [];
-  for (let i = 0; i < 5; i++) {
-    const x = CX - 16 + i * 8;
-    const z = SEAT_Z + (i % 2 === 0 ? 0 : 2.4);
-    out.push({ x, z });
-  }
-  return out;
-}
-
-// Chair offsets around a table (deterministic four-around layout).
-const CHAIR_OFFSETS: [number, number][] = [
-  [0.85, 0], [-0.85, 0], [0, 0.85], [0, -0.85],
-];
-
-// The street that the promenade fronts onto: an E-W asphalt road just south of
-// the seating, with curbs, a double-yellow center line, a crosswalk aligned with
-// the patio, and a paver sidewalk on the far side. This is what turns the
-// isolated tile pad into an embedded city street.
-const ROAD_Z = CZ + 14;       // road centerline, south of the seating band
-const STREET_LEN = 54;        // road length along x (spans the promenade + margins)
-const FAR_WALK_D = 4;         // depth of the sidewalk across the road
-
+// The street the promenade fronts onto: an E-W asphalt road, curbs, double
+// yellow, a crosswalk aligned with the entrance lane, and a far sidewalk.
 function makeStreetBlock(): THREE.Object3D {
   const g = new THREE.Group();
   g.name = "street";
 
-  // asphalt road
   const atex = makeAsphaltTexture();
   atex.repeat.set(Math.max(1, Math.round(STREET_LEN / GRAIN_M)), Math.max(1, Math.round(ROAD_W / GRAIN_M)));
   const road = new THREE.Mesh(new THREE.BoxGeometry(STREET_LEN, 0.12, ROAD_W), new THREE.MeshStandardMaterial({ map: atex }));
@@ -312,7 +235,6 @@ function makeStreetBlock(): THREE.Object3D {
   road.receiveShadow = true;
   g.add(road);
 
-  // raised curbs on both edges
   for (const s of [-1, 1]) {
     const curb = new THREE.Mesh(new THREE.BoxGeometry(STREET_LEN, 0.16, 0.3), new THREE.MeshStandardMaterial({ color: PALETTE.curb }));
     curb.position.set(CX, 0.08, ROAD_Z + s * (ROAD_W / 2 + 0.15));
@@ -320,7 +242,6 @@ function makeStreetBlock(): THREE.Object3D {
     g.add(curb);
   }
 
-  // double-yellow center line
   const ylMat = new THREE.MeshStandardMaterial({ color: PALETTE.yellowLine });
   for (const s of [-1, 1]) {
     const yl = new THREE.Mesh(new THREE.BoxGeometry(STREET_LEN, 0.02, 0.16), ylMat);
@@ -328,7 +249,6 @@ function makeStreetBlock(): THREE.Object3D {
     g.add(yl);
   }
 
-  // crosswalk bands aligned with the patio center (the player crosses here)
   const bandMat = new THREE.MeshStandardMaterial({ color: PALETTE.crosswalk });
   const bands: THREE.BufferGeometry[] = [];
   for (let i = -3; i <= 3; i++) {
@@ -338,7 +258,6 @@ function makeStreetBlock(): THREE.Object3D {
   }
   g.add(new THREE.Mesh(mergeGeometries(bands), bandMat));
 
-  // paver sidewalk on the far side of the road
   const paver = makeSidewalkTexture();
   paver.repeat.set(Math.max(1, Math.round(STREET_LEN / PAVER_SUPER_M)), Math.max(1, Math.round(FAR_WALK_D / PAVER_SUPER_M)));
   const farWalk = new THREE.Mesh(new THREE.BoxGeometry(STREET_LEN, 0.12, FAR_WALK_D), new THREE.MeshStandardMaterial({ map: paver }));
@@ -349,32 +268,27 @@ function makeStreetBlock(): THREE.Object3D {
   return g;
 }
 
-// Parked cars along the near curb, length-wise to the road (a quiet, lived-in
-// street signal). Deterministic colors + positions.
+// Parked cars along the near curb (the taxi fills the gap east of the crosswalk).
 function makeParkedCars(): THREE.Object3D {
   const g = new THREE.Group();
-  const colors = [0xd94f4f, 0x4f7fd9, 0xe0b23a, 0x4faf6a, 0xc9c9c9];
-  const carZ = ROAD_Z - ROAD_W / 2 + 1.0; // near (patio-side) lane, against the curb
-  const xs = [CX - 22, CX - 13, CX + 11, CX + 20]; // leave the crosswalk clear
+  const colors = [0xd94f4f, 0x4f7fd9, 0xc9c9c9];
+  const carZ = ROAD_Z - ROAD_W / 2 + 1.0;
+  const xs = [CX - 22, CX - 13, CX + 20];
   xs.forEach((x, i) => {
     const car = makeCarBody({ bodyColor: colors[i % colors.length], withWheels: true });
     car.position.set(x, 0.55, carZ);
-    car.rotation.y = Math.PI / 2; // length runs along x (parallel to the curb)
+    car.rotation.y = Math.PI / 2;
     g.add(car);
   });
   return g;
 }
 
-// Infill buildings that pack the block so the restaurant reads as embedded in a
-// dense street rather than floating in grass: a retail row across the road
-// (rotated to face the street), buildings flanking the promenade ends, and a
-// taller background row behind. Reuses the city building maker (facades, doors,
-// parapets) so they match the rest of the city.
+// Infill buildings packing the block (retail row across the road, a west flank,
+// a taller background row). The east flank is now the phone shop.
 function makeInfillBuildings(): THREE.Object3D {
   const g = new THREE.Group();
-  const farFront = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D; // front line of the far row
+  const farFront = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D;
 
-  // far side of the road: a retail row facing the street (rotated to face -Z).
   const far = [
     { x: CX - 20, w: 9, d: 8, h: 9, c: BUILDING_COLORS[0] },
     { x: CX - 7, w: 8, d: 8, h: 7, c: BUILDING_COLORS[4] },
@@ -384,20 +298,13 @@ function makeInfillBuildings(): THREE.Object3D {
   far.forEach((b, i) => {
     const def: BuildingDef = { id: `rfar-${i}`, x: b.x, z: farFront + b.d / 2, width: b.w, depth: b.d, height: b.h, color: b.c };
     const bld = makeBuilding(def);
-    bld.rotation.y = Math.PI; // front (+Z) turns to face the road
+    bld.rotation.y = Math.PI;
     g.add(bld);
   });
 
-  // flanking the promenade ends, continuing the restaurant row (face +Z).
-  const flank = [
-    { x: CX - 27, w: 8, d: 8, h: 10, c: BUILDING_COLORS[2] },
-    { x: CX + 27, w: 8, d: 8, h: 12, c: BUILDING_COLORS[6] },
-  ];
-  flank.forEach((b, i) => {
-    g.add(makeBuilding({ id: `rflank-${i}`, x: b.x, z: SHOP_Z, width: b.w, depth: b.d, height: b.h, color: b.c }));
-  });
+  // west flank only (the east end is the phone shop).
+  g.add(makeBuilding({ id: "rflank-0", x: CX - 27, z: SHOP_Z, width: 8, depth: 8, height: 10, color: BUILDING_COLORS[2] }));
 
-  // background row behind the restaurants (north), taller, for skyline depth.
   const bg = [
     { x: CX - 14, w: 10, d: 8, h: 16, c: BUILDING_COLORS[3] },
     { x: CX + 2, w: 9, d: 8, h: 20, c: BUILDING_COLORS[3] },
@@ -410,9 +317,8 @@ function makeInfillBuildings(): THREE.Object3D {
   return g;
 }
 
-// People that make the patio feel occupied: a few seated diners at the tables
-// (legs swung forward + lowered onto the chairs) and standing pedestrians near
-// the entrances and crosswalk. Deterministic palettes/positions.
+// Static seated diners + standing pedestrians that make the patio feel occupied
+// (scripted NPCs add the movement on top of this baseline).
 const PATIO_PALETTES: HumanoidPalette[] = [
   { skin: 0xf0c9a0, shirt: 0xc0392b, pants: 0x274060 },
   { skin: 0xc98a5a, shirt: 0x2e8b57, pants: 0x2a2a30 },
@@ -427,23 +333,20 @@ function makePatioPeople(): THREE.Object3D {
     const m = c as THREE.Mesh; if (m.isMesh) m.castShadow = true;
   });
 
-  // seated diners on the -x chair of a few clusters, facing the table (+x).
-  [0, 2, 4].forEach((ci, i) => {
+  // seated diners on the -x chair of two outer clusters, facing the table (+x).
+  [0, clusters.length - 1].forEach((ci, i) => {
     const c = clusters[ci];
     const { group, limbs } = makeHumanoid(PATIO_PALETTES[i % PATIO_PALETTES.length]);
-    group.position.set(c.x - 0.85, -0.4, c.z); // lowered so the hips meet the seat
-    group.rotation.y = Math.PI / 2;            // face +x toward the table
-    limbs.leftLeg.rotation.x = -1.5; limbs.rightLeg.rotation.x = -1.5; // thighs forward
-    limbs.leftArm.rotation.x = -0.6; limbs.rightArm.rotation.x = -0.6; // hands toward table
+    group.position.set(c.x - 0.95, -0.4, c.z);
+    group.rotation.y = Math.PI / 2;
+    limbs.leftLeg.rotation.x = -1.5; limbs.rightLeg.rotation.x = -1.5;
+    limbs.leftArm.rotation.x = -0.6; limbs.rightArm.rotation.x = -0.6;
     castAll(group);
     g.add(group);
   });
 
-  // standing pedestrians near the entrances and the crosswalk.
   const peds: [number, number, number, number][] = [
-    [CX, SHOP_Z + 6, 0, 0],
     [CX - 13, SEAT_Z + 1.5, Math.PI, 1],
-    [CX + 3, ROAD_Z - 3.2, 0.6, 2],
     [CX + 12, SHOP_Z + 7, -0.8, 3],
   ];
   for (const [x, z, yaw, pi] of peds) {
@@ -464,7 +367,11 @@ export function makeRestaurantStreet(): THREE.Object3D {
   group.add(makeStreetBlock());
   group.add(makeParkedCars());
 
-  // trash bins near the curb / crosswalk for street realism.
+  // secondary locations
+  group.add(makePhoneShop());
+  group.add(makePocketPark());
+  group.add(makeTaxiPickup());
+
   group.add(trashcanInstances([
     { id: "rtc-1", kind: "trashcan", x: CX - 4, z: ROAD_Z - ROAD_W / 2 - 1.2 },
     { id: "rtc-2", kind: "trashcan", x: CX + 24, z: SEAT_Z },
@@ -472,8 +379,7 @@ export function makeRestaurantStreet(): THREE.Object3D {
 
   group.add(makePatioPeople());
 
-  // --- promenade slab: a paved plaza textured with the shared paver super-tile
-  // so it reads as laid stones (matching the sidewalks), tiled to plaza size. ---
+  // --- promenade slab ---
   const paver = makeSidewalkTexture();
   paver.repeat.set(
     Math.max(1, Math.round(PROM_W / PAVER_SUPER_M)),
@@ -487,11 +393,9 @@ export function makeRestaurantStreet(): THREE.Object3D {
   promBase.receiveShadow = true;
   group.add(promBase);
 
-  // --- restaurant buildings: each restaurant's solid voxel parts merge into
-  // one vertex-colored mesh; the warm glass / door / sign-lit / awning use
-  // their own shared materials and merge across all three restaurants. So the
-  // whole row is ~5 draw calls regardless of restaurant count. Each restaurant
-  // box is its OWN named mesh so the tests can count >=3 building meshes. ---
+  // --- restaurant buildings: the open one becomes a furnished walk-in shell;
+  // the other two stay closed bodies. Glass / frame / sign-lit / awning merge
+  // across all three; the closed pair add a warm interior panel + a door. ---
   const storefronts: THREE.BufferGeometry[] = [];
   const doors: THREE.BufferGeometry[] = [];
   const signLits: THREE.BufferGeometry[] = [];
@@ -499,24 +403,29 @@ export function makeRestaurantStreet(): THREE.Object3D {
   const interiors: THREE.BufferGeometry[] = [];
   const frames: THREE.BufferGeometry[] = [];
   for (const r of RESTAURANTS) {
-    const box = new THREE.Mesh(
-      mergeGeometries(restaurantSolids(r)),
-      new THREE.MeshStandardMaterial({ vertexColors: true }),
-    );
-    box.castShadow = true;
-    box.receiveShadow = true;
-    box.name = "restaurantBuilding";
-    group.add(box);
-
+    if (r.open) {
+      // furnished interior (its structural shell is named "restaurantBuilding")
+      group.add(makeRestaurantInterior());
+      const trim = new THREE.Mesh(mergeGeometries(restaurantTrim(r)), new THREE.MeshStandardMaterial({ vertexColors: true }));
+      trim.castShadow = true; trim.receiveShadow = true; trim.name = "restaurantTrim";
+      group.add(trim);
+    } else {
+      const box = new THREE.Mesh(
+        mergeGeometries([restaurantBody(r), ...restaurantTrim(r)]),
+        new THREE.MeshStandardMaterial({ vertexColors: true }),
+      );
+      box.castShadow = true; box.receiveShadow = true; box.name = "restaurantBuilding";
+      group.add(box);
+      doors.push(restaurantDoor(r));
+      interiors.push(restaurantInteriorPanel(r));
+    }
     storefronts.push(restaurantStorefront(r));
-    doors.push(restaurantDoor(r));
     signLits.push(restaurantSignLit(r));
-    interiors.push(restaurantInterior(r));
     frames.push(...restaurantStorefrontFrame(r));
-    awnings.push(...awningStripes(r.x, r.h - 2.0, SHOP_Z + r.d / 2 + 0.7, r.w * 0.92, r.awning));
+    awnings.push(...awningStripes(r.x, r.h - 2.0, shopFront(r.d) + 0.7, r.w * 0.92, r.awning));
   }
 
-  // warm-lit interior behind the glass + a proud frame ring around the opening.
+  // warm-lit interior panels behind the closed restaurants' glass.
   const interior = new THREE.Mesh(
     mergeGeometries(interiors),
     new THREE.MeshStandardMaterial({ color: 0xf3c97a, emissive: 0xf0b85a, emissiveIntensity: 0.6 }),
@@ -536,7 +445,7 @@ export function makeRestaurantStreet(): THREE.Object3D {
     mergeGeometries(storefronts),
     new THREE.MeshStandardMaterial({
       color: PALETTE.storefront, emissive: PALETTE.signLit, emissiveIntensity: 0.15,
-      transparent: true, opacity: 0.62, // semi-transparent so the warm interior reads through
+      transparent: true, opacity: 0.62,
     }),
   );
   glass.name = "storefrontGlass";
@@ -564,15 +473,13 @@ export function makeRestaurantStreet(): THREE.Object3D {
   awning.name = "awnings";
   group.add(awning);
 
-  // --- outdoor seating: tables + chairs + umbrellas instanced across the
-  // seating clusters (three instanced meshes total). ---
+  // --- outdoor seating: tables + chairs + umbrellas instanced across clusters ---
   const clusters = seatClusters();
   const tablePl: Placement[] = clusters.map((c) => ({ x: c.x, z: c.z }));
   const umbrellaPl: Placement[] = clusters.map((c) => ({ x: c.x, z: c.z }));
   const chairPl: Placement[] = [];
   clusters.forEach((c, ci) => {
     CHAIR_OFFSETS.forEach(([dx, dz], oi) => {
-      // face each chair toward its table center (deterministic rotation).
       const rotationY = (oi * Math.PI) / 2;
       chairPl.push({ x: c.x + dx, z: c.z + dz, rotationY, scale: 1 - (ci % 2) * 0.04 });
     });
@@ -581,11 +488,8 @@ export function makeRestaurantStreet(): THREE.Object3D {
   group.add(makeInstanced(chairGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }), chairPl, 0));
   group.add(makeInstanced(umbrellaGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), umbrellaPl, 0));
 
-  // flower planters lining the patio (one vertex-colored instanced draw).
   group.add(makeInstanced(planterBoxGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), planterPlacements(), 0));
 
-  // lamp posts around the promenade (reuse the city street-light prop) so the
-  // patio has the warm lanterns the reference shows.
   const lamps: PropDef[] = [
     { id: "rl-1", kind: "streetlight", x: CX - 21, z: CZ + 9 },
     { id: "rl-2", kind: "streetlight", x: CX - 7, z: CZ + 10 },
@@ -594,19 +498,13 @@ export function makeRestaurantStreet(): THREE.Object3D {
   ];
   for (const l of lamps) group.add(makeStreetLight(l));
 
-  // leafy trees flanking the promenade for greenery.
   group.add(treeInstances([
-    { id: "rt-1", kind: "tree", x: CX - 24, z: CZ + 6 },
     { id: "rt-2", kind: "tree", x: CX + 24, z: CZ + 6 },
-    { id: "rt-3", kind: "tree", x: CX - 24, z: CZ - 2 },
   ]));
 
-  // --- menu board + delivery/pickup marker: a small bespoke stand at the
-  // RESTAURANT anchor. A post holds a warm-signed board (the menu); a lit cap
-  // marks it as the pickup point. Built as one small group. ---
+  // --- menu board + delivery/pickup marker stand at the RESTAURANT anchor ---
   const stand = new THREE.Group();
   stand.position.set(RESTAURANT.x, 0, RESTAURANT.z);
-
   const post = new THREE.Mesh(
     new THREE.BoxGeometry(0.22, 1.8, 0.22),
     new THREE.MeshStandardMaterial({ color: PALETTE.lampPole }),
@@ -614,7 +512,6 @@ export function makeRestaurantStreet(): THREE.Object3D {
   post.position.y = 0.9;
   post.castShadow = true;
   stand.add(post);
-
   const board = new THREE.Mesh(
     new THREE.BoxGeometry(1.4, 1.0, 0.12),
     new THREE.MeshStandardMaterial({ color: PALETTE.signWarm }),
@@ -622,7 +519,6 @@ export function makeRestaurantStreet(): THREE.Object3D {
   board.position.y = 1.9;
   board.castShadow = true;
   stand.add(board);
-
   const marker = new THREE.Mesh(
     new THREE.BoxGeometry(0.6, 0.6, 0.6),
     new THREE.MeshStandardMaterial({ color: PALETTE.signLit, emissive: PALETTE.signLit, emissiveIntensity: 0.8 }),

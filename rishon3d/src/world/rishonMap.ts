@@ -85,7 +85,9 @@ export const CORE_MAP: RishonMap = {
     { x: -12, z: -4 }, { x: 12, z: 6 }, { x: -2, z: 16 },
   ],
   carSpawn: { x: 6, z: 14 },
-  playerSpawn: { x: 0, z: 4 },
+  // Spawn on the restaurant promenade plaza, facing the storefronts (north), so
+  // the player starts in the finished restaurant street scene.
+  playerSpawn: { x: 95, z: 100 },
   props: [
     { id: "t1", kind: "tree", x: 10, z: -4 }, { id: "t2", kind: "tree", x: -10, z: 2 },
     { id: "t3", kind: "tree", x: 24, z: -2 }, { id: "t4", kind: "tree", x: -26, z: 10 },

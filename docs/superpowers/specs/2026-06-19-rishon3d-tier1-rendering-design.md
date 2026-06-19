@@ -127,3 +127,23 @@ tested; the mesh helper is exported for Tier 3 prop reuse.
 - Verification → chose **Playwright screenshots via the existing dev server** (`#char`
   fixed-camera preview + gameplay street view) compared to the reference, plus
   `tsc/vitest/smoke`. No pixel-diff baseline (the look is being changed on purpose).
+
+## PIVOT (mid-build, per user feedback)
+
+The user clarified that "reach that level" means the **objects / content / atmosphere**
+(textured pavements, modeled props, planters, awnings, people detail), NOT lighting or
+post-processing. They explicitly liked the original bright sky/ambient; rendering
+"graphics" are deferred ("change later").
+
+- Tier 1 rendering work (lighting re-grade + GTAO/bloom/SMAA composer + fog) was
+  **committed then reverted** (commits 5d23d7c, eec93ad on the branch; reverted in the
+  next commit) so it is preserved in history but the live look is back to original.
+- The overnight build now targets the audit's **content tiers**, re-sequenced by how
+  visible they are in the reference restaurant frame:
+  - A. Pavement textures — varied paver sidewalks, asphalt grain, promenade slab.
+  - B. Patio props — striped sloped umbrellas, tables/chairs with legs, awning valance.
+  - C. Flower planters in the patio + richer planters/flowerbeds + actually placing them.
+  - D. Two-tone vertex-colored tree canopies.
+  - E. Stucco/brick wall texture on building facades + houses.
+- Each lands as its own committed, tested task. Do NOT touch DAY lighting or add
+  post-processing. See memory `rishon3d-prioritize-content-over-rendering`.
