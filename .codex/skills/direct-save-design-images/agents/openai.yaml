@@ -1,4 +1,0 @@
-interface:
-  display_name: "Direct-Save Design Images"
-  short_description: "Save generated design assets into this repo"
-  default_prompt: "Use $direct-save-design-images to generate and save project design images."
