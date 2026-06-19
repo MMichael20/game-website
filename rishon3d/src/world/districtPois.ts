@@ -69,22 +69,12 @@ export const CHAIR_OFFSETS: [number, number][] = [
 
 // --- named gameplay anchors (POIs) -------------------------------------------
 // All in world space. `r` is the interaction/approach radius.
-export type PoiKind =
-  | "restaurant" | "bakery" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk" | "house";
-
-export interface Poi {
-  kind: PoiKind;
-  id: string;
-  label: string;
-  x: number;
-  z: number;
-  r: number;
-  /** one-letter glyph drawn on the minimap marker */
-  glyph: string;
-  /** minimap marker color */
-  color: string;
-}
-
+//
+// The `Poi`/`PoiKind` TYPES and the flat `POIS` table now live in `locations.ts`
+// (the single source: `POIS = locationPois()`, a projection of `LOCATIONS`). This
+// module only owns the raw coordinate ANCHORS that the registry composes from —
+// keeping the dependency one-way (locations -> districtPois) with no runtime
+// back-edge.
 const MD = MAIN_RESTAURANT;
 const MAIN_FRONT = shopFront(MD.d); // 93
 
@@ -178,34 +168,14 @@ export const CROSSWALK: Vec2 = { x: CX, z: ROAD_Z };
 export const PATIO_WALK_Z = ANCHOR_Z + 2.0;            // 105: patio-side walking lane
 export const FAR_WALK_Z = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D / 2; // far sidewalk
 
-// The POI table consumed by the minimap legend + the interaction prompts.
+// The flat POI table consumed by the minimap legend + the interaction prompts is
+// NOT declared here anymore. It is `POIS` in `locations.ts` (a projection of the
+// `LOCATIONS` registry: the single source). This module only owns the raw
+// coordinate ANCHORS above (RESTAURANT_DOOR, BAKERY_DOOR, ...) that the registry
+// composes from.
 //
-// This stays a literal here (the placement source of truth, rishon3d rule 2) and
-// is the SHAPE the location registry projects to: `locations.ts` builds
-// `LOCATIONS` from the SAME anchors above and `locations.locationPois()` is a
-// DERIVED PROJECTION that deep-equals this array (pinned by locations.test.ts).
-// Live consumers (Minimap, interactions, Game) read the registry projection so
-// that adding a location is a single data entry; this literal remains for the
-// existing districtPois importers + as the deep-equal contract.
-//
-// IMPORT-CYCLE NOTE: districtPois must NOT import locations. The dependency runs
-// one way only (locations -> districtPois for anchors/types), which keeps both
-// the older rishonMap -> districtPois -> roads -> rishonMap chain broken AND
-// avoids a districtPois <-> locations init-order trap (locations reading these
-// anchors while districtPois is still mid-initialisation).
-export const POIS: Poi[] = [
-  { kind: "restaurant", id: "restaurant", label: "Restaurant", glyph: "R", color: "#e0524a",
-    x: RESTAURANT_DOOR.x, z: RESTAURANT_DOOR.z, r: 4.5 },
-  { kind: "bakery", id: "bakery", label: "Bakery", glyph: "B", color: "#f3a6c0",
-    x: BAKERY_DOOR.x, z: BAKERY_DOOR.z, r: 4.5 },
-  { kind: "phoneShop", id: "phoneShop", label: "Phone Shop", glyph: "P", color: "#3aa0ff",
-    x: PHONE_SHOP_DOOR.x, z: PHONE_SHOP_DOOR.z, r: 4.5 },
-  { kind: "taxi", id: "taxi", label: "Taxi Stand", glyph: "T", color: "#f2c14e",
-    x: TAXI_WAIT.x, z: TAXI_WAIT.z, r: 4.5 },
-  { kind: "park", id: "park", label: "Pocket Park", glyph: "G", color: "#5cc24a",
-    x: PARK_CENTER.x, z: PARK_CENTER.z, r: 6 },
-  { kind: "pickup", id: "pickup", label: "Pickup", glyph: "S", color: "#ffd98a",
-    x: PICKUP_STAND.x, z: PICKUP_STAND.z, r: 3.5 },
-  { kind: "house", id: "house", label: "Home", glyph: "H", color: "#f4c542",
-    x: HOUSE_DOOR.x, z: HOUSE_DOOR.z, r: 4 },
-];
+// IMPORT-CYCLE NOTE: districtPois must NOT import any `locations` VALUE. The
+// dependency runs one way only (locations -> districtPois for anchors + Vec2),
+// which keeps both the older rishonMap -> districtPois -> roads -> rishonMap chain
+// broken AND avoids a districtPois <-> locations init-order trap (locations
+// reading these anchors while districtPois is still mid-initialisation).

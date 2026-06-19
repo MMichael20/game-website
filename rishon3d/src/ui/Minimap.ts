@@ -1,10 +1,11 @@
 import type { RishonMap } from "../world/rishonMap";
-import { locationPois } from "../world/locations";
+import { minimapEntries } from "../world/locations";
 import { worldToMinimap, worldRectToMinimap } from "./minimapMath";
 
-// POI markers drive from the location-registry projection (deep-equal to
-// districtPois.POIS), so adding a location adds a marker with no further wiring.
-const POIS = locationPois();
+// Markers drive from the location registry's marker projection, so adding a
+// location adds a marker with no further wiring. Each entry is one location's
+// minimap marker ({x, z, glyph, color}) anchored at its primary zone center.
+const MARKERS = minimapEntries();
 
 const SIZE = 180;
 
@@ -60,24 +61,24 @@ export class Minimap {
     this.base = base;
   }
 
-  // POI markers are static (anchored to fixed world points), so they live on the
-  // base layer beneath the moving player/car dots drawn each frame in update().
+  // Location markers are static (anchored to fixed world points), so they live on
+  // the base layer beneath the moving player/car dots drawn each frame in update().
   private drawPois(b: CanvasRenderingContext2D): void {
     const half = 4; // marker half-size in minimap pixels
     b.textAlign = "center";
     b.textBaseline = "middle";
     b.font = "bold 6px sans-serif";
     b.lineWidth = 1;
-    for (const poi of POIS) {
-      const m = worldToMinimap(poi.x - this.center.x, poi.z - this.center.z, this.worldSize, SIZE);
-      b.fillStyle = poi.color;
+    for (const marker of MARKERS) {
+      const m = worldToMinimap(marker.x - this.center.x, marker.z - this.center.z, this.worldSize, SIZE);
+      b.fillStyle = marker.color;
       b.strokeStyle = "rgba(0,0,0,0.6)";
       // Rounded square keeps adjacent promenade markers distinct at small size.
       this.roundedRect(b, m.x - half, m.y - half, half * 2, half * 2, 2);
       b.fill();
       b.stroke();
       b.fillStyle = "#10141a"; // dark glyph reads on the bright marker fills
-      b.fillText(poi.glyph, m.x, m.y + 0.5);
+      b.fillText(marker.glyph, m.x, m.y + 0.5);
     }
   }
 

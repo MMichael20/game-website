@@ -5,14 +5,13 @@
 // they are standing at, and the HUD prompt to show there. Game.update() drives
 // the on-foot prompt cascade from this.
 
-import { type Poi } from "../world/districtPois";
-import { locationPois } from "../world/locations";
+import { type Poi, locationPois } from "../world/locations";
 
 export interface Vec2 { x: number; z: number }
 
 // The POI table the proximity system runs against: the location-registry
-// projection (deep-equal to districtPois.POIS), so the registry is the single
-// source feeding interactions. Built once at module load.
+// projection, so the registry is the single source feeding interactions. Built
+// once at module load.
 const POIS: readonly Poi[] = locationPois();
 
 // The POI whose interaction radius currently contains the player, nearest first

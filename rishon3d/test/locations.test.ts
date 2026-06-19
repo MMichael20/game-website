@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { LOCATIONS, locationPois, minimapEntries } from "../src/world/locations";
-import type { Poi } from "../src/world/districtPois";
+import { LOCATIONS, locationPois, minimapEntries, type Poi } from "../src/world/locations";
 
-// The exact 7-entry POI table the registry MUST reproduce (captured from the
-// pre-refactor districtPois.POIS). locationPois() projecting LOCATIONS must
-// deep-equal this set (order-independent, keyed by id) so the minimap +
-// interaction system behave identically.
+// The exact 7-entry POI table the single-source registry MUST reproduce. This is
+// now a REGRESSION fixture on the one literal (LOCATIONS) — not a drift guard
+// between two parallel literals (the duplicate districtPois.POIS was removed).
+// locationPois() projecting LOCATIONS must still deep-equal this set
+// (order-independent, keyed by id) so the minimap + interaction system behave
+// identically — i.e. these 7 entries stay pinned.
 const EXPECTED_POIS: Poi[] = [
   { kind: "restaurant", id: "restaurant", label: "Restaurant", glyph: "R", color: "#e0524a", x: 97.52, z: 93, r: 4.5 },
   { kind: "bakery", id: "bakery", label: "Bakery", glyph: "B", color: "#f3a6c0", x: 77.92, z: 93, r: 4.5 },

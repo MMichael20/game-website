@@ -24,8 +24,8 @@ import { locationPois } from "../world/locations";
 
 const ENTER_RADIUS = 3.5;
 
-// Nearest-POI HUD anchor reads the location-registry projection (deep-equal to
-// districtPois.POIS), keeping the registry the single source for on-foot prompts.
+// Nearest-POI HUD anchor reads the location-registry projection, keeping the
+// registry the single source for on-foot prompts.
 const POIS = locationPois();
 
 export class Game implements Tickable {

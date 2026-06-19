@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { nearestPoi, poiPrompt } from "../src/game/interactions";
-import { POIS } from "../src/world/districtPois";
+import { POIS } from "../src/world/locations";
 
 describe("nearestPoi", () => {
   it("returns null when the player is far from every location", () => {

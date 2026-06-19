@@ -1,11 +1,16 @@
 // rishon3d/src/world/locations.ts
 //
-// The LOCATION REGISTRY: one data table describing every named place in the
-// world (its identity, minimap marker and interaction zones). It is the single
-// place a future location is added — drop a `LocationDef` in `LOCATIONS` and the
-// minimap markers (`minimapEntries()`) and the proximity interactions
-// (`locationPois()` -> `nearestPoi`/`poiPrompt`) pick it up; obstacle
-// aggregation can also hook the registry (see obstacles.ts).
+// The LOCATION REGISTRY: the SINGLE SOURCE of every named place in the world
+// (its identity, minimap marker and interaction zones). It is the single place a
+// future location is added — drop a `LocationDef` in `LOCATIONS` and the minimap
+// markers (`minimapEntries()`), the proximity interactions (`locationPois()` ->
+// `nearestPoi`/`poiPrompt`) and the flat POI table (`POIS`) all pick it up;
+// obstacle aggregation can also hook the registry (see obstacles.ts).
+//
+// This module also OWNS the `Poi`/`PoiKind` types and the derived `POIS` table:
+// there is no longer a parallel `POIS` literal in `districtPois.ts`. `POIS` is
+// `locationPois()`, a projection of `LOCATIONS`, so the registry is the one data
+// table consumers read.
 //
 // Coordinates are NOT re-typed here. Per rishon3d rule 2 ("one source of truth
 // for placement") every position is sourced from the named anchors in
@@ -14,22 +19,21 @@
 // system consume.
 //
 // IMPORT-CYCLE NOTE: the dependency runs ONE WAY — `locations` imports
-// `districtPois` (anchors + the `Poi`/`PoiKind`/`Vec2` types); `districtPois`
-// does NOT import `locations`. That asymmetry is deliberate. `districtPois.POIS`
-// is kept as the literal placement source of truth, and `locationPois()` is a
-// derived projection that DEEP-EQUALS it (pinned by `locations.test.ts`), so the
-// registry feeds live consumers without districtPois ever depending back on this
-// module. A two-way pairing (`districtPois.POIS = locationPois()`) was rejected:
-// because districtPois's anchors are declared below where it would import this
-// module, initialising `locations` mid-`districtPois`-init reads still-undefined
-// anchors (verified: it throws). Keeping the edge one-way also preserves the
-// older cycle-break — `rishonMap.ts` must not import either module (it mirrors
-// HOUSE coords as literals) so `rishonMap -> districtPois -> roads -> rishonMap`
-// never forms. No THREE, no RNG -> unit-testable.
+// `districtPois` VALUES (the coordinate anchors) + its `Vec2` type; `districtPois`
+// does NOT import any `locations` VALUE — in fact, after dropping the duplicate
+// POIS literal, districtPois needs no `Poi`/`PoiKind` import at all. (Were it to
+// need those TYPES it could `import type` them from here — type-only imports are
+// erased at runtime, so they form NO init cycle even though `locations` imports
+// districtPois values.)
+// That asymmetry is deliberate: districtPois's anchors are declared in the middle
+// of its module body, so a runtime back-edge would initialise `locations`
+// mid-`districtPois`-init and read still-undefined anchors (verified: it throws).
+// Keeping the edge one-way also preserves the older cycle-break — `rishonMap.ts`
+// must not import either module (it mirrors HOUSE coords as literals) so
+// `rishonMap -> districtPois -> roads -> rishonMap` never forms. No THREE, no RNG
+// -> unit-testable.
 
 import {
-  type Poi,
-  type PoiKind,
   type Vec2,
   RESTAURANT_DOOR,
   BAKERY_DOOR,
@@ -40,6 +44,26 @@ import {
   HOUSE_DOOR,
 } from "./districtPois";
 import { type Rect } from "../game/wander";
+
+// --- POI types (owned here; the registry is their single source) --------------
+// A named gameplay anchor's kind. Drives interaction prompts + minimap colouring.
+export type PoiKind =
+  | "restaurant" | "bakery" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk" | "house";
+
+// The flat POI record consumed by the minimap legend + the interaction prompts.
+// All in world space; `r` is the interaction/approach radius.
+export interface Poi {
+  kind: PoiKind;
+  id: string;
+  label: string;
+  x: number;
+  z: number;
+  r: number;
+  /** one-letter glyph drawn on the minimap marker */
+  glyph: string;
+  /** minimap marker color */
+  color: string;
+}
 
 // Broad category for a place; drives future per-type behaviour (NPC budgets,
 // default minimap styling) without each location restating it.
@@ -74,8 +98,9 @@ export interface LocationDef {
   obstacles?: Rect[];
 }
 
-// The registry. Each entry's primary zone reproduces exactly one of the current
-// POIS entries; the anchors come straight from districtPois so there is no drift.
+// The registry — the SINGLE SOURCE for every place. Each entry's primary zone
+// projects to exactly one `Poi`; the anchors come straight from districtPois so
+// there is no drift and no parallel literal to keep in sync.
 export const LOCATIONS: LocationDef[] = [
   {
     id: "restaurant", name: "Restaurant", type: "restaurant",
@@ -116,8 +141,8 @@ export const LOCATIONS: LocationDef[] = [
 
 // Project the registry to the flat POI table the minimap + interactions consume.
 // Each location contributes its PRIMARY zone (zones[0]) as one Poi, carrying the
-// location id/name + minimap glyph/color. This deep-equals the pre-refactor
-// districtPois.POIS (same kind/id/label/x/z/r/glyph/color, same order).
+// location id/name + minimap glyph/color (same kind/id/label/x/z/r/glyph/color,
+// same registry order).
 export function locationPois(): Poi[] {
   return LOCATIONS.map((loc): Poi => {
     const z0 = loc.zones[0];
@@ -133,6 +158,12 @@ export function locationPois(): Poi[] {
     };
   });
 }
+
+// The flat POI table consumers read. This IS the single source: it is the
+// registry projection, not a hand-typed parallel literal. (districtPois no longer
+// declares its own POIS.) locations -> districtPois is one-way at runtime, so
+// owning POIS here forms no init cycle.
+export const POIS: Poi[] = locationPois();
 
 // One minimap marker per location, anchored at its primary zone center.
 export function minimapEntries(): { x: number; z: number; glyph: string; color: string }[] {
