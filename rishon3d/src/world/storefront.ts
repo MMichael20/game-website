@@ -92,8 +92,13 @@ export function makeStorefront(
   const doorW      = 1.4
   const doorH      = 2.5
   const doorFrameT = 0.14
-  const doorX      = doorSide === 'left'  ? x - w * 0.28
-                   : doorSide === 'right' ? x + w * 0.28
+  // Clamp offset so the door frame stays inside the facade body (margin 0.05m)
+  const doorFrameHalfWidth = doorW / 2 + doorFrameT
+  const maxOffset = Math.max(0, w / 2 - doorFrameHalfWidth - 0.05)
+  const rawOffset = w * 0.28
+  const clampedOffset = Math.min(rawOffset, maxOffset)
+  const doorX      = doorSide === 'left'  ? x - clampedOffset
+                   : doorSide === 'right' ? x + clampedOffset
                    : x
   const doorZ = frontZ + 0.05  // slightly proud of the body
 
@@ -140,8 +145,8 @@ export function makeStorefront(
 
   // ─── Sign band (opaque Group with emissive face) ────────────────────────────
 
-  if (signText !== undefined || true) {
-    // Show sign whenever spec is present — presence of signText drives band
+  if (signText !== undefined) {
+    // Show sign band only when signText is provided
     const signH   = 0.55
     const signW   = w * 0.80
     const signBand = makeSignLitMesh({ w: signW, h: signH, color: PALETTE.signWarm })

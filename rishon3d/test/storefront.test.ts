@@ -18,4 +18,9 @@ describe('storefront kit', () => {
     const box = (s:any) => { const b = new THREE.Box3().setFromObject(makeStorefront(s).object); return [b.min.toArray(), b.max.toArray()] }
     expect(box({ ...base, lamps: true })).toEqual(box({ ...base, lamps: true }))
   })
+  it('signText drives sign presence', () => {
+    const withSign = makeStorefront({ ...base, signText: 'CAFE' }).object.children.length
+    const noSign = makeStorefront({ ...base }).object.children.length
+    expect(withSign).toBeGreaterThan(noSign)
+  })
 })
