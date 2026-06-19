@@ -31,6 +31,7 @@ export function poiPrompt(poi: Poi): string {
   switch (poi.kind) {
     case "restaurant": return "Walk in to the restaurant";
     case "bakery": return "Walk in to the bakery";
+    case "cafe": return "Walk in to the cafe";
     case "phoneShop": return "Walk in to the phone shop";
     case "taxi": return "Taxi pickup point";
     case "park": return "Pocket park";

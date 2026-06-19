@@ -23,7 +23,10 @@ describe("makeRestaurantStreet", () => {
 
   it("has at least 3 restaurant building meshes", () => {
     const grp = makeRestaurantStreet();
-    expect(countNamed(grp, "restaurantBuilding")).toBeGreaterThanOrEqual(3);
+    // SEMANTIC invariant (kept): >=3 building shells. With the HERO cafe added
+    // (its walk-in shell is named restaurantBuilding too, like the bakery), the
+    // real count is now 4 — assert >=4 so the cafe shell's presence is guarded.
+    expect(countNamed(grp, "restaurantBuilding")).toBeGreaterThanOrEqual(4);
   });
 
   it("includes outdoor seating, awnings and a pickup stand", () => {
@@ -46,6 +49,7 @@ describe("makeRestaurantStreet", () => {
   it("keeps all geometry within +/-138 and clear of the E/S district footprints", () => {
     const grp = makeRestaurantStreet();
     const box = new THREE.Box3().setFromObject(grp);
+    // OUTER framing invariant (kept): everything stays within +/-138.
     expect(box.min.x).toBeGreaterThanOrEqual(-138);
     expect(box.max.x).toBeLessThanOrEqual(138);
     expect(box.min.z).toBeGreaterThanOrEqual(-138);
@@ -53,6 +57,14 @@ describe("makeRestaurantStreet", () => {
     // SE corner: clear of the E district (z in [-30,30]) and S district (x in [-30,30]).
     expect(box.min.x).toBeGreaterThan(30); // clear of S district x-band
     expect(box.min.z).toBeGreaterThan(30); // clear of E district z-band
+    // RE-DERIVED tight bounds (D4): the cafe (x=62, w=12) + its west-shifted flank
+    // box (x=48) now set the west edge at x=44; the patio/park/house set the rest.
+    // Pinned to the ACTUAL new output (read from the builder) with a small margin
+    // so this catches an unintended footprint/placement shift, not float jitter.
+    expect(box.min.x).toBeCloseTo(44, 1);     // west edge: flank box left face
+    expect(box.max.x).toBeCloseTo(122.5, 1);  // east edge: east cross-side props
+    expect(box.min.z).toBeCloseTo(74, 1);     // north edge: skyline backdrop row
+    expect(box.max.z).toBeCloseTo(132, 1);    // south edge: park / house lot
   });
 
   it("is deterministic across calls (same geometry, same anchor)", () => {

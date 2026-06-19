@@ -5,6 +5,7 @@ import {
   INDOOR_TABLES, INDOOR_CHAIR_DX, INDOOR_TABLE_SEATS, INDOOR_DINER_SEATS,
   seatClusters, CHAIR_OFFSETS, PARK_BENCH, TAXI_WAIT, HOUSE_DOOR,
   RESTAURANT_COUNTER, RESTAURANT_INSIDE, BAKERY_COUNTER, PHONE_SHOP_COUNTER,
+  CAFE_COUNTER, CAFE_INSIDE, CAFE_TABLE_SEATS,
 } from "../src/world/districtPois";
 
 const inside = (p: { x: number; z: number }) =>
@@ -51,6 +52,9 @@ describe("patron obstacles", () => {
       { label: "restaurantInside", p: RESTAURANT_INSIDE },
       { label: "bakeryCounter", p: BAKERY_COUNTER },
       { label: "phoneShopCounter", p: PHONE_SHOP_COUNTER },
+      { label: "cafeCounter", p: CAFE_COUNTER },
+      { label: "cafeInside", p: CAFE_INSIDE },
+      ...CAFE_TABLE_SEATS.map((s, i) => ({ label: `cafeTableSeat${i}`, p: s })),
     ];
     const trapped = targets.filter((t) => inside(t.p)).map((t) => t.label);
     expect(trapped).toEqual([]);

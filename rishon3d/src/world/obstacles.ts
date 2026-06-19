@@ -7,7 +7,7 @@
 // Pure data + a cheap per-frame push-out (no THREE) -> unit-testable.
 
 import { RESTAURANTS, SHOP_Z, HOUSE, TAXI_CAR, type Vec2 } from "./districtPois";
-import { INFILL_FOOTPRINTS, PARKED_CAR_SPOTS, restaurantPropObstacles } from "./restaurantStreet";
+import { INFILL_FOOTPRINTS, PARKED_CAR_SPOTS, restaurantPropObstacles, cafePropObstacles } from "./restaurantStreet";
 import { secondaryPropObstacles } from "./secondaryLocations";
 import { residentialPropObstacles } from "./residential";
 import { allLocationObstacles } from "./locations";
@@ -35,6 +35,7 @@ export const PATRON_OBSTACLES: Rect[] = [
   rectAround(TAXI_CAR.x, TAXI_CAR.z, CAR_W, CAR_D, M),
   // chunky props from each location (planters, stand, cart, trees, hedges, bins...)
   ...restaurantPropObstacles(),
+  ...cafePropObstacles(),
   ...secondaryPropObstacles(),
   ...residentialPropObstacles(),
   // Additive registry hook: solid footprints declared directly on a LocationDef.

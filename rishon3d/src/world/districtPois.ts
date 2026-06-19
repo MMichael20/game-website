@@ -47,7 +47,8 @@ export interface RestaurantSpec {
 // shells with full interiors. The east box stays a closed facade (follow-up).
 export const RESTAURANTS: RestaurantSpec[] = [
   { x: CX - 15, w: 8, d: 8, h: 6, awning: PALETTE.awningRed, open: true, bakery: true },
-  { x: CX, w: 9, d: 8, h: 9, awning: PALETTE.awningBlue, open: true },
+  // HERO main restaurant — widened (9 -> 11) to read as the district's centrepiece.
+  { x: CX, w: 11, d: 8, h: 9, awning: PALETTE.awningBlue, open: true },
   { x: CX + 15, w: 8, d: 8, h: 7, awning: PALETTE.awningRed },
 ];
 
@@ -197,13 +198,28 @@ export const OFFICE_PLAZA: Vec2 = { x: OFFICE_WEST - 3.5, z: OFFICE.z + 2 };
 // Cafe (Task 9 builds the geometry): a small walk-in shell WEST of the bakery,
 // extending the hero strip's storefront row. Its front face derives from SHOP_Z
 // via shopFront() like the other promenade shells, so it lines up with the row.
-export const CAFE = { x: 62, z: SHOP_Z, w: 12, d: 9 };
+export const CAFE = { x: 62, z: SHOP_Z, w: 12, d: 9, h: 6 };
 const CAFE_FRONT = shopFront(CAFE.d);            // front (south) face on the strip
 // Door offset to the +x side of the storefront (toward the bakery), clear of the
 // solid wall; an inside waypoint and the service counter behind it.
 export const CAFE_DOOR: Vec2 = { x: CAFE.x + CAFE.w * 0.26, z: CAFE_FRONT };
 export const CAFE_INSIDE: Vec2 = { x: CAFE.x + 1.0, z: SHOP_Z + 1.0 };
 export const CAFE_COUNTER: Vec2 = { x: CAFE.x - 0.6, z: SHOP_Z - 1.6 };
+// Two small indoor cafe tables (south, near the entrance) and the chairs/seats
+// derived from them — same drift-free pattern as INDOOR_TABLES so a chair always
+// sits under every reachable seat. Tables straddle the door lane so a patron can
+// still walk in. Built by cafeInterior; seats are reachable dwell targets.
+export const CAFE_TABLES: Vec2[] = [
+  { x: CAFE.x - 2.6, z: SHOP_Z + 2.4 },
+  { x: CAFE.x + 2.6, z: SHOP_Z + 2.4 },
+];
+export const CAFE_CHAIR_DX = 0.95;
+// Scripted cafe diners sit on the OUTER chairs (away from the table center toward
+// the room edge); face the table along x.
+export const CAFE_TABLE_SEATS: Seat[] = CAFE_TABLES.map((t) => {
+  const outer = t.x < CAFE.x ? t.x - CAFE_CHAIR_DX : t.x + CAFE_CHAIR_DX;
+  return { x: outer, z: t.z, faceYaw: t.x < CAFE.x ? Math.PI / 2 : -Math.PI / 2 };
+});
 
 // Pickup / delivery stand (existing landmark anchor).
 export const PICKUP_STAND: Vec2 = { x: CX, z: ANCHOR_Z };

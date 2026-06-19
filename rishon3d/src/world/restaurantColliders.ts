@@ -6,7 +6,7 @@
 // infill buildings. Pure data (no THREE / no Rapier) -> unit-testable; World.ts
 // turns each BoxCollider into a Rapier fixed cuboid.
 
-import { RESTAURANTS, PHONE_SHOP, SHOP_Z, HOUSE, type RestaurantSpec } from "./districtPois";
+import { RESTAURANTS, PHONE_SHOP, CAFE, SHOP_Z, HOUSE, type RestaurantSpec } from "./districtPois";
 import { INFILL_FOOTPRINTS } from "./restaurantStreet";
 
 export interface BoxCollider { x: number; y: number; z: number; hx: number; hy: number; hz: number; }
@@ -48,6 +48,8 @@ export function restaurantColliders(): BoxCollider[] {
   }
   // the phone shop is the other walk-in shell
   out.push(...shellWalls(PHONE_SHOP.x, PHONE_SHOP.w, PHONE_SHOP.d, PHONE_SHOP.h));
+  // the cafe (west of the bakery) is a walk-in shell too (open front center)
+  out.push(...shellWalls(CAFE.x, CAFE.w, CAFE.d, CAFE.h));
   // infill buildings: solid boxes (footprints shared with the mesh builder)
   for (const f of INFILL_FOOTPRINTS) {
     out.push(box(f.x, f.height / 2, f.z, f.width / 2, f.height / 2, f.depth / 2));

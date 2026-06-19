@@ -8,13 +8,17 @@ import { LOCATIONS, locationPois, minimapEntries, type Poi } from "../src/world/
 // (order-independent, keyed by id) so the minimap + interaction system behave
 // identically — i.e. these 7 entries stay pinned.
 const EXPECTED_POIS: Poi[] = [
-  { kind: "restaurant", id: "restaurant", label: "Restaurant", glyph: "R", color: "#e0524a", x: 97.52, z: 93, r: 4.5 },
+  // Restaurant door x re-derived after the HERO widen (MAIN_RESTAURANT.w 9 -> 11):
+  // RESTAURANT_DOOR.x = 95 + 11*0.28 = 98.08 (was 97.52 at w=9).
+  { kind: "restaurant", id: "restaurant", label: "Restaurant", glyph: "R", color: "#e0524a", x: 98.08, z: 93, r: 4.5 },
   { kind: "bakery", id: "bakery", label: "Bakery", glyph: "B", color: "#f3a6c0", x: 77.92, z: 93, r: 4.5 },
   { kind: "phoneShop", id: "phoneShop", label: "Phone Shop", glyph: "P", color: "#3aa0ff", x: 120.4, z: 93, r: 4.5 },
   { kind: "taxi", id: "taxi", label: "Taxi Stand", glyph: "T", color: "#f2c14e", x: 104, z: 104, r: 4.5 },
   { kind: "park", id: "park", label: "Pocket Park", glyph: "G", color: "#5cc24a", x: 94, z: 121, r: 6 },
   { kind: "pickup", id: "pickup", label: "Pickup", glyph: "S", color: "#ffd98a", x: 95, z: 103, r: 3.5 },
   { kind: "house", id: "house", label: "Home", glyph: "H", color: "#f4c542", x: 74, z: 118.5, r: 4 },
+  // Cafe (NEW): CAFE_DOOR.x = 62 + 12*0.26 = 65.12; z = shopFront(9) = 93.5.
+  { kind: "cafe", id: "cafe", label: "Cafe", glyph: "C", color: "#caa46a", x: 65.12, z: 93.5, r: 4.5 },
 ];
 
 const byId = <T extends { id: string }>(arr: T[]) =>

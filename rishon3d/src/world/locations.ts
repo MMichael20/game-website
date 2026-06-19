@@ -37,6 +37,7 @@ import {
   type Vec2,
   RESTAURANT_DOOR,
   BAKERY_DOOR,
+  CAFE_DOOR,
   PHONE_SHOP_DOOR,
   TAXI_WAIT,
   PARK_CENTER,
@@ -48,7 +49,7 @@ import { type Rect } from "../game/wander";
 // --- POI types (owned here; the registry is their single source) --------------
 // A named gameplay anchor's kind. Drives interaction prompts + minimap colouring.
 export type PoiKind =
-  | "restaurant" | "bakery" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk" | "house";
+  | "restaurant" | "bakery" | "cafe" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk" | "house";
 
 // The flat POI record consumed by the minimap legend + the interaction prompts.
 // All in world space; `r` is the interaction/approach radius.
@@ -111,6 +112,11 @@ export const LOCATIONS: LocationDef[] = [
     id: "bakery", name: "Bakery", type: "cafe",
     minimap: { glyph: "B", color: "#f3a6c0" },
     zones: [{ center: BAKERY_DOOR, r: 4.5, prompt: "Bakery", kind: "bakery" }],
+  },
+  {
+    id: "cafe", name: "Cafe", type: "cafe",
+    minimap: { glyph: "C", color: "#caa46a" },
+    zones: [{ center: CAFE_DOOR, r: 4.5, prompt: "Cafe", kind: "cafe" }],
   },
   {
     id: "phoneShop", name: "Phone Shop", type: "shop",

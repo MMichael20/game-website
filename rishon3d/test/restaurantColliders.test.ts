@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { restaurantColliders, type BoxCollider } from "../src/world/restaurantColliders";
-import { RESTAURANTS, PHONE_SHOP, SHOP_Z } from "../src/world/districtPois";
+import { RESTAURANTS, PHONE_SHOP, CAFE, SHOP_Z } from "../src/world/districtPois";
 
 const contains = (c: BoxCollider, x: number, y: number, z: number) =>
   Math.abs(x - c.x) <= c.hx && Math.abs(y - c.y) <= c.hy && Math.abs(z - c.z) <= c.hz;
@@ -28,6 +28,17 @@ describe("restaurantColliders", () => {
     const back = SHOP_Z - PHONE_SHOP.d / 2;
     expect(anyContains(cs, PHONE_SHOP.x, 1.0, front)).toBe(false);
     expect(anyContains(cs, PHONE_SHOP.x, 1.0, back + 0.15)).toBe(true);
+  });
+
+  it("leaves the cafe entrance clear but walls its back and sides", () => {
+    const front = SHOP_Z + CAFE.d / 2;
+    const back = SHOP_Z - CAFE.d / 2;
+    // open front center is walk-in clear
+    expect(anyContains(cs, CAFE.x, 1.0, front)).toBe(false);
+    // back + sides are solid
+    expect(anyContains(cs, CAFE.x, 1.0, back + 0.15)).toBe(true);
+    expect(anyContains(cs, CAFE.x - CAFE.w / 2 + 0.15, 1.0, SHOP_Z)).toBe(true);
+    expect(anyContains(cs, CAFE.x + CAFE.w / 2 - 0.15, 1.0, SHOP_Z)).toBe(true);
   });
 
   it("makes closed restaurants solid", () => {

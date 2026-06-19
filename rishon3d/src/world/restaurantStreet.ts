@@ -10,6 +10,9 @@ import { makeCarBody } from "../entities/carMesh";
 import type { PropDef, BuildingDef } from "./rishonMap";
 import { makeRestaurantInterior } from "./restaurantInterior";
 import { makeBakeryInterior } from "./bakeryInterior";
+import { makeCafeInterior } from "./cafeInterior";
+import { makeStorefront } from "./storefront";
+import { makePatioSet, makePlanterRow } from "./kits";
 import { makePhoneShop, makePocketPark, makeTaxiPickup } from "./secondaryLocations";
 import { makePlayerHouse } from "./playerHouse";
 import { makeStaticPeople } from "./staticPeople";
@@ -20,7 +23,8 @@ import { mergeTinted } from "./objects/voxel";
 import { makeDessertCart } from "./dessertCart";
 import {
   CX, CZ, PROM_W, PROM_D, SHOP_Z, SEAT_Z, ANCHOR_Z, ROAD_Z, STREET_LEN, FAR_WALK_D, ROAD_W,
-  RESTAURANTS, seatClusters, CHAIR_OFFSETS, PICKUP_STAND, shopFront, type RestaurantSpec,
+  RESTAURANTS, seatClusters, CHAIR_OFFSETS, PICKUP_STAND, shopFront,
+  CAFE, CAFE_DOOR, type RestaurantSpec,
 } from "./districtPois";
 import { rectAround } from "../game/wander";
 
@@ -294,8 +298,9 @@ export interface InfillFootprint extends BuildingDef { rotY: number; }
 // dressing: a west closure box and a taller background row that reads as the distant
 // city skyline behind the restaurant strip (matching the concept art).
 export const INFILL_FOOTPRINTS: InfillFootprint[] = [
-  // west flank (the east end is the phone shop)
-  { id: "rflank-0", x: CX - 27, z: SHOP_Z, width: 8, depth: 8, height: 10, color: BUILDING_COLORS[2], rotY: 0 },
+  // west flank closure box — moved WEST of the new cafe (cafe x in [56,68]) so it
+  // no longer overlaps the cafe footprint; it now closes the strip past the cafe.
+  { id: "rflank-0", x: 48, z: SHOP_Z, width: 8, depth: 8, height: 10, color: BUILDING_COLORS[2], rotY: 0 },
   // taller background row (skyline backdrop)
   { id: "rbg-0", x: CX - 14, z: SHOP_Z - 11, width: 10, depth: 8, height: 16, color: BUILDING_COLORS[3], rotY: 0 },
   { id: "rbg-1", x: CX + 2, z: SHOP_Z - 11, width: 9, depth: 8, height: 20, color: BUILDING_COLORS[3], rotY: 0 },
@@ -312,6 +317,57 @@ function makeInfillBuildings(): THREE.Object3D {
   return g;
 }
 
+// --- CAFE (HERO district, west of the bakery) --------------------------------
+// The cafe's FACADE is built from the reusable storefront kit (S2): body wall,
+// sign band, awning, layered glass door + windows (S1), wall lamps + window
+// planters. Its furnished walk-in interior comes from cafeInterior (shared shell
+// pattern). One spec drives both the geometry and the NPC footprints.
+const CAFE_AWNING = 0x3a8a6a; // teal-green cafe awning (distinct from red/blue)
+function cafeStorefront(): { object: THREE.Group; obstacles: import("../game/wander").Rect[] } {
+  return makeStorefront({
+    x: CAFE.x,
+    frontZ: shopFront(CAFE.d),
+    w: CAFE.w,
+    h: CAFE.h,
+    signText: "CAFE",
+    awningColor: CAFE_AWNING,
+    glassStyle: "storefront",
+    doorSide: CAFE_DOOR.x > CAFE.x ? "right" : "left",
+    lamps: true,
+    planters: true,
+    interiorPeek: true,
+  });
+}
+
+// Shared cafe frontage planter-row spec (single source so the mesh placement in
+// the assembler and the obstacle footprints here cannot drift).
+const CAFE_PLANTER_ROW = { x: CAFE.x - 4.5, count: 4, dx: 3.0 };
+
+// Footprints of the cafe's chunky facade + frontage props NPCs must not walk
+// through: the two storefront window planters (base of the facade) and the
+// frontage planter row built by makePlanterRow. Derived from the same specs as
+// the meshes so they can't drift. EXCLUDES the cafe's indoor + patio chairs (sit
+// targets) per Rule 3.
+export function cafePropObstacles(): import("../game/wander").Rect[] {
+  const out: import("../game/wander").Rect[] = [];
+  const frontZ = shopFront(CAFE.d);
+  // storefront window planters (sit ~0.28m proud of the front face on each window)
+  const doorW = 1.4;
+  const clampedOffset = Math.min(CAFE.w * 0.28, Math.max(0, CAFE.w / 2 - (doorW / 2 + 0.14) - 0.05));
+  const doorX = CAFE_DOOR.x > CAFE.x ? CAFE.x + clampedOffset : CAFE.x - clampedOffset;
+  const winPresetW = 3.0; // GLASS_PRESETS.storefront.w
+  const winW = Math.min(winPresetW, (CAFE.w - doorW - 0.8) / 2);
+  const winSideOff = doorW / 2 + 0.2 + winW / 2;
+  for (const wx of [doorX - winSideOff, doorX + winSideOff]) {
+    out.push(rectAround(wx, frontZ + 0.28, Math.min(1.2, winW * 0.85), 0.4, 0.15));
+  }
+  // frontage planter row (matches the makePlanterRow call in the assembler)
+  for (let i = 0; i < CAFE_PLANTER_ROW.count; i++) {
+    out.push(rectAround(CAFE_PLANTER_ROW.x + i * CAFE_PLANTER_ROW.dx, frontZ + 1.2, 1.2, 0.45, 0.1));
+  }
+  return out;
+}
+
 export function makeRestaurantStreet(): THREE.Object3D {
   const group = new THREE.Group();
   group.name = "restaurantStreet";
@@ -325,6 +381,40 @@ export function makeRestaurantStreet(): THREE.Object3D {
   group.add(makePocketPark());
   group.add(makeTaxiPickup());
   group.add(makePlayerHouse());
+
+  // CAFE (HERO district): a kit-built storefront facade + a furnished walk-in
+  // interior, west of the bakery. The collider (shellWalls, open front) lives in
+  // restaurantColliders; its window-planter footprints come from cafePropObstacles.
+  group.add(cafeStorefront().object);
+  group.add(makeCafeInterior());
+
+  // Cafe patio + frontage greenery — built FROM THE KITS (S3). A small paver pad
+  // with two outdoor patio sets (table + 4 chairs + umbrella) and a planter row
+  // along the cafe frontage. Seats are sit targets (excluded from obstacles); the
+  // planters' footprints are registered via makePlanterRow's obstacles -> the
+  // location aggregation is unchanged (these are decorative, west of the strip).
+  const cafePaver = makeSidewalkTexture();
+  const cafePadW = CAFE.w + 2, cafePadD = 8;
+  cafePaver.repeat.set(
+    Math.max(1, Math.round(cafePadW / PAVER_SUPER_M)),
+    Math.max(1, Math.round(cafePadD / PAVER_SUPER_M)),
+  );
+  const cafePad = new THREE.Mesh(
+    new THREE.BoxGeometry(cafePadW, 0.12, cafePadD),
+    new THREE.MeshStandardMaterial({ map: cafePaver }),
+  );
+  cafePad.position.set(CAFE.x, 0.06, SEAT_Z);
+  cafePad.receiveShadow = true;
+  group.add(cafePad);
+  for (const px of [CAFE.x - 3.2, CAFE.x + 3.2]) {
+    const set = makePatioSet({ x: px, z: SEAT_Z + 1.0, umbrella: true });
+    group.add(set.object);
+  }
+  const cafePlanters = makePlanterRow({
+    x: CAFE_PLANTER_ROW.x, z: shopFront(CAFE.d) + 1.2,
+    count: CAFE_PLANTER_ROW.count, dx: CAFE_PLANTER_ROW.dx, axis: "x",
+  });
+  group.add(cafePlanters.object);
   group.add(makeResidentialGrounds());   // south paths/hedges/greenery (fills the grass)
   group.add(makeStaticPeople());         // guaranteed staff + diners + idlers
 
