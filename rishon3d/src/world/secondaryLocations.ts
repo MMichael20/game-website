@@ -10,8 +10,9 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { PALETTE } from "./palette";
-import { tintGeo, mergeTinted } from "./objects/voxel";
+import { tintGeo, mergeTinted, tintedMesh } from "./objects/voxel";
 import { makeFlower } from "./objects/flower";
+import { makePhone, PHONE_SCREENS } from "./objects/phone";
 import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
 import { makeCarBody } from "../entities/carMesh";
 import { treeInstances, benchInstances, makeBenchMesh, trashcanInstances, makeStreetLight } from "./props";
@@ -101,29 +102,44 @@ export function makePhoneShop(): THREE.Object3D {
   furnMesh.name = "phoneShopFurniture";
   furnMesh.castShadow = true; group.add(furnMesh);
 
-  // props: register + a grid of colorful phone/accessory boxes on the shelves
+  // props: the till stays a box (it IS a boxy register); accessory cases stay
+  // small boxes; the PHONES are real reusable phone objects, not bare cubes
+  // (repo rule: build an object, don't drop a cube for a recognizable item).
   const props: THREE.BufferGeometry[] = [];
   props.push(tinted(0.5, 0.42, 0.4, S.x + 1.0, 1.37, counterZ, C.register));
-  const boxColors = [0xe0524a, 0x4f7fd9, 0x6db24a, 0xf2c14e, 0xc98ab0, 0x2a2a30];
+  props.push(tinted(0.42, 0.26, 0.05, S.x + 1.0, 1.5, counterZ + 0.22, 0x9aa0a6)); // register screen
+  const caseColors = [0xe0524a, 0x4f7fd9, 0x6db24a, 0xf2c14e, 0xc98ab0];
   let n = 0;
-  for (const sy of [1.5, 2.4, 3.3]) {                      // phones on back shelves
-    for (let k = 0; k < 7; k++) {
-      const x = S.x - (S.w - 2.0) / 2 + k * ((S.w - 2.0) / 6);
-      props.push(tinted(0.28, 0.4, 0.06, x, sy + 0.28, BACK + 0.5, boxColors[n++ % boxColors.length]));
-    }
-  }
-  for (const sy of [1.5, 2.4]) {                            // accessories on left shelf
+  for (const sy of [1.5, 2.4]) {                            // accessory cases on the left shelf
     for (let k = 0; k < 4; k++) {
       const z = SHOP_Z - (S.d - 2.2) / 2 + k * ((S.d - 2.2) / 3);
-      props.push(tinted(0.06, 0.36, 0.26, LX + 0.5, sy + 0.26, z, boxColors[n++ % boxColors.length]));
+      props.push(tinted(0.06, 0.36, 0.26, LX + 0.5, sy + 0.26, z, caseColors[n++ % caseColors.length]));
     }
-  }
-  // a few display phones on the counter top
-  for (const dx of [-1.8, -1.0, -0.2, 0.6]) {
-    props.push(tinted(0.24, 0.04, 0.42, S.x - 1.0 + dx, 1.18, counterZ, boxColors[n++ % boxColors.length]));
   }
   const propsMesh = new THREE.Mesh(mergeGeometries(props), vcMat());
   propsMesh.name = "phoneShopProps"; group.add(propsMesh);
+
+  // display PHONES: real reusable phone objects standing on the back shelves and
+  // lying on the counter (merged to one vertex-colored mesh).
+  const phoneGeos: THREE.BufferGeometry[] = [];
+  let pc = 0;
+  for (const sy of [1.5, 2.4, 3.3]) {
+    for (let k = 0; k < 5; k++) {
+      const x = S.x - (S.w - 2.6) / 2 + k * ((S.w - 2.6) / 4);
+      const ph = makePhone({ screenColor: PHONE_SCREENS[pc++ % PHONE_SCREENS.length] });
+      ph.translate(x, sy + 0.12, BACK + 0.55);
+      phoneGeos.push(ph);
+    }
+  }
+  for (const dx of [-1.9, -1.1, -0.3, 0.5]) {               // a few lying on the counter
+    const ph = makePhone({ screenColor: PHONE_SCREENS[pc++ % PHONE_SCREENS.length] });
+    ph.rotateX(-Math.PI / 2);
+    ph.translate(S.x - 1.0 + dx, 1.22, counterZ);
+    phoneGeos.push(ph);
+  }
+  const phonesMesh = tintedMesh(mergeTinted(phoneGeos));
+  phonesMesh.name = "phoneShopPhones";
+  group.add(phonesMesh);
 
   // storefront glass (transparent so the stocked interior reads from the plaza)
   const glass = new THREE.Mesh(
