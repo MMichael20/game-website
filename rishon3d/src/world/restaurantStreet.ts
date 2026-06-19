@@ -7,12 +7,13 @@ import { makeSidewalkTexture, makeAsphaltTexture, PAVER_SUPER_M, GRAIN_M } from 
 import { makeStreetLight, treeInstances, trashcanInstances } from "./props";
 import { makeBuilding } from "./builders";
 import { makeCarBody } from "../entities/carMesh";
-import { makeHumanoid, type HumanoidPalette } from "../entities/Humanoid";
 import type { PropDef, BuildingDef } from "./rishonMap";
 import { makeRestaurantInterior } from "./restaurantInterior";
 import { makeBakeryInterior } from "./bakeryInterior";
 import { makePhoneShop, makePocketPark, makeTaxiPickup } from "./secondaryLocations";
 import { makePlayerHouse } from "./playerHouse";
+import { makeStaticPeople } from "./staticPeople";
+import { makeResidentialGrounds } from "./residential";
 import { makeUmbrella } from "./objects/umbrella";
 import { makeFlower } from "./objects/flower";
 import { mergeTinted } from "./objects/voxel";
@@ -294,48 +295,6 @@ function makeInfillBuildings(): THREE.Object3D {
   return g;
 }
 
-// Static seated diners + standing pedestrians that make the patio feel occupied
-// (scripted NPCs add the movement on top of this baseline).
-const PATIO_PALETTES: HumanoidPalette[] = [
-  { skin: 0xf0c9a0, shirt: 0xc0392b, pants: 0x274060 },
-  { skin: 0xc98a5a, shirt: 0x2e8b57, pants: 0x2a2a30 },
-  { skin: 0xe0b48a, shirt: 0x2980b9, pants: 0x303848 },
-  { skin: 0xf0c9a0, shirt: 0xe0b23a, pants: 0x444450 },
-];
-
-function makePatioPeople(): THREE.Object3D {
-  const g = new THREE.Group();
-  const clusters = seatClusters();
-  const castAll = (o: THREE.Object3D) => o.traverse((c) => {
-    const m = c as THREE.Mesh; if (m.isMesh) m.castShadow = true;
-  });
-
-  // seated diners on the -x chair of two outer clusters, facing the table (+x).
-  [0, clusters.length - 1].forEach((ci, i) => {
-    const c = clusters[ci];
-    const { group, limbs } = makeHumanoid(PATIO_PALETTES[i % PATIO_PALETTES.length]);
-    group.position.set(c.x - 0.95, -0.4, c.z);
-    group.rotation.y = Math.PI / 2;
-    limbs.leftLeg.rotation.x = -1.5; limbs.rightLeg.rotation.x = -1.5;
-    limbs.leftArm.rotation.x = -0.6; limbs.rightArm.rotation.x = -0.6;
-    castAll(group);
-    g.add(group);
-  });
-
-  const peds: [number, number, number, number][] = [
-    [CX - 13, SEAT_Z + 1.5, Math.PI, 1],
-    [CX + 12, SHOP_Z + 7, -0.8, 3],
-  ];
-  for (const [x, z, yaw, pi] of peds) {
-    const { group } = makeHumanoid(PATIO_PALETTES[pi % PATIO_PALETTES.length]);
-    group.position.set(x, 0, z);
-    group.rotation.y = yaw;
-    castAll(group);
-    g.add(group);
-  }
-  return g;
-}
-
 export function makeRestaurantStreet(): THREE.Object3D {
   const group = new THREE.Group();
   group.name = "restaurantStreet";
@@ -349,13 +308,14 @@ export function makeRestaurantStreet(): THREE.Object3D {
   group.add(makePocketPark());
   group.add(makeTaxiPickup());
   group.add(makePlayerHouse());
+  group.add(makeResidentialGrounds());   // south paths/hedges/greenery (fills the grass)
+  group.add(makeStaticPeople());         // guaranteed staff + diners + idlers
 
   group.add(trashcanInstances([
     { id: "rtc-1", kind: "trashcan", x: CX - 4, z: ROAD_Z - ROAD_W / 2 - 1.2 },
     { id: "rtc-2", kind: "trashcan", x: CX + 24, z: SEAT_Z },
   ]));
 
-  group.add(makePatioPeople());
   group.add(makeDessertCart());
 
   // --- promenade slab ---

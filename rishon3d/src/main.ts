@@ -38,9 +38,11 @@ async function boot() {
   // distant landmarks (airport, restaurant street, transit station).
   // #view=<x>,<z>[,<height>][,<dist>] — optional height/dist allow a close
   // ground-level 3/4 framing (e.g. #view=95,103,8,18) for inspecting props, not
-  // just the default high aerial (40,50) used for distant landmarks.
+  // just the default high aerial (40,50) used for distant landmarks. A NEGATIVE
+  // dist parks the camera on the -z side of the target (looking south), e.g.
+  // #view=74,119,7,-15 to inspect a north-facing facade like the house front.
   const viewMatch = location.hash.match(
-    /^#view=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?(?:,(\d+(?:\.\d+)?))?/,
+    /^#view=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?(?:,(-?\d+(?:\.\d+)?))?/,
   );
   if (import.meta.env.DEV && viewMatch) {
     const tx = parseFloat(viewMatch[1]);

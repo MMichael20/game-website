@@ -10,12 +10,14 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { PALETTE } from "./palette";
+import { tintGeo, mergeTinted } from "./objects/voxel";
+import { makeFlower } from "./objects/flower";
 import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
 import { makeCarBody } from "../entities/carMesh";
 import { treeInstances, benchInstances, trashcanInstances, makeStreetLight } from "./props";
 import {
   PHONE_SHOP, PHONE_SHOP_DOOR, shopFront, SHOP_Z,
-  PARK_CENTER, TAXI_CAR, TAXI_WAIT,
+  PARK_CENTER, PARK_BENCH, TAXI_CAR, TAXI_WAIT,
 } from "./districtPois";
 import type { PropDef } from "./rishonMap";
 
@@ -131,6 +133,28 @@ export function makePhoneShop(): THREE.Object3D {
   signLit.position.set(S.x, H - 1.0, FRONT + 0.24);
   group.add(signLit);
 
+  // blue-and-white striped awning over the storefront — the strongest "this is a
+  // shop" identity signal, matching the restaurants' awnings and the concept art.
+  const aw: THREE.BufferGeometry[] = [];
+  const cols = 7;
+  const awW = S.w * 0.88;
+  const colW = awW / cols;
+  for (let i = 0; i < cols; i++) {
+    const hex = i % 2 === 0 ? PALETTE.awningBlue : PALETTE.awningStripe;
+    const cx = S.x - awW / 2 + colW * (i + 0.5);
+    const slab = new THREE.BoxGeometry(colW, 0.26, 2.1);
+    slab.rotateX(-0.34);
+    slab.translate(cx, 3.2, FRONT + 0.7);
+    aw.push(tintGeo(slab, hex));
+    const valance = new THREE.BoxGeometry(colW, 0.5, 0.1);
+    valance.translate(cx, 2.7, FRONT + 1.7);
+    aw.push(tintGeo(valance, hex));
+  }
+  const awning = new THREE.Mesh(mergeGeometries(aw), vcMat());
+  awning.name = "phoneShopAwning";
+  awning.castShadow = true;
+  group.add(awning);
+
   return group;
 }
 
@@ -168,25 +192,52 @@ export function makePocketPark(): THREE.Object3D {
   path.receiveShadow = true;
   group.add(path);
 
+  // a small central plaza pad so the park reads as a designed gathering spot.
+  const plazaTex = makeSidewalkTexture();
+  plazaTex.repeat.set(3, 3);
+  const plaza = new THREE.Mesh(
+    new THREE.BoxGeometry(5.5, 0.13, 5.0),
+    new THREE.MeshStandardMaterial({ map: plazaTex }),
+  );
+  plaza.position.set(cx, 0.08, cz);
+  plaza.receiveShadow = true;
+  group.add(plaza);
+
   // greenery + furniture reuse the city prop instancers (matched style). Trees at
-  // the back (south); bench + bin + lamp toward the street-facing north edge.
+  // the back (south); benches + bin + lamp toward the street-facing north edge.
   const trees: PropDef[] = [
-    { id: "pk-t1", kind: "tree", x: cx - 3.5, z: cz + 3.2 },
-    { id: "pk-t2", kind: "tree", x: cx + 3.5, z: cz + 3.6 },
+    { id: "pk-t1", kind: "tree", x: cx - 3.8, z: cz + 3.4 },
+    { id: "pk-t2", kind: "tree", x: cx + 3.8, z: cz + 3.8 },
+    { id: "pk-t3", kind: "tree", x: cx + 0.2, z: cz + 4.2 },
   ];
   group.add(treeInstances(trees));
-  group.add(benchInstances([{ id: "pk-b1", kind: "bench", x: cx + 3.2, z: cz - 1.5 }]));
-  group.add(trashcanInstances([{ id: "pk-tc", kind: "trashcan", x: cx + 4.6, z: cz - 2.0 }]));
-  group.add(makeStreetLight({ id: "pk-l", kind: "streetlight", x: cx - 4.6, z: cz - 2.5 }));
+  // one bench sits exactly at PARK_BENCH so the idler + visiting patrons rest on it.
+  group.add(benchInstances([
+    { id: "pk-b1", kind: "bench", x: PARK_BENCH.x, z: PARK_BENCH.z },
+    { id: "pk-b2", kind: "bench", x: cx - 4.0, z: cz - 0.5 },
+  ]));
+  group.add(trashcanInstances([{ id: "pk-tc", kind: "trashcan", x: cx + 4.8, z: cz - 2.2 }]));
+  group.add(makeStreetLight({ id: "pk-l", kind: "streetlight", x: cx - 4.8, z: cz - 2.2 }));
 
-  // low planter borders along the street-facing (north) edge
+  // chunky flower planters bordering the street-facing (north) edge, with real
+  // voxel blooms (merged via mergeTinted so the non-indexed flowers combine).
   const planters: THREE.BufferGeometry[] = [];
   for (let i = 0; i < 4; i++) {
-    const x = cx - 4.5 + i * 3;
-    planters.push(tinted(2.4, 0.5, 0.7, x, 0.25, cz - 5.0, PALETTE.benchWood));
-    planters.push(tinted(2.0, 0.4, 0.5, x, 0.6, cz - 5.0, PALETTE.hedge));
+    const px = cx - 4.5 + i * 3;
+    const pz = cz - 5.0;
+    planters.push(tinted(2.5, 0.62, 0.9, px, 0.31, pz, PALETTE.benchWood));
+    planters.push(tinted(2.2, 0.18, 0.66, px, 0.62, pz, 0x3a2a1c));
+    for (const dx of [-0.7, -0.2, 0.3, 0.75]) {
+      planters.push(tinted(0.46, 0.4, 0.46, px + dx, 0.78, pz, PALETTE.hedge));
+    }
+    const bloom: [number, number][] = [[-0.7, PALETTE.flowerRed], [-0.1, PALETTE.flowerWhite], [0.45, PALETTE.flowerYellow]];
+    for (const [dx, hex] of bloom) {
+      const f = makeFlower({ petalColor: hex, height: 0.34, petalCount: 5 });
+      f.translate(px + dx, 0.74, pz);
+      planters.push(f);
+    }
   }
-  group.add(new THREE.Mesh(mergeGeometries(planters), vcMat()));
+  group.add(new THREE.Mesh(mergeTinted(planters), vcMat()));
 
   return group;
 }
