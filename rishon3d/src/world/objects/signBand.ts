@@ -9,7 +9,7 @@
 // ~1u = 1m.
 
 import * as THREE from 'three'
-import { tintedBox, mergeTinted, tintedMesh } from './voxel'
+import { tintedBox, mergeTinted, tintedMesh, DECAL_GAP } from './voxel'
 
 export interface SignBandConfig {
   /** Width of the sign board in metres (required). */
@@ -34,9 +34,9 @@ export function makeSignBand(cfg: SignBandConfig): THREE.BufferGeometry {
   // Light border trim (bright inner frame strip)
   const trimInset = 0.04
   // Top strip
-  parts.push(tintedBox(w - trimInset * 2, 0.025, 0.02, 0, h - trimInset, d + 0.01, 0xffffff))
+  parts.push(tintedBox(w - trimInset * 2, 0.025, 0.02, 0, h - trimInset, d + DECAL_GAP, 0xffffff))
   // Bottom strip
-  parts.push(tintedBox(w - trimInset * 2, 0.025, 0.02, 0, trimInset, d + 0.01, 0xffffff))
+  parts.push(tintedBox(w - trimInset * 2, 0.025, 0.02, 0, trimInset, d + DECAL_GAP, 0xffffff))
 
   return mergeTinted(parts)
 }
@@ -70,7 +70,7 @@ export function makeSignLitMesh(cfg: SignBandConfig): THREE.Group {
   })
   const panelMesh = new THREE.Mesh(panelGeo, panelMat)
   panelMesh.name = 'sign-face'
-  panelMesh.position.set(0, h / 2, d + 0.012)
+  panelMesh.position.set(0, h / 2, d + DECAL_GAP + 0.01)
   group.add(panelMesh)
 
   return group

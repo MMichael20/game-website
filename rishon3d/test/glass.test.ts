@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
-import { makeGlassFrame, makeGlassPanel, GLASS_PRESETS } from '../src/world/objects/glass'
+import { makeGlassFrame, makeGlassPanel, makeGlassPaneMaterial, GLASS_PRESETS } from '../src/world/objects/glass'
 
 describe('glass', () => {
   it('frame geometry is non-empty, vertex-colored, and merged to one buffer', () => {
@@ -30,5 +30,9 @@ describe('glass', () => {
     const a = makeGlassFrame(GLASS_PRESETS.storefront).getAttribute('position').array
     const b = makeGlassFrame(GLASS_PRESETS.storefront).getAttribute('position').array
     expect(Array.from(a)).toEqual(Array.from(b))
+  })
+  it('pane material has depthWrite disabled to prevent z-fighting', () => {
+    const mat = makeGlassPaneMaterial({ w: 1, h: 1 }) as THREE.MeshStandardMaterial
+    expect(mat.depthWrite).toBe(false)
   })
 })

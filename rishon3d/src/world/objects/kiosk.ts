@@ -6,7 +6,7 @@
 // Convention: base at y=0, grows +y, centered x=z=0. ~1u = 1m.
 
 import * as THREE from 'three'
-import { tintedBox, mergeTinted, tintedMesh } from './voxel'
+import { tintedBox, mergeTinted, tintedMesh, DECAL_GAP } from './voxel'
 import { OFFICE_BLUE } from './objectPalette'
 
 const WALL_COLOR   = 0xdde0e4    // light off-white walls
@@ -31,7 +31,7 @@ export function makeKiosk(cfg: KioskConfig = {}): THREE.BufferGeometry {
   parts.push(tintedBox(w, h, d, 0, h / 2, 0, WALL_COLOR))
 
   // Accent stripe just below the roof
-  parts.push(tintedBox(w, 0.15, d + 0.01, 0, h - 0.15, 0, ACCENT_COLOR))
+  parts.push(tintedBox(w, 0.15, d + DECAL_GAP, 0, h - 0.15, 0, ACCENT_COLOR))
 
   // Roof slab with overhang on front
   const roofH = 0.12
@@ -47,7 +47,7 @@ export function makeKiosk(cfg: KioskConfig = {}): THREE.BufferGeometry {
   // Service opening (recessed dark inset above the counter on front face)
   const openingW = w * 0.55
   const openingH = h - counterH - 0.22
-  parts.push(tintedBox(openingW, openingH, 0.06, 0, counterH + openingH / 2 + 0.06, d / 2 - 0.01, 0x1a2030))
+  parts.push(tintedBox(openingW, openingH, 0.06, 0, counterH + openingH / 2 + 0.06, d / 2 - DECAL_GAP, 0x1a2030))
 
   return mergeTinted(parts)
 }

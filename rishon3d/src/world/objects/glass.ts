@@ -119,6 +119,7 @@ export function makeGlassPaneMaterial(cfg: GlassConfig): THREE.Material {
       roughness:   0.1,
       metalness:   0.0,
       side:        THREE.DoubleSide,
+      depthWrite:  false,
     })
   )
 }
@@ -155,6 +156,7 @@ export function makeGlassPanel(cfg: GlassConfig): THREE.Group {
         roughness:   0.9,
         metalness:   0.0,
         side:        THREE.FrontSide,
+        depthWrite:  false,
       })
     )
     const silMesh = new THREE.Mesh(silGeo, silMat)

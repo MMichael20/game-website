@@ -9,6 +9,11 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
+// Minimum safe gap for a decal / accent slab sitting proud of its parent face.
+// 0.01 m was too close → z-fighting. 0.04 m keeps surfaces visually flush yet
+// gives the depth buffer enough separation to stay clean.
+export const DECAL_GAP = 0.04;
+
 // Bake a single color into every vertex of a geometry (so many colors survive a
 // merge into one vertex-colored mesh). Returns the same geometry for chaining.
 export function tintGeo(geo: THREE.BufferGeometry, hex: number): THREE.BufferGeometry {
