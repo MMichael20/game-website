@@ -78,4 +78,6 @@ export const GLASS = {
   highlight:   0xe8f4fc,  // bright reflective strip baked near top of frame
   silhouette:  0x1a2a38,  // dim interior shadow plane
   handleColor: 0x8aabcc,  // door handle bar
+  paneOffice:  0xb8d4e8,  // cooler blue tint for office glazing
+  frameOffice: 0x9aabb8,  // lighter grey frame for office facades
 } as const;

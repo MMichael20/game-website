@@ -95,7 +95,7 @@ export function makeGlassFrame(cfg: GlassConfig): THREE.BufferGeometry {
 
   // Door handle
   if (handle) {
-    const hx = hw * 0.5 - HANDLE_OFFSET_X
+    const hx = Math.max(0.05, hw * 0.5 - HANDLE_OFFSET_X)
     // Backplate
     parts.push(tintedBox(HANDLE_W * 2, HANDLE_H + 0.06, HANDLE_D * 0.5, hx, HANDLE_Y, HANDLE_D / 2, frameColor))
     // Grip bar
@@ -139,6 +139,7 @@ export function makeGlassPanel(cfg: GlassConfig): THREE.Group {
   const paneGeo = new THREE.PlaneGeometry(innerW, innerH)
   const paneMat = makeGlassPaneMaterial(cfg)
   const paneMesh = new THREE.Mesh(paneGeo, paneMat)
+  // Centered at h/2 so the inner pane spans FRAME_T..h-FRAME_T vertically
   paneMesh.position.set(0, h / 2, 0)
   group.add(paneMesh)
 
@@ -153,7 +154,7 @@ export function makeGlassPanel(cfg: GlassConfig): THREE.Group {
         opacity:     0.18,
         roughness:   0.9,
         metalness:   0.0,
-        side:        THREE.DoubleSide,
+        side:        THREE.FrontSide,
       })
     )
     const silMesh = new THREE.Mesh(silGeo, silMat)
@@ -168,7 +169,7 @@ export function makeGlassPanel(cfg: GlassConfig): THREE.Group {
 
 export const GLASS_PRESETS: Record<'storefront' | 'office' | 'house' | 'door', GlassConfig> = {
   storefront: { w: 3.0, h: 2.8, divisions: 2, tint: GLASS.pane,   frameColor: GLASS.frame,  opacity: 0.50 },
-  office:     { w: 2.4, h: 2.4, divisions: 1, tint: 0xb8d4e8,     frameColor: 0x9aabb8,     opacity: 0.45 },
+  office:     { w: 2.4, h: 2.4, divisions: 1, tint: GLASS.paneOffice, frameColor: GLASS.frameOffice, opacity: 0.45 },
   house:      { w: 1.2, h: 1.4, divisions: 1, tint: GLASS.pane,   frameColor: 0xdce8f0,     opacity: 0.60, silhouette: true },
   door:       { w: 1.2, h: 2.4, door: true,   tint: GLASS.pane,   frameColor: GLASS.frame,  opacity: 0.55 },
 }
