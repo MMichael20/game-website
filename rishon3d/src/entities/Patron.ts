@@ -3,10 +3,10 @@ import type { Tickable } from "../core/Engine";
 import { makeHumanoid, animateWalk, type HumanoidPalette, type HumanoidLimbs } from "./Humanoid";
 import {
   makePatron, stepPatron, isSitting,
-  dineInRoute, bakeryRoute, phoneShopRoute, crossingLoopRoute, taxiWaitRoute, patrolRoute,
   type Patron as PatronData, type Waypoint,
 } from "../game/patronRoutine";
-import { INDOOR_TABLE_SEATS, CX, type Seat } from "../world/districtPois";
+import { buildItinerary } from "../game/itinerary";
+import { CX } from "../world/districtPois";
 
 // Seated pose, mirroring the static diners in restaurantStreet.ts makePatioPeople:
 // the whole humanoid drops by SIT_DROP so its bent legs meet a chair, legs fold
@@ -121,35 +121,22 @@ function paletteAt(i: number): HumanoidPalette {
   return PALETTES[i % PALETTES.length];
 }
 
-// Build a lively cast of scripted patrons, every one on a continuously LOOPING
-// route so they live "circular lives" (eat, shop, cross, stroll, repeat) instead
-// of finishing and standing frozen. Staggered start delays keep them desynced.
+// Build a lively cast of scripted patrons. Each gets a UNIQUE seeded multi-stop
+// daily itinerary (eat -> shop -> sit outside -> cross -> park, in its own order),
+// run on a continuous loop, so the crowd reads as a living town instead of
+// identical routines. Staggered delays + per-itinerary speeds keep them desynced.
+const PATRON_COUNT = 12;
+
 export function spawnPatrons(scene: THREE.Scene): Patron[] {
   const patrons: Patron[] = [];
-  let pi = 0;
-  const add = (waypoints: Waypoint[], speed: number, delay: number): void => {
-    patrons.push(new Patron(scene, paletteAt(pi++), { waypoints, speed, loop: true, delay }));
-  };
-
-  const seats: Seat[] = INDOOR_TABLE_SEATS;
-  // restaurant diners (order, sit at a table, eat, leave, loop)
-  add(dineInRoute(seats[0], -2), 1.7, 0);
-  add(dineInRoute(seats[1], 0), 1.6, 4);
-  add(dineInRoute(seats[0], 2), 1.8, 9);
-  // bakery customers (browse the bakery interior, loop)
-  add(bakeryRoute(-1), 1.7, 2);
-  add(bakeryRoute(2), 1.6, 11);
-  // phone-shop visitors
-  add(phoneShopRoute(-1), 1.7, 1.5);
-  add(phoneShopRoute(2), 1.6, 8);
-  // pedestrians crossing the street back and forth
-  add(crossingLoopRoute(7), 1.6, 0);
-  add(crossingLoopRoute(11), 1.5, 6);
-  // someone hanging around the taxi stand
-  add(taxiWaitRoute(), 1.6, 3);
-  // patio strollers pacing the lane, passing each other
-  add(patrolRoute(CX - 22, CX + 22), 1.4, 0);
-  add(patrolRoute(CX + 22, CX - 22), 1.5, 2);
-
+  for (let i = 0; i < PATRON_COUNT; i++) {
+    const it = buildItinerary(1301 + i * 17);
+    patrons.push(new Patron(scene, paletteAt(i), {
+      waypoints: it.waypoints,
+      speed: it.speed,
+      loop: true,
+      delay: (i % 6) * 1.7,
+    }));
+  }
   return patrons;
 }
