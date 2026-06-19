@@ -10,7 +10,12 @@ import { makeCarBody } from "../entities/carMesh";
 import { makeHumanoid, type HumanoidPalette } from "../entities/Humanoid";
 import type { PropDef, BuildingDef } from "./rishonMap";
 import { makeRestaurantInterior } from "./restaurantInterior";
+import { makeBakeryInterior } from "./bakeryInterior";
 import { makePhoneShop, makePocketPark, makeTaxiPickup } from "./secondaryLocations";
+import { makeUmbrella } from "./objects/umbrella";
+import { makeFlower } from "./objects/flower";
+import { mergeTinted } from "./objects/voxel";
+import { makeDessertCart } from "./dessertCart";
 import {
   CX, CZ, PROM_W, PROM_D, SHOP_Z, SEAT_Z, ROAD_Z, STREET_LEN, FAR_WALK_D, ROAD_W,
   RESTAURANTS, seatClusters, CHAIR_OFFSETS, PICKUP_STAND, shopFront, type RestaurantSpec,
@@ -151,42 +156,9 @@ function chairGeo(): THREE.BufferGeometry {
   }
   return mergeGeometries(parts);
 }
-function umbrellaGeo(): THREE.BufferGeometry {
-  const tint = (g: THREE.BufferGeometry, hex: number) => {
-    const c = new THREE.Color(hex);
-    const n = g.attributes.position.count;
-    const colors = new Float32Array(n * 3);
-    for (let v = 0; v < n; v++) { colors[v * 3] = c.r; colors[v * 3 + 1] = c.g; colors[v * 3 + 2] = c.b; }
-    g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    return g;
-  };
-  const parts: THREE.BufferGeometry[] = [];
-  const pole = new THREE.BoxGeometry(0.14, 2.7, 0.14); pole.translate(0, 1.35, 0);
-  parts.push(tint(pole, PALETTE.benchWood));
-  const rings: [number, number, number][] = [
-    [3.0, 2.55, PALETTE.awningRed],
-    [2.3, 2.67, PALETTE.awningStripe],
-    [1.6, 2.79, PALETTE.awningRed],
-    [0.9, 2.91, PALETTE.awningStripe],
-  ];
-  for (const [s, ry, hex] of rings) {
-    const ring = new THREE.BoxGeometry(s, 0.13, s); ring.translate(0, ry, 0);
-    parts.push(tint(ring, hex));
-  }
-  const finial = new THREE.BoxGeometry(0.18, 0.22, 0.18); finial.translate(0, 3.03, 0);
-  parts.push(tint(finial, PALETTE.awningRed));
-  return mergeGeometries(parts);
-}
-
-function flowerSprig(x: number, z: number, hex: number, h: number, sy: number): THREE.BufferGeometry[] {
-  return [
-    tintedBox(0.07, h, 0.07, x, sy + h / 2, z, PALETTE.flowerStem),
-    tintedBox(0.26, 0.24, 0.26, x, sy + h + 0.08, z, hex),
-  ];
-}
-
 // A CHUNKY, player-scale wooden flower planter (wooden box, dark soil, dense
-// green leaf clumps, readable blocky flowers); merges to one instanced draw.
+// green leaf clumps) topped with real multi-part flowers from the object
+// library; merges to one instanced draw.
 function planterBoxGeo(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
   const soilY = 0.66;
@@ -202,8 +174,12 @@ function planterBoxGeo(): THREE.BufferGeometry {
     [0.54, 0.1, PALETTE.flowerRed, 0.44],
     [0.84, -0.06, PALETTE.flowerYellow, 0.32],
   ];
-  for (const [bx, bz, hex, h] of blooms) parts.push(...flowerSprig(bx, bz, hex, h, 0.84));
-  return mergeGeometries(parts);
+  for (const [bx, bz, hex, h] of blooms) {
+    const f = makeFlower({ petalColor: hex, height: h, petalCount: 5 });
+    f.translate(bx, 0.84, bz);
+    parts.push(f);
+  }
+  return mergeTinted(parts);
 }
 
 // Planter placements: a row along the street-facing edge of the promenade and a
@@ -375,6 +351,7 @@ export function makeRestaurantStreet(): THREE.Object3D {
   ]));
 
   group.add(makePatioPeople());
+  group.add(makeDessertCart());
 
   // --- promenade slab ---
   const paver = makeSidewalkTexture();
@@ -401,8 +378,9 @@ export function makeRestaurantStreet(): THREE.Object3D {
   const frames: THREE.BufferGeometry[] = [];
   for (const r of RESTAURANTS) {
     if (r.open) {
-      // furnished interior (its structural shell is named "restaurantBuilding")
-      group.add(makeRestaurantInterior());
+      // furnished walk-in interior (restaurant or bakery; its structural shell
+      // is named "...Building")
+      group.add(r.bakery ? makeBakeryInterior() : makeRestaurantInterior());
       const trim = new THREE.Mesh(mergeGeometries(restaurantTrim(r)), new THREE.MeshStandardMaterial({ vertexColors: true }));
       trim.castShadow = true; trim.receiveShadow = true; trim.name = "restaurantTrim";
       group.add(trim);
@@ -483,7 +461,7 @@ export function makeRestaurantStreet(): THREE.Object3D {
   });
   group.add(makeInstanced(tableGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), tablePl, 0));
   group.add(makeInstanced(chairGeo(), new THREE.MeshStandardMaterial({ color: PALETTE.benchWood }), chairPl, 0));
-  group.add(makeInstanced(umbrellaGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), umbrellaPl, 0));
+  group.add(makeInstanced(makeUmbrella(), new THREE.MeshStandardMaterial({ vertexColors: true }), umbrellaPl, 0));
 
   group.add(makeInstanced(planterBoxGeo(), new THREE.MeshStandardMaterial({ vertexColors: true }), planterPlacements(), 0));
 

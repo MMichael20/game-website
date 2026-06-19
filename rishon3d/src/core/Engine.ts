@@ -34,7 +34,10 @@ export class Engine {
     this.camera = new THREE.PerspectiveCamera(60, this.aspect(), 0.1, 1000);
     this.camera.position.set(0, 8, 14);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    // preserveDrawingBuffer lets the canvas be read back (toDataURL) for the
+    // screenshot-based visual verification this project relies on; it does not
+    // change what is rendered.
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.shadowMap.enabled = true;

@@ -32,19 +32,26 @@ export function shopFront(d: number): number { return SHOP_Z + d / 2; }
 
 export interface RestaurantSpec {
   x: number; w: number; d: number; h: number; awning: number;
-  open?: boolean; // the one enterable, furnished restaurant
+  open?: boolean;   // an enterable, furnished, walk-in shell
+  bakery?: boolean; // the west shell is a bakery-cafe (its own dessert interior)
 }
 
-// Three bespoke restaurants spaced evenly along the promenade. The middle box
-// is the OPEN one: a hollow shell with a walk-in doorway and a full interior.
+// Three bespoke restaurants spaced evenly along the promenade. The middle box is
+// the OPEN restaurant; the west box is the OPEN bakery-cafe; both are walk-in
+// shells with full interiors. The east box stays a closed facade (follow-up).
 export const RESTAURANTS: RestaurantSpec[] = [
-  { x: CX - 15, w: 8, d: 8, h: 6, awning: PALETTE.awningRed },
+  { x: CX - 15, w: 8, d: 8, h: 6, awning: PALETTE.awningRed, open: true, bakery: true },
   { x: CX, w: 9, d: 8, h: 9, awning: PALETTE.awningBlue, open: true },
   { x: CX + 15, w: 8, d: 8, h: 7, awning: PALETTE.awningRed },
 ];
 
+// The middle restaurant specifically (NOT the bakery) anchors restaurantInterior.
 export const MAIN_RESTAURANT: RestaurantSpec =
-  RESTAURANTS.find((r) => r.open) ?? RESTAURANTS[1];
+  RESTAURANTS.find((r) => r.open && !r.bakery) ?? RESTAURANTS[1];
+
+// The bakery-cafe shell (west), anchoring bakeryInterior.
+export const BAKERY: RestaurantSpec =
+  RESTAURANTS.find((r) => r.bakery) ?? RESTAURANTS[0];
 
 // --- patio seating clusters ---------------------------------------------------
 // One table cluster per slot, deliberately skipping the central x≈CX entrance
@@ -63,7 +70,7 @@ export const CHAIR_OFFSETS: [number, number][] = [
 // --- named gameplay anchors (POIs) -------------------------------------------
 // All in world space. `r` is the interaction/approach radius.
 export type PoiKind =
-  | "restaurant" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk";
+  | "restaurant" | "bakery" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk";
 
 export interface Poi {
   kind: PoiKind;
@@ -96,6 +103,14 @@ export const INDOOR_TABLE_SEATS: Seat[] = [
   { x: MD.x + 2.6, z: SHOP_Z + 2.0, faceYaw: -Math.PI / 2 },
 ];
 
+// Bakery-cafe (west shell): walk-in door + interior anchors.
+const BD = BAKERY;
+const BAKERY_FRONT = shopFront(BD.d);
+export const BAKERY_DOOR: Vec2 = { x: BD.x - BD.w * 0.26, z: BAKERY_FRONT };
+export const BAKERY_INSIDE: Vec2 = { x: BD.x - 1.0, z: SHOP_Z + 1.0 };
+export const BAKERY_COUNTER: Vec2 = { x: BD.x + 0.6, z: SHOP_Z - 1.4 };
+export const BAKERY_STAFF: Vec2 = { x: BD.x + 0.6, z: SHOP_Z - 2.6 };
+
 // Phone / convenience shop: a storefront at the east end of the promenade row.
 export const PHONE_SHOP = { x: CX + 23, w: 9, d: 8, h: 7 };
 const PHONE_FRONT = shopFront(PHONE_SHOP.d);
@@ -127,6 +142,8 @@ export const FAR_WALK_Z = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D / 2; // far sid
 export const POIS: Poi[] = [
   { kind: "restaurant", id: "restaurant", label: "Restaurant", glyph: "R", color: "#e0524a",
     x: RESTAURANT_DOOR.x, z: RESTAURANT_DOOR.z, r: 4.5 },
+  { kind: "bakery", id: "bakery", label: "Bakery", glyph: "B", color: "#f3a6c0",
+    x: BAKERY_DOOR.x, z: BAKERY_DOOR.z, r: 4.5 },
   { kind: "phoneShop", id: "phoneShop", label: "Phone Shop", glyph: "P", color: "#3aa0ff",
     x: PHONE_SHOP_DOOR.x, z: PHONE_SHOP_DOOR.z, r: 4.5 },
   { kind: "taxi", id: "taxi", label: "Taxi Stand", glyph: "T", color: "#f2c14e",

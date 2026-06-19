@@ -25,6 +25,7 @@ export function nearestPoi(pos: Vec2, pois: readonly Poi[] = POIS): Poi | null {
 export function poiPrompt(poi: Poi): string {
   switch (poi.kind) {
     case "restaurant": return "Walk in to the restaurant";
+    case "bakery": return "Walk in to the bakery";
     case "phoneShop": return "Walk in to the phone shop";
     case "taxi": return "Taxi pickup point";
     case "park": return "Pocket park";
