@@ -40,12 +40,25 @@ export interface RishonMap {
 // House coords mirror world/districtPois.ts HOUSE / HOUSE_SPAWN / DRIVEWAY as
 // literals to avoid an import cycle (rishonMap -> districtPois -> roads ->
 // rishonMap). Keep these in sync with districtPois.
+//
+// The east cross street + office/cafe footprints are ALSO declared in
+// districtPois (EAST_CROSS / OFFICE / CAFE). Per the same cycle rule, the road
+// below is a LITERAL mirror of districtPois.EAST_CROSS — never an import. The
+// office/cafe FOOTPRINTS deliberately stay out of CORE_MAP.buildings: World
+// renders every non-house data building as a generic box (with a box collider),
+// so the real office (Task 12) + cafe (Task 9) geometry must come from their own
+// builders, not the box path. Only the one isHouse building lives here.
 export const CORE_MAP: RishonMap = {
-  ground: { size: 100, center: { x: 95, z: 104 } },
+  // Grown from 100 -> 160 and re-centered east to (108,104) so the office tower
+  // (x≈142) and cafe (x≈62) footprints fit inside the framed bounds
+  // x∈[28,188], z∈[24,184]. Mirrors districtPois OFFICE / CAFE / EAST_CROSS.
+  ground: { size: 160, center: { x: 108, z: 104 } },
   roads: [
-    // The visible 3D road is drawn by restaurantStreet.makeStreetBlock(); this
-    // RoadDef only feeds the minimap and the off-road prop filter.
-    { id: "street", x: 95, z: 109, length: 60, horizontal: true },
+    // The visible 3D road is drawn by restaurantStreet.makeStreetBlock(); these
+    // RoadDefs only feed the minimap and the off-road prop filter.
+    { id: "hero-street", x: 95, z: 109, length: 60, horizontal: true },
+    // East cross street — mirrors districtPois.EAST_CROSS (literal, no import).
+    { id: "east-cross", x: 128, z: 112, length: 40, horizontal: false },
   ],
   buildings: [
     // The player house (data only): satisfies validateMap's exactly-one-house and

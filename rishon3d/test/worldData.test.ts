@@ -18,8 +18,11 @@ describe("assembleMap (V1 compact block)", () => {
   });
 
   it("is a compact block framed off the world origin", () => {
-    expect(map.ground.size).toBeLessThanOrEqual(140);
-    expect(map.ground.center).toBeTruthy();
+    // Grown from 100 to 160 (Task 8) so the office tower (east) + cafe (west)
+    // footprints fit inside the framed bounds; center shifted east to (108,104).
+    expect(map.ground.size).toBeLessThanOrEqual(180);
+    expect(map.ground.size).toBe(160);
+    expect(map.ground.center).toEqual({ x: 108, z: 104 });
   });
 
   it("gives every building a unique id", () => {

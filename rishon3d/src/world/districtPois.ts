@@ -9,6 +9,12 @@
 
 import { PALETTE } from "./palette";
 import { ROAD_W } from "./roads";
+// Type-only import: erased at runtime, so it forms NO init cycle (mirrors the
+// `import type { RoadDef }` already used by roads.ts). The east cross-street
+// RoadDef is mirrored as a literal in rishonMap.CORE_MAP (the only edge that
+// would close the rishonMap -> districtPois -> roads -> rishonMap loop is a
+// VALUE import, which we never add).
+import type { RoadDef } from "./rishonMap";
 
 export interface Vec2 { x: number; z: number }
 
@@ -157,6 +163,47 @@ export const HOUSE_DOOR: Vec2 = { x: HOUSE.x, z: HOUSE_FRONT - 1.0 };
 export const HOUSE_SPAWN: Vec2 = { x: HOUSE.x + 10, z: HOUSE_FRONT - 3.5 }; // (84, 116)
 export const DRIVEWAY: Vec2 = { x: CX - 9, z: ROAD_Z + 14 };           // (86, 123) drivable car
 export const MAILBOX: Vec2 = { x: CX - 15, z: HOUSE_FRONT - 1.5 };     // (80, 118) at the path
+
+// --- East cross street + east-side locations (Task 8 world growth) ------------
+// The world is grown to ground.size 160 / center (108,104) so an office tower
+// (east) and a cafe (west) fit beside the existing hero strip. A second, short
+// south-running street branches off the hero street EAST of the phone shop
+// (x=118), giving the loop a junction + a frontage for the office tower.
+// NOTE: rishonMap.CORE_MAP mirrors EAST_CROSS as a literal RoadDef (to avoid the
+// rishonMap -> districtPois import cycle) — keep them in sync.
+export const EAST_CROSS_X = 128;                 // cross-street centerline x
+// z=112 (== ROAD_Z + 3): centered so the 40u street straddles the hero street
+// (z=109) and runs south past the office frontage. Pinned literal for the test.
+export const EAST_CROSS: RoadDef = { id: "east-cross", x: EAST_CROSS_X, z: 112, length: 40, horizontal: false };
+// Junction of the hero street (z = ROAD_Z = 109) and the east cross street.
+export const EAST_CROSS_JUNCTION: Vec2 = { x: EAST_CROSS_X, z: ROAD_Z };
+
+// Office tower (Task 12 builds the geometry/colliders): a tall block fronting the
+// east cross street, set back EAST of it so its lobby door faces the street (-x).
+// Footprint only here (mirrored as a comment in rishonMap, but NOT added to
+// CORE_MAP.buildings — World renders data buildings as generic boxes, so the real
+// tower must come from its own builder, not the box path).
+export const OFFICE = { x: 142, z: 100, w: 18, d: 16, h: 22 };
+const OFFICE_WEST = OFFICE.x - OFFICE.w / 2;     // 133: street-facing (west) face
+// Lobby door on the west face, ~1u clear of the solid wall, offset toward the
+// junction end so the approach reads off the cross street.
+export const OFFICE_DOOR: Vec2 = { x: OFFICE_WEST - 1.0, z: OFFICE.z + 2 };
+// A waypoint just inside the lobby, the reception desk behind it, and a small
+// arrival plaza out on the street side (where NPCs queue / the marker sits).
+export const OFFICE_LOBBY: Vec2 = { x: OFFICE.x - OFFICE.w * 0.3, z: OFFICE.z + 1 };
+export const OFFICE_DESK: Vec2 = { x: OFFICE.x, z: OFFICE.z - OFFICE.d * 0.28 };
+export const OFFICE_PLAZA: Vec2 = { x: OFFICE_WEST - 3.5, z: OFFICE.z + 2 };
+
+// Cafe (Task 9 builds the geometry): a small walk-in shell WEST of the bakery,
+// extending the hero strip's storefront row. Its front face derives from SHOP_Z
+// via shopFront() like the other promenade shells, so it lines up with the row.
+export const CAFE = { x: 62, z: SHOP_Z, w: 12, d: 9 };
+const CAFE_FRONT = shopFront(CAFE.d);            // front (south) face on the strip
+// Door offset to the +x side of the storefront (toward the bakery), clear of the
+// solid wall; an inside waypoint and the service counter behind it.
+export const CAFE_DOOR: Vec2 = { x: CAFE.x + CAFE.w * 0.26, z: CAFE_FRONT };
+export const CAFE_INSIDE: Vec2 = { x: CAFE.x + 1.0, z: SHOP_Z + 1.0 };
+export const CAFE_COUNTER: Vec2 = { x: CAFE.x - 0.6, z: SHOP_Z - 1.6 };
 
 // Pickup / delivery stand (existing landmark anchor).
 export const PICKUP_STAND: Vec2 = { x: CX, z: ANCHOR_Z };
