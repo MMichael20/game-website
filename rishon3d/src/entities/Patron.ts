@@ -94,8 +94,15 @@ export class Patron implements Tickable {
   get done(): boolean { return this.data.done; }
 
   private poseSitting(): void {
-    // face the table center (+x or -x depending on which side of CX we sit on)
-    this.object.rotation.y = this.data.pos.x < CX ? Math.PI / 2 : -Math.PI / 2;
+    // Prefer the explicit faceYaw on the current waypoint (e.g. park bench, cafe
+    // counter, lobby seat) so any seat at any orientation faces correctly.
+    // Fall back to the legacy CX-heuristic for old indoor-table waypoints that
+    // don't carry an explicit faceYaw.
+    const currentWp = this.data.waypoints[this.data.index];
+    const yaw = currentWp?.faceYaw !== undefined
+      ? currentWp.faceYaw
+      : (this.data.pos.x < CX ? Math.PI / 2 : -Math.PI / 2);
+    this.object.rotation.y = yaw;
     this.limbs.leftLeg.rotation.x = LEG_SIT;
     this.limbs.rightLeg.rotation.x = LEG_SIT;
     this.limbs.leftArm.rotation.x = ARM_SIT;
