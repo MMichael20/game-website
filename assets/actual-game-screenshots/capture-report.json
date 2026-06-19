@@ -1,0 +1,13 @@
+{
+  "url": "http://127.0.0.1:5194",
+  "errors": [],
+  "files": [
+    "actual-01-title-instructions.png",
+    "actual-02-gameplay-hud-minimap.png",
+    "actual-03-minimap-closeup.png",
+    "actual-04-phone-home.png",
+    "actual-05-call-car-prompt.png",
+    "actual-06-car-arriving-gameplay.png",
+    "actual-07-pause-menu.png"
+  ]
+}

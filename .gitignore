@@ -1,10 +1,4 @@
-node_modules/
-dist/
-.superpowers/
-# local capture/scratch artifacts
-.playwright-mcp/
-*-walk*.png
-crop-*.png
-after-*.png
-baseline-*.png
-rishon3d/vite-*.log
+node_modules
+dist
+test-results
+playwright-report

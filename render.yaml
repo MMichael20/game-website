@@ -2,8 +2,8 @@ services:
   - type: web
     name: our-places-game
     runtime: static
-    buildCommand: cd rishon3d && npm install && npm run build
-    staticPublishPath: ./rishon3d/dist
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
     routes:
       - type: rewrite
         source: /*

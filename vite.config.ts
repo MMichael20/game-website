@@ -1,9 +1,6 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
 
 export default defineConfig({
-  base: './',
-  build: {
-    outDir: 'dist',
-    assetsInlineLimit: 0,
-  },
+  root: ".",
+  build: { target: "es2022", outDir: "dist" },
 });

@@ -1,25 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <title>H&M Adventures</title>
-  <link rel="stylesheet" href="/src/ui/styles/base.css" />
-  <link rel="stylesheet" href="/src/ui/styles/hud.css" />
-  <link rel="stylesheet" href="/src/ui/styles/menus.css" />
-  <link rel="stylesheet" href="/src/ui/styles/minigames.css" />
-  <link rel="stylesheet" href="/src/ui/styles/minimap.css" />
-</head>
-<body>
-  <div id="game-container">
-    <div id="ui-layer">
-      <div id="hud"></div>
-      <div id="dialog-container"></div>
-      <div id="menu-container"></div>
-    </div>
-  </div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>H&amp;M Adventures</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1a2e; }
+      #app { position: fixed; inset: 0; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
