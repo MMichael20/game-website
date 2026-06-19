@@ -19,9 +19,10 @@ import { makeFlower } from "./objects/flower";
 import { mergeTinted } from "./objects/voxel";
 import { makeDessertCart } from "./dessertCart";
 import {
-  CX, CZ, PROM_W, PROM_D, SHOP_Z, SEAT_Z, ROAD_Z, STREET_LEN, FAR_WALK_D, ROAD_W,
+  CX, CZ, PROM_W, PROM_D, SHOP_Z, SEAT_Z, ANCHOR_Z, ROAD_Z, STREET_LEN, FAR_WALK_D, ROAD_W,
   RESTAURANTS, seatClusters, CHAIR_OFFSETS, PICKUP_STAND, shopFront, type RestaurantSpec,
 } from "./districtPois";
+import { rectAround } from "../game/wander";
 
 // A short, lively restaurant promenade in the open SE corner of the map. The
 // block now reads as a small playable slice: an enterable open restaurant with a
@@ -197,6 +198,22 @@ function planterPlacements(): Placement[] {
     out.push({ x: r.x - r.w * 0.3, z: shopFront(r.d) + 1.4 });
     out.push({ x: r.x + r.w * 0.3, z: shopFront(r.d) + 1.4 });
   }
+  return out;
+}
+
+// Footprints of the chunky promenade props NPCs must not walk through (planters,
+// the pickup stand, the dessert cart, the corner tree, lamps, bins). Lives next to
+// the placement data so adding a prop here means adding its NPC footprint here too.
+// Patio SEATING (tables/chairs/umbrellas) is intentionally NOT included — patrons
+// sit there. Consumed by world/obstacles.ts.
+export function restaurantPropObstacles(): import("../game/wander").Rect[] {
+  const out = planterPlacements().map((p) => rectAround(p.x, p.z, 2.0, 0.92, 0.2));
+  out.push(rectAround(RESTAURANT.x, RESTAURANT.z, 1.3, 1.3, 0.2));        // pickup stand
+  out.push(rectAround(CX - 6, ANCHOR_Z + 1.5, 3.0, 1.4, 0.2));           // dessert cart (default pos)
+  out.push(rectAround(CX + 24, CZ + 6, 1.6, 1.6, 0.2));                  // corner tree
+  for (const lx of [CX - 21, CX - 7, CX + 7, CX + 21]) out.push(rectAround(lx, CZ + 9, 0.5, 0.5, 0.15)); // lamps
+  out.push(rectAround(CX - 4, ROAD_Z - ROAD_W / 2 - 1.2, 0.7, 0.7, 0.15)); // bin
+  out.push(rectAround(CX + 24, SEAT_Z, 0.7, 0.7, 0.15));                   // bin
   return out;
 }
 

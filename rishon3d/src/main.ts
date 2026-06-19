@@ -12,6 +12,7 @@ import { Hud } from "./ui/Hud";
 import { Minimap } from "./ui/Minimap";
 import { makeHumanoid } from "./entities/Humanoid";
 import { OBJECT_LIBRARY, tintedMesh } from "./world/objects";
+import { DebugOverlay } from "./ui/DebugOverlay";
 
 async function boot() {
   const container = document.getElementById("app")!;
@@ -51,6 +52,7 @@ async function boot() {
     const dist = viewMatch[4] ? parseFloat(viewMatch[4]) : 50;
     engine.camera.position.set(tx, h, tz + dist);
     engine.camera.lookAt(tx, h <= 15 ? 2 : 6, tz);
+    DebugOverlay.viewCaption(container, tx, tz, h, dist);
     engine.start();
     return;
   }
@@ -149,6 +151,7 @@ async function boot() {
       if (engine["running"] ?? true) { input.clear(); engine.stop(); menu.showPause(); }
     }
     if (e.code === "KeyM" && started) minimap.toggle();
+    if (e.code === "F3") game.toggleDebug();
   });
   window.addEventListener("blur", () => input.clear());
 }

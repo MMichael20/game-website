@@ -19,6 +19,8 @@ import { formatSpeed } from "../ui/format";
 import { RideCar } from "../entities/RideCar";
 import { nextTaxiPhase, type TaxiPhase } from "./taxi";
 import { Phone } from "../ui/Phone";
+import { DebugOverlay } from "../ui/DebugOverlay";
+import { POIS } from "../world/districtPois";
 
 const ENTER_RADIUS = 3.5;
 
@@ -33,6 +35,8 @@ export class Game implements Tickable {
   private summonPhase: TaxiPhase = "idle";
   private pickup = { x: 0, z: 0 };
   private phone: Phone;
+  private debug: DebugOverlay;
+  private lookDir = new THREE.Vector3();
 
   constructor(
     scene: THREE.Scene,
@@ -40,7 +44,7 @@ export class Game implements Tickable {
     private input: Input,
     world: World,
     private follow: FollowCamera,
-    camera: THREE.Camera,
+    private camera: THREE.Camera,
     private hud: Hud,
     private minimap: Minimap,
     container: HTMLElement,
@@ -59,6 +63,7 @@ export class Game implements Tickable {
     this.summon = new RideCar(scene);
     this.phone = new Phone(container);
     this.phone.onCallCar(() => this.callCar());
+    this.debug = new DebugOverlay(container, import.meta.env.DEV);
     this.entities = new EntityManager(() => camera.position, 90);
 
     // Scripted patrons that walk in/out of the restaurant + phone shop, sit,
@@ -184,6 +189,26 @@ export class Game implements Tickable {
     this.entities.update(dt);
     this.minimap.update(pPos, cPos, this.mode);
     this.hud.setSpeed(this.mode === "driving" ? formatSpeed(this.car.speed) : null);
+    this.updateDebug();
     this.input.endFrame();
+  }
+
+  toggleDebug(): void { this.debug.toggle(); }
+
+  private updateDebug(): void {
+    const p = this.mode === "driving" ? this.car.position : this.character.position;
+    this.camera.getWorldDirection(this.lookDir);
+    // nearest POI by raw distance (not radius-gated), so the overlay always anchors.
+    let nearest: { label: string; x: number; z: number; dist: number } | null = null;
+    for (const poi of POIS) {
+      const d = Math.hypot(p.x - poi.x, p.z - poi.z);
+      if (!nearest || d < nearest.dist) nearest = { label: poi.label, x: poi.x, z: poi.z, dist: d };
+    }
+    this.debug.update({
+      player: { x: p.x, z: p.z },
+      look: { x: this.lookDir.x, z: this.lookDir.z },
+      nearest,
+      mode: this.mode,
+    });
   }
 }

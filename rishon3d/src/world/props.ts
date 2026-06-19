@@ -218,6 +218,19 @@ export function benchInstances(props: PropDef[]): THREE.Object3D {
   return makeInstanced(benchGeo(), benchMat(), pl, 0);
 }
 
+// A single bench you can rotate (instanced benches all share rotation 0). The
+// default bench has its backrest on the -z side, so you sit facing +z (south);
+// pass rotationY=Math.PI to face the seat the other way (e.g. a park bench that
+// should face the plaza/street to its north). A seated NPC's yaw must match.
+export function makeBenchMesh(x: number, z: number, rotationY = 0): THREE.Mesh {
+  const m = new THREE.Mesh(benchGeo(), benchMat());
+  m.position.set(x, 0, z);
+  m.rotation.y = rotationY;
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+
 export function makeStreetLight(def: PropDef): THREE.Object3D {
   const g = new THREE.Group();
   g.position.set(def.x, 0, def.z);

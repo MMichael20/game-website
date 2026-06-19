@@ -14,7 +14,7 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { PALETTE } from "./palette";
-import { MAIN_RESTAURANT, shopFront, SHOP_Z } from "./districtPois";
+import { MAIN_RESTAURANT, shopFront, SHOP_Z, INDOOR_TABLES, INDOOR_CHAIR_DX } from "./districtPois";
 
 const MD = MAIN_RESTAURANT;
 const FRONT = shopFront(MD.d);        // +Z storefront plane (93)
@@ -118,12 +118,14 @@ export function makeRestaurantInterior(): THREE.Object3D {
   furniture.push(tinted(5.0, 0.4, 0.5, MD.x - 0.4, 3.0, BACK + 0.5, C.steelDark));  // overhead shelf
   furniture.push(tinted(2.2, 0.7, 0.5, MD.x + 1.4, 2.0, BACK + 0.5, C.steelDark));  // range hood
 
-  // --- indoor dining: two tables with chairs (south, near the entrance) ------
-  const tables: [number, number][] = [[MD.x - 2.6, SHOP_Z + 2.2], [MD.x + 2.6, SHOP_Z + 2.2]];
+  // --- indoor dining: two tables with chairs (south, near the entrance). Built
+  // from the shared INDOOR_TABLES / INDOOR_CHAIR_DX so a chair is ALWAYS under
+  // every NPC seat (INDOOR_TABLE_SEATS / INDOOR_DINER_SEATS derive from these). ---
+  const tables: [number, number][] = INDOOR_TABLES.map((t) => [t.x, t.z]);
   for (const [tx, tz] of tables) {
     indoorTable(tx, tz, furniture);
-    chair(tx - 0.95, tz, Math.PI / 2, furniture);
-    chair(tx + 0.95, tz, -Math.PI / 2, furniture);
+    chair(tx - INDOOR_CHAIR_DX, tz, Math.PI / 2, furniture);
+    chair(tx + INDOOR_CHAIR_DX, tz, -Math.PI / 2, furniture);
   }
 
   // --- booth bench along the left wall + its table ---------------------------

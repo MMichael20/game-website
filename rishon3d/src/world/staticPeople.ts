@@ -11,7 +11,7 @@ import * as THREE from "three";
 import { makeHumanoid, type HumanoidPalette } from "../entities/Humanoid";
 import {
   RESTAURANT_STAFF, BAKERY_STAFF, PHONE_SHOP_STAFF, PHONE_SHOP_INSIDE,
-  TAXI_WAIT, PARK_BENCH, PARK_CENTER, INDOOR_TABLE_SEATS, seatClusters,
+  TAXI_WAIT, PARK_BENCH, PARK_CENTER, INDOOR_DINER_SEATS, seatClusters,
 } from "./districtPois";
 
 const SIT_DROP = 0.4, LEG_SIT = -1.5, ARM_SIT = -0.6;
@@ -71,8 +71,8 @@ export function makeStaticPeople(): THREE.Object3D {
   g.add(sitter(P[5], PARK_BENCH.x, PARK_BENCH.z, Math.PI));              // bench, facing the street
   g.add(stander(P[2], PARK_CENTER.x - 3.0, PARK_CENTER.z + 0.5, 0.6));
 
-  // --- indoor diners seated at the restaurant tables ---
-  INDOOR_TABLE_SEATS.forEach((s, i) => g.add(sitter(P[i % P.length], s.x, s.z, s.faceYaw)));
+  // --- indoor diners seated at the restaurant tables (inner chairs) ---
+  INDOOR_DINER_SEATS.forEach((s, i) => g.add(sitter(P[i % P.length], s.x, s.z, s.faceYaw)));
 
   // --- a couple of patio diners at outer clusters (face the table center) ---
   const cl = seatClusters();

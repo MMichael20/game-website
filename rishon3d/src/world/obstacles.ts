@@ -7,31 +7,35 @@
 // Pure data + a cheap per-frame push-out (no THREE) -> unit-testable.
 
 import { RESTAURANTS, SHOP_Z, HOUSE, TAXI_CAR, type Vec2 } from "./districtPois";
-import { INFILL_FOOTPRINTS, PARKED_CAR_SPOTS } from "./restaurantStreet";
-import type { Rect } from "../game/wander";
+import { INFILL_FOOTPRINTS, PARKED_CAR_SPOTS, restaurantPropObstacles } from "./restaurantStreet";
+import { secondaryPropObstacles } from "./secondaryLocations";
+import { residentialPropObstacles } from "./residential";
+import { rectAround, type Rect } from "../game/wander";
 
-const MARGIN = 0.25; // keep-clear band so NPCs graze rather than touch
-
-function rect(cx: number, cz: number, w: number, d: number): Rect {
-  return {
-    minX: cx - w / 2 - MARGIN, maxX: cx + w / 2 + MARGIN,
-    minZ: cz - d / 2 - MARGIN, maxZ: cz + d / 2 + MARGIN,
-  };
-}
+const M = 0.25; // keep-clear band so NPCs graze rather than touch
 
 // Curbside cars run their length along x (~3.6) and ~1.8 across (z).
 const CAR_W = 3.8, CAR_D = 2.0;
 
+// The full solid-obstacle set the scripted patrons push out of. Buildings/house/
+// cars here; the chunky PROPS come from each location builder's *PropObstacles()
+// (so a new prop is covered by adding its footprint right where it's placed).
+// EXCLUDED by design: open-shell interiors (patrons enter via the door) and all
+// SEATING (patio clusters, indoor chairs, PARK_BENCH) — those are sit targets.
 export const PATRON_OBSTACLES: Rect[] = [
   // closed restaurants are solid bodies centered on the building front line.
-  ...RESTAURANTS.filter((r) => !r.open).map((r) => rect(r.x, SHOP_Z, r.w, r.d)),
+  ...RESTAURANTS.filter((r) => !r.open).map((r) => rectAround(r.x, SHOP_Z, r.w, r.d, M)),
   // skyline + west-flank infill buildings.
-  ...INFILL_FOOTPRINTS.map((f) => rect(f.x, f.z, f.width, f.depth)),
+  ...INFILL_FOOTPRINTS.map((f) => rectAround(f.x, f.z, f.width, f.depth, M)),
   // the player house.
-  rect(HOUSE.x, HOUSE.z, HOUSE.w, HOUSE.d),
+  rectAround(HOUSE.x, HOUSE.z, HOUSE.w, HOUSE.d, M),
   // curbside cars (parked + taxi).
-  ...PARKED_CAR_SPOTS.map((c) => rect(c.x, c.z, CAR_W, CAR_D)),
-  rect(TAXI_CAR.x, TAXI_CAR.z, CAR_W, CAR_D),
+  ...PARKED_CAR_SPOTS.map((c) => rectAround(c.x, c.z, CAR_W, CAR_D, M)),
+  rectAround(TAXI_CAR.x, TAXI_CAR.z, CAR_W, CAR_D, M),
+  // chunky props from each location (planters, stand, cart, trees, hedges, bins...)
+  ...restaurantPropObstacles(),
+  ...secondaryPropObstacles(),
+  ...residentialPropObstacles(),
 ];
 
 // If `pos` is inside any obstacle rect, push it out to the nearest edge (smallest

@@ -96,12 +96,30 @@ export const RESTAURANT_COUNTER: Vec2 = { x: MD.x - 0.6, z: SHOP_Z - 1.6 };
 // Staff stand-point behind the counter (cashier idles here).
 export const RESTAURANT_STAFF: Vec2 = { x: MD.x - 0.6, z: SHOP_Z - 3.0 };
 
-// Indoor table seats (where scripted diners sit; face toward the table center).
+// Indoor dining — the SINGLE SOURCE OF TRUTH for the two indoor tables, their
+// chairs and the seats NPCs use. restaurantInterior builds tables+chairs from
+// these exact constants (so a chair is always under every seat), and the seat
+// lists below are derived as table.x +/- INDOOR_CHAIR_DX — never hand-typed table
+// centers. (The floating-diner bug came from seats pointing at table centers.)
 export interface Seat extends Vec2 { faceYaw: number }
-export const INDOOR_TABLE_SEATS: Seat[] = [
-  { x: MD.x - 2.6, z: SHOP_Z + 2.0, faceYaw: Math.PI / 2 },
-  { x: MD.x + 2.6, z: SHOP_Z + 2.0, faceYaw: -Math.PI / 2 },
+export const INDOOR_TABLES: Vec2[] = [
+  { x: MD.x - 2.6, z: SHOP_Z + 2.2 },
+  { x: MD.x + 2.6, z: SHOP_Z + 2.2 },
 ];
+export const INDOOR_CHAIR_DX = 0.95; // chair offset along x from each table center
+
+// Scripted patrons sit on the OUTER chairs (away from CX): the Patron sit-facing
+// heuristic (face +x when seat.x < CX, else -x) only reads correctly there.
+export const INDOOR_TABLE_SEATS: Seat[] = INDOOR_TABLES.map((t) => {
+  const outer = t.x < CX ? t.x - INDOOR_CHAIR_DX : t.x + INDOOR_CHAIR_DX;
+  return { x: outer, z: t.z, faceYaw: t.x < CX ? Math.PI / 2 : -Math.PI / 2 };
+});
+// Always-present static diners take the INNER chairs (distinct seats, so they
+// never double up with a scripted diner). They face the table via faceYaw.
+export const INDOOR_DINER_SEATS: Seat[] = INDOOR_TABLES.map((t) => {
+  const inner = t.x < CX ? t.x + INDOOR_CHAIR_DX : t.x - INDOOR_CHAIR_DX;
+  return { x: inner, z: t.z, faceYaw: t.x < CX ? -Math.PI / 2 : Math.PI / 2 };
+});
 
 // Bakery-cafe (west shell): walk-in door + interior anchors.
 const BD = BAKERY;

@@ -46,7 +46,7 @@ describe("buildItinerary", () => {
   });
 
   it("drives a looping patron that never finishes and sits when its routine has a sit-down", () => {
-    const sitters = new Set(["dineRestaurant", "outdoorDine", "visitPark"]);
+    const sitters = new Set(["dineRestaurant", "outdoorDine"]);
     let seed = 0;
     while (seed < 1000 && !buildItinerary(seed).activities.some((a) => sitters.has(a))) seed++;
     const it = buildItinerary(seed);

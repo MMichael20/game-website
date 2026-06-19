@@ -14,12 +14,29 @@ import { tintGeo, mergeTinted } from "./objects/voxel";
 import { makeFlower } from "./objects/flower";
 import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
 import { makeCarBody } from "../entities/carMesh";
-import { treeInstances, benchInstances, trashcanInstances, makeStreetLight } from "./props";
+import { treeInstances, benchInstances, makeBenchMesh, trashcanInstances, makeStreetLight } from "./props";
 import {
   PHONE_SHOP, PHONE_SHOP_DOOR, shopFront, SHOP_Z,
   PARK_CENTER, PARK_BENCH, TAXI_CAR, TAXI_WAIT,
 } from "./districtPois";
 import type { PropDef } from "./rishonMap";
+import { rectAround, type Rect } from "../game/wander";
+
+// Footprints of the pocket-park props NPCs must not walk through (trees, the
+// side bench, bin, lamp, planters). PARK_BENCH is EXCLUDED — patrons sit there.
+// Kept next to makePocketPark's placements so they stay in sync. -> obstacles.ts
+export function secondaryPropObstacles(): Rect[] {
+  const { x: cx, z: cz } = PARK_CENTER;
+  const out: Rect[] = [];
+  for (const [tx, tz] of [[cx - 3.8, cz + 3.4], [cx + 3.8, cz + 3.8], [cx + 0.2, cz + 4.2]] as [number, number][]) {
+    out.push(rectAround(tx, tz, 1.6, 1.6, 0.2)); // trees
+  }
+  out.push(rectAround(cx - 4.0, cz - 0.5, 1.6, 0.6, 0.2)); // side bench (not PARK_BENCH)
+  out.push(rectAround(cx + 4.8, cz - 2.2, 0.7, 0.7, 0.15)); // bin
+  out.push(rectAround(cx - 4.8, cz - 2.2, 0.5, 0.5, 0.15)); // lamp
+  for (let i = 0; i < 4; i++) out.push(rectAround(cx - 4.5 + i * 3, cz - 5.0, 2.5, 0.9, 0.2)); // planters
+  return out;
+}
 
 function tinted(w: number, h: number, d: number, x: number, y: number, z: number, hex: number): THREE.BufferGeometry {
   const b = new THREE.BoxGeometry(w, h, d);
@@ -211,11 +228,10 @@ export function makePocketPark(): THREE.Object3D {
     { id: "pk-t3", kind: "tree", x: cx + 0.2, z: cz + 4.2 },
   ];
   group.add(treeInstances(trees));
-  // one bench sits exactly at PARK_BENCH so the idler + visiting patrons rest on it.
-  group.add(benchInstances([
-    { id: "pk-b1", kind: "bench", x: PARK_BENCH.x, z: PARK_BENCH.z },
-    { id: "pk-b2", kind: "bench", x: cx - 4.0, z: cz - 0.5 },
-  ]));
+  // the main bench sits at PARK_BENCH, rotated to FACE the plaza/street (north) so
+  // the seated idler (yaw=PI) sits the right way round, not into the backrest.
+  group.add(makeBenchMesh(PARK_BENCH.x, PARK_BENCH.z, Math.PI));
+  group.add(benchInstances([{ id: "pk-b2", kind: "bench", x: cx - 4.0, z: cz - 0.5 }]));
   group.add(trashcanInstances([{ id: "pk-tc", kind: "trashcan", x: cx + 4.8, z: cz - 2.2 }]));
   group.add(makeStreetLight({ id: "pk-l", kind: "streetlight", x: cx - 4.8, z: cz - 2.2 }));
 

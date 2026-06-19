@@ -13,7 +13,7 @@ import {
   BAKERY_DOOR, BAKERY_INSIDE, BAKERY_COUNTER,
   PHONE_SHOP_DOOR, PHONE_SHOP_INSIDE, PHONE_SHOP_COUNTER,
   TAXI_WAIT, CROSSWALK, PATIO_WALK_Z, FAR_WALK_Z,
-  PARK_CENTER, PARK_BENCH, seatClusters, CHAIR_OFFSETS, INDOOR_TABLE_SEATS,
+  PARK_CENTER, seatClusters, CHAIR_OFFSETS, INDOOR_TABLE_SEATS,
   HOUSE_DOOR, CX, type Vec2,
 } from "../world/districtPois";
 import type { Waypoint, PatronState } from "./patronRoutine";
@@ -78,9 +78,12 @@ function outdoorDine(rng: Rng): Waypoint[] {
 }
 
 function visitPark(rng: Rng): Waypoint[] {
+  // Scripted visitors stroll in and idle in the plaza; the always-present static
+  // idler takes the bench (a scripted patron on it would sit sideways, since the
+  // Patron sit-facing heuristic is tuned for the x-facing patio/indoor chairs).
   return [
     wp({ x: PARK_CENTER.x, z: PATIO_WALK_Z }, "patrol"),
-    wp(PARK_BENCH, "seated", jit(rng, 8, 4)),
+    wp({ x: PARK_CENTER.x, z: PARK_CENTER.z }, "waiting", jit(rng, 7, 4)),
     wp({ x: PARK_CENTER.x + 3, z: PATIO_WALK_Z }, "leaving"),
   ];
 }

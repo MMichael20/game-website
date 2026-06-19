@@ -15,6 +15,22 @@ import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
 import { treeInstances, bushInstances, benchInstances } from "./props";
 import type { PropDef } from "./rishonMap";
 import { CROSSWALK, PARK_CENTER } from "./districtPois";
+import { rectAround, type Rect } from "../game/wander";
+
+// Footprints of the residential dressing NPCs must not walk through (border
+// planters, hedges, trees, the corner bench). Kept beside the placements below.
+// -> world/obstacles.ts
+export function residentialPropObstacles(): Rect[] {
+  const out: Rect[] = [];
+  for (const x of [64, 70, 100, 106]) out.push(rectAround(x, 119.2, 2.4, 1.0, 0.2)); // border planters
+  out.push(rectAround(84, 130, 44, 0.9, 0.2));   // south boundary hedge run
+  out.push(rectAround(88.5, 120, 3, 0.9, 0.2));  // lot-divider hedge
+  for (const [tx, tz] of [[63, 124], [104, 126], [112, 120], [118, 98]] as [number, number][]) {
+    out.push(rectAround(tx, tz, 1.6, 1.6, 0.2)); // trees
+  }
+  out.push(rectAround(116, 100, 1.6, 0.6, 0.2)); // east-corner bench
+  return out;
+}
 
 function paverSlab(w: number, d: number, x: number, z: number): THREE.Mesh {
   const tex = makeSidewalkTexture();

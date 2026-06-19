@@ -2,6 +2,15 @@ import type { Vec2, BuildingDef } from "../world/rishonMap";
 
 export interface Rect { minX: number; maxX: number; minZ: number; maxZ: number }
 
+// A centered footprint rect with an optional keep-clear margin. Shared by every
+// obstacle/prop builder so NPC collision footprints are defined the same way.
+export function rectAround(cx: number, cz: number, w: number, d: number, margin = 0): Rect {
+  return {
+    minX: cx - w / 2 - margin, maxX: cx + w / 2 + margin,
+    minZ: cz - d / 2 - margin, maxZ: cz + d / 2 + margin,
+  };
+}
+
 export function moveToward(pos: Vec2, target: Vec2, maxStep: number): Vec2 {
   const dx = target.x - pos.x;
   const dz = target.z - pos.z;

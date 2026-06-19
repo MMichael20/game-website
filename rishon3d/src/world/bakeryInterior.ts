@@ -55,10 +55,13 @@ export function makeBakeryInterior(): THREE.Object3D {
   const counterZ = SHOP_Z + 1.2;
   furn.push(tintedBox(4.6, 1.0, 0.8, MD.x - 0.3, 0.5, counterZ, C.counter));        // case body
   furn.push(tintedBox(4.8, 0.12, 0.92, MD.x - 0.3, 1.06, counterZ, C.counterTop));  // case top rail
-  // back wall cake shelves + ice-cream/drinks back counter
+  // back wall cake shelves (against the wall) + a SEPARATE ice-cream/drinks
+  // counter pulled forward into the room, so the tall cones never intersect the
+  // shelf cakes behind them (was: counter flush with shelves -> cake-in-icecream).
+  const backCounterZ = BACK + 1.5;
   for (const sy of [1.6, 2.6, 3.5]) furn.push(tintedBox(MD.w - 1.2, 0.12, 0.5, MD.x, sy, BACK + 0.4, C.shelf));
-  furn.push(tintedBox(4.8, 0.95, 0.55, MD.x, 0.48, BACK + 0.55, C.counter));        // back counter
-  furn.push(tintedBox(5.0, 0.12, 0.66, MD.x, 1.0, BACK + 0.55, C.counterTop));
+  furn.push(tintedBox(4.8, 0.95, 0.6, MD.x, 0.48, backCounterZ, C.counter));        // back counter
+  furn.push(tintedBox(5.0, 0.12, 0.72, MD.x, 1.0, backCounterZ, C.counterTop));
   group.add(tintedMesh(mergeTinted(furn)));
 
   // glass over the pastry case
@@ -79,16 +82,16 @@ export function makeBakeryInterior(): THREE.Object3D {
   add(makeCupcakeMesh({ frostingColor: FROSTING.mint }), MD.x + 0.2, caseY, counterZ - 0.1);
   add(makeCupcakeMesh({ frostingColor: FROSTING.lemon }), MD.x + 0.7, caseY, counterZ + 0.1);
   add(makeDonutMesh({ glazeColor: GLAZE.chocolate }), MD.x + 1.4, caseY, counterZ);
-  // cakes on the back shelves
-  add(makeCakeMesh({ frostingColor: FROSTING.cream, tiers: 3 }), MD.x - 1.6, 1.72, BACK + 0.5);
-  add(makeCakeMesh({ frostingColor: FROSTING.pink }), MD.x + 1.6, 1.72, BACK + 0.5);
+  // cakes on the back shelves (2 tiers max so they fit under the shelf above)
+  add(makeCakeMesh({ frostingColor: FROSTING.cream, tiers: 2 }), MD.x - 1.6, 1.72, BACK + 0.5);
+  add(makeCakeMesh({ frostingColor: FROSTING.pink, tiers: 2 }), MD.x + 1.6, 1.72, BACK + 0.5);
   add(makeCupcakeMesh(), MD.x - 0.4, 2.72, BACK + 0.5);
   add(makeCupcakeMesh({ frostingColor: FROSTING.lemon }), MD.x + 0.4, 2.72, BACK + 0.5);
-  // ice creams + drinks on the back counter
-  add(makeIceCreamMesh(ICE_CREAM_PRESETS.classic), MD.x - 1.8, 1.05, BACK + 0.55);
-  add(makeIceCreamMesh(ICE_CREAM_PRESETS.mintChoc), MD.x - 1.2, 1.05, BACK + 0.55);
-  add(makeDrinkCupMesh(DRINK_PRESETS.berry), MD.x + 1.2, 1.05, BACK + 0.55);
-  add(makeDrinkCupMesh(DRINK_PRESETS.orange), MD.x + 1.7, 1.05, BACK + 0.55);
+  // ice creams + drinks on the back counter (pulled forward, clear of the shelves)
+  add(makeIceCreamMesh(ICE_CREAM_PRESETS.classic), MD.x - 1.8, 1.05, backCounterZ);
+  add(makeIceCreamMesh(ICE_CREAM_PRESETS.mintChoc), MD.x - 1.1, 1.05, backCounterZ);
+  add(makeDrinkCupMesh(DRINK_PRESETS.berry), MD.x + 1.1, 1.05, backCounterZ);
+  add(makeDrinkCupMesh(DRINK_PRESETS.orange), MD.x + 1.7, 1.05, backCounterZ);
 
   // --- a small cafe table near the entrance with a cake + cupcakes ---
   const tableX = MD.x + 1.4, tableZ = SHOP_Z + 2.4;
