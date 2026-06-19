@@ -19,6 +19,8 @@ const EXPECTED_POIS: Poi[] = [
   { kind: "house", id: "house", label: "Home", glyph: "H", color: "#f4c542", x: 74, z: 118.5, r: 4 },
   // Cafe (NEW): CAFE_DOOR.x = 62 + 12*0.26 = 65.12; z = shopFront(9) = 93.5.
   { kind: "cafe", id: "cafe", label: "Cafe", glyph: "C", color: "#caa46a", x: 65.12, z: 93.5, r: 4.5 },
+  // Office (Task 12): OFFICE_DOOR = { x: OFFICE_WEST - 1 = 132, z: OFFICE.z + 2 = 102 }.
+  { kind: "office", id: "office", label: "Hi-Tech Office", glyph: "O", color: "#4aa3d0", x: 132, z: 102, r: 4.5 },
 ];
 
 const byId = <T extends { id: string }>(arr: T[]) =>

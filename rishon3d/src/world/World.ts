@@ -4,6 +4,7 @@ import { makeBuilding, makeGround } from "./builders";
 import type { RishonMap } from "./rishonMap";
 import { makeClouds } from "./clouds";
 import { makeRestaurantStreet } from "./restaurantStreet";
+import { makeOfficeBlock } from "./officeBlock";
 import { restaurantColliders } from "./restaurantColliders";
 
 // V1 COMPACT WORLD. The whole scene is the restaurant-block slice
@@ -25,8 +26,13 @@ export class World {
 
     scene.add(makeRestaurantStreet());
 
+    // Hi-tech office block (east wing): a glass tower + walk-in lobby + plaza,
+    // a sibling of the restaurant street. Its colliders (lobby open-front shell +
+    // solid tower core) come from restaurantColliders() below.
+    scene.add(makeOfficeBlock());
+
     // District collision: walk-in shells (open storefront), solid closed
-    // restaurants + skyline infill + the player house.
+    // restaurants + skyline infill + the player house + the office lobby/tower.
     for (const c of restaurantColliders()) {
       const body = physics.world.createRigidBody(
         RAPIER.RigidBodyDesc.fixed().setTranslation(c.x, c.y, c.z),

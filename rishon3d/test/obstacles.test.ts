@@ -8,6 +8,7 @@ import {
   RESTAURANT_COUNTER, RESTAURANT_INSIDE, BAKERY_COUNTER, PHONE_SHOP_COUNTER,
   CAFE_COUNTER, CAFE_INSIDE, CAFE_TABLE_SEATS,
   PARK_CENTER, PARK_D, PARK_PICNIC_SEATS,
+  OFFICE_LOBBY, OFFICE_DESK,
 } from "../src/world/districtPois";
 import { makePhoneShop, makeRealPark } from "../src/world/secondaryLocations";
 
@@ -58,6 +59,10 @@ describe("patron obstacles", () => {
       { label: "cafeCounter", p: CAFE_COUNTER },
       { label: "cafeInside", p: CAFE_INSIDE },
       ...CAFE_TABLE_SEATS.map((s, i) => ({ label: `cafeTableSeat${i}`, p: s })),
+      // Task 12: the office lobby waypoint + reception desk are walk-in dwell
+      // targets — they must NOT sit inside any solid obstacle (tower or props).
+      { label: "officeLobby", p: OFFICE_LOBBY },
+      { label: "officeDesk", p: OFFICE_DESK },
     ];
     const trapped = targets.filter((t) => inside(t.p)).map((t) => t.label);
     expect(trapped).toEqual([]);

@@ -43,13 +43,14 @@ import {
   PARK_CENTER,
   PICKUP_STAND,
   HOUSE_DOOR,
+  OFFICE_DOOR,
 } from "./districtPois";
 import { type Rect } from "../game/wander";
 
 // --- POI types (owned here; the registry is their single source) --------------
 // A named gameplay anchor's kind. Drives interaction prompts + minimap colouring.
 export type PoiKind =
-  | "restaurant" | "bakery" | "cafe" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk" | "house";
+  | "restaurant" | "bakery" | "cafe" | "counter" | "phoneShop" | "office" | "taxi" | "park" | "pickup" | "crosswalk" | "house";
 
 // The flat POI record consumed by the minimap legend + the interaction prompts.
 // All in world space; `r` is the interaction/approach radius.
@@ -122,6 +123,11 @@ export const LOCATIONS: LocationDef[] = [
     id: "phoneShop", name: "Phone Shop", type: "shop",
     minimap: { glyph: "P", color: "#3aa0ff" },
     zones: [{ center: PHONE_SHOP_DOOR, r: 4.5, prompt: "Phone Shop", kind: "phoneShop" }],
+  },
+  {
+    id: "office", name: "Hi-Tech Office", type: "office",
+    minimap: { glyph: "O", color: "#4aa3d0" },
+    zones: [{ center: OFFICE_DOOR, r: 4.5, prompt: "Hi-Tech Office", kind: "office" }],
   },
   {
     id: "taxi", name: "Taxi Stand", type: "taxi",

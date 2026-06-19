@@ -11,6 +11,7 @@ import {
   RESTAURANT_DOOR, RESTAURANT_INSIDE, RESTAURANT_COUNTER,
   BAKERY_DOOR, BAKERY_INSIDE, BAKERY_COUNTER,
   PHONE_SHOP_DOOR, PHONE_SHOP_INSIDE, PHONE_SHOP_COUNTER,
+  OFFICE_DOOR, OFFICE_LOBBY, OFFICE_DESK, OFFICE_PLAZA,
   TAXI_WAIT, CROSSWALK, PATIO_WALK_Z, FAR_WALK_Z,
   PARK_CENTER, PARK_BENCH,
   INDOOR_TABLE_SEATS,
@@ -186,20 +187,24 @@ export function cafeRoute(side = 0): Waypoint[] {
   ];
 }
 
-// Office lobby visitor: stroll the patio lane, enter the phone shop and wait at
-// the counter as though conducting business, then leave. Provides a "business
-// errand" behavior type distinct from the phone-shop browser.
+// Office lobby visitor: approach across the plaza, walk in through the open WEST
+// front of the hi-tech office lobby, wait at the reception desk as though
+// conducting business, then leave and loop. Re-pointed (Task 12) to the REAL
+// OFFICE_* anchors now that the office block geometry exists — it previously
+// proxied the phone-shop anchors as a placeholder (Task 7). Still a closed loop.
+// The lobby faces WEST (the cross street), so the desk-facing yaw is -PI/2
+// (face +x / east, toward the reception desk at the back of the lobby).
 export function officeLobbyRoute(side = 0): Waypoint[] {
-  const COUNTER_FACE_YAW = Math.PI; // face the counter
+  const DESK_FACE_YAW = -Math.PI / 2; // face east (+x) toward the reception desk
   return [
-    wp(laneApproach(PHONE_SHOP_DOOR, side), "toDoor"),
-    wp(PHONE_SHOP_DOOR, "entering"),
-    wp(PHONE_SHOP_INSIDE, "entering"),
-    wp(PHONE_SHOP_COUNTER, "toCounter"),
-    wp(PHONE_SHOP_COUNTER, "ordering", 8, COUNTER_FACE_YAW),
-    wp(PHONE_SHOP_INSIDE, "leaving"),
-    wp(PHONE_SHOP_DOOR, "leaving"),
-    wp(laneApproach(PHONE_SHOP_DOOR, side + 8), "patrol"),
+    wp({ x: OFFICE_PLAZA.x, z: OFFICE_PLAZA.z + side }, "toDoor"),
+    wp(OFFICE_DOOR, "entering"),
+    wp(OFFICE_LOBBY, "entering"),
+    wp(OFFICE_DESK, "toCounter"),
+    wp(OFFICE_DESK, "ordering", 8, DESK_FACE_YAW),
+    wp(OFFICE_LOBBY, "leaving"),
+    wp(OFFICE_DOOR, "leaving"),
+    wp({ x: OFFICE_PLAZA.x, z: OFFICE_PLAZA.z + side - 6 }, "patrol"),
   ];
 }
 

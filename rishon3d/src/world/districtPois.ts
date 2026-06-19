@@ -201,6 +201,9 @@ export const EAST_CROSS_JUNCTION: Vec2 = { x: EAST_CROSS_X, z: ROAD_Z };
 // tower must come from its own builder, not the box path).
 export const OFFICE = { x: 142, z: 100, w: 18, d: 16, h: 22 };
 const OFFICE_WEST = OFFICE.x - OFFICE.w / 2;     // 133: street-facing (west) face
+// Ground-floor lobby is a walk-in shell; the TOWER above it is solid. The lobby
+// is the bottom slab of the tower height — tall enough to feel like a glass atrium.
+export const OFFICE_LOBBY_H = 6;                 // ground-floor (walk-in) clear height
 // Lobby door on the west face, ~1u clear of the solid wall, offset toward the
 // junction end so the approach reads off the cross street.
 export const OFFICE_DOOR: Vec2 = { x: OFFICE_WEST - 1.0, z: OFFICE.z + 2 };
@@ -209,6 +212,15 @@ export const OFFICE_DOOR: Vec2 = { x: OFFICE_WEST - 1.0, z: OFFICE.z + 2 };
 export const OFFICE_LOBBY: Vec2 = { x: OFFICE.x - OFFICE.w * 0.3, z: OFFICE.z + 1 };
 export const OFFICE_DESK: Vec2 = { x: OFFICE.x, z: OFFICE.z - OFFICE.d * 0.28 };
 export const OFFICE_PLAZA: Vec2 = { x: OFFICE_WEST - 3.5, z: OFFICE.z + 2 };
+// Staff stand-point behind the reception desk (a worker idles here, facing west
+// toward arriving visitors). Derived from the desk + a small north (-z) offset.
+export const OFFICE_STAFF: Vec2 = { x: OFFICE.x, z: OFFICE_DESK.z - 1.4 };
+// Lobby waiting seats: a small bench cluster on the south wall, facing the desk
+// (north, -z → faceYaw = 0 in the sit heuristic's "face -z" convention).
+export const OFFICE_SEATS: (Vec2 & { faceYaw: number })[] = [
+  { x: OFFICE.x - 3.5, z: OFFICE.z + OFFICE.d * 0.28, faceYaw: 0 },
+  { x: OFFICE.x - 1.5, z: OFFICE.z + OFFICE.d * 0.28, faceYaw: 0 },
+];
 
 // Cafe (Task 9 builds the geometry): a small walk-in shell WEST of the bakery,
 // extending the hero strip's storefront row. Its front face derives from SHOP_Z

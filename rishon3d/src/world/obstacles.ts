@@ -9,6 +9,7 @@
 import { RESTAURANTS, SHOP_Z, HOUSE, TAXI_CAR, type Vec2 } from "./districtPois";
 import { INFILL_FOOTPRINTS, PARKED_CAR_SPOTS, restaurantPropObstacles, cafePropObstacles } from "./restaurantStreet";
 import { secondaryPropObstacles } from "./secondaryLocations";
+import { officePropObstacles } from "./officeBlock";
 import { residentialPropObstacles } from "./residential";
 import { allLocationObstacles } from "./locations";
 import { rectAround, type Rect } from "../game/wander";
@@ -37,6 +38,7 @@ export const PATRON_OBSTACLES: Rect[] = [
   ...restaurantPropObstacles(),
   ...cafePropObstacles(),
   ...secondaryPropObstacles(),
+  ...officePropObstacles(),
   ...residentialPropObstacles(),
   // Additive registry hook: solid footprints declared directly on a LocationDef.
   // Empty for the current locations (their solids come from the spreads above),
