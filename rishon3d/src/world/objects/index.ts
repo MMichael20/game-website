@@ -15,6 +15,15 @@ import { makeDrinkCup, DRINK_PRESETS } from "./drinkCup";
 import { makeUmbrella } from "./umbrella";
 import { makePhone, PHONE_SCREENS } from "./phone";
 import { makeGlassFrame, GLASS_PRESETS } from "./glass";
+import { makeTrafficLight } from "./trafficLight";
+import { makeStopSign } from "./stopSign";
+import { makeBikeRack } from "./bikeRack";
+import { makeFountain } from "./fountain";
+import { makeKiosk } from "./kiosk";
+import { makeAwning } from "./awning";
+import { makeSignBand } from "./signBand";
+import { makeWallLamp } from "./wallLamp";
+import { makePlanter } from "./planter";
 import { FROSTING, SPONGE, GLAZE, DRINK } from "./objectPalette";
 
 export * from "./voxel";
@@ -28,6 +37,15 @@ export * from "./drinkCup";
 export * from "./umbrella";
 export * from "./phone";
 export * from "./glass";
+export * from "./trafficLight";
+export * from "./stopSign";
+export * from "./bikeRack";
+export * from "./fountain";
+export * from "./kiosk";
+export * from "./awning";
+export * from "./signBand";
+export * from "./wallLamp";
+export * from "./planter";
 
 export interface ObjectVariant { label: string; geo: () => THREE.BufferGeometry }
 export interface ObjectEntry { name: string; variants: ObjectVariant[] }
@@ -71,5 +89,39 @@ export const OBJECT_LIBRARY: ObjectEntry[] = [
     { label: "office",     geo: () => makeGlassFrame(GLASS_PRESETS.office) },
     { label: "house",      geo: () => makeGlassFrame(GLASS_PRESETS.house) },
     { label: "door",       geo: () => makeGlassFrame(GLASS_PRESETS.door) },
+  ] },
+  { name: "trafficLight", variants: [
+    { label: "standard", geo: () => makeTrafficLight() },
+    { label: "tall",     geo: () => makeTrafficLight({ poleH: 4.0 }) },
+  ] },
+  { name: "stopSign", variants: [
+    { label: "standard", geo: () => makeStopSign() },
+  ] },
+  { name: "bikeRack", variants: [
+    { label: "3-loop", geo: () => makeBikeRack() },
+    { label: "5-loop", geo: () => makeBikeRack({ loops: 5 }) },
+  ] },
+  { name: "fountain", variants: [
+    { label: "single-tier", geo: () => makeFountain() },
+    { label: "two-tier",    geo: () => makeFountain({ tiers: 2 }) },
+  ] },
+  { name: "kiosk", variants: [
+    { label: "standard", geo: () => makeKiosk() },
+    { label: "wide",     geo: () => makeKiosk({ w: 3.2 }) },
+  ] },
+  { name: "awning", variants: [
+    { label: "red-white", geo: () => makeAwning({ w: 3.0, colorA: 0xcc2222, colorB: 0xfafafa }) },
+    { label: "blue-white", geo: () => makeAwning({ w: 3.0, colorA: 0x2255cc, colorB: 0xfafafa }) },
+  ] },
+  { name: "signBand", variants: [
+    { label: "dark",  geo: () => makeSignBand({ w: 3.0 }) },
+    { label: "red",   geo: () => makeSignBand({ w: 3.0, color: 0x991111 }) },
+  ] },
+  { name: "wallLamp", variants: [
+    { label: "standard", geo: () => makeWallLamp() },
+  ] },
+  { name: "planter", variants: [
+    { label: "plain",        geo: () => makePlanter() },
+    { label: "with flowers", geo: () => makePlanter({ withFlowers: true }) },
   ] },
 ];

@@ -71,6 +71,14 @@ export const LEAF = 0x57b04a;
 export const POT_TERRACOTTA = 0xc5703a;
 export const POT_SOIL = 0x3a2a1c;
 
+// Street / urban objects
+export const SIGN   = { red: 0xcc2222, white: 0xfafafa } as const
+export const OFFICE_BLUE = 0x2d6a9e
+export const AWNING = { stripe: 0xfafafa } as const
+export const LAMP   = { bracket: 0x3a3a3a, shade: 0xe8d88a, bulb: 0xfff9d6 } as const
+export const TRAFFIC = { pole: 0x333333, housing: 0x222222, red: 0xee2222, amber: 0xf5a623, green: 0x22cc55 } as const
+export const WATER   = 0x5ab8f0
+
 // Glass panels (storefront windows, office facades, doors)
 export const GLASS = {
   pane:        0xc8e0f0,  // light sky-blue tint for glass
