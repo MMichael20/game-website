@@ -9,6 +9,7 @@
 import { moveToward, reachedTarget } from "./wander";
 import {
   RESTAURANT_DOOR, RESTAURANT_INSIDE, RESTAURANT_COUNTER,
+  BAKERY_DOOR, BAKERY_INSIDE, BAKERY_COUNTER,
   PHONE_SHOP_DOOR, PHONE_SHOP_INSIDE, PHONE_SHOP_COUNTER,
   TAXI_WAIT, CROSSWALK, PATIO_WALK_Z, FAR_WALK_Z,
   type Vec2, type Seat,
@@ -18,7 +19,7 @@ import {
 
 export type PatronState =
   | "toDoor" | "entering" | "toCounter" | "ordering" | "toTable" | "seated"
-  | "leaving" | "toCrosswalk" | "crossing" | "patrol" | "done";
+  | "waiting" | "leaving" | "toCrosswalk" | "crossing" | "patrol" | "done";
 
 // One scripted leg of a route: walk to `to`, and on arrival enter `state`. If
 // `dwell` > 0 the patron holds in `state` for that many seconds before advancing.
@@ -49,7 +50,9 @@ export interface Patron {
 const REACH = 0.6;
 
 // States in which the humanoid should be posed sitting rather than standing.
-const SITTING: ReadonlySet<PatronState> = new Set<PatronState>(["ordering", "seated"]);
+// Only an actual table seat sits; ordering at a counter and waiting are standing
+// dwells.
+const SITTING: ReadonlySet<PatronState> = new Set<PatronState>(["seated"]);
 
 // --- route builders (derive every coordinate from districtPois anchors) -------
 
@@ -63,27 +66,45 @@ function laneApproach(door: Vec2, side: number): Vec2 {
   return { x: door.x + side, z: PATIO_WALK_Z };
 }
 
-// Full dine-in loop: stroll the lane -> door -> inside -> counter (order) ->
-// indoor seat (eat) -> back out the door -> cross the street. Ends "done".
+// Every route below is a CLOSED CIRCUIT meant to be run with loop:true, so the
+// patron lives a continuous "circular life" instead of finishing and standing
+// frozen. None of them contain a terminal "done" leg.
+
+// Full dine-in loop: stroll the lane -> door -> inside -> counter (order, stand)
+// -> indoor seat (sit + eat) -> back out -> stroll off down the lane -> (loop)
+// back to the door and do it again.
 export function dineInRoute(seat: Seat, side = 0): Waypoint[] {
   return [
     wp(laneApproach(RESTAURANT_DOOR, side), "toDoor"),
     wp(RESTAURANT_DOOR, "entering"),
     wp(RESTAURANT_INSIDE, "entering"),
     wp(RESTAURANT_COUNTER, "toCounter"),
-    wp(RESTAURANT_COUNTER, "ordering", 4),
+    wp(RESTAURANT_COUNTER, "ordering", 3),
     wp({ x: seat.x, z: seat.z }, "toTable"),
     wp({ x: seat.x, z: seat.z }, "seated", 8),
     wp(RESTAURANT_INSIDE, "leaving"),
     wp(RESTAURANT_DOOR, "leaving"),
-    wp(laneApproach(RESTAURANT_DOOR, side), "leaving"),
-    wp({ x: CROSSWALK.x, z: PATIO_WALK_Z }, "toCrosswalk"),
-    wp({ x: CROSSWALK.x, z: FAR_WALK_Z }, "crossing"),
-    wp({ x: CROSSWALK.x, z: FAR_WALK_Z }, "done"),
+    wp(laneApproach(RESTAURANT_DOOR, side + 7), "patrol"),  // stroll off, then loop
   ];
 }
 
-// Phone-shop visitor: lane -> shop door -> inside -> counter (browse) -> out.
+// Bakery customer: lane -> bakery door -> inside -> counter (order, stand) -> out
+// -> stroll off -> (loop). Brings life to the bakery interior.
+export function bakeryRoute(side = 0): Waypoint[] {
+  return [
+    wp(laneApproach(BAKERY_DOOR, side), "toDoor"),
+    wp(BAKERY_DOOR, "entering"),
+    wp(BAKERY_INSIDE, "entering"),
+    wp(BAKERY_COUNTER, "toCounter"),
+    wp(BAKERY_COUNTER, "ordering", 4),
+    wp(BAKERY_INSIDE, "leaving"),
+    wp(BAKERY_DOOR, "leaving"),
+    wp(laneApproach(BAKERY_DOOR, side - 7), "patrol"),
+  ];
+}
+
+// Phone-shop visitor: lane -> shop door -> inside -> counter (browse) -> out ->
+// stroll off -> (loop).
 export function phoneShopRoute(side = 0): Waypoint[] {
   return [
     wp(laneApproach(PHONE_SHOP_DOOR, side), "toDoor"),
@@ -93,23 +114,34 @@ export function phoneShopRoute(side = 0): Waypoint[] {
     wp(PHONE_SHOP_COUNTER, "ordering", 5),
     wp(PHONE_SHOP_INSIDE, "leaving"),
     wp(PHONE_SHOP_DOOR, "leaving"),
-    wp(laneApproach(PHONE_SHOP_DOOR, side), "done"),
+    wp(laneApproach(PHONE_SHOP_DOOR, side + 6), "patrol"),
   ];
 }
 
-// Taxi waiter: walk to the curb stand, wait, then cross the street. Ends "done".
-export function streetCrossRoute(): Waypoint[] {
+// Pedestrian circuit: pace the patio sidewalk, cross at the crosswalk, walk the
+// far sidewalk, cross back -> (loop). Real, continuous street-crossing.
+export function crossingLoopRoute(span = 8): Waypoint[] {
   return [
-    wp({ x: TAXI_WAIT.x, z: PATIO_WALK_Z }, "toCrosswalk"),
-    wp(TAXI_WAIT, "ordering", 6),
+    wp({ x: CROSSWALK.x - span, z: PATIO_WALK_Z }, "patrol"),
     wp({ x: CROSSWALK.x, z: PATIO_WALK_Z }, "toCrosswalk"),
     wp({ x: CROSSWALK.x, z: FAR_WALK_Z }, "crossing"),
-    wp({ x: CROSSWALK.x, z: PATIO_WALK_Z }, "done"),
+    wp({ x: CROSSWALK.x + span, z: FAR_WALK_Z }, "patrol"),
+    wp({ x: CROSSWALK.x, z: FAR_WALK_Z }, "toCrosswalk"),
+    wp({ x: CROSSWALK.x, z: PATIO_WALK_Z }, "crossing"),
   ];
 }
 
-// Patio stroller: pace the walking lane between two x extents, forever. The
-// route loops, so this patron never finishes.
+// Taxi waiter: amble to the curb stand, wait (standing), wander off, then loop
+// back. Never finishes.
+export function taxiWaitRoute(): Waypoint[] {
+  return [
+    wp({ x: TAXI_WAIT.x - 6, z: PATIO_WALK_Z }, "patrol"),
+    wp(TAXI_WAIT, "waiting", 7),
+    wp({ x: TAXI_WAIT.x + 5, z: PATIO_WALK_Z }, "patrol"),
+  ];
+}
+
+// Patio stroller: pace the walking lane between two x extents, forever.
 export function patrolRoute(minX: number, maxX: number): Waypoint[] {
   return [
     wp({ x: minX, z: PATIO_WALK_Z }, "patrol"),

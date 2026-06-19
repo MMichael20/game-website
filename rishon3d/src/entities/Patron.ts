@@ -3,7 +3,7 @@ import type { Tickable } from "../core/Engine";
 import { makeHumanoid, animateWalk, type HumanoidPalette, type HumanoidLimbs } from "./Humanoid";
 import {
   makePatron, stepPatron, isSitting,
-  dineInRoute, phoneShopRoute, streetCrossRoute, patrolRoute,
+  dineInRoute, bakeryRoute, phoneShopRoute, crossingLoopRoute, taxiWaitRoute, patrolRoute,
   type Patron as PatronData, type Waypoint,
 } from "../game/patronRoutine";
 import { INDOOR_TABLE_SEATS, CX, type Seat } from "../world/districtPois";
@@ -27,6 +27,8 @@ export class Patron implements Tickable {
   /** seconds of staggered delay before this patron starts walking */
   private delay: number;
   private wasSitting = false;
+  /** clock used for subtle idle motion while standing still */
+  private idle = 0;
 
   constructor(
     scene: THREE.Scene,
@@ -59,14 +61,23 @@ export class Patron implements Tickable {
 
     if (sitting) {
       if (!this.wasSitting) this.poseSitting();
-    } else {
+    } else if (moving) {
       if (this.wasSitting) this.poseStanding();
-      if (moving) {
-        // face travel direction; advance the walk cycle by distance moved
-        this.object.rotation.y = Math.atan2(dx, dz);
-        this.phase += Math.hypot(dx, dz) * 6;
-      }
-      animateWalk(this.limbs, this.phase, moving ? 0.5 : 0);
+      // face travel direction; advance the walk cycle by distance moved
+      this.object.rotation.y = Math.atan2(dx, dz);
+      this.phase += Math.hypot(dx, dz) * 6;
+      animateWalk(this.limbs, this.phase, 0.5);
+    } else {
+      // standing still (dwelling at a counter / taxi stand): subtle idle life —
+      // a gentle arm sway and an occasional slow glance, so nobody is a statue.
+      if (this.wasSitting) this.poseStanding();
+      this.idle += dt;
+      const sway = Math.sin(this.idle * 1.7) * 0.1;
+      this.limbs.leftArm.rotation.x = sway;
+      this.limbs.rightArm.rotation.x = -sway;
+      this.limbs.leftLeg.rotation.x = 0;
+      this.limbs.rightLeg.rotation.x = 0;
+      this.object.rotation.y += Math.sin(this.idle * 0.5) * dt * 0.5;
     }
     this.wasSitting = sitting;
 
@@ -110,34 +121,35 @@ function paletteAt(i: number): HumanoidPalette {
   return PALETTES[i % PALETTES.length];
 }
 
-// Build a small, lively cast of scripted patrons for the restaurant block:
-// 3 dine-in diners (sidewalk -> door -> counter -> indoor seat -> sit -> leave ->
-// cross), 1 phone-shop visitor, 1 taxi waiter, and 2 patio strollers. Each gets a
-// staggered start delay so they are not synchronized.
+// Build a lively cast of scripted patrons, every one on a continuously LOOPING
+// route so they live "circular lives" (eat, shop, cross, stroll, repeat) instead
+// of finishing and standing frozen. Staggered start delays keep them desynced.
 export function spawnPatrons(scene: THREE.Scene): Patron[] {
   const patrons: Patron[] = [];
   let pi = 0;
-  const add = (
-    waypoints: Waypoint[], speed: number, delay: number, loop = false,
-  ): void => {
-    patrons.push(new Patron(scene, paletteAt(pi++), { waypoints, speed, loop, delay }));
+  const add = (waypoints: Waypoint[], speed: number, delay: number): void => {
+    patrons.push(new Patron(scene, paletteAt(pi++), { waypoints, speed, loop: true, delay }));
   };
 
-  // 3 dine-in patrons; cycle through the two indoor seats, offset along the lane.
   const seats: Seat[] = INDOOR_TABLE_SEATS;
+  // restaurant diners (order, sit at a table, eat, leave, loop)
   add(dineInRoute(seats[0], -2), 1.7, 0);
-  add(dineInRoute(seats[1], 0), 1.6, 3.5);
-  add(dineInRoute(seats[0], 2), 1.8, 7);
-
-  // 1 phone-shop visitor.
+  add(dineInRoute(seats[1], 0), 1.6, 4);
+  add(dineInRoute(seats[0], 2), 1.8, 9);
+  // bakery customers (browse the bakery interior, loop)
+  add(bakeryRoute(-1), 1.7, 2);
+  add(bakeryRoute(2), 1.6, 11);
+  // phone-shop visitors
   add(phoneShopRoute(-1), 1.7, 1.5);
-
-  // 1 patron waiting at the taxi stand, then crossing.
-  add(streetCrossRoute(), 1.6, 5);
-
-  // 2 patio strollers pacing the lane (loop forever), offset start so they pass.
-  add(patrolRoute(CX - 22, CX + 22), 1.4, 0, true);
-  add(patrolRoute(CX + 22, CX - 22), 1.5, 2, true);
+  add(phoneShopRoute(2), 1.6, 8);
+  // pedestrians crossing the street back and forth
+  add(crossingLoopRoute(7), 1.6, 0);
+  add(crossingLoopRoute(11), 1.5, 6);
+  // someone hanging around the taxi stand
+  add(taxiWaitRoute(), 1.6, 3);
+  // patio strollers pacing the lane, passing each other
+  add(patrolRoute(CX - 22, CX + 22), 1.4, 0);
+  add(patrolRoute(CX + 22, CX - 22), 1.5, 2);
 
   return patrons;
 }
