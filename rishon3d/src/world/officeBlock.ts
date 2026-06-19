@@ -7,8 +7,8 @@
 // floors above are a SOLID tower mass clad in tiled office curtain-wall glass.
 //
 // Built FROM THE KITS / OBJECTS (rule 1 — no bare cubes for recognizable items):
-//   - tower curtain wall: tiled `makeGlassPanel(GLASS_PRESETS.office)` over a solid
-//     structural core (the core IS architecture, so a bare tinted box is fine).
+//   - tower curtain wall: batched office curtain-wall glass over a solid structural
+//     core (each face = 1 merged frame mesh + 1 pane mesh; ~8 meshes for the tower).
 //   - lobby reception desk: `makeCounterKit`; a digital sign / `makeKioskMesh`;
 //     a waiting bench cluster.
 //   - plaza out front: `makeOfficePlaza` (paving + planters + bike rack + kiosk)
@@ -25,7 +25,7 @@
 
 import * as THREE from "three";
 import { tintedBox, mergeTinted, tintedMesh } from "./objects/voxel";
-import { makeGlassPanel, GLASS_PRESETS } from "./objects/glass";
+import { makeGlassFrame, makeGlassPaneMaterial, makeGlassPanel, GLASS_PRESETS } from "./objects/glass";
 import { makeCounterKit, makeOfficePlaza, makeBikeRackKit } from "./kits";
 import { makeKioskMesh } from "./objects/kiosk";
 import { makeBenchMesh } from "./props";
@@ -61,18 +61,22 @@ const C = {
   podium:    0xb7c0cb,  // ground-floor podium band under the glass tower
 };
 
-// ─── tower curtain wall: tile office glass panels up each elevation ───────────
-// We clad the four faces (above the lobby) with `makeGlassPanel` tiles. The panes
-// are transparent (separate meshes) over a SOLID core box, so the tower reads as a
-// glazed mass without exposing the inside. Shared pane material keeps draw calls
-// bounded (D8).
+// ─── tower curtain wall: batch-merge glass frames per face ───────────────────
+// Each face emits exactly 2 meshes: one merged frame mesh (all tile frames
+// collapsed into one vertex-colored geometry) + one pane mesh (a single transparent
+// plane spanning the whole face). This collapses ~100+ Groups per face down to 2
+// meshes (~8 total for the four faces instead of ~420). Visual result is identical:
+// the merged geometry retains every mullion line so the grid still reads clearly.
+//
+// Layout math is identical to the old tiled version (same PANEL_W / ROWS_H grid)
+// so the frame bars land in the same world positions.
 function cladFace(
   group: THREE.Group,
   axis: "x" | "z",
-  faceCoord: number,     // the world coord of the face plane on the cladding axis
+  faceCoord: number,     // world coord of the face plane on the cladding axis
   spanCenter: number,    // center of the face along the tiling axis
   spanLen: number,       // length of the face along the tiling axis
-  yaw: number,           // panel yaw so the pane faces outward
+  yaw: number,           // yaw so the pane faces outward
 ): void {
   const PANEL_W = 2.4;   // GLASS_PRESETS.office.w
   const towerH = O.h - LOBBY_H;
@@ -81,18 +85,44 @@ function cladFace(
   const ROWS_H = 2.4;    // GLASS_PRESETS.office.h
   const rows = Math.max(1, Math.round(towerH / ROWS_H));
   const rowH = towerH / rows;
+
+  // Collect all frame geometries for this face. Each tile frame is built locally
+  // (base at y=0, centered at x=z=0), then translated to its world position before
+  // being pushed into the merge array. Because tintedBox already bakes the offset
+  // into vertex positions, translate() here shifts the whole piece.
+  const frameGeos: THREE.BufferGeometry[] = [];
+  const tileCfg = { ...GLASS_PRESETS.office, w: colW * 0.96, h: rowH * 0.96 };
+
   for (let r = 0; r < rows; r++) {
     const y0 = LOBBY_H + r * rowH;
     for (let c = 0; c < cols; c++) {
       const off = -spanLen / 2 + (c + 0.5) * colW;
-      const panel = makeGlassPanel({ ...GLASS_PRESETS.office, w: colW * 0.96, h: rowH * 0.96 });
-      panel.rotation.y = yaw;
-      // panel base is at y=0 locally, grows +y → lift to the course base.
-      if (axis === "x") panel.position.set(faceCoord, y0 + rowH * 0.02, spanCenter + off);
-      else panel.position.set(spanCenter + off, y0 + rowH * 0.02, faceCoord);
-      group.add(panel);
+      const frameGeo = makeGlassFrame(tileCfg);
+      // translate to world tile position (panel base y = y0 + small gap, same as before)
+      if (axis === "x") frameGeo.translate(faceCoord, y0 + rowH * 0.02, spanCenter + off);
+      else              frameGeo.translate(spanCenter + off, y0 + rowH * 0.02, faceCoord);
+      frameGeos.push(frameGeo);
     }
   }
+
+  // 1 merged frame mesh per face
+  const frameMesh = tintedMesh(mergeTinted(frameGeos));
+  frameMesh.name = "officeTowerGlassFrame";
+  group.add(frameMesh);
+
+  // 1 pane mesh per face — a single transparent plane spanning the whole cladded
+  // area. Uses the cached pane material (no new material object per face).
+  const paneW = spanLen;
+  const paneH = towerH;
+  const paneCenterY = LOBBY_H + paneH / 2;
+  const paneGeo = new THREE.PlaneGeometry(paneW, paneH);
+  const paneMat = makeGlassPaneMaterial(tileCfg);
+  const paneMesh = new THREE.Mesh(paneGeo, paneMat);
+  paneMesh.rotation.y = yaw;
+  if (axis === "x") paneMesh.position.set(faceCoord, paneCenterY, spanCenter);
+  else              paneMesh.position.set(spanCenter, paneCenterY, faceCoord);
+  paneMesh.name = "officeTowerGlassPane";
+  group.add(paneMesh);
 }
 
 export function makeOfficeBlock(): THREE.Object3D {
@@ -156,7 +186,7 @@ export function makeOfficeBlock(): THREE.Object3D {
   core.name = "officeTower";
   group.add(core);
 
-  // curtain-wall glass on all four elevations
+  // curtain-wall glass on all four elevations (2 meshes each = 8 total)
   cladFace(group, "x", WEST - 0.12, O.z, O.d, -Math.PI / 2); // west
   cladFace(group, "x", EAST + 0.12, O.z, O.d, Math.PI / 2);  // east
   cladFace(group, "z", NORTH - 0.12, O.x, O.w, Math.PI);     // north
