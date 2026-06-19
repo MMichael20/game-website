@@ -62,7 +62,7 @@ describe("makeRestaurantStreet", () => {
     // Pinned to the ACTUAL new output (read from the builder) with a small margin
     // so this catches an unintended footprint/placement shift, not float jitter.
     expect(box.min.x).toBeCloseTo(44, 1);     // west edge: flank box left face
-    expect(box.max.x).toBeCloseTo(122.5, 1);  // east edge: east cross-side props
+    expect(box.max.x).toBeCloseTo(124.5, 1);  // east edge: phone shop storefront right window (Task 10 retrofit)
     expect(box.min.z).toBeCloseTo(74, 1);     // north edge: skyline backdrop row
     expect(box.max.z).toBeCloseTo(132, 1);    // south edge: park / house lot
   });

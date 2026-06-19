@@ -8,20 +8,21 @@
 // the park matches the rest of the world.
 
 import * as THREE from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { PALETTE } from "./palette";
-import { tintGeo, mergeTinted, tintedMesh } from "./objects/voxel";
+import { mergeTinted, tintedMesh, tintedBox } from "./objects/voxel";
 import { makeFlower } from "./objects/flower";
 import { makePhone, PHONE_SCREENS } from "./objects/phone";
 import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
 import { makeCarBody } from "../entities/carMesh";
 import { treeInstances, benchInstances, makeBenchMesh, trashcanInstances, makeStreetLight } from "./props";
 import {
-  PHONE_SHOP, PHONE_SHOP_DOOR, shopFront, SHOP_Z,
+  PHONE_SHOP, PHONE_SHOP_DOOR, PHONE_SHOP_COUNTER, shopFront, SHOP_Z,
   PARK_CENTER, PARK_BENCH, TAXI_CAR, TAXI_WAIT,
 } from "./districtPois";
 import type { PropDef } from "./rishonMap";
 import { rectAround, type Rect } from "../game/wander";
+import { makeStorefront } from "./storefront";
+import { makeCounterKit, makeDisplayShelf } from "./kits";
 
 // Footprints of the pocket-park props NPCs must not walk through (trees, the
 // side bench, bin, lamp, planters). PARK_BENCH is EXCLUDED — patrons sit there.
@@ -39,22 +40,18 @@ export function secondaryPropObstacles(): Rect[] {
   return out;
 }
 
-function tinted(w: number, h: number, d: number, x: number, y: number, z: number, hex: number): THREE.BufferGeometry {
-  const b = new THREE.BoxGeometry(w, h, d);
-  b.translate(x, y, z);
-  const c = new THREE.Color(hex);
-  const n = b.attributes.position.count;
-  const colors = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b; }
-  b.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  return b;
-}
 const vcMat = () => new THREE.MeshStandardMaterial({ vertexColors: true });
 
 // =============================================================================
-// PHONE / CONVENIENCE SHOP — a small walk-in storefront with a sign, glass
-// front + doorway, a service counter, a register, and wall display shelves
-// stocked with colorful phone/accessory boxes.
+// PHONE / CONVENIENCE SHOP — a walk-in tech shop retrofitted onto the reusable
+// storefront kit (facade + door + glass + sign + awning), counter kit, and
+// display-shelf kit. The phone display objects (makePhone) stay as the real
+// reusable objects per repo Rule 1. The hollow interior shell (floor/ceiling/
+// walls) is named "phoneShopBuilding" so the >=N building-mesh invariant holds.
+//
+// OBSTACLE NOTE: the shell collider (shellWalls) in restaurantColliders.ts gates
+// entry; the storefront body obstacle returned by makeStorefront is intentionally
+// discarded so the counter/door targets stay reachable (Rule 3).
 // =============================================================================
 export function makePhoneShop(): THREE.Object3D {
   const group = new THREE.Group();
@@ -66,64 +63,88 @@ export function makePhoneShop(): THREE.Object3D {
   const LX = S.x - S.w / 2, RX = S.x + S.w / 2;
   const H = S.h, T = 0.3;
   const C = {
-    wall: 0xdfe6ec, trim: 0x2f7fb0, floor: 0xc6cdd3, ceiling: 0xd6dde2,
-    counter: 0x2f7fb0, counterTop: 0xdfe6ec, register: 0x2a2a30, shelf: 0xb9c2c9,
+    wall: 0xdfe6ec, floor: 0xc6cdd3, ceiling: 0xd6dde2,
+    register: 0x2a2a30,
   };
+
+  // --- interior hollow shell (floor + ceiling + back + two side walls) ---------
+  // NOTE: the FRONT face is supplied by makeStorefront below (body wall, door,
+  // glass, sign, awning). The interior shell intentionally leaves the front open —
+  // no doubling / z-fighting with the storefront facade.
   const shell: THREE.BufferGeometry[] = [];
-  shell.push(tinted(S.w - 0.2, 0.12, S.d - 0.2, S.x, 0.07, SHOP_Z, C.floor));
-  shell.push(tinted(S.w, T, S.d, S.x, H - T / 2, SHOP_Z, C.ceiling));
-  shell.push(tinted(S.w, H, T, S.x, H / 2, BACK + T / 2, C.wall));
-  shell.push(tinted(T, H, S.d, LX + T / 2, H / 2, SHOP_Z, C.wall));
-  shell.push(tinted(T, H, S.d, RX - T / 2, H / 2, SHOP_Z, C.wall));
-  shell.push(tinted(1.0, H, T, LX + 0.5, H / 2, FRONT - T / 2, C.wall));   // front corners
-  shell.push(tinted(1.0, H, T, RX - 0.5, H / 2, FRONT - T / 2, C.wall));
-  shell.push(tinted(S.w - 2.0, H - 3.0, T, S.x, 3.0 + (H - 3.0) / 2, FRONT - T / 2, C.wall)); // header
-  const shellMesh = new THREE.Mesh(mergeGeometries(shell), vcMat());
-  shellMesh.name = "phoneShopBuilding";
-  shellMesh.castShadow = true; shellMesh.receiveShadow = true;
+  shell.push(tintedBox(S.w - 0.2, 0.12, S.d - 0.2, S.x, 0.07, SHOP_Z, C.floor));  // floor
+  shell.push(tintedBox(S.w, T, S.d, S.x, H - T / 2, SHOP_Z, C.ceiling));           // ceiling
+  shell.push(tintedBox(S.w, H, T, S.x, H / 2, BACK + T / 2, C.wall));              // back wall
+  shell.push(tintedBox(T, H, S.d, LX + T / 2, H / 2, SHOP_Z, C.wall));             // left wall
+  shell.push(tintedBox(T, H, S.d, RX - T / 2, H / 2, SHOP_Z, C.wall));             // right wall
+  const shellMesh = tintedMesh(mergeTinted(shell));
+  shellMesh.name = "phoneShopBuilding"; // keeps the >=N building-mesh invariant
+  shellMesh.castShadow = true;
+  shellMesh.receiveShadow = true;
   group.add(shellMesh);
 
-  // parapet rim cap
-  const rim = new THREE.Mesh(tinted(S.w, 0.5, S.d, S.x, H + 0.25, SHOP_Z, PALETTE.cornice), vcMat());
-  rim.castShadow = true; group.add(rim);
+  // --- storefront facade (reusable kit: body wall + door frame + glass + awning + sign) ---
+  // Obstacles from makeStorefront are intentionally discarded — the walk-in shell
+  // collider (restaurantColliders shellWalls) is the entry gate; a body obstacle
+  // here would trap the door/counter targets (Rule 3).
+  const { object: storefrontObj } = makeStorefront({
+    x: S.x,
+    frontZ: FRONT,
+    w: S.w,
+    h: H,
+    signText: "PHONES",
+    awningColor: PALETTE.awningBlue,
+    glassStyle: "storefront",
+    doorSide: PHONE_SHOP_DOOR.x > S.x ? "right" : "left",
+    lamps: true,
+    planters: false,
+    interiorPeek: true,
+  });
+  storefrontObj.name = "phoneShopStorefront";
+  group.add(storefrontObj);
 
-  // furniture: service counter + display shelves
-  const furn: THREE.BufferGeometry[] = [];
-  const counterZ = SHOP_Z - 1.4;
-  furn.push(tinted(5.0, 1.05, 0.7, S.x - 1.0, 0.525, counterZ, C.counter));
-  furn.push(tinted(5.3, 0.12, 0.85, S.x - 1.0, 1.1, counterZ, C.counterTop));
-  for (const sy of [1.5, 2.4, 3.3]) {                     // back wall display shelves
-    furn.push(tinted(S.w - 1.0, 0.12, 0.5, S.x, sy, BACK + 0.4, C.shelf));
-  }
-  for (const sy of [1.5, 2.4]) {                          // left wall display shelves
-    furn.push(tinted(0.5, 0.12, S.d - 1.6, LX + 0.45, sy, SHOP_Z, C.shelf));
-  }
-  const furnMesh = new THREE.Mesh(mergeGeometries(furn), vcMat());
-  furnMesh.name = "phoneShopFurniture";
-  furnMesh.castShadow = true; group.add(furnMesh);
+  // --- service counter (reusable kit) at PHONE_SHOP_COUNTER --------------------
+  // NOT registered as an obstacle (it is a patron ORDER target per Rule 3).
+  const counter = makeCounterKit({ x: PHONE_SHOP_COUNTER.x, z: PHONE_SHOP_COUNTER.z, w: 5.0 });
+  counter.object.name = "phoneShopCounter";
+  group.add(counter.object);
 
-  // props: the till stays a box (it IS a boxy register); accessory cases stay
-  // small boxes; the PHONES are real reusable phone objects, not bare cubes
-  // (repo rule: build an object, don't drop a cube for a recognizable item).
-  const props: THREE.BufferGeometry[] = [];
-  props.push(tinted(0.5, 0.42, 0.4, S.x + 1.0, 1.37, counterZ, C.register));
-  props.push(tinted(0.42, 0.26, 0.05, S.x + 1.0, 1.5, counterZ + 0.22, 0x9aa0a6)); // register screen
-  const caseColors = [0xe0524a, 0x4f7fd9, 0x6db24a, 0xf2c14e, 0xc98ab0];
-  let n = 0;
-  for (const sy of [1.5, 2.4]) {                            // accessory cases on the left shelf
-    for (let k = 0; k < 4; k++) {
-      const z = SHOP_Z - (S.d - 2.2) / 2 + k * ((S.d - 2.2) / 3);
-      props.push(tinted(0.06, 0.36, 0.26, LX + 0.5, sy + 0.26, z, caseColors[n++ % caseColors.length]));
-    }
+  // --- back wall display shelves (reusable kit) ---------------------------------
+  // Three shelf units across the back wall, face south (+z). NOT in obstacles
+  // (interior furniture; the shell collider prevents NPC entry from outside).
+  const shelfZ = BACK + 0.25; // ~0.25m from the back wall
+  for (let i = 0; i < 3; i++) {
+    const sx = S.x - 2.4 + i * 2.4;
+    const shelf = makeDisplayShelf({ x: sx, z: shelfZ, faceYaw: 0 });
+    shelf.object.name = `phoneShopShelf${i}`;
+    group.add(shelf.object);
   }
-  const propsMesh = new THREE.Mesh(mergeGeometries(props), vcMat());
-  propsMesh.name = "phoneShopProps"; group.add(propsMesh);
 
-  // display PHONES: real reusable phone objects standing on the back shelves and
-  // lying on the counter (merged to one vertex-colored mesh).
+  // --- left wall display shelves -----------------------------------------------
+  // Two shelf units on the left (west) wall, face east (-x → yaw = -π/2).
+  for (let i = 0; i < 2; i++) {
+    const sz = SHOP_Z - 1.8 + i * 2.2;
+    const shelf = makeDisplayShelf({ x: LX + 0.45, z: sz, faceYaw: -Math.PI / 2 });
+    shelf.object.name = `phoneShopSideShelf${i}`;
+    group.add(shelf.object);
+  }
+
+  // --- register (boxy till — genuinely a boxy rectangle, not a recognizable item) ---
+  const registerGeo = mergeTinted([
+    tintedBox(0.5, 0.42, 0.4, 0, 0.21, 0, C.register),         // body
+    tintedBox(0.42, 0.26, 0.05, 0, 0.42, 0.22, 0x9aa0a6),      // screen
+  ]);
+  const registerMesh = tintedMesh(registerGeo);
+  registerMesh.position.set(PHONE_SHOP_COUNTER.x + 2.0, 0.88, PHONE_SHOP_COUNTER.z);
+  registerMesh.name = "phoneShopRegister";
+  group.add(registerMesh);
+
+  // --- display PHONES: real reusable phone objects on back shelves + counter ----
+  // Repo Rule 1: phones are recognizable items → use makePhone, not bare cubes.
   const phoneGeos: THREE.BufferGeometry[] = [];
   let pc = 0;
-  for (const sy of [1.5, 2.4, 3.3]) {
+  // Back shelf display: 5 phones × 3 shelf levels (offset y to sit on shelf tops)
+  for (const sy of [0.36, 0.96, 1.56]) {                       // shelf-unit shelf heights (approx)
     for (let k = 0; k < 5; k++) {
       const x = S.x - (S.w - 2.6) / 2 + k * ((S.w - 2.6) / 4);
       const ph = makePhone({ screenColor: PHONE_SCREENS[pc++ % PHONE_SCREENS.length] });
@@ -131,62 +152,16 @@ export function makePhoneShop(): THREE.Object3D {
       phoneGeos.push(ph);
     }
   }
-  for (const dx of [-1.9, -1.1, -0.3, 0.5]) {               // a few lying on the counter
+  // A few phones lying on the counter top
+  for (const dx of [-1.9, -1.1, -0.3, 0.5]) {
     const ph = makePhone({ screenColor: PHONE_SCREENS[pc++ % PHONE_SCREENS.length] });
     ph.rotateX(-Math.PI / 2);
-    ph.translate(S.x - 1.0 + dx, 1.22, counterZ);
+    ph.translate(PHONE_SHOP_COUNTER.x + dx, 0.88 + 0.06, PHONE_SHOP_COUNTER.z);
     phoneGeos.push(ph);
   }
   const phonesMesh = tintedMesh(mergeTinted(phoneGeos));
   phonesMesh.name = "phoneShopPhones";
   group.add(phonesMesh);
-
-  // storefront glass (transparent so the stocked interior reads from the plaza)
-  const glass = new THREE.Mesh(
-    tinted(S.w * 0.74, 2.6, 0.1, S.x, 1.6, FRONT + 0.05, PALETTE.storefront),
-    new THREE.MeshStandardMaterial({ color: PALETTE.storefront, transparent: true, opacity: 0.5 }),
-  );
-  glass.name = "phoneShopGlass"; group.add(glass);
-
-  // doorway frame on the +x side
-  const doorX = PHONE_SHOP_DOOR.x;
-  const fr: THREE.BufferGeometry[] = [];
-  fr.push(tinted(0.18, 2.6, 0.2, doorX - 0.9, 1.3, FRONT, PALETTE.frame));
-  fr.push(tinted(0.18, 2.6, 0.2, doorX + 0.9, 1.3, FRONT, PALETTE.frame));
-  fr.push(tinted(1.98, 0.2, 0.2, doorX, 2.6, FRONT, PALETTE.frame));
-  group.add(new THREE.Mesh(mergeGeometries(fr), vcMat()));
-
-  // sign band + lit accent above the storefront
-  const sign = new THREE.Mesh(tinted(S.w * 0.9, 0.9, 0.2, S.x, H - 1.0, FRONT + 0.12, PALETTE.signCool), vcMat());
-  sign.name = "phoneShopSign"; group.add(sign);
-  const signLit = new THREE.Mesh(
-    new THREE.BoxGeometry(S.w * 0.5, 0.42, 0.1),
-    new THREE.MeshStandardMaterial({ color: PALETTE.signLit, emissive: PALETTE.signLit, emissiveIntensity: 0.6 }),
-  );
-  signLit.position.set(S.x, H - 1.0, FRONT + 0.24);
-  group.add(signLit);
-
-  // blue-and-white striped awning over the storefront — the strongest "this is a
-  // shop" identity signal, matching the restaurants' awnings and the concept art.
-  const aw: THREE.BufferGeometry[] = [];
-  const cols = 7;
-  const awW = S.w * 0.88;
-  const colW = awW / cols;
-  for (let i = 0; i < cols; i++) {
-    const hex = i % 2 === 0 ? PALETTE.awningBlue : PALETTE.awningStripe;
-    const cx = S.x - awW / 2 + colW * (i + 0.5);
-    const slab = new THREE.BoxGeometry(colW, 0.26, 2.1);
-    slab.rotateX(-0.34);
-    slab.translate(cx, 3.2, FRONT + 0.7);
-    aw.push(tintGeo(slab, hex));
-    const valance = new THREE.BoxGeometry(colW, 0.5, 0.1);
-    valance.translate(cx, 2.7, FRONT + 1.7);
-    aw.push(tintGeo(valance, hex));
-  }
-  const awning = new THREE.Mesh(mergeGeometries(aw), vcMat());
-  awning.name = "phoneShopAwning";
-  awning.castShadow = true;
-  group.add(awning);
 
   return group;
 }
@@ -257,10 +232,10 @@ export function makePocketPark(): THREE.Object3D {
   for (let i = 0; i < 4; i++) {
     const px = cx - 4.5 + i * 3;
     const pz = cz - 5.0;
-    planters.push(tinted(2.5, 0.62, 0.9, px, 0.31, pz, PALETTE.benchWood));
-    planters.push(tinted(2.2, 0.18, 0.66, px, 0.62, pz, 0x3a2a1c));
+    planters.push(tintedBox(2.5, 0.62, 0.9, px, 0.31, pz, PALETTE.benchWood));
+    planters.push(tintedBox(2.2, 0.18, 0.66, px, 0.62, pz, 0x3a2a1c));
     for (const dx of [-0.7, -0.2, 0.3, 0.75]) {
-      planters.push(tinted(0.46, 0.4, 0.46, px + dx, 0.78, pz, PALETTE.hedge));
+      planters.push(tintedBox(0.46, 0.4, 0.46, px + dx, 0.78, pz, PALETTE.hedge));
     }
     const bloom: [number, number][] = [[-0.7, PALETTE.flowerRed], [-0.1, PALETTE.flowerWhite], [0.45, PALETTE.flowerYellow]];
     for (const [dx, hex] of bloom) {

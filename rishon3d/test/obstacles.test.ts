@@ -7,6 +7,7 @@ import {
   RESTAURANT_COUNTER, RESTAURANT_INSIDE, BAKERY_COUNTER, PHONE_SHOP_COUNTER,
   CAFE_COUNTER, CAFE_INSIDE, CAFE_TABLE_SEATS,
 } from "../src/world/districtPois";
+import { makePhoneShop } from "../src/world/secondaryLocations";
 
 const inside = (p: { x: number; z: number }) =>
   PATRON_OBSTACLES.some((r) => p.x > r.minX && p.x < r.maxX && p.z > r.minZ && p.z < r.maxZ);
@@ -58,6 +59,26 @@ describe("patron obstacles", () => {
     ];
     const trapped = targets.filter((t) => inside(t.p)).map((t) => t.label);
     expect(trapped).toEqual([]);
+  });
+});
+
+// Structural invariant for the phone shop retrofit (Task 10): the shop must
+// produce a *Building-named mesh (keeps the >=N building-mesh invariant), and
+// the service counter target must stay reachable (not inside any obstacle).
+describe("phone shop structural invariants (Task 10)", () => {
+  it("makePhoneShop produces at least one *Building-named mesh", () => {
+    const shop = makePhoneShop();
+    let found = false;
+    shop.traverse((c) => { if (/Building/i.test(c.name)) found = true; });
+    expect(found).toBe(true);
+  });
+
+  it("PHONE_SHOP_COUNTER is not inside any patron obstacle", () => {
+    const p = { ...PHONE_SHOP_COUNTER };
+    const before = { ...p };
+    resolveObstacles(p);
+    // resolveObstacles does NOT move it → it was not inside any rect
+    expect(p).toEqual(before);
   });
 });
 
