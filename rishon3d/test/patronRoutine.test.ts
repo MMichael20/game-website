@@ -137,11 +137,33 @@ describe("Task 7: new route builders", () => {
     expect(isFiniteCoords(wps)).toBe(true);
   });
 
+  it("cafeRoute patron never finishes and advances through multiple waypoints on loop", () => {
+    const p = makePatron(cafeRoute(), 4, { loop: true });
+    const visitedIndices = new Set<number>([p.index]);
+    for (let i = 0; i < 120 * 60; i++) {
+      stepPatron(p, dt);
+      visitedIndices.add(p.index);
+      expect(p.done).toBe(false);
+    }
+    expect(visitedIndices.size).toBeGreaterThan(1);
+  });
+
   it("officeLobbyRoute returns a non-empty closed loop with finite coords", () => {
     const wps = officeLobbyRoute();
     expect(wps.length).toBeGreaterThan(0);
     expect(isClosedLoop(wps)).toBe(true);
     expect(isFiniteCoords(wps)).toBe(true);
+  });
+
+  it("officeLobbyRoute patron never finishes and advances through multiple waypoints on loop", () => {
+    const p = makePatron(officeLobbyRoute(), 4, { loop: true });
+    const visitedIndices = new Set<number>([p.index]);
+    for (let i = 0; i < 120 * 60; i++) {
+      stepPatron(p, dt);
+      visitedIndices.add(p.index);
+      expect(p.done).toBe(false);
+    }
+    expect(visitedIndices.size).toBeGreaterThan(1);
   });
 
   it("sidewalkLoopRoute(p1, p2) returns a non-empty closed loop with finite coords", () => {
@@ -151,6 +173,19 @@ describe("Task 7: new route builders", () => {
     expect(wps.length).toBeGreaterThan(0);
     expect(isClosedLoop(wps)).toBe(true);
     expect(isFiniteCoords(wps)).toBe(true);
+  });
+
+  it("sidewalkLoopRoute patron never finishes and advances through multiple waypoints on loop", () => {
+    const p1 = { x: CX - 10, z: PATIO_WALK_Z };
+    const p2 = { x: CX + 10, z: PATIO_WALK_Z };
+    const p = makePatron(sidewalkLoopRoute(p1, p2), 4, { loop: true });
+    const visitedIndices = new Set<number>([p.index]);
+    for (let i = 0; i < 120 * 60; i++) {
+      stepPatron(p, dt);
+      visitedIndices.add(p.index);
+      expect(p.done).toBe(false);
+    }
+    expect(visitedIndices.size).toBeGreaterThan(1);
   });
 
   it("workerStationRoute returns a non-empty closed loop with finite coords", () => {

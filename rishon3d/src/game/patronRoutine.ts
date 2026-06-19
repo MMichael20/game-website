@@ -13,6 +13,7 @@ import {
   PHONE_SHOP_DOOR, PHONE_SHOP_INSIDE, PHONE_SHOP_COUNTER,
   TAXI_WAIT, CROSSWALK, PATIO_WALK_Z, FAR_WALK_Z,
   PARK_CENTER, PARK_BENCH,
+  INDOOR_TABLE_SEATS,
   type Vec2, type Seat,
 } from "../world/districtPois";
 
@@ -238,7 +239,7 @@ export const BEHAVIORS: Readonly<Record<string, BehaviorFactory>> = {
     { x: CROSSWALK.x + 8, z: PATIO_WALK_Z },
   ),
   taxiWait: () => taxiWaitRoute(),
-  dineIn: () => dineInRoute({ x: 93, z: 91.2, faceYaw: Math.PI / 2 }),
+  dineIn: () => dineInRoute(INDOOR_TABLE_SEATS[0]),
 };
 
 // --- FSM construction + stepping ----------------------------------------------
