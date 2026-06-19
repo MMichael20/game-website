@@ -104,6 +104,27 @@ describe("makeBenchBinLamp", () => {
   it("bench seat NOT inside obstacles", () => {
     expect(seatsInsideObstacles(makeBenchBinLamp(cfg))).toBe(false);
   });
+  it("faceYaw=PI/2: obstacles are finite and seat not inside any obstacle", () => {
+    const kit = makeBenchBinLamp({ x: 10, z: 10, faceYaw: Math.PI / 2 });
+    // All obstacle coords must be finite
+    for (const r of kit.obstacles) {
+      expect(isFinite(r.minX)).toBe(true);
+      expect(isFinite(r.maxX)).toBe(true);
+      expect(isFinite(r.minZ)).toBe(true);
+      expect(isFinite(r.maxZ)).toBe(true);
+    }
+    // Seat (bench center at x=10,z=10) must NOT be inside any obstacle
+    expect(seatsInsideObstacles(kit)).toBe(false);
+    // At faceYaw=PI/2: bin is at local (1.4, 0) → world (10, 10+1.4)=(10, 11.4)
+    // lamp is at local (-1.4, 0) → world (10, 10-1.4)=(10, 8.6)
+    // So both obstacles should be centered near z=11.4 and z=8.6, not z=10
+    const centers = kit.obstacles.map((r) => ({ x: (r.minX + r.maxX) / 2, z: (r.minZ + r.maxZ) / 2 }));
+    // Neither obstacle should be centered on the bench seat (x=10,z=10)
+    for (const c of centers) {
+      const distFromSeat = Math.sqrt((c.x - 10) ** 2 + (c.z - 10) ** 2);
+      expect(distFromSeat).toBeGreaterThan(0.5);
+    }
+  });
 });
 
 // ------- makeTaxiKit -------
@@ -212,6 +233,15 @@ describe("makeDisplayShelf", () => {
     const kit = makeDisplayShelf({ x: 0, z: 0 });
     expect(kit.object).toBeDefined();
     expect(Array.isArray(kit.obstacles)).toBe(true);
+    expect(kit.obstacles.length).toBeGreaterThanOrEqual(1);
+  });
+  it("yaw=PI/2: obstacle Z-extent wider than X-extent (footprint rotated)", () => {
+    const kit = makeDisplayShelf({ x: 0, z: 0, faceYaw: Math.PI / 2 });
+    const obs = kit.obstacles[0];
+    const xExtent = obs.maxX - obs.minX;
+    const zExtent = obs.maxZ - obs.minZ;
+    // At 90deg: original w=1.6 maps to Z, original d=0.4 maps to X → zExtent > xExtent
+    expect(zExtent).toBeGreaterThan(xExtent);
   });
 });
 

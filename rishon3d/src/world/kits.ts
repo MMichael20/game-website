@@ -27,6 +27,7 @@ import { makeBenchMesh } from "./props";
 import { makeCarBody } from "../entities/carMesh";
 import { tintedBox, mergeTinted, tintedMesh } from "./objects/voxel";
 import { PALETTE } from "./palette";
+import { ROAD_W } from "./roads";
 
 export interface KitResult {
   object: THREE.Object3D;
@@ -246,8 +247,10 @@ export function makeBenchBinLamp(cfg: {
   const seats = [{ x, z, faceYaw }];
 
   // Obstacles: bin + lamp (NOT the bench)
-  const binWorld = { x: x + cos * 1.4, z: z - sin * 1.4 };
-  const lampWorld = { x: x - cos * 1.4, z: z + sin * 1.4 };
+  // Proper 2D yaw rotation: worldX = x + cos*dx - sin*dz; worldZ = z + sin*dx + cos*dz
+  // bin is at local (dx=+1.4, dz=0); lamp is at local (dx=-1.4, dz=0)
+  const binWorld = { x: x + cos * 1.4 - sin * 0, z: z + sin * 1.4 + cos * 0 };
+  const lampWorld = { x: x + cos * -1.4 - sin * 0, z: z + sin * -1.4 + cos * 0 };
   const obstacles: Rect[] = [
     rectAround(binWorld.x, binWorld.z, 0.5, 0.5, 0.1),
     rectAround(lampWorld.x, lampWorld.z, 0.2, 0.2, 0.1),
@@ -287,7 +290,7 @@ export function makeCrosswalkKit(cfg: {
   const { x, z, axis, width } = cfg;
   const bands = cfg.bands ?? 7;
   const bandW = 0.45;
-  const roadW = 6.0;
+  const roadW = ROAD_W;
 
   const parts: THREE.BufferGeometry[] = [];
   for (let i = 0; i < bands; i++) {
@@ -480,8 +483,14 @@ export function makeDisplayShelf(cfg: {
   mesh.position.set(x, 0, z);
   mesh.rotation.y = faceYaw;
 
-  // Shelf is typically wall-mounted — obstacle for its depth footprint
-  const obstacles: Rect[] = [rectAround(x, z, 1.6, 0.4, 0.1)];
+  // Shelf footprint (w=1.6, d=0.4); compute axis-aligned bounding rect for any yaw
+  const shelfW = 1.6;
+  const shelfD = 0.4;
+  const absC = Math.abs(Math.cos(faceYaw));
+  const absS = Math.abs(Math.sin(faceYaw));
+  const hw2 = absC * shelfW / 2 + absS * shelfD / 2;
+  const hd2 = absS * shelfW / 2 + absC * shelfD / 2;
+  const obstacles: Rect[] = [rectAround(x, z, hw2 * 2, hd2 * 2, 0.1)];
 
   return { object: mesh, obstacles };
 }
@@ -502,7 +511,13 @@ export function makeCounterKit(cfg: {
   mesh.position.set(x, 0, z);
   mesh.rotation.y = faceYaw;
 
-  const obstacles: Rect[] = [rectAround(x, z, w, 0.55, 0.1)];
+  // Counter footprint (w × 0.55d); compute axis-aligned bounding rect for any yaw
+  const counterD = 0.55;
+  const absC = Math.abs(Math.cos(faceYaw));
+  const absS = Math.abs(Math.sin(faceYaw));
+  const hw2 = absC * w / 2 + absS * counterD / 2;
+  const hd2 = absS * w / 2 + absC * counterD / 2;
+  const obstacles: Rect[] = [rectAround(x, z, hw2 * 2, hd2 * 2, 0.1)];
 
   return { object: mesh, obstacles };
 }
