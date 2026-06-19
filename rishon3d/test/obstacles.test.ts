@@ -6,8 +6,9 @@ import {
   seatClusters, CHAIR_OFFSETS, PARK_BENCH, TAXI_WAIT, HOUSE_DOOR,
   RESTAURANT_COUNTER, RESTAURANT_INSIDE, BAKERY_COUNTER, PHONE_SHOP_COUNTER,
   CAFE_COUNTER, CAFE_INSIDE, CAFE_TABLE_SEATS,
+  PARK_CENTER, PARK_D, PARK_PICNIC_SEATS,
 } from "../src/world/districtPois";
-import { makePhoneShop } from "../src/world/secondaryLocations";
+import { makePhoneShop, makeRealPark } from "../src/world/secondaryLocations";
 
 const inside = (p: { x: number; z: number }) =>
   PATRON_OBSTACLES.some((r) => p.x > r.minX && p.x < r.maxX && p.z > r.minZ && p.z < r.maxZ);
@@ -100,5 +101,36 @@ describe("indoor seats sit on real chairs", () => {
         expect(Math.abs(a.x - b.x) + Math.abs(a.z - b.z)).toBeGreaterThan(0.5);
       }
     }
+  });
+});
+
+// Task 11: real park structural invariants
+describe("Task 11: real park", () => {
+  it("makeRealPark produces a non-empty Object3D with children", () => {
+    const park = makeRealPark();
+    expect(park).toBeDefined();
+    expect(park.children.length).toBeGreaterThan(0);
+  });
+
+  it("PARK_BENCH seat is reachable (not inside any patron obstacle)", () => {
+    expect(inside(PARK_BENCH)).toBe(false);
+  });
+
+  it("PARK_PICNIC_SEATS are all reachable (not inside any patron obstacle)", () => {
+    const trapped = PARK_PICNIC_SEATS.filter((s) => inside(s)).map((s) => JSON.stringify(s));
+    expect(trapped).toEqual([]);
+  });
+
+  it("PARK_PICNIC_SEATS all have a numeric faceYaw", () => {
+    for (const s of PARK_PICNIC_SEATS) {
+      expect(typeof s.faceYaw).toBe("number");
+      expect(Number.isFinite(s.faceYaw)).toBe(true);
+    }
+  });
+
+  it("park region is south of the road (z > 109) and does not overlap the road corridor", () => {
+    const ROAD_Z = 109;
+    const northEdge = PARK_CENTER.z - PARK_D / 2;
+    expect(northEdge).toBeGreaterThan(ROAD_Z);
   });
 });

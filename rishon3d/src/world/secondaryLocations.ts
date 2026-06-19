@@ -1,7 +1,7 @@
 // rishon3d/src/world/secondaryLocations.ts
 //
 // The three secondary destinations that round out the restaurant block into a
-// small playable slice: a walk-in phone / convenience shop, a pocket park, and
+// small playable slice: a walk-in phone / convenience shop, a real park, and
 // a taxi pickup. Each is self-contained, deterministic and anchored to the
 // shared district coordinates in districtPois.ts. Geometry merges into a few
 // vertex-colored meshes; greenery/bench/bin reuse the city prop instancers so
@@ -14,33 +14,54 @@ import { makeFlower } from "./objects/flower";
 import { makePhone, PHONE_SCREENS } from "./objects/phone";
 import { makeSidewalkTexture, PAVER_SUPER_M } from "./roads";
 import { makeCarBody } from "../entities/carMesh";
-import { treeInstances, benchInstances, makeBenchMesh, trashcanInstances, makeStreetLight } from "./props";
+import { makeBenchMesh } from "./props";
 import {
   PHONE_SHOP, PHONE_SHOP_DOOR, PHONE_SHOP_COUNTER, shopFront, SHOP_Z,
   PARK_CENTER, PARK_BENCH, TAXI_CAR, TAXI_WAIT,
+  PARK_W, PARK_D,
 } from "./districtPois";
-import type { PropDef } from "./rishonMap";
 import { rectAround, type Rect } from "../game/wander";
 import { makeStorefront } from "./storefront";
-import { makeCounterKit, makeDisplayShelf } from "./kits";
+import { makeCounterKit, makeDisplayShelf, makeFountainKit, makePicnicKit, makeBenchBinLamp } from "./kits";
+import { fillSurface, type FillRegion } from "./surfaceFill";
 
-// Footprints of the pocket-park props NPCs must not walk through (trees, the
-// side bench, bin, lamp, planters). PARK_BENCH is EXCLUDED — patrons sit there.
-// Kept next to makePocketPark's placements so they stay in sync. -> obstacles.ts
+// Footprints of the real park props NPCs must not walk through. PARK_BENCH and
+// PARK_PICNIC_SEATS are EXCLUDED — patrons sit there. Kit-returned obstacles
+// (fountain, bins, lamps, picnic table body, trees from fillSurface) are included.
+// Kept next to makeRealPark's placements so they stay in sync. -> obstacles.ts
 export function secondaryPropObstacles(): Rect[] {
   const { x: cx, z: cz } = PARK_CENTER;
   const out: Rect[] = [];
-  for (const [tx, tz] of [[cx - 3.8, cz + 3.4], [cx + 3.8, cz + 3.8], [cx + 0.2, cz + 4.2]] as [number, number][]) {
-    out.push(rectAround(tx, tz, 1.6, 1.6, 0.2)); // trees
-  }
-  out.push(rectAround(cx - 4.0, cz - 0.5, 1.6, 0.6, 0.2)); // side bench (not PARK_BENCH)
-  out.push(rectAround(cx + 4.8, cz - 2.2, 0.7, 0.7, 0.15)); // bin
-  out.push(rectAround(cx - 4.8, cz - 2.2, 0.5, 0.5, 0.15)); // lamp
-  for (let i = 0; i < 4; i++) out.push(rectAround(cx - 4.5 + i * 3, cz - 5.0, 2.5, 0.9, 0.2)); // planters
+
+  // Fountain at center (r=1.1 → footprint 2.2×2.2 + margin 0.2)
+  out.push(...makeFountainKit({ x: cx, z: cz, r: 1.1 }).obstacles);
+
+  // Picnic kit — include the TABLE body obstacle, exclude seats (handled above)
+  out.push(...makePicnicKit({ x: cx, z: cz + 4.5 }).obstacles);
+
+  // BenchBinLamp kits — include bin+lamp obstacles, exclude their bench seats
+  // North edge: two kits facing south (faceYaw=PI) at east/west sides of path north edge
+  out.push(...makeBenchBinLamp({ x: cx - 6, z: cz - 4.5, faceYaw: Math.PI }).obstacles);
+  out.push(...makeBenchBinLamp({ x: cx + 6, z: cz - 4.5, faceYaw: Math.PI }).obstacles);
+  // South edge: two kits facing north (faceYaw=0) at east/west sides
+  out.push(...makeBenchBinLamp({ x: cx - 6, z: cz + 2.0, faceYaw: 0 }).obstacles);
+  out.push(...makeBenchBinLamp({ x: cx + 6, z: cz + 2.0, faceYaw: 0 }).obstacles);
+
+  // Tree fill (deterministic, seed=11) — build the same avoid list as makeRealPark
+  // to get the same footprints as what was placed
+  const grassRegion: FillRegion = {
+    minX: cx - PARK_W / 2, maxX: cx + PARK_W / 2,
+    minZ: cz - PARK_D / 2, maxZ: cz + PARK_D / 2,
+  };
+  const fountainRect = rectAround(cx, cz, 2.2 * 2, 2.2 * 2, 0.3);
+  const pathHRect = rectAround(cx, cz, PARK_W, 2.5, 0.1);   // horizontal path strip
+  const pathVRect = rectAround(cx, cz, 2.5, PARK_D, 0.1);   // vertical path strip
+  const avoidForFill: Rect[] = [fountainRect, pathHRect, pathVRect];
+  const { obstacles: treeObs } = fillSurface(grassRegion, "grass", 11, avoidForFill);
+  out.push(...treeObs);
+
   return out;
 }
-
-const vcMat = () => new THREE.MeshStandardMaterial({ vertexColors: true });
 
 // =============================================================================
 // PHONE / CONVENIENCE SHOP — a walk-in tech shop retrofitted onto the reusable
@@ -167,87 +188,124 @@ export function makePhoneShop(): THREE.Object3D {
 }
 
 // =============================================================================
-// POCKET PARK — a small grassy plaza on the PLAYER (south) side of the street,
-// just below the crosswalk: a grass pad with a crossing paver path, two trees, a
-// bench, a bin, planters and a lamp. The street is to the NORTH (lower z), so the
-// street-facing dressing (path, planter border, lamp, bench) hugs the north edge
-// and the trees sit at the back (south).
+// REAL PARK — an upgraded park on the PLAYER (south) side of the street,
+// just below the crosswalk: a grass pad with a paver path loop, a central
+// fountain, a picnic area, bench+bin+lamp kits around the loop, and trees/
+// flowers via fillSurface. Street is NORTH (lower z); path entry and benches
+// face that edge. PARK_BENCH (main NPC sit target) is just south of the fountain.
 // =============================================================================
-export function makePocketPark(): THREE.Object3D {
+export function makeRealPark(): THREE.Object3D {
   const group = new THREE.Group();
-  group.name = "pocketPark";
+  group.name = "realPark";
   const { x: cx, z: cz } = PARK_CENTER;
-  const W = 12, D = 11;
+  const W = PARK_W, D = PARK_D;  // 20 × 14
 
-  // grass pad
+  // ---- grass pad ----
   const grass = new THREE.Mesh(
     new THREE.BoxGeometry(W, 0.1, D),
     new THREE.MeshStandardMaterial({ color: PALETTE.parkGrass }),
   );
   grass.position.set(cx, 0.05, cz);
   grass.receiveShadow = true;
+  grass.name = "parkGrass";
   group.add(grass);
 
-  // a paver path crossing the park toward the street (north edge), so it reads as
-  // the walked route from the crosswalk into the park.
-  const paver = makeSidewalkTexture();
-  paver.repeat.set(1, Math.max(1, Math.round(D / PAVER_SUPER_M)));
-  const path = new THREE.Mesh(
+  // ---- path loop: horizontal + vertical paver cross forming a walkable loop ----
+  // Horizontal strip (east-west)
+  const paverH = makeSidewalkTexture();
+  paverH.repeat.set(Math.max(1, Math.round(W / PAVER_SUPER_M)), 1);
+  const pathH = new THREE.Mesh(
+    new THREE.BoxGeometry(W, 0.12, 2.4),
+    new THREE.MeshStandardMaterial({ map: paverH }),
+  );
+  pathH.position.set(cx, 0.08, cz);
+  pathH.receiveShadow = true;
+  group.add(pathH);
+
+  // Vertical strip (north-south: street entry path)
+  const paverV = makeSidewalkTexture();
+  paverV.repeat.set(1, Math.max(1, Math.round(D / PAVER_SUPER_M)));
+  const pathV = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 0.12, D),
-    new THREE.MeshStandardMaterial({ map: paver }),
+    new THREE.MeshStandardMaterial({ map: paverV }),
   );
-  path.position.set(cx, 0.07, cz);
-  path.receiveShadow = true;
-  group.add(path);
+  pathV.position.set(cx, 0.09, cz);
+  pathV.receiveShadow = true;
+  group.add(pathV);
 
-  // a small central plaza pad so the park reads as a designed gathering spot.
-  const plazaTex = makeSidewalkTexture();
-  plazaTex.repeat.set(3, 3);
-  const plaza = new THREE.Mesh(
-    new THREE.BoxGeometry(5.5, 0.13, 5.0),
-    new THREE.MeshStandardMaterial({ map: plazaTex }),
-  );
-  plaza.position.set(cx, 0.08, cz);
-  plaza.receiveShadow = true;
-  group.add(plaza);
+  // ---- fountain (center of the park) ----
+  const fountain = makeFountainKit({ x: cx, z: cz, r: 1.1 });
+  fountain.object.name = "parkFountain";
+  group.add(fountain.object);
 
-  // greenery + furniture reuse the city prop instancers (matched style). Trees at
-  // the back (south); benches + bin + lamp toward the street-facing north edge.
-  const trees: PropDef[] = [
-    { id: "pk-t1", kind: "tree", x: cx - 3.8, z: cz + 3.4 },
-    { id: "pk-t2", kind: "tree", x: cx + 3.8, z: cz + 3.8 },
-    { id: "pk-t3", kind: "tree", x: cx + 0.2, z: cz + 4.2 },
-  ];
-  group.add(treeInstances(trees));
-  // the main bench sits at PARK_BENCH, rotated to FACE the plaza/street (north) so
-  // the seated idler (yaw=PI) sits the right way round, not into the backrest.
-  group.add(makeBenchMesh(PARK_BENCH.x, PARK_BENCH.z, Math.PI));
-  group.add(benchInstances([{ id: "pk-b2", kind: "bench", x: cx - 4.0, z: cz - 0.5 }]));
-  group.add(trashcanInstances([{ id: "pk-tc", kind: "trashcan", x: cx + 4.8, z: cz - 2.2 }]));
-  group.add(makeStreetLight({ id: "pk-l", kind: "streetlight", x: cx - 4.8, z: cz - 2.2 }));
+  // ---- picnic area south of center ----
+  const picnic = makePicnicKit({ x: cx, z: cz + 4.5 });
+  picnic.object.name = "parkPicnic";
+  group.add(picnic.object);
 
-  // chunky flower planters bordering the street-facing (north) edge, with real
-  // voxel blooms (merged via mergeTinted so the non-indexed flowers combine).
+  // ---- bench+bin+lamp kits placed around the path loop ----
+  // North-west corner, facing south (faceYaw=PI) — patron faces the fountain
+  const bblNW = makeBenchBinLamp({ x: cx - 6, z: cz - 4.5, faceYaw: Math.PI });
+  bblNW.object.name = "parkBenchNW";
+  group.add(bblNW.object);
+  // North-east corner, facing south (faceYaw=PI)
+  const bblNE = makeBenchBinLamp({ x: cx + 6, z: cz - 4.5, faceYaw: Math.PI });
+  bblNE.object.name = "parkBenchNE";
+  group.add(bblNE.object);
+  // South-west, facing north (faceYaw=0)
+  const bblSW = makeBenchBinLamp({ x: cx - 6, z: cz + 2.0, faceYaw: 0 });
+  bblSW.object.name = "parkBenchSW";
+  group.add(bblSW.object);
+  // South-east, facing north (faceYaw=0)
+  const bblSE = makeBenchBinLamp({ x: cx + 6, z: cz + 2.0, faceYaw: 0 });
+  bblSE.object.name = "parkBenchSE";
+  group.add(bblSE.object);
+
+  // ---- PARK_BENCH — main scripted NPC bench (parkLoopRoute dwells here) ----
+  // Faces north (faceYaw = 0) toward the street; placed on the horizontal path.
+  group.add(makeBenchMesh(PARK_BENCH.x, PARK_BENCH.z, 0));
+
+  // ---- grass fill: flowers, bushes, trees — avoid paths + fountain ----
+  const grassRegion: FillRegion = {
+    minX: cx - W / 2, maxX: cx + W / 2,
+    minZ: cz - D / 2, maxZ: cz + D / 2,
+  };
+  const fountainRect = rectAround(cx, cz, 2.2 * 2, 2.2 * 2, 0.3);
+  const pathHRect = rectAround(cx, cz, W, 2.5, 0.1);
+  const pathVRect = rectAround(cx, cz, 2.5, D, 0.1);
+  const fill = fillSurface(grassRegion, "grass", 11, [fountainRect, pathHRect, pathVRect]);
+  fill.object.name = "parkGreenery";
+  group.add(fill.object);
+
+  // ---- flower planters bordering the north (street-facing) edge ----
   const planters: THREE.BufferGeometry[] = [];
-  for (let i = 0; i < 4; i++) {
-    const px = cx - 4.5 + i * 3;
-    const pz = cz - 5.0;
-    planters.push(tintedBox(2.5, 0.62, 0.9, px, 0.31, pz, PALETTE.benchWood));
-    planters.push(tintedBox(2.2, 0.18, 0.66, px, 0.62, pz, 0x3a2a1c));
-    for (const dx of [-0.7, -0.2, 0.3, 0.75]) {
-      planters.push(tintedBox(0.46, 0.4, 0.46, px + dx, 0.78, pz, PALETTE.hedge));
+  for (let i = 0; i < 3; i++) {
+    const px = cx - 6 + i * 6;
+    const pz = cz - D / 2 + 0.5;
+    planters.push(tintedBox(2.2, 0.62, 0.9, px, 0.31, pz, PALETTE.benchWood));
+    planters.push(tintedBox(2.0, 0.18, 0.66, px, 0.62, pz, 0x3a2a1c));
+    for (const dxp of [-0.7, -0.1, 0.55]) {
+      planters.push(tintedBox(0.46, 0.4, 0.46, px + dxp, 0.78, pz, PALETTE.hedge));
     }
-    const bloom: [number, number][] = [[-0.7, PALETTE.flowerRed], [-0.1, PALETTE.flowerWhite], [0.45, PALETTE.flowerYellow]];
-    for (const [dx, hex] of bloom) {
+    const bloom: [number, number][] = [[-0.7, PALETTE.flowerRed], [0.0, PALETTE.flowerWhite], [0.55, PALETTE.flowerYellow]];
+    for (const [dxp, hex] of bloom) {
       const f = makeFlower({ petalColor: hex, height: 0.34, petalCount: 5 });
-      f.translate(px + dx, 0.74, pz);
+      f.translate(px + dxp, 0.74, pz);
       planters.push(f);
     }
   }
-  group.add(new THREE.Mesh(mergeTinted(planters), vcMat()));
+  const planterMesh = new THREE.Mesh(
+    mergeTinted(planters),
+    new THREE.MeshStandardMaterial({ vertexColors: true }),
+  );
+  planterMesh.name = "parkPlanters";
+  group.add(planterMesh);
 
   return group;
 }
+
+// Backward-compat alias — restaurantStreet.ts still calls makePocketPark().
+export { makeRealPark as makePocketPark };
 
 // =============================================================================
 // TAXI PICKUP — a parked cab on the near curb, a pickup sign on a post, a

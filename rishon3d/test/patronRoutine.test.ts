@@ -6,7 +6,7 @@ import {
   BEHAVIORS,
   type Patron, type Waypoint,
 } from "../src/game/patronRoutine";
-import { INDOOR_TABLE_SEATS, PATIO_WALK_Z, FAR_WALK_Z, PARK_BENCH, CX } from "../src/world/districtPois";
+import { INDOOR_TABLE_SEATS, PATIO_WALK_Z, FAR_WALK_Z, PARK_BENCH, CX, PARK_CENTER, PARK_W, PARK_D } from "../src/world/districtPois";
 
 const dt = 1 / 60;
 
@@ -281,5 +281,47 @@ describe("Task 7: BEHAVIORS registry", () => {
       expect(isClosedLoop(wps)).toBe(true);
       expect(isFiniteCoords(wps)).toBe(true);
     }
+  });
+});
+
+// Task 11: park loop route waypoint geometry sanity
+describe("Task 11: parkLoopRoute geometry alignment", () => {
+  it("parkLoopRoute bench waypoint lands within the park region", () => {
+    const wps = parkLoopRoute();
+    const benchWp = wps.find(
+      (w) => Math.hypot(w.to.x - PARK_BENCH.x, w.to.z - PARK_BENCH.z) < 0.5,
+    );
+    expect(benchWp).toBeDefined();
+    // Bench must be inside the park bounding box
+    const minX = PARK_CENTER.x - PARK_W / 2;
+    const maxX = PARK_CENTER.x + PARK_W / 2;
+    const minZ = PARK_CENTER.z - PARK_D / 2;
+    const maxZ = PARK_CENTER.z + PARK_D / 2;
+    expect(benchWp!.to.x).toBeGreaterThanOrEqual(minX);
+    expect(benchWp!.to.x).toBeLessThanOrEqual(maxX);
+    expect(benchWp!.to.z).toBeGreaterThanOrEqual(minZ);
+    expect(benchWp!.to.z).toBeLessThanOrEqual(maxZ);
+  });
+
+  it("parkLoopRoute walk-into-park waypoint (PARK_CENTER) is inside the park region", () => {
+    const wps = parkLoopRoute();
+    const centerWp = wps.find(
+      (w) => Math.hypot(w.to.x - PARK_CENTER.x, w.to.z - PARK_CENTER.z) < 1.0
+             && w.to.z > PATIO_WALK_Z,
+    );
+    expect(centerWp).toBeDefined();
+  });
+
+  it("parkLoopRoute patron reaches PARK_BENCH and sits", () => {
+    const p = makePatron(parkLoopRoute(), 4, { loop: true });
+    let reachedBench = false;
+    for (let i = 0; i < 120 * 60; i++) {
+      stepPatron(p, dt);
+      if (p.state === "seated" && Math.hypot(p.pos.x - PARK_BENCH.x, p.pos.z - PARK_BENCH.z) < 1.0) {
+        reachedBench = true;
+        break;
+      }
+    }
+    expect(reachedBench).toBe(true);
   });
 });

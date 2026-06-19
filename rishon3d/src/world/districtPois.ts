@@ -142,9 +142,24 @@ export const TAXI_WAIT: Vec2 = { x: CX + 9, z: ANCHOR_Z + 1 };
 // Pocket park / plaza: a small green pocket on the PLAYER (south) side of the
 // street, just below the central crosswalk, so the loop reads
 // house -> park -> crosswalk -> restaurant. Its street-facing edge faces NORTH
-// toward the road (see makePocketPark, which flips its offsets for the south side).
+// toward the road (see makeRealPark, which flips its offsets for the south side).
 export const PARK_CENTER: Vec2 = { x: CX - 1, z: ROAD_Z + 12 };   // (94, 121)
+export const PARK_W = 20;  // park width along x
+export const PARK_D = 14;  // park depth along z
+
+// The main bench target (NPC sits here facing north toward the street).
 export const PARK_BENCH: Vec2 = { x: PARK_CENTER.x, z: PARK_CENTER.z + 1.5 };
+
+// Picnic table bench seats — two benches on the south side of the picnic area.
+// Derived from the picnic kit placement so a seat is always under a bench plank.
+// picnic table is at PARK_CENTER offset south by 4.5 → (94, 125.5)
+export const PARK_PICNIC_Z = PARK_CENTER.z + 4.5;
+export const PARK_PICNIC_SEATS: (Vec2 & { faceYaw: number })[] = [
+  { x: PARK_CENTER.x - 0.5, z: PARK_PICNIC_Z - 0.7, faceYaw: 0 },
+  { x: PARK_CENTER.x + 0.5, z: PARK_PICNIC_Z - 0.7, faceYaw: 0 },
+  { x: PARK_CENTER.x - 0.5, z: PARK_PICNIC_Z + 0.7, faceYaw: Math.PI },
+  { x: PARK_CENTER.x + 0.5, z: PARK_PICNIC_Z + 0.7, faceYaw: Math.PI },
+];
 
 // --- Player House (the spawn / home base, location #1) -------------------------
 // A small residential lot on the SOUTH side of the street (across the crosswalk
