@@ -284,36 +284,33 @@ function makeParkedCars(): THREE.Object3D {
 }
 
 // Infill buildings packing the block (retail row across the road, a west flank,
-// a taller background row). The east flank is now the phone shop.
+// a taller background row). The east flank is the phone shop. Lifted to a shared
+// const so the collider builder gives every infill box a solid footprint.
+const FAR_FRONT = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D;
+
+export interface InfillFootprint extends BuildingDef { rotY: number; }
+
+export const INFILL_FOOTPRINTS: InfillFootprint[] = [
+  // retail row across the road, facing the promenade (rotated PI)
+  { id: "rfar-0", x: CX - 20, z: FAR_FRONT + 4, width: 9, depth: 8, height: 9, color: BUILDING_COLORS[0], rotY: Math.PI },
+  { id: "rfar-1", x: CX - 7, z: FAR_FRONT + 4, width: 8, depth: 8, height: 7, color: BUILDING_COLORS[4], rotY: Math.PI },
+  { id: "rfar-2", x: CX + 7, z: FAR_FRONT + 4, width: 9, depth: 8, height: 11, color: BUILDING_COLORS[1], rotY: Math.PI },
+  { id: "rfar-3", x: CX + 20, z: FAR_FRONT + 4, width: 8, depth: 8, height: 8, color: BUILDING_COLORS[5], rotY: Math.PI },
+  // west flank (the east end is the phone shop)
+  { id: "rflank-0", x: CX - 27, z: SHOP_Z, width: 8, depth: 8, height: 10, color: BUILDING_COLORS[2], rotY: 0 },
+  // taller background row
+  { id: "rbg-0", x: CX - 14, z: SHOP_Z - 11, width: 10, depth: 8, height: 16, color: BUILDING_COLORS[3], rotY: 0 },
+  { id: "rbg-1", x: CX + 2, z: SHOP_Z - 11, width: 9, depth: 8, height: 20, color: BUILDING_COLORS[3], rotY: 0 },
+  { id: "rbg-2", x: CX + 16, z: SHOP_Z - 11, width: 10, depth: 8, height: 14, color: BUILDING_COLORS[7], rotY: 0 },
+];
+
 function makeInfillBuildings(): THREE.Object3D {
   const g = new THREE.Group();
-  const farFront = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D;
-
-  const far = [
-    { x: CX - 20, w: 9, d: 8, h: 9, c: BUILDING_COLORS[0] },
-    { x: CX - 7, w: 8, d: 8, h: 7, c: BUILDING_COLORS[4] },
-    { x: CX + 7, w: 9, d: 8, h: 11, c: BUILDING_COLORS[1] },
-    { x: CX + 20, w: 8, d: 8, h: 8, c: BUILDING_COLORS[5] },
-  ];
-  far.forEach((b, i) => {
-    const def: BuildingDef = { id: `rfar-${i}`, x: b.x, z: farFront + b.d / 2, width: b.w, depth: b.d, height: b.h, color: b.c };
-    const bld = makeBuilding(def);
-    bld.rotation.y = Math.PI;
+  for (const f of INFILL_FOOTPRINTS) {
+    const bld = makeBuilding(f);
+    bld.rotation.y = f.rotY;
     g.add(bld);
-  });
-
-  // west flank only (the east end is the phone shop).
-  g.add(makeBuilding({ id: "rflank-0", x: CX - 27, z: SHOP_Z, width: 8, depth: 8, height: 10, color: BUILDING_COLORS[2] }));
-
-  const bg = [
-    { x: CX - 14, w: 10, d: 8, h: 16, c: BUILDING_COLORS[3] },
-    { x: CX + 2, w: 9, d: 8, h: 20, c: BUILDING_COLORS[3] },
-    { x: CX + 16, w: 10, d: 8, h: 14, c: BUILDING_COLORS[7] },
-  ];
-  bg.forEach((b, i) => {
-    g.add(makeBuilding({ id: `rbg-${i}`, x: b.x, z: SHOP_Z - 11, width: b.w, depth: b.d, height: b.h, color: b.c }));
-  });
-
+  }
   return g;
 }
 

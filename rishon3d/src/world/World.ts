@@ -11,6 +11,7 @@ import { makeRail } from "./rail";
 import { makeStreetFurniture } from "./streetFurniture";
 import { makeAirport } from "./airport";
 import { makeRestaurantStreet } from "./restaurantStreet";
+import { restaurantColliders } from "./restaurantColliders";
 
 export class World {
   constructor(scene: THREE.Scene, physics: Physics, public readonly map: RishonMap) {
@@ -21,6 +22,16 @@ export class World {
     scene.add(makeRail());
     scene.add(makeAirport());
     scene.add(makeRestaurantStreet());
+
+    // Restaurant-district collision: walk-in shell walls (open front), solid
+    // closed restaurants + infill buildings. Lets the player enter the open
+    // restaurant / phone shop through the doorway without phasing through walls.
+    for (const c of restaurantColliders()) {
+      const body = physics.world.createRigidBody(
+        RAPIER.RigidBodyDesc.fixed().setTranslation(c.x, c.y, c.z),
+      );
+      physics.world.createCollider(RAPIER.ColliderDesc.cuboid(c.hx, c.hy, c.hz), body);
+    }
 
     // ground collider (thin fixed cuboid at y=0)
     const half = map.ground.size / 2;

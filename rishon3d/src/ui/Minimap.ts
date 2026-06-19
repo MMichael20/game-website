@@ -1,4 +1,5 @@
 import type { RishonMap } from "../world/rishonMap";
+import { POIS } from "../world/districtPois";
 import { worldToMinimap, worldRectToMinimap } from "./minimapMath";
 
 const SIZE = 180;
@@ -47,7 +48,41 @@ export class Minimap {
       const rect = worldRectToMinimap(bl.x, bl.z, bl.width, bl.depth, this.worldSize, SIZE);
       b.fillRect(rect.x, rect.y, rect.w, rect.h);
     }
+    this.drawPois(b);
     this.base = base;
+  }
+
+  // POI markers are static (anchored to fixed world points), so they live on the
+  // base layer beneath the moving player/car dots drawn each frame in update().
+  private drawPois(b: CanvasRenderingContext2D): void {
+    const half = 4; // marker half-size in minimap pixels
+    b.textAlign = "center";
+    b.textBaseline = "middle";
+    b.font = "bold 6px sans-serif";
+    b.lineWidth = 1;
+    for (const poi of POIS) {
+      const m = worldToMinimap(poi.x, poi.z, this.worldSize, SIZE);
+      b.fillStyle = poi.color;
+      b.strokeStyle = "rgba(0,0,0,0.6)";
+      // Rounded square keeps adjacent promenade markers distinct at small size.
+      this.roundedRect(b, m.x - half, m.y - half, half * 2, half * 2, 2);
+      b.fill();
+      b.stroke();
+      b.fillStyle = "#10141a"; // dark glyph reads on the bright marker fills
+      b.fillText(poi.glyph, m.x, m.y + 0.5);
+    }
+  }
+
+  private roundedRect(
+    b: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number,
+  ): void {
+    b.beginPath();
+    b.moveTo(x + r, y);
+    b.arcTo(x + w, y, x + w, y + h, r);
+    b.arcTo(x + w, y + h, x, y + h, r);
+    b.arcTo(x, y + h, x, y, r);
+    b.arcTo(x, y, x + w, y, r);
+    b.closePath();
   }
 
   update(player: { x: number; z: number }, car: { x: number; z: number }, mode: "onFoot" | "driving"): void {

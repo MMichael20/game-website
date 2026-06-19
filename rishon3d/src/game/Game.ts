@@ -8,6 +8,8 @@ import { Car } from "../entities/Car";
 import { Npc } from "../entities/Npc";
 import { Animal } from "../entities/Animal";
 import { NpcCar } from "../entities/NpcCar";
+import { spawnPatrons } from "../entities/Patron";
+import { nearestPoi, poiPrompt } from "./interactions";
 import type { World } from "../world/World";
 import { nextMode, canEnter, type Mode } from "./InteractionSystem";
 import { buildingRects, type Rect } from "./wander";
@@ -83,6 +85,10 @@ export class Game implements Tickable {
     pop.carRoutes.forEach((route, i) => {
       this.entities.add(new NpcCar(scene, route, carColors[i % carColors.length], 6 + (i % 3)));
     });
+
+    // Scripted patrons that walk in/out of the restaurant + phone shop, sit,
+    // order, wait for taxis and stroll the promenade (life around the slice).
+    for (const patron of spawnPatrons(scene)) this.entities.add(patron);
     this.car.enabled = false;
     this.character.enabled = true;
     this.follow.setTarget(this.character.object, 8, 1.6);
@@ -169,6 +175,7 @@ export class Game implements Tickable {
     }
 
     // --- HUD prompt ---
+    const poi = this.mode === "onFoot" ? nearestPoi(pPos) : null;
     if (this.summonPhase === "toPickup") {
       this.hud.setPrompt("Your car is on its way...");
     } else if (this.summonPhase === "waiting") {
@@ -177,6 +184,8 @@ export class Game implements Tickable {
       this.hud.setPrompt("Press E to drive");
     } else if (this.mode === "driving") {
       this.hud.setPrompt("Press E to exit");
+    } else if (this.mode === "onFoot" && poi) {
+      this.hud.setPrompt(poiPrompt(poi));
     } else if (this.mode === "onFoot") {
       this.hud.setPrompt("Press P for phone");
     } else {
