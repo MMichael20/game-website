@@ -30,6 +30,7 @@ export function poiPrompt(poi: Poi): string {
     case "taxi": return "Taxi pickup point";
     case "park": return "Pocket park";
     case "pickup": return "Delivery / pickup point";
+    case "house": return "Your home";
     default: return poi.label;
   }
 }

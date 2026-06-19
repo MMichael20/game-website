@@ -70,7 +70,7 @@ export const CHAIR_OFFSETS: [number, number][] = [
 // --- named gameplay anchors (POIs) -------------------------------------------
 // All in world space. `r` is the interaction/approach radius.
 export type PoiKind =
-  | "restaurant" | "bakery" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk";
+  | "restaurant" | "bakery" | "counter" | "phoneShop" | "taxi" | "park" | "pickup" | "crosswalk" | "house";
 
 export interface Poi {
   kind: PoiKind;
@@ -124,9 +124,31 @@ export const PHONE_SHOP_STAFF: Vec2 = { x: PHONE_SHOP.x - 1.0, z: SHOP_Z - 2.8 }
 export const TAXI_CAR: Vec2 = { x: CX + 9, z: ROAD_Z - ROAD_W / 2 + 1.0 };
 export const TAXI_WAIT: Vec2 = { x: CX + 9, z: ANCHOR_Z + 1 };
 
-// Pocket park / plaza: a small green pocket at the west end of the block.
-export const PARK_CENTER: Vec2 = { x: CX - 25, z: CZ + 6 };
-export const PARK_BENCH: Vec2 = { x: PARK_CENTER.x, z: PARK_CENTER.z + 2.0 };
+// Pocket park / plaza: a small green pocket on the PLAYER (south) side of the
+// street, just below the central crosswalk, so the loop reads
+// house -> park -> crosswalk -> restaurant. Its street-facing edge faces NORTH
+// toward the road (see makePocketPark, which flips its offsets for the south side).
+export const PARK_CENTER: Vec2 = { x: CX - 1, z: ROAD_Z + 12 };   // (94, 121)
+export const PARK_BENCH: Vec2 = { x: PARK_CENTER.x, z: PARK_CENTER.z + 1.5 };
+
+// --- Player House (the spawn / home base, location #1) -------------------------
+// A small residential lot on the SOUTH side of the street (across the crosswalk
+// from the restaurant strip). The house front faces NORTH (-z) onto the street.
+// NOTE: rishonMap.CORE_MAP mirrors these coords as literals (to avoid an import
+// cycle) for the one isHouse building + the player/car spawns — keep them in sync.
+export const HOUSE = { x: CX - 21, z: ROAD_Z + 15, w: 12, d: 9, h: 5 }; // (74, 124)
+export const HOUSE_FRONT = HOUSE.z - HOUSE.d / 2;                       // 119.5 (north face)
+// The door anchor sits ~1u IN FRONT of the physical door so it is clear of the
+// house's solid footprint (used by the home POI + the NPC "goHome" target, both
+// of which want the spot just outside the door, not embedded in the wall).
+export const HOUSE_DOOR: Vec2 = { x: HOUSE.x, z: HOUSE_FRONT - 1.0 };
+// Spawn IN FRONT of the house (lower z, toward the street) so the player is not
+// inside the solid house collider, and offset east of the house body so the
+// follow-camera (which sits ~7.5u behind) clears the house instead of starting
+// inside it. The player faces north toward the crosswalk + restaurant strip.
+export const HOUSE_SPAWN: Vec2 = { x: HOUSE.x + 10, z: HOUSE_FRONT - 3.5 }; // (84, 116)
+export const DRIVEWAY: Vec2 = { x: CX - 9, z: ROAD_Z + 14 };           // (86, 123) drivable car
+export const MAILBOX: Vec2 = { x: CX - 15, z: HOUSE_FRONT - 1.5 };     // (80, 118) at the path
 
 // Pickup / delivery stand (existing landmark anchor).
 export const PICKUP_STAND: Vec2 = { x: CX, z: ANCHOR_Z };
@@ -152,4 +174,6 @@ export const POIS: Poi[] = [
     x: PARK_CENTER.x, z: PARK_CENTER.z, r: 6 },
   { kind: "pickup", id: "pickup", label: "Pickup", glyph: "S", color: "#ffd98a",
     x: PICKUP_STAND.x, z: PICKUP_STAND.z, r: 3.5 },
+  { kind: "house", id: "house", label: "Home", glyph: "H", color: "#f4c542",
+    x: HOUSE_DOOR.x, z: HOUSE_DOOR.z, r: 4 },
 ];

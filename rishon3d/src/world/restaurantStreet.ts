@@ -12,6 +12,7 @@ import type { PropDef, BuildingDef } from "./rishonMap";
 import { makeRestaurantInterior } from "./restaurantInterior";
 import { makeBakeryInterior } from "./bakeryInterior";
 import { makePhoneShop, makePocketPark, makeTaxiPickup } from "./secondaryLocations";
+import { makePlayerHouse } from "./playerHouse";
 import { makeUmbrella } from "./objects/umbrella";
 import { makeFlower } from "./objects/flower";
 import { mergeTinted } from "./objects/voxel";
@@ -244,37 +245,40 @@ function makeStreetBlock(): THREE.Object3D {
   return g;
 }
 
-// Parked cars along the near curb (the taxi fills the gap east of the crosswalk).
+// Near-curb parked car spots (shared with the patron obstacle set so NPCs don't
+// walk through them). The taxi fills the gap east of the crosswalk.
+const PARKED_CAR_Z = ROAD_Z - ROAD_W / 2 + 1.0;
+export const PARKED_CAR_SPOTS: { x: number; z: number }[] = [
+  { x: CX - 22, z: PARKED_CAR_Z },
+  { x: CX - 13, z: PARKED_CAR_Z },
+  { x: CX + 20, z: PARKED_CAR_Z },
+];
+
 function makeParkedCars(): THREE.Object3D {
   const g = new THREE.Group();
   const colors = [0xd94f4f, 0x4f7fd9, 0xc9c9c9];
-  const carZ = ROAD_Z - ROAD_W / 2 + 1.0;
-  const xs = [CX - 22, CX - 13, CX + 20];
-  xs.forEach((x, i) => {
+  PARKED_CAR_SPOTS.forEach((spot, i) => {
     const car = makeCarBody({ bodyColor: colors[i % colors.length], withWheels: true });
-    car.position.set(x, 0.55, carZ);
+    car.position.set(spot.x, 0.55, spot.z);
     car.rotation.y = Math.PI / 2;
     g.add(car);
   });
   return g;
 }
 
-// Infill buildings packing the block (retail row across the road, a west flank,
-// a taller background row). The east flank is the phone shop. Lifted to a shared
-// const so the collider builder gives every infill box a solid footprint.
-const FAR_FRONT = ROAD_Z + ROAD_W / 2 + 0.3 + FAR_WALK_D;
-
+// Infill buildings dressing the NORTH side of the block (a west flank + a taller
+// background skyline row). Lifted to a shared const so the collider builder gives
+// every infill box a solid footprint.
 export interface InfillFootprint extends BuildingDef { rotY: number; }
 
+// V1: the SOUTH side of the road is now the residential lot (player house + pocket
+// park), so the old far-retail row (rfar-*) is gone. What remains is the NORTH-side
+// dressing: a west closure box and a taller background row that reads as the distant
+// city skyline behind the restaurant strip (matching the concept art).
 export const INFILL_FOOTPRINTS: InfillFootprint[] = [
-  // retail row across the road, facing the promenade (rotated PI)
-  { id: "rfar-0", x: CX - 20, z: FAR_FRONT + 4, width: 9, depth: 8, height: 9, color: BUILDING_COLORS[0], rotY: Math.PI },
-  { id: "rfar-1", x: CX - 7, z: FAR_FRONT + 4, width: 8, depth: 8, height: 7, color: BUILDING_COLORS[4], rotY: Math.PI },
-  { id: "rfar-2", x: CX + 7, z: FAR_FRONT + 4, width: 9, depth: 8, height: 11, color: BUILDING_COLORS[1], rotY: Math.PI },
-  { id: "rfar-3", x: CX + 20, z: FAR_FRONT + 4, width: 8, depth: 8, height: 8, color: BUILDING_COLORS[5], rotY: Math.PI },
   // west flank (the east end is the phone shop)
   { id: "rflank-0", x: CX - 27, z: SHOP_Z, width: 8, depth: 8, height: 10, color: BUILDING_COLORS[2], rotY: 0 },
-  // taller background row
+  // taller background row (skyline backdrop)
   { id: "rbg-0", x: CX - 14, z: SHOP_Z - 11, width: 10, depth: 8, height: 16, color: BUILDING_COLORS[3], rotY: 0 },
   { id: "rbg-1", x: CX + 2, z: SHOP_Z - 11, width: 9, depth: 8, height: 20, color: BUILDING_COLORS[3], rotY: 0 },
   { id: "rbg-2", x: CX + 16, z: SHOP_Z - 11, width: 10, depth: 8, height: 14, color: BUILDING_COLORS[7], rotY: 0 },
@@ -340,10 +344,11 @@ export function makeRestaurantStreet(): THREE.Object3D {
   group.add(makeStreetBlock());
   group.add(makeParkedCars());
 
-  // secondary locations
+  // secondary locations + the player house (V1 location #1, south residential lot)
   group.add(makePhoneShop());
   group.add(makePocketPark());
   group.add(makeTaxiPickup());
+  group.add(makePlayerHouse());
 
   group.add(trashcanInstances([
     { id: "rtc-1", kind: "trashcan", x: CX - 4, z: ROAD_Z - ROAD_W / 2 - 1.2 },

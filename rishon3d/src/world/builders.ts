@@ -116,6 +116,9 @@ export function makeGround(map: RishonMap): THREE.Mesh {
   const mat = new THREE.MeshStandardMaterial({ color: PALETTE.grass });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.rotation.x = -Math.PI / 2;
+  // frame the playable block: sit the ground under map.ground.center (origin default).
+  const c = map.ground.center ?? { x: 0, z: 0 };
+  mesh.position.set(c.x, 0, c.z);
   mesh.receiveShadow = true;
   return mesh;
 }

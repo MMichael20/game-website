@@ -7,6 +7,7 @@ import {
 } from "../game/patronRoutine";
 import { buildItinerary } from "../game/itinerary";
 import { CX } from "../world/districtPois";
+import { resolveObstacles } from "../world/obstacles";
 
 // Seated pose, mirroring the static diners in restaurantStreet.ts makePatioPeople:
 // the whole humanoid drops by SIT_DROP so its bent legs meet a chair, legs fold
@@ -53,6 +54,10 @@ export class Patron implements Tickable {
 
     const prev = { x: this.data.pos.x, z: this.data.pos.z };
     stepPatron(this.data, dt);
+    // Keep patrons from ghosting through solid buildings / the house / curbside
+    // cars: push the post-step position out of any obstacle it landed inside.
+    // (Open shells are excluded from the set, so door-routes still work.)
+    if (!isSitting(this.data.state)) resolveObstacles(this.data.pos);
 
     const sitting = isSitting(this.data.state);
     const dx = this.data.pos.x - prev.x;
@@ -125,7 +130,7 @@ function paletteAt(i: number): HumanoidPalette {
 // daily itinerary (eat -> shop -> sit outside -> cross -> park, in its own order),
 // run on a continuous loop, so the crowd reads as a living town instead of
 // identical routines. Staggered delays + per-itinerary speeds keep them desynced.
-const PATRON_COUNT = 12;
+const PATRON_COUNT = 7;
 
 export function spawnPatrons(scene: THREE.Scene): Patron[] {
   const patrons: Patron[] = [];

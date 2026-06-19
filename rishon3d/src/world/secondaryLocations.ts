@@ -135,8 +135,11 @@ export function makePhoneShop(): THREE.Object3D {
 }
 
 // =============================================================================
-// POCKET PARK — a small grassy plaza at the west end of the block: a grass pad
-// with a crossing paver path, two trees, a bench, a bin, planters and a lamp.
+// POCKET PARK — a small grassy plaza on the PLAYER (south) side of the street,
+// just below the crosswalk: a grass pad with a crossing paver path, two trees, a
+// bench, a bin, planters and a lamp. The street is to the NORTH (lower z), so the
+// street-facing dressing (path, planter border, lamp, bench) hugs the north edge
+// and the trees sit at the back (south).
 // =============================================================================
 export function makePocketPark(): THREE.Object3D {
   const group = new THREE.Group();
@@ -153,33 +156,35 @@ export function makePocketPark(): THREE.Object3D {
   grass.receiveShadow = true;
   group.add(grass);
 
-  // a paver path crossing the park (so it reads as walkable)
+  // a paver path crossing the park toward the street (north edge), so it reads as
+  // the walked route from the crosswalk into the park.
   const paver = makeSidewalkTexture();
-  paver.repeat.set(Math.max(1, Math.round(W / PAVER_SUPER_M)), 1);
+  paver.repeat.set(1, Math.max(1, Math.round(D / PAVER_SUPER_M)));
   const path = new THREE.Mesh(
-    new THREE.BoxGeometry(W, 0.12, 2.2),
+    new THREE.BoxGeometry(2.4, 0.12, D),
     new THREE.MeshStandardMaterial({ map: paver }),
   );
-  path.position.set(cx, 0.07, cz + 1.5);
+  path.position.set(cx, 0.07, cz);
   path.receiveShadow = true;
   group.add(path);
 
-  // greenery + furniture reuse the city prop instancers (matched style)
+  // greenery + furniture reuse the city prop instancers (matched style). Trees at
+  // the back (south); bench + bin + lamp toward the street-facing north edge.
   const trees: PropDef[] = [
-    { id: "pk-t1", kind: "tree", x: cx - 3.5, z: cz - 2.5 },
-    { id: "pk-t2", kind: "tree", x: cx + 3.5, z: cz - 2.0 },
+    { id: "pk-t1", kind: "tree", x: cx - 3.5, z: cz + 3.2 },
+    { id: "pk-t2", kind: "tree", x: cx + 3.5, z: cz + 3.6 },
   ];
   group.add(treeInstances(trees));
-  group.add(benchInstances([{ id: "pk-b1", kind: "bench", x: cx, z: cz + 3.0 }]));
-  group.add(trashcanInstances([{ id: "pk-tc", kind: "trashcan", x: cx + 4.5, z: cz + 3.2 }]));
-  group.add(makeStreetLight({ id: "pk-l", kind: "streetlight", x: cx - 4.6, z: cz + 3.0 }));
+  group.add(benchInstances([{ id: "pk-b1", kind: "bench", x: cx + 3.2, z: cz - 1.5 }]));
+  group.add(trashcanInstances([{ id: "pk-tc", kind: "trashcan", x: cx + 4.6, z: cz - 2.0 }]));
+  group.add(makeStreetLight({ id: "pk-l", kind: "streetlight", x: cx - 4.6, z: cz - 2.5 }));
 
-  // low planter borders along the street-facing edge
+  // low planter borders along the street-facing (north) edge
   const planters: THREE.BufferGeometry[] = [];
   for (let i = 0; i < 4; i++) {
     const x = cx - 4.5 + i * 3;
-    planters.push(tinted(2.4, 0.5, 0.7, x, 0.25, cz + 5.0, PALETTE.benchWood));
-    planters.push(tinted(2.0, 0.4, 0.5, x, 0.6, cz + 5.0, PALETTE.hedge));
+    planters.push(tinted(2.4, 0.5, 0.7, x, 0.25, cz - 5.0, PALETTE.benchWood));
+    planters.push(tinted(2.0, 0.4, 0.5, x, 0.6, cz - 5.0, PALETTE.hedge));
   }
   group.add(new THREE.Mesh(mergeGeometries(planters), vcMat()));
 

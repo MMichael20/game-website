@@ -6,7 +6,7 @@
 // infill buildings. Pure data (no THREE / no Rapier) -> unit-testable; World.ts
 // turns each BoxCollider into a Rapier fixed cuboid.
 
-import { RESTAURANTS, PHONE_SHOP, SHOP_Z, type RestaurantSpec } from "./districtPois";
+import { RESTAURANTS, PHONE_SHOP, SHOP_Z, HOUSE, type RestaurantSpec } from "./districtPois";
 import { INFILL_FOOTPRINTS } from "./restaurantStreet";
 
 export interface BoxCollider { x: number; y: number; z: number; hx: number; hy: number; hz: number; }
@@ -52,5 +52,8 @@ export function restaurantColliders(): BoxCollider[] {
   for (const f of INFILL_FOOTPRINTS) {
     out.push(box(f.x, f.height / 2, f.z, f.width / 2, f.height / 2, f.depth / 2));
   }
+  // the player house: a solid box matching its body footprint (geometry in
+  // playerHouse.ts; the player walks around it, not into it, in V1).
+  out.push(box(HOUSE.x, HOUSE.h / 2, HOUSE.z, HOUSE.w / 2, HOUSE.h / 2, HOUSE.d / 2));
   return out;
 }

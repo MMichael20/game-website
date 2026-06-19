@@ -1,41 +1,39 @@
 import { describe, it, expect } from "vitest";
-import { assembleMap, DISTRICTS } from "../src/world/worldData";
+import { assembleMap, RISHON_MAP } from "../src/world/worldData";
 import { validateMap } from "../src/world/rishonMap";
 import { roadRects, rectsOverlap } from "../src/world/roadClear";
-import { pointInRects } from "../src/game/wander";
-import { DISTRICT_PALETTES } from "../src/world/palette";
 
-describe("assembleMap", () => {
+// V1 COMPACT MAP. assembleMap no longer layers a procedural city / districts /
+// arterials on top of a core; it returns the small framed block (one house + one
+// decorative street). These assertions pin that compact shape.
+describe("assembleMap (V1 compact block)", () => {
   const map = assembleMap();
 
   it("validates cleanly (one house, spawns in bounds, no spawn in a building)", () => {
     expect(validateMap(map)).toEqual([]);
   });
 
-  it("has exactly one house (only the core district)", () => {
+  it("has exactly one house (the player home)", () => {
     expect(map.buildings.filter((b) => b.isHouse).length).toBe(1);
   });
 
-  it("adds district buildings on top of the core", () => {
-    // core has 8 buildings; districts add many more
-    expect(map.buildings.length).toBeGreaterThan(20);
+  it("is a compact block framed off the world origin", () => {
+    expect(map.ground.size).toBeLessThanOrEqual(140);
+    expect(map.ground.center).toBeTruthy();
   });
 
-  it("gives every building a unique id across districts", () => {
+  it("gives every building a unique id", () => {
     const ids = map.buildings.map((b) => b.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("keeps all buildings within the (larger) ground bounds", () => {
+  it("keeps all buildings within the framed ground bounds", () => {
     const half = map.ground.size / 2;
+    const c = map.ground.center ?? { x: 0, z: 0 };
     for (const b of map.buildings) {
-      expect(Math.abs(b.x) + b.width / 2).toBeLessThanOrEqual(half);
-      expect(Math.abs(b.z) + b.depth / 2).toBeLessThanOrEqual(half);
+      expect(Math.abs(b.x - c.x) + b.width / 2).toBeLessThanOrEqual(half);
+      expect(Math.abs(b.z - c.z) + b.depth / 2).toBeLessThanOrEqual(half);
     }
-  });
-
-  it("declares at least three districts", () => {
-    expect(DISTRICTS.length).toBeGreaterThanOrEqual(3);
   });
 
   it("keeps every building off every road", () => {
@@ -50,20 +48,8 @@ describe("assembleMap", () => {
     expect(onRoad).toEqual([]);
   });
 
-  it("keeps trees/bushes/benches out of road corridors", () => {
-    const corridors = roadRects(map.roads, 1.5);
-    const onRoad = map.props.filter(
-      (p) => p.kind !== "streetlight" && pointInRects({ x: p.x, z: p.z }, corridors),
-    );
-    expect(onRoad).toEqual([]);
-  });
-});
-
-describe("district palettes use the saturated palette", () => {
-  it("each district's palette matches the shared palette module", () => {
-    for (const d of DISTRICTS) {
-      expect(DISTRICT_PALETTES[d.id]).toBeTruthy();
-      expect(d.palette).toEqual(DISTRICT_PALETTES[d.id]);
-    }
+  it("exports the assembled singleton", () => {
+    expect(RISHON_MAP.buildings.length).toBe(map.buildings.length);
+    expect(RISHON_MAP.ground.size).toBe(map.ground.size);
   });
 });

@@ -12,9 +12,13 @@ export class Minimap {
   private ctx: CanvasRenderingContext2D | null;
   private base: HTMLCanvasElement | null = null;
   private worldSize: number;
+  // The V1 block is framed off-origin (ground.center ~ (95,104)); minimapMath maps
+  // an origin-centered world, so we translate every world point by `center` first.
+  private center: { x: number; z: number };
 
   constructor(container: HTMLElement, private map: RishonMap) {
     this.worldSize = map.ground.size;
+    this.center = map.ground.center ?? { x: 0, z: 0 };
     // Backing store stays at SIZE (crisp); CSS scales the displayed size down to
     // game-UI scale (~138px desktop, responsive on narrow viewports).
     this.canvas.width = SIZE;
@@ -40,12 +44,12 @@ export class Minimap {
     for (const r of this.map.roads) {
       const w = r.horizontal ? r.length : 6;
       const d = r.horizontal ? 6 : r.length;
-      const rect = worldRectToMinimap(r.x, r.z, w, d, this.worldSize, SIZE);
+      const rect = worldRectToMinimap(r.x - this.center.x, r.z - this.center.z, w, d, this.worldSize, SIZE);
       b.fillRect(rect.x, rect.y, rect.w, rect.h);
     }
     b.fillStyle = "#9aa7b8"; // buildings
     for (const bl of this.map.buildings) {
-      const rect = worldRectToMinimap(bl.x, bl.z, bl.width, bl.depth, this.worldSize, SIZE);
+      const rect = worldRectToMinimap(bl.x - this.center.x, bl.z - this.center.z, bl.width, bl.depth, this.worldSize, SIZE);
       b.fillRect(rect.x, rect.y, rect.w, rect.h);
     }
     this.drawPois(b);
@@ -61,7 +65,7 @@ export class Minimap {
     b.font = "bold 6px sans-serif";
     b.lineWidth = 1;
     for (const poi of POIS) {
-      const m = worldToMinimap(poi.x, poi.z, this.worldSize, SIZE);
+      const m = worldToMinimap(poi.x - this.center.x, poi.z - this.center.z, this.worldSize, SIZE);
       b.fillStyle = poi.color;
       b.strokeStyle = "rgba(0,0,0,0.6)";
       // Rounded square keeps adjacent promenade markers distinct at small size.
@@ -91,7 +95,7 @@ export class Minimap {
     ctx.clearRect(0, 0, SIZE, SIZE);
     ctx.drawImage(this.base, 0, 0);
     const dot = (p: { x: number; z: number }, color: string, radius: number) => {
-      const m = worldToMinimap(p.x, p.z, this.worldSize, SIZE);
+      const m = worldToMinimap(p.x - this.center.x, p.z - this.center.z, this.worldSize, SIZE);
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(m.x, m.y, radius, 0, Math.PI * 2);

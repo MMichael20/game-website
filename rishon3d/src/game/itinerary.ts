@@ -14,7 +14,7 @@ import {
   PHONE_SHOP_DOOR, PHONE_SHOP_INSIDE, PHONE_SHOP_COUNTER,
   TAXI_WAIT, CROSSWALK, PATIO_WALK_Z, FAR_WALK_Z,
   PARK_CENTER, PARK_BENCH, seatClusters, CHAIR_OFFSETS, INDOOR_TABLE_SEATS,
-  CX, type Vec2,
+  HOUSE_DOOR, CX, type Vec2,
 } from "../world/districtPois";
 import type { Waypoint, PatronState } from "./patronRoutine";
 
@@ -99,8 +99,22 @@ function crossStreet(rng: Rng): Waypoint[] {
 
 function stroll(rng: Rng): Waypoint[] {
   return [
-    wp(lane(jit(rng, CX, 36)), "patrol"),
-    wp(lane(jit(rng, CX, 36)), "waiting", jit(rng, 2, 2)),
+    wp(lane(jit(rng, CX, 30)), "patrol"),
+    wp(lane(jit(rng, CX, 30)), "waiting", jit(rng, 2, 2)),
+  ];
+}
+
+// Cross south to the residential lot, linger at the house door, then come back —
+// gives the player side of the block visible life and ties NPCs to "home".
+function goHome(rng: Rng): Waypoint[] {
+  return [
+    wp({ x: CROSSWALK.x, z: PATIO_WALK_Z }, "toCrosswalk"),
+    wp({ x: CROSSWALK.x, z: FAR_WALK_Z }, "crossing"),
+    wp({ x: HOUSE_DOOR.x, z: FAR_WALK_Z }, "patrol"),
+    wp(HOUSE_DOOR, "waiting", jit(rng, 5, 3)),
+    wp({ x: HOUSE_DOOR.x, z: FAR_WALK_Z }, "leaving"),
+    wp({ x: CROSSWALK.x, z: FAR_WALK_Z }, "toCrosswalk"),
+    wp({ x: CROSSWALK.x, z: PATIO_WALK_Z }, "crossing"),
   ];
 }
 
@@ -123,6 +137,7 @@ export const ACTIVITIES: readonly Activity[] = [
   { name: "crossStreet", build: crossStreet },
   { name: "stroll", build: stroll },
   { name: "waitTaxi", build: waitTaxi },
+  { name: "goHome", build: goHome },
 ];
 
 export interface Itinerary { waypoints: Waypoint[]; speed: number; activities: string[] }

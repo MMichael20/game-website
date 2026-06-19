@@ -5,8 +5,6 @@ import type { Input } from "../core/Input";
 import type { Physics } from "../core/Physics";
 import { Character } from "../entities/Character";
 import { Car } from "../entities/Car";
-import { Npc } from "../entities/Npc";
-import { Animal } from "../entities/Animal";
 import { NpcCar } from "../entities/NpcCar";
 import { spawnPatrons } from "../entities/Patron";
 import { nearestPoi, poiPrompt } from "./interactions";
@@ -14,7 +12,6 @@ import type { World } from "../world/World";
 import { nextMode, canEnter, type Mode } from "./InteractionSystem";
 import { buildingRects, type Rect } from "./wander";
 import { EntityManager } from "./EntityManager";
-import { planPopulations } from "./populate";
 import type { Hud } from "../ui/Hud";
 import type { Minimap } from "../ui/Minimap";
 import { safeExitPosition } from "./exit";
@@ -52,43 +49,33 @@ export class Game implements Tickable {
     this.character = new Character(scene, physics, input, world.playerSpawn, camera);
     this.car = new Car(scene, physics, input, world.carSpawn);
     const rects = buildingRects(world.map.buildings, 1.5);
-    const bounds = world.map.ground.size / 2 - 2;
+    // safeExitPosition treats `bounds` as an origin-centered half-extent, but the
+    // V1 block is framed off-origin (ground.center ~ (95,104)). Grow bounds to
+    // contain the whole block so car exits/summons near the player stay valid.
+    const gc = world.map.ground.center ?? { x: 0, z: 0 };
+    const bounds = Math.max(Math.abs(gc.x), Math.abs(gc.z)) + world.map.ground.size / 2 - 2;
     this.rects = rects;
     this.bounds = bounds;
     this.summon = new RideCar(scene);
     this.phone = new Phone(container);
     this.phone.onCallCar(() => this.callCar());
-    const palettes = [
-      { skin: 0xe8b98a, shirt: 0x9b59b6, pants: 0x40313f },
-      { skin: 0xf0c9a0, shirt: 0x27ae60, pants: 0x1e5c3a },
-      { skin: 0xd9a066, shirt: 0xe67e22, pants: 0x7a431a },
-      { skin: 0xf2d2b6, shirt: 0x2980b9, pants: 0x1f3f57 },
-      { skin: 0xe8b98a, shirt: 0xc0392b, pants: 0x5a1f1a },
-      { skin: 0xf0c9a0, shirt: 0xf1c40f, pants: 0x6b5a12 },
-    ];
-    this.entities = new EntityManager(() => camera.position, 140);
-
-    // Hand-authored downtown NPCs (kept for character).
-    world.npcSpawns.forEach((s, i) => {
-      this.entities.add(new Npc(scene, s, palettes[i % palettes.length], { bounds, rects }));
-    });
-
-    // Procedurally placed life across the whole city.
-    const pop = planPopulations(world.map, 1234, { pedestrians: 28, cats: 8, dogs: 8 });
-    pop.pedestrians.forEach((s, i) => {
-      this.entities.add(new Npc(scene, s, palettes[i % palettes.length], { bounds, rects }));
-    });
-    pop.cats.forEach((s) => this.entities.add(new Animal(scene, s, "cat", { bounds, rects })));
-    pop.dogs.forEach((s) => this.entities.add(new Animal(scene, s, "dog", { bounds, rects })));
-
-    const carColors = [0x2980b9, 0xf1c40f, 0x27ae60, 0xe67e22, 0x8e44ad, 0xecf0f1];
-    pop.carRoutes.forEach((route, i) => {
-      this.entities.add(new NpcCar(scene, route, carColors[i % carColors.length], 6 + (i % 3)));
-    });
+    this.entities = new EntityManager(() => camera.position, 90);
 
     // Scripted patrons that walk in/out of the restaurant + phone shop, sit,
-    // order, wait for taxis and stroll the promenade (life around the slice).
+    // order, wait for taxis, visit the park and stroll the block (the living life
+    // of the compact V1 slice). No procedural city population in V1.
     for (const patron of spawnPatrons(scene)) this.entities.add(patron);
+
+    // A couple of cars circling the one street so the block isn't dead: each runs
+    // a closed there-and-back loop along the road (east in one lane, back west in
+    // the other). The second starts half a loop offset so they desync.
+    const streetLoop = [
+      { x: 70, z: 110.6 }, { x: 120, z: 110.6 },
+      { x: 120, z: 107.4 }, { x: 70, z: 107.4 },
+    ];
+    const streetLoopB = [streetLoop[2], streetLoop[3], streetLoop[0], streetLoop[1]];
+    this.entities.add(new NpcCar(scene, streetLoop, 0xc0392b, 7));
+    this.entities.add(new NpcCar(scene, streetLoopB, 0x2980b9, 6));
     this.car.enabled = false;
     this.character.enabled = true;
     this.follow.setTarget(this.character.object, 8, 1.6);

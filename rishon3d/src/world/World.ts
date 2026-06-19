@@ -1,31 +1,32 @@
 import * as THREE from "three";
 import { Physics, RAPIER } from "../core/Physics";
-import { makeBuilding, makeGround, makeAwnings } from "./builders";
-import { treeInstances, bushInstances, makeStreetLight, benchInstances, flowerbedInstances, trashcanInstances, planterInstances } from "./props";
+import { makeBuilding, makeGround } from "./builders";
 import type { RishonMap } from "./rishonMap";
-import { makeRoadNetwork } from "./roads";
-import { planParkedCars, parkedCarInstances } from "./parkedCars";
-import { makeParkGround } from "./park";
 import { makeClouds } from "./clouds";
-import { makeRail } from "./rail";
-import { makeStreetFurniture } from "./streetFurniture";
-import { makeAirport } from "./airport";
 import { makeRestaurantStreet } from "./restaurantStreet";
 import { restaurantColliders } from "./restaurantColliders";
 
+// V1 COMPACT WORLD. The whole scene is the restaurant-block slice
+// (makeRestaurantStreet: strip + patio + phone shop + taxi + pocket park + player
+// house) sitting on a small framing ground. No procedural city, roads network,
+// rail, airport, downtown park or street-furniture grid — those were deleted for
+// the compact V1. The data-layer `map` carries only the framing ground, the one
+// isHouse building (data only — geometry comes from playerHouse.ts) and the spawns.
 export class World {
   constructor(scene: THREE.Scene, physics: Physics, public readonly map: RishonMap) {
+    const center = map.ground.center ?? { x: 0, z: 0 };
+
     scene.add(makeGround(map));
-    scene.add(makeParkGround());
-    scene.add(makeRoadNetwork(map.roads));
-    scene.add(makeClouds());
-    scene.add(makeRail());
-    scene.add(makeAirport());
+
+    // keep the bright box-clouds the user likes, floated over the compact block.
+    const clouds = makeClouds();
+    clouds.position.set(center.x, 0, center.z);
+    scene.add(clouds);
+
     scene.add(makeRestaurantStreet());
 
-    // Restaurant-district collision: walk-in shell walls (open front), solid
-    // closed restaurants + infill buildings. Lets the player enter the open
-    // restaurant / phone shop through the doorway without phasing through walls.
+    // District collision: walk-in shells (open storefront), solid closed
+    // restaurants + skyline infill + the player house.
     for (const c of restaurantColliders()) {
       const body = physics.world.createRigidBody(
         RAPIER.RigidBodyDesc.fixed().setTranslation(c.x, c.y, c.z),
@@ -33,15 +34,20 @@ export class World {
       physics.world.createCollider(RAPIER.ColliderDesc.cuboid(c.hx, c.hy, c.hz), body);
     }
 
-    // ground collider (thin fixed cuboid at y=0)
+    // ground collider (thin fixed cuboid at y=0), centered under the block.
     const half = map.ground.size / 2;
     const groundBody = physics.world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
     physics.world.createCollider(
-      RAPIER.ColliderDesc.cuboid(half, 0.1, half).setTranslation(0, -0.1, 0),
+      RAPIER.ColliderDesc.cuboid(half, 0.1, half).setTranslation(center.x, -0.1, center.z),
       groundBody,
     );
 
+    // Data-layer buildings (just the house in V1). Skip isHouse: the rich house
+    // mesh + its collider come from playerHouse.ts / restaurantColliders, so we
+    // don't double it with the generic box-building path. The loop stays for any
+    // future non-house data building.
     for (const b of map.buildings) {
+      if (b.isHouse) continue;
       scene.add(makeBuilding(b));
       const body = physics.world.createRigidBody(
         RAPIER.RigidBodyDesc.fixed().setTranslation(b.x, b.height / 2, b.z),
@@ -50,28 +56,6 @@ export class World {
         RAPIER.ColliderDesc.cuboid(b.width / 2, b.height / 2, b.depth / 2),
         body,
       );
-    }
-
-    scene.add(makeAwnings(map.buildings));
-    scene.add(treeInstances(map.props));
-    scene.add(bushInstances(map.props));
-    scene.add(benchInstances(map.props));
-    scene.add(flowerbedInstances(map.props));
-    scene.add(trashcanInstances(map.props));
-    scene.add(planterInstances(map.props));
-    scene.add(makeStreetFurniture(map));
-    scene.add(parkedCarInstances(planParkedCars(map, 4242, 40)));
-
-    let lightBudget = 12;
-    for (const p of map.props) {
-      if (p.kind !== "streetlight") continue;
-      const sl = makeStreetLight(p);
-      scene.add(sl);
-      if (lightBudget-- > 0) {
-        const glow = new THREE.PointLight(0xffb24d, 8, 16, 2);
-        glow.position.set(p.x, 3.4, p.z);
-        scene.add(glow);
-      }
     }
   }
 
