@@ -550,8 +550,46 @@ walkers; keep cull tuning — raise `cullDistance` if needed for the bigger map)
 - [ ] **Step 6:** Adversarial review workflow over the full diff (correctness/coupling/determinism/draw
   calls/obstacle-trap regressions). Fix findings.
 - [ ] **Step 7:** Update `README.md` (world description is stale — describes the deleted big city).
-- [ ] **Step 8:** Hand back the finished branch with a summary (built / assumed / remains / test results).
-  **Do NOT merge/deploy.**
+- [ ] **Step 8:** Summary (built / assumed / remains / test results), then proceed to Tasks 18-19.
+
+---
+
+## Phase 13 — Title-screen polish (user request)
+
+### Task 18: Polish title screen + remove controls legend
+
+**Files:** Modify `src/ui/Menu.ts`. Test: keep `smoke.spec.ts` green (Start button still works).
+
+User: "polish the main screen, no need to show instructions — people know it already." Remove the `.r3d-legend`
+controls block (WASD/Mouse/E/P/M/Space/Esc/F3) from `showTitle()`. Polish the title card (typography/spacing/
+button); the `public/title.png` concept-art background + scrim stays. Keep the `#r3d-start` button id + `onStart`
+wiring intact (the smoke test clicks Start). Pause menu unchanged.
+
+- [ ] Steps: (1) edit `showTitle()` — drop the legend, tighten the card. (2) `cd rishon3d && npx tsc --noEmit` +
+  `npx vite build` + `npx playwright test` (Start still boots, 2 canvases, 0 errors). (3) Commit
+  `feat(rishon3d): polish title screen, drop controls legend`.
+
+---
+
+## Phase 14 — Go-live (user authorized 2026-06-19: "we officially move to 3D")
+
+### Task 19: Repoint deploy to the 3D build, merge to master, push
+
+**Files:** Modify `render.yaml` (repo root). Use superpowers:finishing-a-development-branch.
+
+ONLY after Tasks 1-18 are complete and the FULL gate is green (tsc + vitest + vite build + playwright smoke,
+with evidence). `render.yaml` currently builds the ROOT 2D Phaser game (`npm install && npm run build`, serves
+`./dist`). Repoint it to build & serve rishon3d:
+```yaml
+buildCommand: cd rishon3d && npm install && npm run build
+staticPublishPath: ./rishon3d/dist
+```
+Verify `cd rishon3d && npm run build` produces `rishon3d/dist/index.html` + assets. Commit the render.yaml change
+on the branch.
+
+- [ ] Steps: (1) edit + verify `render.yaml`, commit. (2) Merge `worktree-3d-spike` → `master` (no-ff), from the
+  main checkout. (3) Push `master` (auto-deploys via Render — replaces the live 2D site with the 3D game).
+  (4) Report the deployed commit + confirm the build command resolves rishon3d/dist.
 
 ---
 
