@@ -193,27 +193,40 @@ interface RestaurantParams {
   variant: string;
 }
 
+// Table + chair dimensions — the SINGLE SOURCE for BOTH the geometry below AND the
+// chair placement around the table. CHAIR_DIST is DERIVED from these, so a chair
+// can never overlap the table (CLAUDE.md pitfall #3): the seat-front-to-table-edge
+// clearance is exactly CHAIR_GAP, no matter how the sizes change.
+const TABLE_TOP = 1.4;     // square tabletop side (m)
+const TABLE_LEG = 0.14;    // leg thickness
+const CHAIR_DEPTH = 0.56;  // seat depth (= width); the dimension that faces the table
+const CHAIR_GAP = 0.1;     // clearance between the seat front and the table edge
+/** How far a chair's CENTRE sits from the table centre. Derived, never eyeballed. */
+const CHAIR_DIST = TABLE_TOP / 2 + CHAIR_DEPTH / 2 + CHAIR_GAP;
+
 /** Simple inline voxel table (top + 4 legs), local origin at center/base. */
 function makeInlineTable(): THREE.Object3D {
   const parts: THREE.BufferGeometry[] = [];
-  // Tabletop
-  parts.push(tintedBox(1.4, 0.16, 1.4, 0, 0.96, 0, PALETTE.benchWood));
-  // Four legs
-  for (const sx of [-0.58, 0.58]) {
-    for (const sz of [-0.58, 0.58]) {
-      parts.push(tintedBox(0.14, 0.96, 0.14, sx, 0.48, sz, PALETTE.benchWood));
+  const legOff = TABLE_TOP / 2 - TABLE_LEG; // legs inset from the edge
+  parts.push(tintedBox(TABLE_TOP, 0.16, TABLE_TOP, 0, 0.96, 0, PALETTE.benchWood));
+  for (const sx of [-legOff, legOff]) {
+    for (const sz of [-legOff, legOff]) {
+      parts.push(tintedBox(TABLE_LEG, 0.96, TABLE_LEG, sx, 0.48, sz, PALETTE.benchWood));
     }
   }
   return tintedMesh(mergeTinted(parts));
 }
 
-/** Simple inline voxel chair, local origin at center/base. */
+/** Simple inline voxel chair, local origin at center/base, FRONT (open side) = +z. */
 function makeInlineChair(): THREE.Object3D {
-  const seat = tintedBox(0.56, 0.13, 0.56, 0, 0.55, 0, PALETTE.benchWood);
-  const back = tintedBox(0.56, 0.62, 0.13, 0, 0.86, -0.22, PALETTE.benchWood);
+  const half = CHAIR_DEPTH / 2;
+  const seat = tintedBox(CHAIR_DEPTH, 0.13, CHAIR_DEPTH, 0, 0.55, 0, PALETTE.benchWood);
+  // Backrest on the -z side (away from the table when the chair faces it).
+  const back = tintedBox(CHAIR_DEPTH, 0.62, 0.13, 0, 0.86, -(half - 0.06), PALETTE.benchWood);
   const legParts: THREE.BufferGeometry[] = [seat, back];
-  for (const sx of [-0.23, 0.23]) {
-    for (const sz of [-0.23, 0.23]) {
+  const legOff = half - 0.05;
+  for (const sx of [-legOff, legOff]) {
+    for (const sz of [-legOff, legOff]) {
       legParts.push(tintedBox(0.1, 0.55, 0.1, sx, 0.275, sz, PALETTE.benchWood));
     }
   }
@@ -254,7 +267,7 @@ defineObject("restaurant", {
       [ 2.6, 2.0],
     ];
 
-    const CHAIR_DIST = 0.95;
+    // CHAIR_DIST is the module-level DERIVED distance (table half + chair half + gap).
     // [dx, dz, faceYaw] — yaw faces TOWARD the table center
     const chairLayout: [number, number, number][] = [
       [0,           -CHAIR_DIST,  0],            // north chair, faces south (toward table)
