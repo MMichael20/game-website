@@ -9,7 +9,7 @@ export const CAR_SPAWN: Vec2 = { x: 12, z: 10 };
 // rot is degrees in {0,90,180,270}. Stores face +z by default (rot:0).
 // Building footprints (for placing props clear of them):
 //   phoneRepairShop @ x=-12, w=18 -> x in [-21,-3], front face z=-9.
-//   restaurant      @ x=14,  w=22 -> x in [ 3,25], front face z=-8.
+//   restaurant      @ cell(2,-3)=world(16,-24), w=22 -> x in [5,27], front face z=-12.
 // The road sits at z=-2 (z in [-5,1]); the sidewalk strip in FRONT of both stores
 // is z in [-9,-5]. Street props live at z=-7 — in front of the glass, clear of
 // every building body (z=-7 is south of both front faces) and of the road.
@@ -27,8 +27,21 @@ export const MAP: Placement[] = [
       props: [{ kind: "lamp", x: -4, z: 9 }] },
     { originX: -12, originZ: -16, cellW: 8, cellD: 8 },
   ),
-  { kind: "restaurant", x: 14, z: -20, params: { variant: "bakery", w: 22, d: 24, h: 8 } },
-  // street furniture along the sidewalk (z=-7), clear of the restaurant deck:
+  // restaurant lot: building + its OWN flanking lamps and corner trees, placed by
+  // grid CELL (default 8m grid -> world (16,-24)). Move `cell` and all 5 follow.
+  // Props are in lot-local coords: +z = toward the street, x = across the front.
+  ...lot({
+    cell: { col: 2, row: -3 },
+    building: "restaurant",
+    buildingParams: { variant: "bakery", w: 22, d: 24, h: 8 },
+    props: [
+      { kind: "lamp", x: -12, z: 10 },   // flanks entrance, left corner
+      { kind: "lamp", x: 12, z: 10 },    // flanks entrance, right corner
+      { kind: "tree", x: -14, z: -10 },  // back-left corner
+      { kind: "tree", x: 14, z: -10 },   // back-right corner
+    ],
+  }),
+  // loose street furniture in the gap (z=-7) — independent, so it stays raw lines:
   { kind: "lamp", x: -12, z: -7 },
   { kind: "bench", x: -8, z: -7 },
   { kind: "flower", x: -4, z: -7, params: { color: "red" } },
