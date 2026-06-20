@@ -55,4 +55,25 @@ export const MAP: Placement[] = [
   // of both. Independent of either lot, so they stay raw lines.
   { kind: "flower", x: 2.5, z: -7, params: { color: "red" } },
   { kind: "flower", x: 3.6, z: -7, params: { color: "yellow" } },
+
+  // ── Filler backdrop ──────────────────────────────────────────────────────
+  // North streetwall: masonry blocks flanking the two real stores, on the
+  // building line (front face +z ≈ z=-9), so the street reads as continuous.
+  { kind: "fillerBuilding", x: -34, z: -16, params: { w: 12, d: 10, stories: 3, bodyColor: 0xe07a5f, ground: "storefront", awningColor: 0xc0392b, seed: 11 } },
+  { kind: "fillerBuilding", x: -47, z: -16, params: { w: 11, d: 10, stories: 4, bodyColor: 0xe9c46a, seed: 12 } },
+  { kind: "fillerBuilding", x: 39, z: -17, params: { w: 12, d: 11, stories: 3, bodyColor: 0x84b06a, ground: "storefront", awningColor: 0x2980b9, seed: 13 } },
+  { kind: "fillerBuilding", x: 52, z: -17, params: { w: 11, d: 11, stories: 4, bodyColor: 0xc98ab0, seed: 14 } },
+
+  // Skyline towers: tall cool glass blocks set well back as a backdrop.
+  { kind: "fillerBuilding", x: -30, z: -44, params: { w: 14, d: 14, stories: 7, style: "glassTower", bodyColor: 0x6aa9c9, roofUnit: false, seed: 21 } },
+  { kind: "fillerBuilding", x: 0, z: -48, params: { w: 16, d: 16, stories: 8, style: "glassTower", bodyColor: 0x7fb5d6, roofUnit: false, seed: 22 } },
+  { kind: "fillerBuilding", x: 32, z: -44, params: { w: 14, d: 14, stories: 6, style: "glassTower", bodyColor: 0x9ac6e0, roofUnit: false, seed: 23 } },
+
+  // South streetwall: a couple of blocks across the road, facing -z (rot 180),
+  // set back behind the spawn corridor.
+  { kind: "fillerBuilding", x: -50, z: 26, rot: 180, params: { w: 12, d: 10, stories: 3, bodyColor: 0xf2c14e, seed: 31 } },
+  { kind: "fillerBuilding", x: 45, z: 26, rot: 180, params: { w: 12, d: 10, stories: 4, bodyColor: 0xd96c5f, ground: "storefront", awningColor: 0xc0392b, seed: 32 } },
+
+  // Park plaza: south-west, clear of the (0,8)/(12,10) spawn corridor.
+  { kind: "park", x: -30, z: 18, params: { w: 26, d: 20, fountain: true, seed: 5 } },
 ];
