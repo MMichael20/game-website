@@ -10,6 +10,7 @@ import * as THREE from "three";
 import { defineObject } from "../system/registry";
 import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
 import { makeFlower } from "../objects/flower";
+import { makeAFrameSign } from "../objects/aFrameSign";
 import { makeAsphaltTexture, ROAD_W, GRAIN_M } from "../roads";
 import { PALETTE } from "../palette";
 import { PETAL } from "../objects/objectPalette";
@@ -217,5 +218,18 @@ defineObject("bench", {
       mesh,
       obstacles: [{ x: 0, z: 0, w: 1.8, d: 0.6 }],
     };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// aFrameSign
+// ---------------------------------------------------------------------------
+
+defineObject("aFrameSign", {
+  params: {},
+  build(_p: Record<string, never>) {
+    const mesh = makeAFrameSign();
+    mesh.castShadow = true;
+    return { mesh, obstacles: [{ x: 0, z: 0, w: 0.9, d: 0.7 }] };
   },
 });
