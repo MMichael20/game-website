@@ -25,40 +25,11 @@ import { makeAwning } from "../objects/awning";
 import { makeGlassPaneMaterial, makeGlassPanel } from "../objects/glass";
 import { makeTextSignMesh } from "../objects/textSign";
 import { SPONGE, FROSTING, GLAZE, PETAL } from "../objects/objectPalette";
-import { makeCounterKit, makeDisplayShelf } from "../kits";
 import { PALETTE } from "../palette";
-import type { Rect as WanderRect } from "../../game/wander";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Convert a kit Rect (minX/maxX/minZ/maxZ) to a system Rect (x,z,w,d).
- * This bridges kits.ts (which uses game/wander.Rect) to the catalog system
- * (which uses system/types.Rect).
- */
-function kitRectToSystemRect(r: WanderRect): Rect {
-  return {
-    x: (r.minX + r.maxX) / 2,
-    z: (r.minZ + r.maxZ) / 2,
-    w: r.maxX - r.minX,
-    d: r.maxZ - r.minZ,
-  };
-}
-
-/**
- * Wrap a kit object + obstacles into a minimal ObjectResult (in local space)
- * so applyTransform can offset/rotate it within a composite.
- * Kit geometry is already placed at the x/z the kit was built at, so we
- * pass x:0, z:0, rot:0 when the kit was created at origin (x:0, z:0).
- */
-function kitToResult(kit: { object: THREE.Object3D; obstacles: WanderRect[] }): ObjectResult {
-  return {
-    mesh: kit.object,
-    obstacles: kit.obstacles.map(kitRectToSystemRect),
-  };
-}
 
 /**
  * Compose multiple ObjectResults into one group-based ObjectResult.
@@ -104,80 +75,208 @@ defineObject("phoneRepairShop", {
   params: { w: 18, d: 14, h: 6 } as PhoneShopParams,
   build(p: PhoneShopParams) {
     const { w, d, h } = p;
+    const ACCENT = PALETTE.awningBlue;     // the shop's blue theme
     const parts: ObjectResult[] = [];
+    const anchors: Record<string, Vec2 | Seat> = {};
 
-    // ── Building shell (colliders for floor/ceiling/walls) ──────────────────
+    // ── Building shell + tiled floor ─────────────────────────────────────────
     const shell = buildObject("buildingShell", { w, d, h });
     parts.push(applyTransform(shell, { x: 0, z: 0, rot: 0 }));
+    parts.push({ mesh: makeTiledFloor(w, d) });
 
-    // ── Storefront (glass facade at the front face, z = +d/2) ───────────────
-    // The storefront build() produces geometry in its own local space (z=0 = facade).
-    // applyTransform offsets its mesh to z = d/2 inside our composite.
+    // ── Storefront (blue awning + blue sign, glass facade at z = +d/2) ───────
     const front = buildObject("storefront", {
-      w,
-      h,
-      d,
+      w, h, d,
       signText: "Phone Repair",
-      awningColor: PALETTE.awningBlue,
+      awningColor: ACCENT,
+      signColor: PALETTE.signCool,
       fullGlass: true,
     });
     parts.push(applyTransform(front, { x: 0, z: d / 2, rot: 0 }));
 
-    // ── Service counter near the back (counter body centered on x=0) ─────────
-    // Counter width = 8m, placed at z = -d/2 + 2.0 (2m from back wall).
-    const counterW = 8;
-    const counterZ = -d / 2 + 2.0;
-    const counterKit = makeCounterKit({ x: 0, z: 0, w: counterW });
-    parts.push(applyTransform(kitToResult(counterKit), { x: 0, z: counterZ, rot: 0 }));
+    // Interior reference frame (composite-local). +z = open glass storefront;
+    // the back wall is at -d/2. Every fitting derives from these.
+    const T = 0.3;             // shell wall thickness (= buildingShell WALL_T)
+    const xi = w / 2 - T;      // interior wall x
+    const backZ = -d / 2 + T;  // inner face of the back wall
 
-    // ── Wall display shelves along the back wall ─────────────────────────────
-    // Three shelf units spread across the back wall, 0.4m in from z = -d/2.
-    // Each shelfUnit is ~1.6m wide; place three of them at x = -4, 0, +4.
-    const shelfZ = -d / 2 + 0.4;
-    for (const sx of [-4, 0, 4]) {
-      const shelf = makeDisplayShelf({ x: 0, z: 0 });
-      parts.push(applyTransform(kitToResult(shelf), { x: sx, z: shelfZ, rot: 0 }));
+    // ── BACK WALL: the "wall of phones" (two big backlit displays) ───────────
+    const wallZ = backZ + 0.3;
+    const wallLen = w * 0.32;
+    pushFitting(parts, anchors, makePhoneWallDisplay(-w * 0.26, wallZ, wallLen, ACCENT));
+    pushFitting(parts, anchors, makePhoneWallDisplay(w * 0.26, wallZ, wallLen, ACCENT));
+
+    // Staff door on the back wall, centred between the two displays.
+    const backDoor = tintedMesh(tintedBox(1.1, 2.2, 0.06, 0, 1.1, backZ + 0.02, PALETTE.facadeDoor));
+    parts.push({ mesh: backDoor });
+
+    // Interior title sign high on the back wall (blue board).
+    const titleW = Math.min(6, w * 0.4);
+    const title = makeTextSignMesh({ text: "Phone Repair", w: titleW, h: 1.0, boardColor: PALETTE.signCool, glow: 0.9 });
+    title.position.set(0, h - 2.4, backZ + 0.05);
+    parts.push({ mesh: title });
+
+    // Wall clock on the back wall, to one side of the title.
+    const clock = makeWallClock();
+    clock.position.set(-w * 0.34, h - 2.4, backZ + 0.06);
+    parts.push({ mesh: clock });
+
+    // ── LEFT WALL: technician repair bench (back) + accessory pegboard (front) ─
+    const leftX = -xi + 0.35;
+    pushFitting(parts, anchors, makeRepairBench(leftX, -d * 0.16, d * 0.34, Math.PI / 2));
+    pushFitting(parts, anchors, makeAccessoryWall(leftX, d * 0.22, d * 0.28, Math.PI / 2));
+
+    // ── FRONT-LEFT: the main service / repair counter (customers on the +z side) ─
+    const counterLen = Math.min(6, w * 0.32);
+    const counterX = -w * 0.2;
+    const counterZ = -d * 0.06;
+    pushFitting(parts, anchors, makeRepairCounter(counterX, counterZ, counterLen));
+    anchors.counter = { x: counterX, z: counterZ + 0.7 } as Vec2;            // customer side
+    anchors.staff = { x: counterX, z: counterZ - 0.7, faceYaw: 0 } as Seat;  // behind the counter
+
+    // ── SHOWROOM: a derived grid of glass display islands (centre / right) ───
+    const islandCols = [w * 0.1, w * 0.3];
+    const islandRows = [-d * 0.12, d * 0.16];
+    for (const ix of islandCols) {
+      for (const iz of islandRows) {
+        pushFitting(parts, anchors, makeDisplayIsland(ix, iz));
+      }
     }
 
-    // ── Phone display on the counter top ────────────────────────────────────
-    // Merge 4 phone geometries into one vertex-colored mesh, sitting atop the counter.
-    // Counter top is at y ≈ 0.88 (from counterGeo). Phones are ~0.84m tall (default),
-    // so we scale them down to 0.2h (height). Place them spaced along the counter.
-    const phoneParts: THREE.BufferGeometry[] = [];
-    const phoneW = 0.18;
-    const phoneH = 0.25;
-    const phonePositions: [number, number, number, number][] = [
-      [-2.4, 0, phoneW, phoneH],
-      [-0.8, 0, phoneW, phoneH],
-      [0.8, 0, phoneW, phoneH],
-      [2.4, 0, phoneW, phoneH],
-    ];
-    for (let i = 0; i < phonePositions.length; i++) {
-      const [px, , pw, ph] = phonePositions[i];
-      const screenColor = PHONE_SCREENS[i % PHONE_SCREENS.length];
-      const geo = makePhone({ width: pw, height: ph, screenColor });
-      // Translate each phone to its x offset and sit on counter top (y=0.88)
-      geo.translate(px, 0.88, 0);
-      phoneParts.push(geo);
-    }
-    const phoneMesh = tintedMesh(mergeTinted(phoneParts));
-    // The phone mesh is in a local group at z=counterZ
-    const phoneGroup = new THREE.Group();
-    phoneGroup.position.set(0, 0, counterZ);
-    phoneGroup.add(phoneMesh);
-    parts.push({ mesh: phoneGroup });
+    // ── RIGHT WALL: glowing digital price/ad screens + framed tech posters ───
+    const wallFaceX = w / 2 - T / 2;
+    const screenHues = [0x2f7fb0, 0x3aa35a, 0xc94f8a];
+    screenHues.forEach((hue, i) => {
+      const scr = makeWallScreen(1.2, 0.8, hue);
+      scr.position.set(wallFaceX - 0.03, 3.0, -d * 0.2 + i * (d * 0.22));
+      scr.rotation.y = -Math.PI / 2;   // face -x into the room
+      parts.push({ mesh: scr });
+    });
 
-    // ── Compose all parts ────────────────────────────────────────────────────
+    // ── FRONT-RIGHT: a customer waiting area ─────────────────────────────────
+    const wait = makeWaitingArea(w * 0.28, d * 0.3, "wait");
+    parts.push({ mesh: wait.mesh, obstacles: wait.obstacles });
+    Object.assign(anchors, wait.seats);
+
+    // ── Indoor plants flanking the entrance ──────────────────────────────────
+    for (const px of [-xi + 1.0, xi - 1.0]) {
+      const plant = makePottedPlantMesh({ height: 1.0 });
+      plant.position.set(px, FLOOR_TOP, d / 2 - 1.6);
+      parts.push({ mesh: plant, obstacles: [{ x: px, z: d / 2 - 1.6, w: 0.7, d: 0.7 }] });
+    }
+
+    // ── Dressing: cool-white pendants over the showroom, wall lamps, beams, mat ─
+    const ceilY = h - T;
+    const pendDrop = Math.max(1.4, ceilY - 4.2);
+    for (const [lx, lz] of [[w * 0.1, -d * 0.12], [w * 0.3, d * 0.16], [counterX, counterZ]] as [number, number][]) {
+      const pend = makePendantLamp(pendDrop, PALETTE.steelDark);
+      pend.position.set(lx, ceilY, lz);
+      parts.push({ mesh: pend });
+    }
+    for (const lz of [backZ + 4, 0, d / 2 - 4]) {
+      const left = makeWallLampMesh();
+      left.position.set(-xi, 3.4, lz);
+      left.rotation.y = Math.PI / 2;
+      parts.push({ mesh: left });
+      const right = makeWallLampMesh();
+      right.position.set(xi, 3.4, lz);
+      right.rotation.y = -Math.PI / 2;
+      parts.push({ mesh: right });
+    }
+    for (const bz of [d / 2 - 2.0, d / 2 - 8.0, backZ + 3.0]) {
+      if (bz < backZ) continue;
+      const beam = tintedMesh(tintedBox(2 * xi, 0.18, 0.28, 0, ceilY - 0.12, bz, PALETTE.trimBrown));
+      parts.push({ mesh: beam });
+    }
+    const mat = tintedMesh(mergeTinted([
+      tintedBox(2.6, 0.04, 1.4, 0, FLOOR_TOP + 0.09, d / 2 - 1.9, PALETTE.signCool),
+      tintedBox(2.2, 0.03, 1.0, 0, FLOOR_TOP + 0.12, d / 2 - 1.9, PALETTE.awningStripe),
+    ]));
+    parts.push({ mesh: mat });
+
+    // ── EXTERIOR: pavement, clad facade (blue), side windows (blue), roof, stoop ─
+    pushFitting(parts, anchors, makePavement(w, d));
+    pushFitting(parts, anchors, makeExteriorFacade(w, d, h, ACCENT));
+    pushFitting(parts, anchors, makeSideWindows(w, d, h, ACCENT));
+    pushFitting(parts, anchors, makeRooftopUnit(w, d, h));
+    pushFitting(parts, anchors, makeSideDownspouts(w, d, h));
+    pushFitting(parts, anchors, makeEntryStoop(w, d / 2));
+
+    // Glowing lanterns on the front wall flanking the entrance.
+    for (const sgn of [-1, 1]) {
+      const lamp = makeWallLampMesh();
+      lamp.position.set(sgn * (w / 2 - 0.5), 3.2, d / 2 - 0.1);
+      parts.push({ mesh: lamp });
+    }
+
+    // A "Phone Repair" sign on the left side wall near the front (faces -x).
+    const sideSign = makeTextSignMesh({ text: "Phone Repair", w: Math.min(3.4, d * 0.22), h: 0.6, boardColor: PALETTE.signCool, glow: 0.8 });
+    sideSign.position.set(-w / 2 - 0.16, h - 1.8, d / 2 - 1.6);
+    sideSign.rotation.y = -Math.PI / 2;
+    parts.push({ mesh: sideSign });
+
+    // ── EXTERIOR BACK: roll-up door + service door + utilities + dumpster + crates ─
+    const backOut = -d / 2 - 0.05;
+    const rollParts: THREE.BufferGeometry[] = [];
+    for (let i = 0; i < 8; i++) {
+      rollParts.push(tintedBox(3.2, 0.34, 0.06, 0, 0.3 + i * 0.36, 0, i % 2 ? PALETTE.rollDoor : PALETTE.steelDark));
+    }
+    const roll = tintedMesh(mergeTinted(rollParts));
+    roll.position.set(0, 0, backOut);
+    parts.push({ mesh: roll });
+
+    const svcDoor = tintedMesh(tintedBox(1.0, 2.2, 0.06, -w / 2 + 2.0, 1.1, backOut, PALETTE.facadeDoor));
+    parts.push({ mesh: svcDoor });
+
+    pushFitting(parts, anchors, makeBackUtilities(w, d, h));
+
+    const dumpX = w / 2 - 2.5;
+    const dumpZ = -d / 2 - 1.2;
+    const dump = tintedMesh(mergeTinted([
+      tintedBox(1.7, 1.2, 1.1, 0, 0.6, 0, PALETTE.dumpster),
+      tintedBox(1.76, 0.12, 1.16, 0, 1.26, 0, PALETTE.steelDark),
+    ]));
+    dump.position.set(dumpX, 0, dumpZ);
+    parts.push({
+      mesh: dump,
+      colliders: [solidBox(dumpX, 0.6, dumpZ, 1.7, 1.2, 1.1)],
+      obstacles: [{ x: dumpX, z: dumpZ, w: 1.8, d: 1.2 }],
+    });
+
+    for (const [crx, crz, cs] of [
+      [w / 2 - 4.5, -d / 2 - 1.0, 0.8],
+      [w / 2 - 4.2, -d / 2 - 1.9, 0.6],
+    ] as [number, number, number][]) {
+      const crate = tintedMesh(tintedBox(cs, cs, cs, 0, cs / 2, 0, PALETTE.benchWood));
+      crate.position.set(crx, 0, crz);
+      parts.push({
+        mesh: crate,
+        colliders: [solidBox(crx, cs / 2, crz, cs, cs, cs)],
+        obstacles: [{ x: crx, z: crz, w: cs, d: cs }],
+      });
+    }
+
+    // Yellow safety bollards flanking the roll-up loading door.
+    for (const bx of [-2.1, 2.1]) {
+      const bz = -d / 2 - 0.5;
+      const bollard = tintedMesh(mergeTinted([
+        tintedBox(0.24, 0.9, 0.24, 0, 0.45, 0, PALETTE.yellowLine),
+        tintedBox(0.26, 0.12, 0.26, 0, 0.78, 0, PALETTE.steelDark),
+      ]));
+      bollard.position.set(bx, 0, bz);
+      parts.push({
+        mesh: bollard,
+        colliders: [solidBox(bx, 0.45, bz, 0.24, 0.9, 0.24)],
+        obstacles: [{ x: bx, z: bz, w: 0.3, d: 0.3 }],
+      });
+    }
+
+    // ── Compose ──────────────────────────────────────────────────────────────
     const result = compose(parts);
-
-    // ── Anchors (composite-local coords, already correct — no double-offset) ─
     result.anchors = {
-      door:    { x: 0, z: d / 2 } as Vec2,
-      counter: { x: 0, z: counterZ } as Vec2,
-      staff:   { x: 0, z: -d / 2 + 1.2, faceYaw: 0 } as Seat,
+      door: { x: 0, z: d / 2 } as Vec2,
+      ...anchors,
     };
-
-    // ── POIs ─────────────────────────────────────────────────────────────────
     result.pois = [
       { kind: "phoneShop", label: "Phone Repair", radius: 4.5, anchor: "door" },
     ];
@@ -540,12 +639,14 @@ function glowBulb(r = 0.12): THREE.Mesh {
 // ───────────────────────────────────────────────────────────────────────────
 
 /** A hanging pendant lamp: a cord from the ceiling to a shade with a glowing bulb
- *  and a modest point light. Origin is the ceiling attach point; hangs by `drop`. */
-function makePendantLamp(drop: number): THREE.Object3D {
+ *  and a modest point light. Origin is the ceiling attach point; hangs by `drop`.
+ *  `shadeColor` defaults to the warm red shade (restaurant); pass a cooler hue for
+ *  a tech-shop pendant. */
+function makePendantLamp(drop: number, shadeColor: number = PALETTE.awningRed): THREE.Object3D {
   const g = new THREE.Group();
   g.add(tintedMesh(mergeTinted([
     tintedBox(0.04, drop, 0.04, 0, -drop / 2, 0, PALETTE.lampPole),     // cord
-    tintedBox(0.5, 0.28, 0.5, 0, -drop - 0.14, 0, PALETTE.awningRed),   // shade
+    tintedBox(0.5, 0.28, 0.5, 0, -drop - 0.14, 0, shadeColor),         // shade
     tintedBox(0.42, 0.05, 0.42, 0, -drop - 0.29, 0, PALETTE.lantern),   // shade rim
   ])));
   const bulb = glowBulb(0.1);
@@ -1036,6 +1137,383 @@ function makeBackUtilities(w: number, d: number, h: number): Fitting {
   }
 
   return { mesh: group };
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Phone-shop interior fittings ("Phone Repair" reference)
+// ───────────────────────────────────────────────────────────────────────────
+// Same Fitting contract as the bakery fittings: each returns its own facets so
+// the composite aggregates them and the engine transforms them on placement. All
+// footprints/colliders are DERIVED from real sizes (CLAUDE.md pitfall #3).
+
+// A rotating stock of phone body colours for varied displays.
+const PHONE_BODIES = [0x20262e, 0x2b3550, 0x3a2740, 0x24303a, 0x402a2a];
+// A cool screen-blue used for backlit panels / glow strips (reads "lit" in day).
+const PANEL_GLOW = 0xbfe3ff;
+
+/** Swap a wall unit's planar extents when it is turned 90° to line a side wall. */
+function wallFootprint(yaw: number, len: number, depth: number): { fw: number; fd: number } {
+  const horiz = Math.abs(Math.sin(yaw)) > 0.5;
+  return { fw: horiz ? depth : len, fd: horiz ? len : depth };
+}
+
+/**
+ * Backlit wall display against a wall (built facing +z; pass `yaw` to line a side
+ * wall): a dark backboard with an accent valance, three lit glass shelves each
+ * with a glow strip, and a DERIVED grid of phones standing on the shelves. This
+ * is the "wall of phones" from the reference. Solid collider.
+ */
+function makePhoneWallDisplay(cx: number, cz: number, len: number, accent: number, yaw = 0): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+  group.rotation.y = yaw;
+
+  const baseY = 0.5;       // panel starts above a low kick
+  const H = 2.2;           // panel height
+  const T = 0.12;          // backboard thickness (z)
+  const SHELF_D = 0.3;     // how far shelves jut out (+z)
+  const levels = [baseY + 0.45, baseY + 1.15, baseY + 1.7];
+
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(len, H, T, 0, baseY + H / 2, 0, PALETTE.steelDark),               // backboard
+    tintedBox(len + 0.1, 0.22, T + 0.06, 0, baseY + H - 0.11, 0.02, accent),    // accent valance
+  ];
+  for (const ly of levels) {
+    parts.push(tintedBox(len - 0.1, 0.05, SHELF_D, 0, ly, SHELF_D / 2, PALETTE.steelLight)); // glass shelf
+    parts.push(tintedBox(len - 0.16, 0.04, 0.02, 0, ly - 0.06, 0.04, PANEL_GLOW));            // under-shelf glow
+  }
+  // DERIVED grid of phones standing on the shelves (count packs the width).
+  const cols = Math.max(2, Math.floor(len / 0.5));
+  let k = 0;
+  for (const ly of levels) {
+    for (let i = 0; i < cols; i++) {
+      const px = -len / 2 + (len / cols) * (i + 0.5);
+      const geo = makePhone({
+        width: 0.32, height: 0.56,
+        screenColor: PHONE_SCREENS[k % PHONE_SCREENS.length],
+        bodyColor: PHONE_BODIES[k % PHONE_BODIES.length],
+      });
+      geo.translate(px, ly + 0.02, 0.06); // stand on the shelf, near the board
+      parts.push(geo);
+      k++;
+    }
+  }
+  group.add(tintedMesh(mergeTinted(parts)));
+
+  const { fw, fd } = wallFootprint(yaw, len, 0.45);
+  return {
+    mesh: group,
+    colliders: [solidBox(cx, baseY + H / 2, cz, fw, H, fd)],
+    obstacles: [{ x: cx, z: cz, w: fw + 0.1, d: fd + 0.1 }],
+  };
+}
+
+/**
+ * An accessory pegboard against a wall (built facing +z; `yaw` to line a side
+ * wall): a light pegboard hung with a DERIVED grid of small colour-boxed
+ * accessories (cases/chargers/cables), over a low shelf of boxed stock. The low
+ * shelf is the only solid part (pegboard is high on the wall).
+ */
+function makeAccessoryWall(cx: number, cz: number, len: number, yaw = 0): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+  group.rotation.y = yaw;
+
+  const shelfY = 0.9;       // low stock shelf height
+  const pegY0 = 1.15;       // pegboard bottom
+  const pegH = 1.25;        // pegboard height
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(len, pegH, 0.05, 0, pegY0 + pegH / 2, 0, 0xcdb98f),          // pegboard
+    tintedBox(len, 0.06, 0.34, 0, shelfY, 0.14, PALETTE.caseWoodTop),       // low shelf
+    tintedBox(len, 0.85, 0.08, 0, shelfY / 2 + 0.05, -0.13, PALETTE.caseWood), // shelf base panel
+  ];
+  // Hanging accessories: a derived grid of small bright boxes on the pegboard.
+  const accHues = [0xe0524a, 0x2f7fb0, 0x3aa35a, 0xf2c14e, 0xc98ab0, 0xf3efe6];
+  const acols = Math.max(3, Math.floor(len / 0.42));
+  const arows = 3;
+  let a = 0;
+  for (let r = 0; r < arows; r++) {
+    for (let i = 0; i < acols; i++) {
+      const px = -len / 2 + (len / acols) * (i + 0.5);
+      const py = pegY0 + 0.24 + r * ((pegH - 0.4) / (arows - 1));
+      parts.push(tintedBox(0.16, 0.2, 0.05, px, py, 0.04, accHues[a % accHues.length]));
+      a++;
+    }
+  }
+  // Boxed stock on the low shelf (derived count).
+  const boxes = Math.max(3, Math.floor(len / 0.5));
+  for (let i = 0; i < boxes; i++) {
+    const px = -len / 2 + (len / boxes) * (i + 0.5);
+    parts.push(tintedBox(0.3, 0.22, 0.26, px, shelfY + 0.14, 0.06, accHues[(i + 2) % accHues.length]));
+  }
+  group.add(tintedMesh(mergeTinted(parts)));
+
+  const { fw, fd } = wallFootprint(yaw, len, 0.34);
+  return {
+    mesh: group,
+    colliders: [solidBox(cx, shelfY / 2, cz, fw, shelfY, fd)],
+    obstacles: [{ x: cx, z: cz, w: fw + 0.1, d: fd + 0.1 }],
+  };
+}
+
+/**
+ * A free-standing showroom island: a dark-wood cabinet, a top lip, a translucent
+ * glass vitrine, and a DERIVED row of phones on little stands under the glass.
+ * Solid collider. Viewable all around (centre-floor furniture).
+ */
+function makeDisplayIsland(cx: number, cz: number): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+
+  const IW = 1.6, ID = 0.9, BASE_H = 0.85, CASE_H = 0.32;
+  group.add(tintedMesh(mergeTinted([
+    tintedBox(IW, BASE_H, ID, 0, BASE_H / 2, 0, PALETTE.caseWood),
+    tintedBox(IW + 0.06, 0.06, ID + 0.06, 0, BASE_H + 0.03, 0, PALETTE.caseWoodTop),
+  ])));
+
+  // Phones on little stands on the cabinet top (count derived from width).
+  const n = Math.max(2, Math.floor(IW / 0.5));
+  const phoneParts: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < n; i++) {
+    const px = -IW / 2 + (IW / n) * (i + 0.5);
+    phoneParts.push(tintedBox(0.16, 0.08, 0.12, px, BASE_H + 0.1, 0, PALETTE.steelDark)); // stand
+    const geo = makePhone({
+      width: 0.34, height: 0.5,
+      screenColor: PHONE_SCREENS[i % PHONE_SCREENS.length],
+      bodyColor: PHONE_BODIES[i % PHONE_BODIES.length],
+    });
+    geo.translate(px, BASE_H + 0.14, 0);
+    phoneParts.push(geo);
+  }
+  group.add(tintedMesh(mergeTinted(phoneParts)));
+
+  // Translucent glass vitrine over the phones (5 thin panes share one material).
+  const glassMat = makeGlassPaneMaterial({ w: 1, h: 1, opacity: 0.18 });
+  const cy = BASE_H + 0.06 + CASE_H / 2;
+  const pane = (pw: number, ph: number, pd: number, x: number, y: number, z: number) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, pd), glassMat);
+    m.position.set(x, y, z);
+    group.add(m);
+  };
+  pane(IW, 0.03, ID, 0, BASE_H + 0.06 + CASE_H, 0);
+  pane(0.03, CASE_H, ID, IW / 2, cy, 0);
+  pane(0.03, CASE_H, ID, -IW / 2, cy, 0);
+  pane(IW, CASE_H, 0.03, 0, cy, ID / 2);
+  pane(IW, CASE_H, 0.03, 0, cy, -ID / 2);
+
+  return {
+    mesh: group,
+    colliders: [solidBox(cx, BASE_H / 2, cz, IW, BASE_H, ID)],
+    obstacles: [{ x: cx, z: cz, w: IW + 0.2, d: ID + 0.2 }],
+  };
+}
+
+/**
+ * The main service / repair counter (built facing +z, customer on the +z side):
+ * wood body + top lip, a register, a parts organiser behind, an anglepoise repair
+ * lamp, two phones lying flat on the top, and a low glass divider along the
+ * customer edge. Solid collider.
+ */
+function makeRepairCounter(cx: number, cz: number, len: number): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+
+  const CH = 0.92, CD = 0.7;
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(len, CH, CD, 0, CH / 2, 0, PALETTE.caseWood),
+    tintedBox(len + 0.04, 0.06, CD + 0.04, 0, CH + 0.03, 0, PALETTE.caseWoodTop),
+    // parts organiser on the staff side (-z), a small drawer cabinet
+    tintedBox(0.9, 0.5, 0.28, -len / 2 + 0.7, CH + 0.25, -CD / 2 - 0.12, PALETTE.steel),
+  ];
+  // drawer fronts on the organiser
+  for (let i = 0; i < 3; i++) {
+    parts.push(tintedBox(0.8, 0.12, 0.02, -len / 2 + 0.7, CH + 0.08 + i * 0.16, -CD / 2 - 0.27, PALETTE.steelDark));
+  }
+  // two phones lying flat on the counter top (screen up, near the customer edge)
+  for (const px of [len * 0.18, len * 0.32]) {
+    const geo = makePhone({ width: 0.3, height: 0.56, screenColor: PHONE_SCREENS[2] });
+    geo.rotateX(-Math.PI / 2);             // lay it flat, screen up
+    geo.translate(px, CH + 0.05, 0.12);
+    parts.push(geo);
+  }
+  group.add(tintedMesh(mergeTinted(parts)));
+
+  // Register on top, one end.
+  const register = tintedMesh(mergeTinted([
+    tintedBox(0.42, 0.28, 0.42, 0, CH + 0.2, 0, PALETTE.steelDark),
+    tintedBox(0.36, 0.22, 0.04, 0, CH + 0.36, 0.2, PALETTE.steelLight), // screen
+  ]));
+  register.position.set(len / 2 - 0.5, 0, -0.05);
+  group.add(register);
+
+  // Anglepoise repair lamp at the other end (base, arm, head).
+  const lamp = tintedMesh(mergeTinted([
+    cylinderY(0.1, 0.05, 0, CH + 0.05, 0, PALETTE.steelDark, 12),      // base
+    tintedBox(0.04, 0.5, 0.04, 0, CH + 0.3, 0, PALETTE.steel),          // lower arm
+    tintedBox(0.04, 0.04, 0.4, 0, CH + 0.54, 0.18, PALETTE.steel),      // upper arm
+    tintedBox(0.16, 0.1, 0.16, 0, CH + 0.52, 0.36, PALETTE.steelDark),  // head
+  ]));
+  lamp.position.set(-len / 2 + 0.7, 0, 0.18);
+  group.add(lamp);
+
+  // Low glass divider along the customer edge (+z).
+  const divider = makeGlassPanel({ w: len * 0.86, h: 0.4, divisions: 2, opacity: 0.3 });
+  divider.position.set(0, CH, CD / 2 + 0.02);
+  group.add(divider);
+
+  return {
+    mesh: group,
+    colliders: [solidBox(cx, CH / 2, cz, len, CH, CD)],
+    obstacles: [{ x: cx, z: cz, w: len + 0.1, d: CD + 0.1 }],
+  };
+}
+
+/**
+ * A technician workbench against a wall (built facing +z): steel base + worktop, a
+ * tool pegboard above it, parts bins, a magnifier lamp, a part-disassembled phone,
+ * and a soldering iron. Solid collider on the base.
+ */
+function makeRepairBench(cx: number, cz: number, len: number, yaw = 0): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+  group.rotation.y = yaw;
+
+  const BH = 0.9, BD = 0.6;
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(len, BH, BD, 0, BH / 2, 0, PALETTE.steel),
+    tintedBox(len + 0.04, 0.06, BD + 0.04, 0, BH + 0.03, 0, PALETTE.steelLight),
+    // tool pegboard above the bench, against the wall side (-z)
+    tintedBox(len, 0.9, 0.05, 0, BH + 0.9, -BD / 2 + 0.05, PALETTE.steelDark),
+  ];
+  // Hanging tools on the pegboard (thin boxes: screwdrivers, pliers, spudgers).
+  const toolHues = [0xf2c14e, 0xe0524a, 0xb9bdc4, 0x2f7fb0];
+  const tcols = Math.max(4, Math.floor(len / 0.4));
+  for (let i = 0; i < tcols; i++) {
+    const px = -len / 2 + (len / tcols) * (i + 0.5);
+    const th = 0.18 + (i % 3) * 0.06;
+    parts.push(tintedBox(0.04, th, 0.03, px, BH + 0.9 + 0.1, -BD / 2 + 0.08, PALETTE.lampPole)); // shaft
+    parts.push(tintedBox(0.07, 0.07, 0.03, px, BH + 0.9 + 0.1 - th / 2, -BD / 2 + 0.08, toolHues[i % toolHues.length])); // handle
+  }
+  // Three parts bins on the worktop.
+  const binHues = [0xe0524a, 0xf2c14e, 0x2f7fb0];
+  for (let i = 0; i < 3; i++) {
+    const px = len / 2 - 0.4 - i * 0.34;
+    parts.push(tintedBox(0.28, 0.16, 0.26, px, BH + 0.14, -0.1, binHues[i]));
+  }
+  // A part-disassembled phone laid out on the worktop (body + detached screen + chips).
+  const dx = -len / 2 + 1.0;
+  const body = makePhone({ width: 0.34, height: 0.6, screenColor: 0x10151b });
+  body.rotateX(-Math.PI / 2);
+  body.translate(dx, BH + 0.05, 0.08);
+  parts.push(body);
+  parts.push(tintedBox(0.3, 0.02, 0.5, dx + 0.42, BH + 0.07, 0.08, PALETTE.glassDark)); // detached screen
+  parts.push(tintedBox(0.06, 0.03, 0.06, dx + 0.1, BH + 0.07, -0.16, PALETTE.steelDark)); // tiny chip
+  parts.push(tintedBox(0.05, 0.03, 0.05, dx - 0.05, BH + 0.07, -0.1, PALETTE.steelDark)); // tiny chip
+  group.add(tintedMesh(mergeTinted(parts)));
+
+  // Magnifier lamp (base + arm + round head) at the left end.
+  const mag = tintedMesh(mergeTinted([
+    cylinderY(0.1, 0.05, 0, BH + 0.05, 0, PALETTE.steelDark, 12),
+    tintedBox(0.04, 0.55, 0.04, 0, BH + 0.32, 0, PALETTE.steel),
+    tintedBox(0.04, 0.04, 0.36, 0, BH + 0.58, 0.16, PALETTE.steel),
+    cylinderY(0.16, 0.04, 0, BH + 0.58, 0.34, PALETTE.glassDark, 14), // round lens head
+  ]));
+  mag.position.set(-len / 2 + 0.5, 0, 0.16);
+  group.add(mag);
+
+  // Soldering iron on a little stand.
+  const solder = tintedMesh(mergeTinted([
+    tintedBox(0.14, 0.04, 0.1, 0, BH + 0.08, 0, PALETTE.steelDark),   // stand
+    cylinderY(0.03, 0.22, 0, BH + 0.2, 0, PALETTE.benchRed, 8),       // handle
+    cylinderY(0.012, 0.12, 0, BH + 0.36, 0, PALETTE.steelLight, 6),   // tip
+  ]));
+  solder.position.set(len / 2 - 1.3, 0, -0.05);
+  group.add(solder);
+
+  const { fw, fd } = wallFootprint(yaw, len, BD);
+  return {
+    mesh: group,
+    colliders: [solidBox(cx, BH / 2, cz, fw, BH, fd)],
+    obstacles: [{ x: cx, z: cz, w: fw + 0.1, d: fd + 0.1 }],
+  };
+}
+
+/**
+ * A small customer waiting area: a low table (with a phone + magazine on top) and
+ * two chairs facing each other across it. Chairs are seating (returned as seats,
+ * NOT obstacles per the kits Rule 3); the table is the obstacle.
+ */
+function makeWaitingArea(cx: number, cz: number, key: string): { mesh: THREE.Object3D; obstacles: Rect[]; seats: Record<string, Seat> } {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+
+  // Low coffee table.
+  const TW = 0.9, TD = 0.6, TH = 0.45;
+  group.add(tintedMesh(mergeTinted([
+    tintedBox(TW, 0.08, TD, 0, TH, 0, PALETTE.benchWood),
+    tintedBox(TW - 0.12, 0.04, TD - 0.12, 0, TH + 0.06, 0, 0xe6dcc6),        // magazine
+    ...[(() => { const g = makePhone({ width: 0.26, height: 0.46, screenColor: PHONE_SCREENS[0] }); g.rotateX(-Math.PI / 2); g.translate(0.22, TH + 0.1, 0); return g; })()],
+    tintedBox(0.1, TH, 0.1, -TW / 2 + 0.12, TH / 2, -TD / 2 + 0.12, PALETTE.benchWood), // a leg
+    tintedBox(0.1, TH, 0.1, TW / 2 - 0.12, TH / 2, -TD / 2 + 0.12, PALETTE.benchWood),
+    tintedBox(0.1, TH, 0.1, -TW / 2 + 0.12, TH / 2, TD / 2 - 0.12, PALETTE.benchWood),
+    tintedBox(0.1, TH, 0.1, TW / 2 - 0.12, TH / 2, TD / 2 - 0.12, PALETTE.benchWood),
+  ])));
+
+  // Two chairs facing each other across the table (along x). Chair front (open
+  // side) is +z; rotate so each faces the table centre.
+  const chairDist = TD / 2 + CHAIR_DEPTH / 2 + 0.35;
+  const seats: Record<string, Seat> = {};
+  const layout: [number, number, number][] = [
+    [0, -chairDist, 0],            // far side, faces +z toward table
+    [0, chairDist, Math.PI],       // near side, faces -z toward table
+  ];
+  let s = 0;
+  for (const [dx, dz, faceYaw] of layout) {
+    const c = new THREE.Group();
+    c.position.set(dx, 0, dz);
+    c.rotation.y = faceYaw;
+    c.add(makeInlineChair());
+    group.add(c);
+    seats[`${key}_${s++}`] = { x: cx + dx, z: cz + dz, faceYaw } as Seat;
+  }
+
+  return {
+    mesh: group,
+    obstacles: [{ x: cx, z: cz, w: TW + 0.1, d: TD + 0.1 }],
+    seats,
+  };
+}
+
+/** A glowing flat wall screen (digital price / ad board): frame + bright face + a
+ *  darker phone silhouette. Built facing +z (rotate on placement). */
+function makeWallScreen(sw: number, sh: number, hue: number): THREE.Object3D {
+  return tintedMesh(mergeTinted([
+    tintedBox(sw + 0.08, sh + 0.08, 0.05, 0, 0, 0, PALETTE.lampPole),   // frame
+    tintedBox(sw, sh, 0.03, 0, 0, 0.02, hue),                          // bright face
+    tintedBox(sw * 0.26, sh * 0.5, 0.02, 0, 0, 0.05, 0x20262e),         // phone silhouette
+    tintedBox(sw * 0.2, sh * 0.4, 0.01, 0, 0, 0.06, PANEL_GLOW),        // its screen
+  ]));
+}
+
+/**
+ * A shallow 2-step entry stoop at a flat (street-level) storefront door: the top
+ * step is flush with the interior floor (FLOOR_TOP) and the steps descend toward
+ * the street (+z). Width derived to span the door gap. Solid colliders per step.
+ */
+function makeEntryStoop(w: number, frontZ: number): Fitting {
+  const colliders: Box[] = [];
+  const parts: THREE.BufferGeometry[] = [];
+  const stoopW = Math.min(w * 0.5, 5);
+  const td = 0.34;               // step tread depth
+  const rise = FLOOR_TOP / 2;    // two risers from the floor to the apron
+  for (let i = 0; i < 2; i++) {
+    const top = FLOOR_TOP - i * rise;            // i=0 flush with floor, i=1 lower
+    const cz = frontZ + td / 2 + i * td;         // step out toward the street
+    parts.push(tintedBox(stoopW, top, td, 0, top / 2, cz, PALETTE.stoneBase));
+    parts.push(tintedBox(stoopW + 0.1, 0.04, td, 0, top, cz, PALETTE.curb));  // nosing
+    colliders.push(solidBox(0, top / 2, cz, stoopW, top, td));
+  }
+  return { mesh: tintedMesh(mergeTinted(parts)), colliders };
 }
 
 defineObject("restaurant", {
