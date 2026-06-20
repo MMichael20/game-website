@@ -14,8 +14,17 @@ import { defineObject } from "../system/registry";
 import { buildObject } from "../system/registry";
 import { applyTransform } from "../system/transform";
 import type { ObjectResult, Box, Rect, Vec2, Seat, PoiSpec } from "../system/types";
-import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
+import { tintedBox, cylinderY, mergeTinted, tintedMesh, DECAL_GAP } from "../objects/voxel";
 import { makePhone, PHONE_SCREENS } from "../objects/phone";
+import { makeCakeMesh } from "../objects/cake";
+import { makeCupcakeMesh } from "../objects/cupcake";
+import { makePottedPlantMesh } from "../objects/pottedPlant";
+import { makeWallLampMesh } from "../objects/wallLamp";
+import { makePlanterMesh } from "../objects/planter";
+import { makeAwning } from "../objects/awning";
+import { makeGlassPaneMaterial, makeGlassPanel } from "../objects/glass";
+import { makeTextSignMesh } from "../objects/textSign";
+import { SPONGE, FROSTING, GLAZE, PETAL } from "../objects/objectPalette";
 import { makeCounterKit, makeDisplayShelf } from "../kits";
 import { PALETTE } from "../palette";
 import type { Rect as WanderRect } from "../../game/wander";
@@ -204,6 +213,42 @@ const CHAIR_GAP = 0.1;     // clearance between the seat front and the table edg
 /** How far a chair's CENTRE sits from the table centre. Derived, never eyeballed. */
 const CHAIR_DIST = TABLE_TOP / 2 + CHAIR_DEPTH / 2 + CHAIR_GAP;
 
+// Floor-tile constants. The shell floor slab is WALL_T thick (buildings.ts), so
+// its top sits at y = SHELL_FLOOR_TOP; tiles rest just above it on a DECAL_GAP.
+const SHELL_FLOOR_TOP = 0.3;  // = buildingShell WALL_T
+const TILE_TARGET = 1.4;      // desired tile size (m) — actual size is derived to fit
+const TILE_H = 0.05;          // tile slab thickness
+const TILE_GROUT = 0.06;      // gap between tiles; the pale shell floor shows as grout
+
+/**
+ * A checkerboard tiled floor sized to the interior, returned as one merged mesh
+ * at the composite's local origin. Tile count/size is DERIVED from the interior
+ * footprint (CLAUDE.md pitfall #3) so the pattern always fills wall-to-wall.
+ */
+function makeTiledFloor(w: number, d: number): THREE.Object3D {
+  const inset = SHELL_FLOOR_TOP;          // keep tiles inside the walls (= WALL_T)
+  const innerW = w - inset * 2;
+  const innerD = d - inset * 2;
+  const cols = Math.max(1, Math.round(innerW / TILE_TARGET));
+  const rows = Math.max(1, Math.round(innerD / TILE_TARGET));
+  const tw = innerW / cols;
+  const td = innerD / rows;
+  const y = SHELL_FLOOR_TOP + DECAL_GAP + TILE_H / 2;
+  const x0 = -innerW / 2 + tw / 2;
+  const z0 = -innerD / 2 + td / 2;
+
+  const parts: THREE.BufferGeometry[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const hex = (r + c) % 2 === 0 ? PALETTE.tileCream : PALETTE.tileTerracotta;
+      parts.push(
+        tintedBox(tw - TILE_GROUT, TILE_H, td - TILE_GROUT, x0 + c * tw, y, z0 + r * td, hex),
+      );
+    }
+  }
+  return tintedMesh(mergeTinted(parts));
+}
+
 /** Simple inline voxel table (top + 4 legs), local origin at center/base. */
 function makeInlineTable(): THREE.Object3D {
   const parts: THREE.BufferGeometry[] = [];
@@ -233,6 +278,766 @@ function makeInlineChair(): THREE.Object3D {
   return tintedMesh(mergeTinted(legParts));
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Bakery interior fittings ("Cake House" reference)
+// ───────────────────────────────────────────────────────────────────────────
+// Each fitting returns its own facets (mesh + colliders + obstacles + seats) so
+// the composite can aggregate them and the engine transforms them on placement.
+// All footprints/colliders are DERIVED from the fitting's real size (pitfall #3).
+
+interface Fitting {
+  mesh: THREE.Object3D;
+  colliders?: Box[];
+  obstacles?: Rect[];
+  seats?: Record<string, Seat>;
+}
+
+/** Axis-aligned solid collider from a centre + full sizes. */
+function solidBox(x: number, y: number, z: number, bw: number, bh: number, bd: number): Box {
+  return { x, y, z, hx: bw / 2, hy: bh / 2, hz: bd / 2 };
+}
+
+// A rotating set of cake looks so a filled display reads as a varied bakery.
+const CAKE_LOOKS = [
+  { spongeColor: SPONGE.chocolate, frostingColor: FROSTING.chocolate },
+  { spongeColor: SPONGE.vanilla,   frostingColor: FROSTING.pink },
+  { spongeColor: SPONGE.redVelvet, frostingColor: FROSTING.cream },
+  { spongeColor: SPONGE.matcha,    frostingColor: FROSTING.mint },
+  { spongeColor: SPONGE.vanilla,   frostingColor: FROSTING.lemon },
+] as const;
+
+/**
+ * Glass-fronted display case: a dark-wood base cabinet, a row of cakes on the
+ * counter top, and a translucent glass cabinet over them. Solid collider so the
+ * player can't walk through it. Runs along +z by default; pass `horizontal` to
+ * run it along +x instead (for the L-shaped corner case). The geometry is always
+ * built along z, then rotated 90° so the collider/obstacle extents just swap.
+ */
+function makeDisplayCase(cx: number, cz: number, len: number, horizontal = false): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+  if (horizontal) group.rotation.y = -Math.PI / 2; // local +z -> world +x
+
+  const WIDTH = 0.9;   // x footprint
+  const BASE_H = 0.92; // cabinet height (= counter top)
+  const CASE_H = 0.6;  // glass cabinet height above the counter
+
+  group.add(tintedMesh(mergeTinted([
+    tintedBox(WIDTH, BASE_H, len, 0, BASE_H / 2, 0, PALETTE.caseWood),
+    tintedBox(WIDTH + 0.06, 0.06, len + 0.06, 0, BASE_H + 0.03, 0, PALETTE.caseWoodTop),
+  ])));
+
+  // Cakes on the counter top (count derived from length — packed for a full case).
+  const n = Math.max(1, Math.floor(len / 0.6));
+  const step = len / n;
+  for (let i = 0; i < n; i++) {
+    const cake = makeCakeMesh({ ...CAKE_LOOKS[i % CAKE_LOOKS.length], slice: i % 3 === 0 });
+    cake.position.set(0, BASE_H + 0.04, -len / 2 + step * (i + 0.5));
+    group.add(cake);
+  }
+
+  // Translucent glass cabinet over the cakes (5 thin panes share one material).
+  const glassMat = makeGlassPaneMaterial({ w: 1, h: 1, opacity: 0.2 });
+  const cy = BASE_H + 0.04 + CASE_H / 2;
+  const pane = (pw: number, ph: number, pd: number, x: number, y: number, z: number) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, pd), glassMat);
+    m.position.set(x, y, z);
+    group.add(m);
+  };
+  pane(WIDTH, 0.03, len, 0, BASE_H + 0.04 + CASE_H, 0);   // top
+  pane(0.03, CASE_H, len, WIDTH / 2, cy, 0);              // +x (customer side)
+  pane(0.03, CASE_H, len, -WIDTH / 2, cy, 0);             // -x (staff side)
+  pane(WIDTH, CASE_H, 0.03, 0, cy, len / 2);              // +z end
+  pane(WIDTH, CASE_H, 0.03, 0, cy, -len / 2);             // -z end
+
+  const totalH = BASE_H + 0.04 + CASE_H;
+  // When horizontal the footprint runs along x, so swap the planar extents.
+  const fw = horizontal ? len : WIDTH;   // x extent
+  const fd = horizontal ? WIDTH : len;   // z extent
+  return {
+    mesh: group,
+    colliders: [solidBox(cx, totalH / 2, cz, fw, totalH, fd)],
+    obstacles: [{ x: cx, z: cz, w: fw + 0.2, d: fd + 0.2 }],
+  };
+}
+
+/** Wall display shelf stocked with cakes, against the back wall, facing +z. */
+function makeCakeShelf(cx: number, cz: number): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+
+  const SW = 1.8;   // shelf width (x)
+  const SD = 0.45;  // shelf depth (z)
+  const levels = [0.65, 1.25, 1.85];
+
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(SW, 2.3, 0.08, 0, 1.25, -SD / 2, PALETTE.caseWood), // back panel
+  ];
+  for (const ly of levels) parts.push(tintedBox(SW, 0.07, SD, 0, ly, 0, PALETTE.caseWoodTop));
+  for (const sx of [-SW / 2 + 0.04, SW / 2 - 0.04]) {
+    parts.push(tintedBox(0.08, 2.3, SD, sx, 1.25, 0, PALETTE.caseWood));
+  }
+  group.add(tintedMesh(mergeTinted(parts)));
+
+  // Stock each level (counts derived from width): cakes below, cupcakes on top.
+  const GLAZES = [GLAZE.pink, GLAZE.chocolate, GLAZE.white, GLAZE.caramel];
+  let idx = 0;
+  for (let lvl = 0; lvl < levels.length; lvl++) {
+    const ly = levels[lvl];
+    if (lvl === levels.length - 1) {
+      const per = Math.max(3, Math.floor(SW / 0.34));
+      for (let i = 0; i < per; i++) {
+        const cup = makeCupcakeMesh({ frostingColor: GLAZES[idx++ % GLAZES.length], cherry: i % 2 === 0 });
+        cup.position.set(-SW / 2 + (SW / per) * (i + 0.5), ly + 0.035, 0.04);
+        group.add(cup);
+      }
+    } else {
+      const per = Math.max(2, Math.floor(SW / 0.5));
+      for (let i = 0; i < per; i++) {
+        const cake = makeCakeMesh({ ...CAKE_LOOKS[idx++ % CAKE_LOOKS.length], cherry: false });
+        cake.scale.setScalar(0.78);
+        cake.position.set(-SW / 2 + (SW / per) * (i + 0.5), ly + 0.035, 0.02);
+        group.add(cake);
+      }
+    }
+  }
+
+  return {
+    mesh: group,
+    colliders: [solidBox(cx, 1.15, cz, SW, 2.3, SD)],
+    obstacles: [{ x: cx, z: cz, w: SW + 0.1, d: SD + 0.1 }],
+  };
+}
+
+/** Stainless kitchen run against the back wall (facing +z): counter, oven, fridge, hood. */
+function makeKitchen(cx: number, cz: number, len: number): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+
+  const KD = 0.75;      // depth (z)
+  const fridgeW = 1.0;
+
+  // Tall stainless wire shelving rack at the +x end (counter-balancing the fridge).
+  const rackW = 1.2;
+  const rackH = 2.0;
+  const rackX = len / 2 - rackW / 2;
+  const rackLevels = [0.5, 1.0, 1.5, 1.95];
+
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(len, 0.9, KD, 0, 0.45, 0, PALETTE.steel),                     // base run
+    tintedBox(len + 0.04, 0.06, KD + 0.04, 0, 0.93, 0, PALETTE.steelLight), // worktop
+    tintedBox(len * 0.3, 0.7, 0.04, 0, 0.45, KD / 2 + 0.02, PALETTE.steelDark), // oven front
+    // tall fridge at the -x end
+    tintedBox(fridgeW, 2.0, KD, -len / 2 + fridgeW / 2, 1.0, 0, PALETTE.steel),
+    tintedBox(0.05, 1.5, 0.04, -len / 2 + fridgeW / 2 + 0.28, 1.0, KD / 2 + 0.02, PALETTE.steelDark),
+    // extractor hood over the centre
+    tintedBox(len * 0.34, 0.5, KD * 0.8, 0, 1.95, -0.04, PALETTE.steelDark),
+    // microwave on the worktop (between oven and rack)
+    tintedBox(0.6, 0.36, 0.42, len * 0.22, 0.96 + 0.18, 0, PALETTE.steelDark),
+    tintedBox(0.4, 0.26, 0.02, len * 0.22, 0.96 + 0.18, 0.22, PALETTE.steelLight), // its window
+  ];
+  // Wire shelving rack: four corner uprights + shelf slabs + a couple of trays.
+  for (const ux of [rackX - rackW / 2 + 0.05, rackX + rackW / 2 - 0.05]) {
+    for (const uz of [-KD / 2 + 0.05, KD / 2 - 0.05]) {
+      parts.push(tintedBox(0.06, rackH, 0.06, ux, rackH / 2, uz, PALETTE.steelDark));
+    }
+  }
+  for (const ly of rackLevels) {
+    parts.push(tintedBox(rackW, 0.04, KD - 0.04, rackX, ly, 0, PALETTE.steelLight));
+  }
+  // Sheet-pans / trays stacked on two of the levels.
+  parts.push(tintedBox(rackW - 0.2, 0.05, KD - 0.2, rackX, rackLevels[1] + 0.06, 0, PALETTE.steel));
+  parts.push(tintedBox(rackW - 0.3, 0.05, KD - 0.3, rackX, rackLevels[2] + 0.06, 0.04, PALETTE.steel));
+  group.add(tintedMesh(mergeTinted(parts)));
+
+  return {
+    mesh: group,
+    colliders: [
+      solidBox(cx, 0.45, cz, len, 0.9, KD),
+      solidBox(cx - len / 2 + fridgeW / 2, 1.0, cz, fridgeW, 2.0, KD),
+      solidBox(cx + rackX, rackH / 2, cz, rackW, rackH, KD),
+    ],
+    obstacles: [{ x: cx, z: cz, w: len + 0.1, d: KD + 0.1 }],
+  };
+}
+
+/**
+ * Long communal dining table running along +z with a red banquette bench on each
+ * long side. Seats (derived from length) face the table. Benches are NOT in the
+ * obstacle footprint (seating, per the kits Rule 3).
+ */
+function makeCommunalTable(cx: number, cz: number, len: number, key: string): Fitting {
+  const group = new THREE.Group();
+  group.position.set(cx, 0, cz);
+
+  const TOP_W = 1.1;                 // tabletop width (x)
+  const benchX = TOP_W / 2 + 0.5;    // bench centre offset from table centre
+
+  group.add(tintedMesh(mergeTinted([
+    tintedBox(TOP_W, 0.14, len, 0, 0.95, 0, PALETTE.benchWood),                // top
+    tintedBox(TOP_W * 0.7, 0.88, 0.12, 0, 0.44, -len / 2 + 0.35, PALETTE.caseWood), // end trestle
+    tintedBox(TOP_W * 0.7, 0.88, 0.12, 0, 0.44,  len / 2 - 0.35, PALETTE.caseWood),
+  ])));
+
+  for (const bx of [-benchX, benchX]) {
+    const bench = tintedMesh(mergeTinted([
+      tintedBox(0.42, 0.46, len, 0, 0.24, 0, PALETTE.caseWood),   // bench base
+      tintedBox(0.44, 0.12, len, 0, 0.48, 0, PALETTE.benchRed),   // red cushion
+      tintedBox(0.44, 0.5, 0.12, 0, 0.73, -len / 2 + 0.06, PALETTE.benchRed), // low backrest (one end)
+    ]));
+    bench.position.set(bx, 0, 0);
+    group.add(bench);
+  }
+
+  // Seats along each bench, facing the table (yaw convention: +π/2 faces +x).
+  const seats: Record<string, Seat> = {};
+  const nSeats = Math.max(2, Math.floor(len / 0.85));
+  const step = len / nSeats;
+  let s = 0;
+  for (const [bx, yaw] of [[-benchX, Math.PI / 2], [benchX, -Math.PI / 2]] as const) {
+    for (let i = 0; i < nSeats; i++) {
+      seats[`${key}_${s++}`] = { x: cx + bx, z: cz - len / 2 + step * (i + 0.5), faceYaw: yaw };
+    }
+  }
+
+  return {
+    mesh: group,
+    obstacles: [{ x: cx, z: cz, w: TOP_W + 0.1, d: len + 0.1 }],
+    seats,
+  };
+}
+
+/** Push a Fitting's facets onto the composite parts list (already composite-local). */
+function pushFitting(parts: ObjectResult[], anchors: Record<string, Vec2 | Seat>, f: Fitting): void {
+  parts.push({ mesh: f.mesh, colliders: f.colliders, obstacles: f.obstacles });
+  if (f.seats) for (const [k, v] of Object.entries(f.seats)) anchors[k] = v;
+}
+
+// The interior floor slab top (buildingShell WALL_T) — the deck is flush with it,
+// so stepping up from the street onto the deck and into the shop is seamless.
+const FLOOR_TOP = 0.3;
+
+// A warm point light for a lantern. Shadows OFF and a short range keep many of
+// them cheap (this project favours content over heavy lighting — kept modest).
+function lanternLight(intensity = 6, distance = 11): THREE.PointLight {
+  const l = new THREE.PointLight(0xffce7a, intensity, distance, 2);
+  l.castShadow = false;
+  return l;
+}
+
+// A small self-lit "bulb" so a lantern visibly glows even in daylight.
+function glowBulb(r = 0.12): THREE.Mesh {
+  return new THREE.Mesh(
+    new THREE.SphereGeometry(r, 8, 6),
+    new THREE.MeshStandardMaterial({ color: 0xffe7b0, emissive: 0xffce6a, emissiveIntensity: 1.7 }),
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Interior dressing (pendants, menu board, pictures, coffee bar) — decorative or
+// mounted on existing surfaces, so they add richness without disturbing the
+// tightly-packed furniture layout.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** A hanging pendant lamp: a cord from the ceiling to a shade with a glowing bulb
+ *  and a modest point light. Origin is the ceiling attach point; hangs by `drop`. */
+function makePendantLamp(drop: number): THREE.Object3D {
+  const g = new THREE.Group();
+  g.add(tintedMesh(mergeTinted([
+    tintedBox(0.04, drop, 0.04, 0, -drop / 2, 0, PALETTE.lampPole),     // cord
+    tintedBox(0.5, 0.28, 0.5, 0, -drop - 0.14, 0, PALETTE.awningRed),   // shade
+    tintedBox(0.42, 0.05, 0.42, 0, -drop - 0.29, 0, PALETTE.lantern),   // shade rim
+  ])));
+  const bulb = glowBulb(0.1);
+  bulb.position.set(0, -drop - 0.3, 0);
+  g.add(bulb);
+  const light = lanternLight(5, 9);
+  light.position.set(0, -drop - 0.42, 0);
+  g.add(light);
+  return g;
+}
+
+/** A wall menu chalkboard: wood frame + dark board + light menu lines + a small
+ *  cake-slice icon. Built facing +z (rotate on placement). */
+function makeMenuBoard(bw: number, bh: number): THREE.Object3D {
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(bw + 0.12, bh + 0.12, 0.05, 0, 0, 0, PALETTE.caseWood),   // frame
+    tintedBox(bw, bh, 0.04, 0, 0, 0.02, 0x223027),                     // dark board
+  ];
+  for (let i = 0; i < 4; i++) {
+    const ly = bh / 2 - 0.32 - i * 0.32;
+    parts.push(tintedBox(bw * (i === 0 ? 0.55 : 0.74), 0.05, 0.02, -bw * 0.05, ly, 0.05, 0xf3efe6));
+  }
+  // cake-slice icon top-left (sponge + frosting)
+  parts.push(tintedBox(0.22, 0.16, 0.02, -bw / 2 + 0.24, bh / 2 - 0.22, 0.06, SPONGE.vanilla));
+  parts.push(tintedBox(0.22, 0.06, 0.02, -bw / 2 + 0.24, bh / 2 - 0.11, 0.06, FROSTING.pink));
+  return tintedMesh(mergeTinted(parts));
+}
+
+/** A small framed picture (wood frame + colored print). Built facing +z. */
+function makeFramedPicture(fw: number, fh: number, hue: number): THREE.Object3D {
+  return tintedMesh(mergeTinted([
+    tintedBox(fw + 0.08, fh + 0.08, 0.04, 0, 0, 0, PALETTE.caseWood),
+    tintedBox(fw, fh, 0.03, 0, 0, 0.02, hue),
+  ]));
+}
+
+/** An espresso machine (body, top, group head, portafilter). Origin at its base,
+ *  front faces +z. Sits on a counter top. */
+function makeEspressoMachine(): THREE.Object3D {
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(0.5, 0.4, 0.4, 0, 0.2, 0, PALETTE.steel),            // body
+    tintedBox(0.52, 0.1, 0.42, 0, 0.45, 0, PALETTE.steelDark),     // top
+    tintedBox(0.36, 0.06, 0.05, 0, 0.16, 0.22, PALETTE.steelDark), // group head
+    tintedBox(0.08, 0.12, 0.08, 0, 0.07, 0.27, PALETTE.lampPole),  // portafilter handle
+  ];
+  return tintedMesh(mergeTinted(parts));
+}
+
+/** A small freestanding coffee bar: a wood counter with an espresso machine and a
+ *  cup stack on top. Solid collider. Front faces +z. */
+function makeCoffeeCounter(cx: number, cz: number): Fitting {
+  const g = new THREE.Group();
+  g.position.set(cx, 0, cz);
+  const CW = 1.6, CD = 0.7, CH = 0.9;
+  g.add(tintedMesh(mergeTinted([
+    tintedBox(CW, CH, CD, 0, CH / 2, 0, PALETTE.caseWood),
+    tintedBox(CW + 0.06, 0.06, CD + 0.06, 0, CH + 0.03, 0, PALETTE.caseWoodTop),
+  ])));
+  const esp = makeEspressoMachine();
+  esp.position.set(-0.2, CH + 0.06, 0);
+  g.add(esp);
+  g.add(tintedMesh(mergeTinted([
+    tintedBox(0.1, 0.1, 0.1, 0.5, CH + 0.11, 0.06, PALETTE.frame),
+    tintedBox(0.1, 0.1, 0.1, 0.5, CH + 0.22, 0.06, PALETTE.frame),
+  ])));
+  return {
+    mesh: g,
+    colliders: [solidBox(cx, CH / 2, cz, CW, CH, CD)],
+    obstacles: [{ x: cx, z: cz, w: CW + 0.1, d: CD + 0.1 }],
+  };
+}
+
+/** Downspouts on the two side walls (front + back of each), proud of the cladding. */
+function makeSideDownspouts(w: number, d: number, h: number): Fitting {
+  const faceX = w / 2 + SHELL_WALL_T / 2;
+  const parts: THREE.BufferGeometry[] = [];
+  const top = h - 1.6;
+  const y0 = 0.2;
+  const hgt = top - y0;
+  for (const sgn of [-1, 1]) {
+    for (const z of [-(d / 2 - 2.5), d / 2 - 2.5]) {
+      const px = sgn * (faceX + 0.14);
+      parts.push(cylinderY(0.1, hgt, px, y0 + hgt / 2, z, PALETTE.rollDoor, 10));
+      parts.push(tintedBox(0.24, 0.2, 0.24, px, 0.11, z, PALETTE.rollDoor)); // shoe at the base
+      for (let by = 0.9; by < top; by += 1.6) {
+        parts.push(tintedBox(0.26, 0.05, 0.14, px, by, z, PALETTE.steelDark)); // brackets
+      }
+    }
+  }
+  return { mesh: tintedMesh(mergeTinted(parts)) };
+}
+
+/** A glass-door drinks fridge stocked with bottles. Built facing +z; pass `yaw` to
+ *  turn it against a wall. Solid collider (footprint swapped when turned 90°). */
+function makeDrinksFridge(cx: number, cz: number, yaw: number): Fitting {
+  const g = new THREE.Group();
+  g.position.set(cx, 0, cz);
+  g.rotation.y = yaw;
+  const W = 1.2, H = 2.0, D = 0.6;
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(W, H, D, 0, H / 2, 0, PALETTE.steel),               // cabinet
+    tintedBox(W - 0.08, 0.12, D, 0, H - 0.06, 0, PALETTE.steelDark), // top
+  ];
+  const hues = [0xd0402f, 0x2f7fb0, 0x3aa35a, 0xe0a24a, 0xc98ab0];
+  const rows = [0.5, 1.0, 1.5];
+  for (let r = 0; r < rows.length; r++) {
+    for (let i = 0; i < 5; i++) {
+      parts.push(tintedBox(0.12, 0.3, 0.12, -W / 2 + 0.22 + i * 0.2, rows[r], 0.04, hues[(i + r) % hues.length]));
+    }
+  }
+  g.add(tintedMesh(mergeTinted(parts)));
+  const glass = makeGlassPanel({ w: W - 0.18, h: H - 0.3, divisions: 1, opacity: 0.32 });
+  glass.position.set(0, 0.16, D / 2 + 0.02);
+  g.add(glass);
+  const horiz = Math.abs(Math.sin(yaw)) > 0.5;
+  const fw = horiz ? D : W, fd = horiz ? W : D;
+  return {
+    mesh: g,
+    colliders: [solidBox(cx, H / 2, cz, fw, H, fd)],
+    obstacles: [{ x: cx, z: cz, w: fw + 0.1, d: fd + 0.1 }],
+  };
+}
+
+/** A simple square wall clock (frame, face, two hands). Built facing +z. */
+function makeWallClock(): THREE.Object3D {
+  return tintedMesh(mergeTinted([
+    tintedBox(0.7, 0.7, 0.06, 0, 0, 0, PALETTE.caseWood),  // frame
+    tintedBox(0.56, 0.56, 0.04, 0, 0, 0.03, 0xf3efe6),     // face
+    tintedBox(0.04, 0.22, 0.02, 0, 0.06, 0.06, 0x231f25), // minute hand
+    tintedBox(0.18, 0.04, 0.02, 0.05, 0, 0.06, 0x231f25), // hour hand
+  ]));
+}
+
+/**
+ * Pavement apron framing the building: a sidewalk slab with a curb border, a
+ * touch proud of the grass. Sized to the footprint + a margin (derived).
+ */
+function makePavement(w: number, d: number): Fitting {
+  const pad = 2.0;
+  const pw = w + pad * 2;
+  const pd = d + pad * 2;
+  const slab = tintedMesh(mergeTinted([
+    tintedBox(pw + 0.4, 0.06, pd + 0.4, 0, 0.03, 0, PALETTE.curb),      // curb border
+    tintedBox(pw, 0.08, pd, 0, 0.05, 0, PALETTE.sidewalk),             // pavement
+  ]));
+  slab.receiveShadow = true;
+  return { mesh: slab };
+}
+
+/**
+ * Raised STONE elevation the building sits on (matching the reference): a stone
+ * plinth/podium whose top is flush with the interior floor, a stone curb lip,
+ * three descending stone steps at the entrance, flower planter boxes flanking the
+ * door, and a glowing lantern on a short stone post at each front corner. No
+ * wooden railing. All sizes derive from FLOOR_TOP and the building width.
+ */
+function makeFrontElevation(w: number, d: number): Fitting {
+  const group = new THREE.Group();
+  const colliders: Box[] = [];
+
+  const padDepth = 2.0;          // how far the podium reaches in front of the glass
+  const padW = w + 0.6;
+  const frontZ = d / 2;
+  const padOuter = frontZ + padDepth;
+  const padCz = frontZ + padDepth / 2;
+
+  // Stone podium: a solid plinth (top flush with FLOOR_TOP) with a slightly proud
+  // curb lip around the top edge so it reads as a stone elevation, not a flat slab.
+  const podiumParts: THREE.BufferGeometry[] = [
+    tintedBox(padW, FLOOR_TOP, padDepth, 0, FLOOR_TOP / 2, padCz, PALETTE.stoneBase),
+    tintedBox(padW + 0.2, 0.06, padDepth + 0.2, 0, FLOOR_TOP + 0.03, padCz, PALETTE.curb), // top curb lip
+  ];
+  group.add(tintedMesh(mergeTinted(podiumParts)));
+  colliders.push(solidBox(0, FLOOR_TOP / 2, padCz, padW, FLOOR_TOP, padDepth));
+
+  // Three stone steps descending from the podium edge to the street.
+  const stairW = Math.min(w * 0.55, 6);
+  const td = 0.3;
+  const rise = FLOOR_TOP / 3;
+  const stepParts: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < 3; i++) {
+    const top = rise * (i + 1);                 // i=2 is tallest, nearest the podium
+    const cz = padOuter + (2 - i) * td + td / 2;
+    stepParts.push(tintedBox(stairW, top, td, 0, top / 2, cz, PALETTE.stoneBase));
+    stepParts.push(tintedBox(stairW + 0.12, 0.04, td, 0, top, cz, PALETTE.curb)); // step nosing
+    colliders.push(solidBox(0, top / 2, cz, stairW, top, td));
+  }
+  group.add(tintedMesh(mergeTinted(stepParts)));
+
+  // Flower planter boxes on the podium, flanking the entrance (clear of the door
+  // gap and the descending stairs), echoing the reference's front planters.
+  for (const sgn of [-1, 1]) {
+    const planter = makePlanterMesh({
+      w: Math.min(3.2, w * 0.28), d: 0.6, withFlowers: true,
+      flowerColor: sgn < 0 ? PETAL[0] : PETAL[2],
+    });
+    const px = sgn * (stairW / 2 + Math.min(3.2, w * 0.28) / 2 + 0.4);
+    planter.position.set(px, FLOOR_TOP, frontZ + 0.5);
+    group.add(planter);
+    colliders.push(solidBox(px, FLOOR_TOP + 0.25, frontZ + 0.5, Math.min(3.2, w * 0.28), 0.5, 0.6));
+  }
+
+  // A glowing lantern on a short stone post at each front corner of the podium.
+  for (const sx of [-padW / 2 + 0.25, padW / 2 - 0.25]) {
+    const postH = 1.0;
+    const postTopY = FLOOR_TOP + postH;
+    const lantern = new THREE.Group();
+    lantern.add(tintedMesh(mergeTinted([
+      tintedBox(0.22, postH, 0.22, 0, FLOOR_TOP + postH / 2, 0, PALETTE.stoneBase), // stone post
+      tintedBox(0.18, 0.2, 0.18, 0, postTopY + 0.1, 0, PALETTE.lantern),            // lamp housing
+    ])));
+    const bulb = glowBulb(0.08);
+    bulb.position.set(0, postTopY + 0.1, 0);
+    lantern.add(bulb);
+    const light = lanternLight(7, 12);
+    light.position.set(0, postTopY + 0.1, 0);
+    lantern.add(light);
+    lantern.position.set(sx, 0, padOuter - 0.2);
+    group.add(lantern);
+    colliders.push(solidBox(sx, FLOOR_TOP + postH / 2, padOuter - 0.2, 0.22, postH, 0.22));
+  }
+
+  return { mesh: group, colliders };
+}
+
+/**
+ * A grey boxy HVAC unit on the parapet roof (louvered face, fan grille on top,
+ * small feet), like the reference's rooftop unit — visible from the SIDE and over
+ * the open front. Decorative: it sits on the roof out of reach, so no collider.
+ */
+function makeRooftopUnit(w: number, d: number, h: number): Fitting {
+  const uw = Math.min(3.0, w * 0.22);
+  const ud = Math.min(2.4, d * 0.18);
+  const uh = 1.1;
+  const baseY = h + 0.14;     // rests on the roof cap (cap top ≈ h + 0.12)
+  const cx = -w * 0.12;       // a touch left of centre
+  const cz = -d * 0.18;       // toward the back, as in the reference
+
+  const parts: THREE.BufferGeometry[] = [
+    tintedBox(uw, uh, ud, cx, baseY + uh / 2, cz, PALETTE.steel),                       // body
+    tintedBox(uw + 0.12, 0.1, ud + 0.12, cx, baseY + uh + 0.05, cz, PALETTE.steelDark), // top cap
+    cylinderY(Math.min(uw, ud) * 0.3, 0.06, cx, baseY + uh + 0.12, cz, PALETTE.steelDark, 12), // fan grille
+  ];
+  // Louver slats on the front (+z) face.
+  for (let i = 0; i < 4; i++) {
+    parts.push(tintedBox(uw * 0.8, 0.06, 0.02, cx, baseY + 0.25 + i * 0.18, cz + ud / 2 + 0.01, PALETTE.steelLight));
+  }
+  // Four small feet.
+  for (const fx of [cx - uw / 2 + 0.2, cx + uw / 2 - 0.2]) {
+    for (const fz of [cz - ud / 2 + 0.2, cz + ud / 2 - 0.2]) {
+      parts.push(tintedBox(0.16, 0.14, 0.16, fx, baseY + 0.07, fz, PALETTE.steelDark));
+    }
+  }
+
+  // A smaller condenser box beside the main unit.
+  const cw = uw * 0.5;
+  const c2x = cx + uw / 2 + cw / 2 + 0.4;
+  parts.push(tintedBox(cw, 0.7, ud * 0.7, c2x, baseY + 0.35, cz, PALETTE.steel));
+  parts.push(cylinderY(cw * 0.28, 0.05, c2x, baseY + 0.72, cz, PALETTE.steelDark, 12)); // its fan
+
+  // A capped vent pipe and a low roof hatch toward the back.
+  parts.push(cylinderY(0.12, 1.0, w * 0.22, baseY + 0.5, -d * 0.3, PALETTE.steelDark, 10));
+  parts.push(tintedBox(0.34, 0.06, 0.34, w * 0.22, baseY + 1.03, -d * 0.3, PALETTE.steelLight)); // pipe cap
+  parts.push(tintedBox(1.2, 0.22, 0.9, -w * 0.28, baseY + 0.11, d * 0.18, PALETTE.trimBrown));   // hatch curb
+  parts.push(tintedBox(1.1, 0.06, 0.8, -w * 0.28, baseY + 0.25, d * 0.18, PALETTE.steelDark));   // hatch lid
+
+  return { mesh: tintedMesh(mergeTinted(parts)) };
+}
+
+// Shell wall thickness (= buildingShell WALL_T). The exterior cladding MUST mount
+// PROUD of the shell's OUTER face (xo + T/2); mounting it on the wall centre buries
+// it inside the pale shell and the building reads as a plain grey box.
+const SHELL_WALL_T = 0.3;
+
+// Shared vertical band layout for the exterior walls, derived from height so the
+// facade bands and the window bays line up on every wall.
+function facadeBands(h: number) {
+  const baseTop = 0.7;                          // stone base course top
+  const sill = 1.1;                             // window sill
+  const winH = Math.min(3.4, h * 0.45);         // window height
+  const winTop = sill + winH;
+  const beltH = 0.26;
+  const beltCY = winTop + 0.2;                  // brown belt course just above the windows
+  const fasciaH = Math.min(1.4, h * 0.2);
+  const fasciaCY = h - 0.1 - fasciaH / 2;       // red fascia band under the roof cap
+  const pilBottom = baseTop;
+  const pilTop = fasciaCY - fasciaH / 2;        // pilasters run base -> fascia underside
+  return { baseTop, sill, winH, winTop, beltH, beltCY, fasciaH, fasciaCY, pilBottom, pilTop };
+}
+
+/**
+ * Exterior cladding so the shell isn't a plain grey box: tan wall panels on the
+ * two sides + back mounted PROUD of the shell, a stone base course + string
+ * course, a brown belt course above the windows, a red fascia band under the
+ * roof, back-wall pilaster strips, brown corner pilasters, and a capped cornice
+ * roof. All derived from w/d/h via facadeBands().
+ */
+function makeExteriorFacade(w: number, d: number, h: number, accent: number = PALETTE.awningRed): Fitting {
+  const xo = w / 2;
+  const zo = d / 2;
+  const T = SHELL_WALL_T;
+  const faceX = xo + T / 2;     // shell outer face (sides)
+  const faceZ = zo + T / 2;     // shell outer face (back)
+  const CLAD = 0.1;
+  const B = facadeBands(h);
+  const parts: THREE.BufferGeometry[] = [];
+
+  // ── Two side walls (±x): tan body + stone base + string + belt + red fascia ──
+  for (const sgn of [-1, 1]) {
+    const x0 = sgn * (faceX + CLAD / 2);   // tan body plane
+    const xb = sgn * (faceX + CLAD);       // bands a touch further out (relief)
+    parts.push(tintedBox(CLAD, h, d, x0, h / 2, 0, PALETTE.houseBody));                        // tan body
+    parts.push(tintedBox(CLAD * 1.6, B.baseTop, d, xb, B.baseTop / 2, 0, PALETTE.stoneBase));  // stone base
+    parts.push(tintedBox(CLAD * 1.8, 0.12, d, xb, B.baseTop + 0.06, 0, PALETTE.trimBrown));    // string course
+    parts.push(tintedBox(CLAD * 1.8, B.beltH, d, xb, B.beltCY, 0, PALETTE.trimBrown));         // belt course
+    parts.push(tintedBox(CLAD * 2.0, B.fasciaH, d, xb, B.fasciaCY, 0, accent));               // accent fascia
+  }
+
+  // ── Back wall (−z): the same band stack ──
+  parts.push(tintedBox(w, h, CLAD, 0, h / 2, -(faceZ + CLAD / 2), PALETTE.houseBody));
+  parts.push(tintedBox(w, B.baseTop, CLAD * 1.6, 0, B.baseTop / 2, -(faceZ + CLAD), PALETTE.stoneBase));
+  parts.push(tintedBox(w, 0.12, CLAD * 1.8, 0, B.baseTop + 0.06, -(faceZ + CLAD), PALETTE.trimBrown));
+  parts.push(tintedBox(w, B.beltH, CLAD * 1.8, 0, B.beltCY, -(faceZ + CLAD), PALETTE.trimBrown));
+  parts.push(tintedBox(w, B.fasciaH, CLAD * 2.0, 0, B.fasciaCY, -(faceZ + CLAD), accent));
+
+  // Back-wall vertical pilaster strips at the quarter points (clear of the centre
+  // roll-up door and the side service door).
+  const pilH = B.pilTop - B.pilBottom;
+  const pilCY = (B.pilTop + B.pilBottom) / 2;
+  for (const px of [-w * 0.3, w * 0.3]) {
+    parts.push(tintedBox(0.4, pilH, CLAD * 2.2, px, pilCY, -(faceZ + CLAD), PALETTE.trimBrown));
+  }
+
+  // Corner pilasters (brown), full height, proud on both faces.
+  const pil = 0.5;
+  for (const cx of [-xo, xo]) {
+    for (const cz of [-zo, zo]) {
+      parts.push(tintedBox(pil, h, pil, cx + Math.sign(cx) * (T / 2), h / 2, cz + Math.sign(cz) * (T / 2), PALETTE.trimBrown));
+    }
+  }
+
+  // Flat roof cap + a deeper cornice lip + parapet around the edge.
+  parts.push(tintedBox(w + 0.5, 0.16, d + 0.5, 0, h + 0.08, 0, PALETTE.roofCap));
+  const par = 0.28;
+  for (const sgn of [-1, 1]) {
+    parts.push(tintedBox(w + 0.5, par, 0.16, 0, h + 0.16 + par / 2, sgn * (zo + 0.2), PALETTE.trimBrown));
+    parts.push(tintedBox(0.16, par, d + 0.5, sgn * (xo + 0.2), h + 0.16 + par / 2, 0, PALETTE.trimBrown));
+  }
+
+  return { mesh: tintedMesh(mergeTinted(parts)) };
+}
+
+/**
+ * The full SIDE elevation from the reference, down each side wall: tall awning'd
+ * windows with planters beneath, brown pilaster strips between every bay (running
+ * base -> fascia), a row of small clerestory accent windows on the upper wall, and
+ * a lantern on each pilaster. Heights come from facadeBands() so everything lines
+ * up with the cladding bands. Mounted PROUD of the now-proud cladding. Returns
+ * planter footprints as obstacles.
+ */
+function makeSideWindows(w: number, d: number, h: number, accent: number = PALETTE.awningRed): Fitting {
+  const group = new THREE.Group();
+  const obstacles: Rect[] = [];
+  const xo = w / 2;
+  const faceX = xo + SHELL_WALL_T / 2;
+  const B = facadeBands(h);
+  const winW = 1.7;
+  const span = d - 3;
+  const n = Math.max(2, Math.floor(span / 3));
+  const step = span / n;
+
+  // Mounting planes, all just outside the proud cladding (body ≈ faceX + 0.1).
+  const glassX = faceX + 0.22;
+  const awnX = faceX + 0.2;
+  const planterX = faceX + 0.5;
+  const pilX = faceX + 0.16;
+  const lampX = faceX + 0.16;
+
+  // Upper clerestory band (between the belt course and the red fascia).
+  const clereBot = B.beltCY + B.beltH / 2 + 0.25;
+  const clereTop = B.fasciaCY - B.fasciaH / 2 - 0.2;
+  const clereH = clereTop - clereBot;
+
+  const pilH = B.pilTop - B.pilBottom;
+  const pilCY = (B.pilTop + B.pilBottom) / 2;
+
+  for (const sgn of [-1, 1]) {                 // left / right wall
+    const yaw = (sgn * Math.PI) / 2;           // window/awning face outward (±x)
+    const trim: THREE.BufferGeometry[] = [];   // merged brown pilaster strips
+
+    for (let i = 0; i < n; i++) {
+      const z = -span / 2 + step * (i + 0.5);
+
+      // Tall main window with a mullion grid, awning above, planter below.
+      const glass = makeGlassPanel({ w: winW, h: B.winH, divisions: 2, opacity: 0.5 });
+      glass.position.set(sgn * glassX, B.sill, z);
+      glass.rotation.y = yaw;
+      group.add(glass);
+
+      const awn = tintedMesh(makeAwning({ w: winW + 0.3, colorA: accent, colorB: PALETTE.awningStripe, depth: 0.8 }));
+      awn.position.set(sgn * awnX, B.sill + B.winH, z);
+      awn.rotation.y = yaw;
+      group.add(awn);
+
+      const planter = makePlanterMesh({ w: winW, d: 0.5, withFlowers: true, flowerColor: i % 2 ? PETAL[2] : PETAL[0] });
+      planter.position.set(sgn * planterX, 0, z);
+      planter.rotation.y = yaw;
+      group.add(planter);
+      obstacles.push({ x: sgn * planterX, z, w: 0.6, d: winW });
+
+      // Small clerestory accent window high on the wall, above this bay.
+      if (clereH > 0.4) {
+        const clere = makeGlassPanel({ w: 1.0, h: clereH, divisions: 1, opacity: 0.5 });
+        clere.position.set(sgn * glassX, clereBot, z);
+        clere.rotation.y = yaw;
+        group.add(clere);
+      }
+    }
+
+    // Vertical pilaster strips at every bay boundary (base -> fascia underside).
+    for (let i = 0; i <= n; i++) {
+      const pz = -span / 2 + step * i;
+      trim.push(tintedBox(0.12, pilH, 0.36, sgn * pilX, pilCY, pz, PALETTE.trimBrown));
+    }
+    group.add(tintedMesh(mergeTinted(trim)));
+
+    // A lantern on each pilaster (glow only — a row of real lights would be too many).
+    for (let i = 0; i <= n; i++) {
+      const lamp = makeWallLampMesh({ emitLight: false });
+      lamp.position.set(sgn * lampX, B.sill + B.winH * 0.55, -span / 2 + step * i);
+      lamp.rotation.y = yaw;
+      group.add(lamp);
+    }
+  }
+
+  return { mesh: group, obstacles };
+}
+
+/**
+ * Back-of-house utilities on the rear wall: two drainpipes (with brackets + a
+ * shoe at the bottom), an electrical conduit running up to a panel + meter beside
+ * the service door, and a couple of louvered wall vents. Outward face is -z.
+ */
+function makeBackUtilities(w: number, d: number, h: number): Fitting {
+  const group = new THREE.Group();
+  const zWall = -d / 2;
+  const pipeZ = zWall - 0.18;     // pipe centre, proud of the clad back wall
+  const topY = h - 0.5;
+  const parts: THREE.BufferGeometry[] = [];
+
+  // Two fat drainpipes down the back wall (brackets every ~1.4m + a bottom shoe).
+  for (const px of [-w / 2 + 1.0, w / 2 - 1.2]) {
+    const r = 0.09;
+    const y0 = 0.18;
+    const hgt = topY - y0;
+    parts.push(cylinderY(r, hgt, px, y0 + hgt / 2, pipeZ, PALETTE.rollDoor, 10));
+    parts.push(tintedBox(r * 2.2, 0.22, r * 2.2, px, 0.11, pipeZ - 0.03, PALETTE.rollDoor)); // shoe
+    for (let by = 0.6; by <= topY; by += 1.4) {
+      parts.push(tintedBox(r * 2 + 0.08, 0.05, 0.12, px, by, (zWall + pipeZ) / 2, PALETTE.steelDark));
+    }
+  }
+
+  // Electrical conduit rising to the panel near the service door.
+  const condX = -w / 2 + 3.2;
+  const panelY = 1.7;
+  parts.push(cylinderY(0.04, panelY - 0.15, condX, (panelY - 0.15) / 2 + 0.15, zWall - 0.14, PALETTE.steelDark, 8));
+  group.add(tintedMesh(mergeTinted(parts)));
+
+  // Panel + meter (separate mesh; outward face = -z).
+  const panel = tintedMesh(mergeTinted([
+    tintedBox(0.5, 0.7, 0.16, 0, 0, 0, PALETTE.steel),
+    tintedBox(0.4, 0.56, 0.04, 0, 0, -0.1, PALETTE.steelDark),       // panel door
+    tintedBox(0.18, 0.22, 0.16, 0.34, -0.2, -0.04, PALETTE.steelLight), // meter beside
+  ]));
+  panel.position.set(condX, panelY, zWall - 0.16);
+  group.add(panel);
+
+  // Louvered wall vents high on the back wall.
+  for (const vx of [-w / 4, w / 4]) {
+    const vent = tintedMesh(mergeTinted([
+      tintedBox(0.7, 0.5, 0.08, 0, 0, 0, PALETTE.steelDark),
+      tintedBox(0.6, 0.06, 0.1, 0, 0.12, -0.05, PALETTE.steelLight),
+      tintedBox(0.6, 0.06, 0.1, 0, 0.0, -0.05, PALETTE.steelLight),
+      tintedBox(0.6, 0.06, 0.1, 0, -0.12, -0.05, PALETTE.steelLight),
+    ]));
+    vent.position.set(vx, h - 1.4, zWall - 0.1);
+    group.add(vent);
+  }
+
+  return { mesh: group };
+}
+
 defineObject("restaurant", {
   params: { w: 12, d: 10, h: 7, variant: "bakery" } as RestaurantParams,
   build(p: RestaurantParams) {
@@ -243,83 +1048,315 @@ defineObject("restaurant", {
     const shell = buildObject("buildingShell", { w, d, h });
     parts.push(applyTransform(shell, { x: 0, z: 0, rot: 0 }));
 
+    // ── Tiled floor (checkerboard, sized to the interior) ────────────────────
+    parts.push({ mesh: makeTiledFloor(w, d) });
+
     // ── Storefront ───────────────────────────────────────────────────────────
     const front = buildObject("storefront", {
       w,
       h,
       d,
-      signText: "Restaurant",
+      signText: "Cake House",
       awningColor: PALETTE.awningRed,
       fullGlass: true,
     });
     parts.push(applyTransform(front, { x: 0, z: d / 2, rot: 0 }));
 
-    // ── Service counter near the back ────────────────────────────────────────
-    const counterW = 5;
-    const counterZ = -d / 2 + 1.8;
-    const counterKit = makeCounterKit({ x: 0, z: 0, w: counterW });
-    parts.push(applyTransform(kitToResult(counterKit), { x: 0, z: counterZ, rot: 0 }));
-
-    // ── Two indoor tables with chairs in the front half ──────────────────────
-    // Table positions: front half of interior, z ≈ +2m from center, x = ±2.6
-    const tablePositions: [number, number][] = [
-      [-2.6, 2.0],
-      [ 2.6, 2.0],
-    ];
-
-    // CHAIR_DIST is the module-level DERIVED distance (table half + chair half + gap).
-    // [dx, dz, faceYaw] — yaw faces TOWARD the table center
-    const chairLayout: [number, number, number][] = [
-      [0,           -CHAIR_DIST,  0],            // north chair, faces south (toward table)
-      [0,            CHAIR_DIST,  Math.PI],       // south chair, faces north
-      [-CHAIR_DIST,  0,           Math.PI / 2],   // west chair, faces east
-      [ CHAIR_DIST,  0,          -Math.PI / 2],   // east chair, faces west
-    ];
-
-    // Collect seat anchors
+    // Interior reference frame (composite-local). Front (+z) is the open glass
+    // storefront; the back wall is at -d/2. Every fitting derives from these.
+    const T = 0.3;            // shell wall thickness (= buildingShell WALL_T)
+    const xi = w / 2 - T;     // interior wall x
+    const backZ = -d / 2 + T; // inner face of the back wall
     const anchors: Record<string, Vec2 | Seat> = {};
-    let seatIdx = 0;
 
-    for (const [tx, tz] of tablePositions) {
-      // Table mesh
+    // ── BACK WALL: cake shelves (left) + stainless kitchen (centre/right) ────
+    const shelfZ = backZ + 0.25;
+    pushFitting(parts, anchors, makeCakeShelf(-xi + 1.1, shelfZ));
+    pushFitting(parts, anchors, makeCakeShelf(-xi + 3.1, shelfZ));
+    const kitchenLen = Math.min(8, xi);          // fits the centre/right back wall
+    const kitchenX = xi - kitchenLen / 2 - 0.6;  // hug the right back corner
+    pushFitting(parts, anchors, makeKitchen(kitchenX, backZ + 0.4, kitchenLen));
+
+    // Staff door on the back wall, between the shelves and the kitchen.
+    const backDoor = tintedMesh(tintedBox(1.1, 2.2, 0.06, -xi + 5.6, 1.1, backZ + 0.02, PALETTE.facadeDoor));
+    parts.push({ mesh: backDoor });
+
+    // ── Interior title sign, high on the back wall ───────────────────────────
+    const titleW = Math.min(6, w * 0.45);
+    const titleH = 1.0;
+    const title = makeTextSignMesh({ text: "Cake House", w: titleW, h: titleH, boardColor: PALETTE.awningRed, glow: 0.9 });
+    title.position.set(0, h - 2.6, backZ + 0.05);
+    parts.push({ mesh: title });
+
+    // ── LEFT: L-shaped glass bakery display case (the service counter) ────────
+    // A long leg along the left wall (+z) plus a short return leg along +x at the
+    // front, wrapping the corner like the reference's angled case.
+    const caseLen = Math.min(8, d * 0.5);
+    const caseX = -xi + 1.7;
+    const caseZ = caseLen / 2 - d * 0.18;   // sits in the front-left, derived from depth
+    pushFitting(parts, anchors, makeDisplayCase(caseX, caseZ, caseLen));
+    const caseFrontZ = caseZ + caseLen / 2;
+    const returnLen = Math.min(4, w * 0.22);
+    const CASE_WIDTH = 0.9;                  // = makeDisplayCase WIDTH
+    const returnX = caseX + returnLen / 2 + CASE_WIDTH / 2;
+    const returnZ = caseFrontZ - CASE_WIDTH / 2;
+    pushFitting(parts, anchors, makeDisplayCase(returnX, returnZ, returnLen, true));
+    // Register sitting ON TOP of the L-case (the case has a glass cabinet over the
+    // cakes, so the register rides above it at ~1.6 rather than clipping inside).
+    const register = tintedMesh(mergeTinted([
+      tintedBox(0.4, 0.28, 0.4, 0, 1.1, 0, PALETTE.steelDark),
+      tintedBox(0.34, 0.22, 0.04, 0, 1.26, 0.18, PALETTE.steelLight),
+    ]));
+    register.position.set(returnX, 0.62, returnZ);
+    parts.push({ mesh: register });
+    anchors.counter = { x: caseX + 1.0, z: caseZ } as Vec2;
+    anchors.staff = { x: caseX - 0.8, z: caseZ, faceYaw: Math.PI / 2 } as Seat;
+
+    // ── RIGHT: communal dining tables in rows, with a plant on each ──────────
+    const tableLen = 4.0;
+    const colXs = [xi - 2.2, xi - 6.4];        // two columns hugging the right
+    const rowZs = [d / 2 - 5.0, d / 2 - 10.5]; // two rows, front to mid
+    let tnum = 0;
+    for (const tx of colXs) {
+      for (const tz of rowZs) {
+        pushFitting(parts, anchors, makeCommunalTable(tx, tz, tableLen, `seat${tnum++}`));
+        const plant = makePottedPlantMesh({ height: 0.5, bloom: false });
+        plant.scale.setScalar(0.7);
+        plant.position.set(tx, 1.02, tz);
+        parts.push({ mesh: plant });
+      }
+    }
+
+    // ── FRONT-CENTRE: a couple of small café tables, a cake on each ──────────
+    const cafeZ = d / 2 - 3.2;
+    const cafeChairs: [number, number, number][] = [
+      [0, -CHAIR_DIST, 0],
+      [0, CHAIR_DIST, Math.PI],
+      [-CHAIR_DIST, 0, Math.PI / 2],
+      [CHAIR_DIST, 0, -Math.PI / 2],
+    ];
+    for (const cxs of [-2.2, 1.0]) {
       const tableGroup = new THREE.Group();
-      tableGroup.position.set(tx, 0, tz);
-      const tableMesh = makeInlineTable();
-      tableGroup.add(tableMesh);
-
-      // Chair meshes
-      for (const [cdx, cdz, cfaceYaw] of chairLayout) {
+      tableGroup.position.set(cxs, 0, cafeZ);
+      tableGroup.add(makeInlineTable());
+      for (const [cdx, cdz, cfaceYaw] of cafeChairs) {
         const chairGroup = new THREE.Group();
         chairGroup.position.set(cdx, 0, cdz);
         chairGroup.rotation.y = cfaceYaw;
         chairGroup.add(makeInlineChair());
         tableGroup.add(chairGroup);
-
-        // Seat anchor in composite-local coords
-        const seatKey = `seat${seatIdx++}`;
-        anchors[seatKey] = {
-          x: tx + cdx,
-          z: tz + cdz,
-          faceYaw: cfaceYaw,
-        } as Seat;
+        anchors[`cafe${tnum++}`] = { x: cxs + cdx, z: cafeZ + cdz, faceYaw: cfaceYaw } as Seat;
       }
-
-      parts.push({ mesh: tableGroup });
+      const cake = makeCakeMesh({ ...CAKE_LOOKS[tnum % CAKE_LOOKS.length] });
+      cake.position.set(0, 1.04, 0);
+      tableGroup.add(cake);
+      parts.push({ mesh: tableGroup, obstacles: [{ x: cxs, z: cafeZ, w: TABLE_TOP + 0.1, d: TABLE_TOP + 0.1 }] });
     }
+
+    // ── Interior wall lamps along the left + right walls ─────────────────────
+    for (const lz of [backZ + 4, 0, d / 2 - 4]) {
+      const left = makeWallLampMesh();
+      left.position.set(-xi, 3.4, lz);
+      left.rotation.y = Math.PI / 2;   // arm points +x into the room
+      parts.push({ mesh: left });
+      const right = makeWallLampMesh();
+      right.position.set(xi, 3.4, lz);
+      right.rotation.y = -Math.PI / 2; // arm points -x into the room
+      parts.push({ mesh: right });
+    }
+
+    // ── Indoor plants flanking the entrance ──────────────────────────────────
+    for (const px of [-xi + 1.0, xi - 1.0]) {
+      const plant = makePottedPlantMesh({ height: 1.0 });
+      plant.position.set(px, FLOOR_TOP, d / 2 - 1.6);
+      parts.push({ mesh: plant, obstacles: [{ x: px, z: d / 2 - 1.6, w: 0.7, d: 0.7 }] });
+    }
+
+    // ── INTERIOR DRESSING: pendants, menu board, pictures, bunting, mat, coffee ─
+    const ceilY = h - T;
+    const pendDrop = Math.max(1.6, ceilY - 4.4);
+    for (const [lx, lz] of [[-2.2, cafeZ], [xi - 4.3, d / 2 - 5.0], [xi - 4.3, d / 2 - 10.5]] as [number, number][]) {
+      const pend = makePendantLamp(pendDrop);
+      pend.position.set(lx, ceilY, lz);
+      parts.push({ mesh: pend });
+    }
+
+    // Wall inner faces (the shell walls are T thick, centred on ±w/2).
+    const wallFaceX = w / 2 - T / 2;
+
+    // Menu chalkboard on the left wall above the display case (faces +x), flush.
+    const menu = makeMenuBoard(Math.min(2.6, d * 0.18), 1.5);
+    menu.position.set(-wallFaceX + 0.03, 2.9, caseZ);
+    menu.rotation.y = Math.PI / 2;
+    parts.push({ mesh: menu });
+
+    // Framed pictures along the right wall (face -x), flush to the wall.
+    const picHues = [0x6aa9c9, 0xe0a24a, 0x84b06a];
+    picHues.forEach((hue, i) => {
+      const pic = makeFramedPicture(0.9, 0.7, hue);
+      pic.position.set(wallFaceX - 0.03, 3.1, d / 2 - 4.5 - i * 3.0);
+      pic.rotation.y = -Math.PI / 2;
+      parts.push({ mesh: pic });
+    });
+
+    // Pennant bunting strung high across the front interior.
+    const buntY = h - 1.8;
+    const buntZ = d / 2 - 2.0;
+    const buntParts: THREE.BufferGeometry[] = [
+      tintedBox(2 * xi - 1.6, 0.03, 0.03, 0, buntY + 0.18, buntZ, PALETTE.lampPole), // cord
+    ];
+    const flags = Math.max(6, Math.round((2 * xi - 1.6) / 0.6));
+    for (let i = 0; i < flags; i++) {
+      const fx = -xi + 0.8 + ((2 * xi - 1.6) / (flags - 1)) * i;
+      buntParts.push(tintedBox(0.26, 0.3, 0.02, fx, buntY, buntZ, i % 2 ? PALETTE.awningRed : PALETTE.awningStripe));
+    }
+    parts.push({ mesh: tintedMesh(mergeTinted(buntParts)) });
+
+    // Welcome mat at the entrance — clearly above the tiled floor, two stacked
+    // layers with a real gap so they don't z-fight.
+    const mat = tintedMesh(mergeTinted([
+      tintedBox(2.6, 0.04, 1.4, 0, FLOOR_TOP + 0.09, d / 2 - 1.9, PALETTE.benchRed),
+      tintedBox(2.2, 0.03, 1.0, 0, FLOOR_TOP + 0.12, d / 2 - 1.9, PALETTE.awningStripe),
+    ]));
+    parts.push({ mesh: mat });
+
+    // Freestanding coffee bar between the display case and the café tables.
+    pushFitting(parts, anchors, makeCoffeeCounter(-xi + 5.8, caseZ + caseLen / 2 + 2.8));
+
+    // Glass drinks fridge against the right wall, in the gap behind the seating.
+    pushFitting(parts, anchors, makeDrinksFridge(xi - 0.3, -d / 2 + 6.0, -Math.PI / 2));
+
+    // Wall clock on the back wall, above the kitchen run.
+    const clock = makeWallClock();
+    clock.position.set(3.0, 4.6, backZ + 0.06);
+    parts.push({ mesh: clock });
+
+    // Ceiling beams across the interior (clear of the pendant drop points).
+    for (const bz of [d / 2 - 2.0, d / 2 - 8.0, backZ + 4.0]) {
+      const beam = tintedMesh(tintedBox(2 * xi, 0.18, 0.28, 0, ceilY - 0.12, bz, PALETTE.trimBrown));
+      parts.push({ mesh: beam });
+    }
+
+    // A hanging planter in the front-right corner.
+    const hang = new THREE.Group();
+    hang.position.set(xi - 1.8, ceilY, d / 2 - 3.0);
+    hang.add(tintedMesh(mergeTinted([
+      tintedBox(0.03, 1.5, 0.03, 0, -0.75, 0, PALETTE.lampPole),     // cord
+      tintedBox(0.42, 0.32, 0.42, 0, -1.66, 0, PALETTE.caseWood),    // pot
+      tintedBox(0.52, 0.26, 0.52, 0, -1.42, 0, PALETTE.leaf),        // foliage
+      tintedBox(0.3, 0.2, 0.3, 0.18, -1.28, 0.1, PALETTE.leafDeep),  // foliage tuft
+    ])));
+    parts.push({ mesh: hang });
+
+    // ── EXTERIOR: pavement apron, clad facade, stone elevation, windows, roof ──
+    pushFitting(parts, anchors, makePavement(w, d));
+    pushFitting(parts, anchors, makeExteriorFacade(w, d, h));
+    pushFitting(parts, anchors, makeFrontElevation(w, d));
+    pushFitting(parts, anchors, makeSideWindows(w, d, h));
+    pushFitting(parts, anchors, makeRooftopUnit(w, d, h));
+    pushFitting(parts, anchors, makeSideDownspouts(w, d, h));
+
+    // A small "Cake House" sign on the left side wall near the front corner
+    // (echoes the SIDE view in the reference). Faces outward (-x).
+    const sideSign = makeTextSignMesh({ text: "Cake House", w: Math.min(3.2, d * 0.18), h: 0.6, boardColor: PALETTE.awningRed, glow: 0.8 });
+    sideSign.position.set(-w / 2 - 0.16, h - 1.9, d / 2 - 1.6);
+    sideSign.rotation.y = -Math.PI / 2;   // board faces -x (outward on the left wall)
+    parts.push({ mesh: sideSign });
+
+    // Glowing lanterns on the front wall flanking the entrance.
+    for (const sgn of [-1, 1]) {
+      const lamp = makeWallLampMesh();   // the lamp carries its own glow + light
+      lamp.position.set(sgn * (w / 2 - 0.5), 3.2, d / 2 - 0.1);
+      parts.push({ mesh: lamp });
+    }
+
+    // ── EXTERIOR BACK: roll-up loading door + service door + dumpster + crates ─
+    const backOut = -d / 2 - 0.05;
+    const rollParts: THREE.BufferGeometry[] = [];
+    for (let i = 0; i < 8; i++) {
+      rollParts.push(tintedBox(3.2, 0.34, 0.06, 0, 0.3 + i * 0.36, 0, i % 2 ? PALETTE.rollDoor : PALETTE.steelDark));
+    }
+    const roll = tintedMesh(mergeTinted(rollParts));
+    roll.position.set(0, 0, backOut);
+    parts.push({ mesh: roll });
+
+    const svcDoor = tintedMesh(tintedBox(1.0, 2.2, 0.06, -w / 2 + 2.0, 1.1, backOut, PALETTE.facadeDoor));
+    parts.push({ mesh: svcDoor });
+
+    // Drainpipes, electrical conduit/panel, and vents on the back wall.
+    pushFitting(parts, anchors, makeBackUtilities(w, d, h));
+
+    const dumpX = w / 2 - 2.5;
+    const dumpZ = -d / 2 - 1.2;
+    const dump = tintedMesh(mergeTinted([
+      tintedBox(1.7, 1.2, 1.1, 0, 0.6, 0, PALETTE.dumpster),
+      tintedBox(1.76, 0.12, 1.16, 0, 1.26, 0, PALETTE.steelDark),
+    ]));
+    dump.position.set(dumpX, 0, dumpZ);
+    parts.push({
+      mesh: dump,
+      colliders: [solidBox(dumpX, 0.6, dumpZ, 1.7, 1.2, 1.1)],
+      obstacles: [{ x: dumpX, z: dumpZ, w: 1.8, d: 1.2 }],
+    });
+
+    for (const [crx, crz, cs] of [
+      [w / 2 - 4.5, -d / 2 - 1.0, 0.8],
+      [w / 2 - 4.2, -d / 2 - 1.9, 0.6],
+      [w / 2 - 5.6, -d / 2 - 1.1, 0.7],   // extra crate (matches the BACK view's stack)
+    ] as [number, number, number][]) {
+      const crate = tintedMesh(tintedBox(cs, cs, cs, 0, cs / 2, 0, PALETTE.benchWood));
+      crate.position.set(crx, 0, crz);
+      parts.push({
+        mesh: crate,
+        colliders: [solidBox(crx, cs / 2, crz, cs, cs, cs)],
+        obstacles: [{ x: crx, z: crz, w: cs, d: cs }],
+      });
+    }
+
+    // Yellow safety bollards flanking the roll-up loading door (BACK view).
+    for (const bx of [-2.1, 2.1]) {
+      const bz = -d / 2 - 0.5;
+      const bollard = tintedMesh(mergeTinted([
+        tintedBox(0.24, 0.9, 0.24, 0, 0.45, 0, PALETTE.yellowLine),
+        tintedBox(0.26, 0.12, 0.26, 0, 0.78, 0, PALETTE.steelDark), // dark band near the top
+      ]));
+      bollard.position.set(bx, 0, bz);
+      parts.push({
+        mesh: bollard,
+        colliders: [solidBox(bx, 0.45, bz, 0.24, 0.9, 0.24)],
+        obstacles: [{ x: bx, z: bz, w: 0.3, d: 0.3 }],
+      });
+    }
+
+    // Hand-truck / dolly leaning against the back wall by the crates.
+    const dollyX = w / 2 - 6.8;
+    const dollyZ = -d / 2 - 0.45;
+    const dolly = tintedMesh(mergeTinted([
+      tintedBox(0.7, 0.06, 0.5, 0, 0.05, 0.25, PALETTE.steelDark),   // toe plate (out from wall)
+      tintedBox(0.06, 1.4, 0.06, -0.3, 0.7, 0, PALETTE.steel),       // left rail
+      tintedBox(0.06, 1.4, 0.06, 0.3, 0.7, 0, PALETTE.steel),        // right rail
+      tintedBox(0.66, 0.06, 0.06, 0, 1.35, 0, PALETTE.steel),        // top crossbar / handle
+      tintedBox(0.66, 0.06, 0.06, 0, 0.8, 0, PALETTE.steel),         // mid crossbar
+      cylinderY(0.18, 0.08, -0.3, 0.18, 0.18, PALETTE.lampPole, 12), // left wheel
+      cylinderY(0.18, 0.08, 0.3, 0.18, 0.18, PALETTE.lampPole, 12),  // right wheel
+    ]));
+    dolly.position.set(dollyX, 0, dollyZ);
+    dolly.rotation.x = -0.18;   // leaning back against the wall
+    parts.push({
+      mesh: dolly,
+      obstacles: [{ x: dollyX, z: dollyZ, w: 0.8, d: 0.6 }],
+    });
 
     // ── Compose ──────────────────────────────────────────────────────────────
     const result = compose(parts);
 
-    // ── Anchors (composite-local) ────────────────────────────────────────────
     result.anchors = {
-      door:    { x: 0, z: d / 2 } as Vec2,
-      counter: { x: 0, z: counterZ } as Vec2,
+      door: { x: 0, z: d / 2 } as Vec2,
       ...anchors,
     };
 
-    // ── POIs ─────────────────────────────────────────────────────────────────
     result.pois = [
-      { kind: "restaurant", label: "Restaurant", radius: 4.5, anchor: "door" },
+      { kind: "restaurant", label: "Cake House", radius: 4.5, anchor: "door" },
     ];
 
     return result;

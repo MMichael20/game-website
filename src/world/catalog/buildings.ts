@@ -17,7 +17,7 @@ import { defineObject } from "../system/registry";
 import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
 import { makeGlassPanel } from "../objects/glass";
 import { makeAwning } from "../objects/awning";
-import { makeSignLitMesh } from "../objects/signBand";
+import { makeTextSignMesh } from "../objects/textSign";
 import { PALETTE } from "../palette";
 
 // ─── buildingShell ────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ defineObject("buildingShell", {
 
 const HEADER_FRAC = 0.35;   // header as a fraction of h (capped at 1.4 m)
 const BASE_TRIM_H = 0.18;   // height of the base trim slab
-const DOOR_GAP_W  = 1.4;    // door opening width
+const DOOR_GAP_W  = 2.4;    // door opening width (wide double-door entrance)
 const INSET       = 0.05;   // small inset at each side
 const MULLION_T   = 0.08;   // slim vertical mullion box half-width (full = 2×)
 
@@ -134,6 +134,7 @@ interface StorefrontParams {
   signText: string;
   awningColor: number;
   fullGlass: boolean;
+  signColor: number;   // header sign board color (warm red by default)
 }
 
 defineObject("storefront", {
@@ -144,6 +145,7 @@ defineObject("storefront", {
     signText: "SHOP",
     awningColor: PALETTE.awningBlue,
     fullGlass: true,
+    signColor: PALETTE.awningRed,
   } as StorefrontParams,
   build(p: StorefrontParams) {
     const { w, h } = p;
@@ -234,16 +236,18 @@ defineObject("storefront", {
     awningMesh.position.set(0, glassTopY, 0);
     group.add(awningMesh);
 
-    // ── Sign band on header face ───────────────────────────────────────────
+    // ── Lit sign band on the header face (shows the real shop name) ─────────
     if (p.signText) {
-      const signGroup = makeSignLitMesh({
+      const signH = Math.min(0.7, headerH * 0.75);
+      const signGroup = makeTextSignMesh({
+        text: p.signText,
         w: w * 0.8,
-        h: Math.min(0.55, headerH * 0.7),
-        color: PALETTE.signCool,
+        h: signH,
+        boardColor: p.signColor ?? PALETTE.awningRed,
       });
       // Sign convention: back face at z=0, grows +z, base at y=0.
       // Place it centered on the header, flush with the header face (+z side).
-      signGroup.position.set(0, h - headerH + (headerH - Math.min(0.55, headerH * 0.7)) / 2, 0.13);
+      signGroup.position.set(0, h - headerH + (headerH - signH) / 2, 0.13);
       group.add(signGroup);
     }
 
