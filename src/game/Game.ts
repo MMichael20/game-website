@@ -5,12 +5,10 @@ import type { Input } from "../core/Input";
 import type { Physics } from "../core/Physics";
 import { Character } from "../entities/Character";
 import { Car } from "../entities/Car";
-import { NpcCar } from "../entities/NpcCar";
-import { spawnPatrons } from "../entities/Patron";
 import { nearestPoi, poiPrompt } from "./interactions";
 import type { World } from "../world/World";
 import { nextMode, canEnter, type Mode } from "./InteractionSystem";
-import { buildingRects, type Rect } from "./wander";
+import type { Rect } from "./wander";
 import { EntityManager } from "./EntityManager";
 import type { Hud } from "../ui/Hud";
 import type { Minimap } from "../ui/Minimap";
@@ -56,12 +54,9 @@ export class Game implements Tickable {
   ) {
     this.character = new Character(scene, physics, input, world.playerSpawn, camera);
     this.car = new Car(scene, physics, input, world.carSpawn);
-    const rects = buildingRects(world.map.buildings, 1.5);
-    // safeExitPosition treats `bounds` as an origin-centered half-extent, but the
-    // V1 block is framed off-origin (ground.center ~ (95,104)). Grow bounds to
-    // contain the whole block so car exits/summons near the player stay valid.
-    const gc = world.map.ground.center ?? { x: 0, z: 0 };
-    const bounds = Math.max(Math.abs(gc.x), Math.abs(gc.z)) + world.map.ground.size / 2 - 2;
+    const rects: Rect[] = [];
+    const gc = world.groundCenter;
+    const bounds = Math.max(Math.abs(gc.x), Math.abs(gc.z)) + world.groundSize / 2 - 2;
     this.rects = rects;
     this.bounds = bounds;
     this.summon = new RideCar(scene);
@@ -70,21 +65,6 @@ export class Game implements Tickable {
     this.debug = new DebugOverlay(container, import.meta.env.DEV);
     this.entities = new EntityManager(() => camera.position, 90);
 
-    // Scripted patrons that walk in/out of the restaurant + phone shop, sit,
-    // order, wait for taxis, visit the park and stroll the block (the living life
-    // of the compact V1 slice). No procedural city population in V1.
-    for (const patron of spawnPatrons(scene)) this.entities.add(patron);
-
-    // A couple of cars circling the one street so the block isn't dead: each runs
-    // a closed there-and-back loop along the road (east in one lane, back west in
-    // the other). The second starts half a loop offset so they desync.
-    const streetLoop = [
-      { x: 70, z: 110.6 }, { x: 120, z: 110.6 },
-      { x: 120, z: 107.4 }, { x: 70, z: 107.4 },
-    ];
-    const streetLoopB = [streetLoop[2], streetLoop[3], streetLoop[0], streetLoop[1]];
-    this.entities.add(new NpcCar(scene, streetLoop, 0xc0392b, 7));
-    this.entities.add(new NpcCar(scene, streetLoopB, 0x2980b9, 6));
     this.car.enabled = false;
     this.character.enabled = true;
     this.follow.setTarget(this.character.object, 8, 1.6);

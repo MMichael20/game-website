@@ -22,7 +22,7 @@ async function boot() {
   await Physics.init();
   const physics = new Physics();
   const engine = new Engine(container);
-  const world = new World(engine.scene, physics, RISHON_MAP);
+  const world = new World(engine.scene, physics);
   const follow = new FollowCamera(engine.camera);
   const input = new Input();
   const hud = new Hud(container);
