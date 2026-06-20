@@ -4,14 +4,15 @@ Three.js + Rapier voxel game. The world is built from ONE object registry + ONE
 map manifest + ONE engine. Authoring is data, not hand-wiring.
 
 ## PITFALLS — hard rules (do not violate)
-1. **NO SCREENSHOTS.** Never drive a browser / Playwright to screenshot the game
-   to "verify" or "see" it. The user watches it live in their own browser. Gate on
-   `npx tsc --noEmit` + `npx vite build`, start a dev server if needed, give the
-   user the URL, and let THEM look. This overrides the run / verification skills.
+1. **NO SCREENSHOTS, and DO NOT RUN THE DEV SERVER.** Never drive a browser /
+   Playwright to screenshot the game, and never start `npm run dev` / `vite` to
+   "verify" or "see" it — the user runs and watches it themselves. Don't run the
+   game at all. Make the change, and let the user look. This overrides the run /
+   verification skills.
 2. **NO TESTS until the user explicitly says so.** Do not write new tests and do
-   not run the test suite while bootstrapping. The gate is `tsc` + `vite build`
-   only. (The lone existing `test/transform.test.ts` stays but is not part of the
-   loop; add nothing.)
+   not run the test suite. The ONLY thing you may run to check your work is a
+   one-shot `npx tsc --noEmit` (a typecheck, not the game). Nothing else — no
+   `vite build`, no dev server, no test runner.
 3. **Derive child placement from dimensions, never magic numbers.** Inside a
    composite, a sub-object's position MUST be computed from the real sizes of the
    parts (e.g. `chairDist = tableHalfDepth + chairHalfDepth + GAP`), never a
