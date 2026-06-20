@@ -3,6 +3,23 @@
 Three.js + Rapier voxel game. The world is built from ONE object registry + ONE
 map manifest + ONE engine. Authoring is data, not hand-wiring.
 
+## PITFALLS — hard rules (do not violate)
+1. **NO SCREENSHOTS.** Never drive a browser / Playwright to screenshot the game
+   to "verify" or "see" it. The user watches it live in their own browser. Gate on
+   `npx tsc --noEmit` + `npx vite build`, start a dev server if needed, give the
+   user the URL, and let THEM look. This overrides the run / verification skills.
+2. **NO TESTS until the user explicitly says so.** Do not write new tests and do
+   not run the test suite while bootstrapping. The gate is `tsc` + `vite build`
+   only. (The lone existing `test/transform.test.ts` stays but is not part of the
+   loop; add nothing.)
+3. **Derive child placement from dimensions, never magic numbers.** Inside a
+   composite, a sub-object's position MUST be computed from the real sizes of the
+   parts (e.g. `chairDist = tableHalfDepth + chairHalfDepth + GAP`), never a
+   hand-typed constant. The facet contract stops an object's own facets drifting;
+   it does NOT stop bad relative placement of children. Hand-typed offsets are how
+   chairs end up overlapping the table. Builders should expose their footprint so
+   composites can derive from it.
+
 ## The three pieces
 - `src/world/catalog/` — the OBJECT LIBRARY. Register a type with
   `defineObject(kind, { params, build })`. `build(params)` returns an `ObjectResult`
@@ -39,9 +56,8 @@ Add one line to `MAP` in `src/world/map.ts`:
 design-example-shop-street.png (polished voxel city).
 
 ## Gate (bootstrap mode)
-We are bootstrapping the new world — iterate fast. The gate is:
-`npx tsc --noEmit` clean + `npx vite build` + it looks right in-game.
-The old content test suite is PAUSED — only `test/transform.test.ts` runs (the
-placement math). Focused tests return once the foundation is stable / heading toward
-production. The old `src/world/*` hand-builders are retired: left in the tree, not
-invoked.
+We are bootstrapping the new world — iterate fast. The gate is ONLY:
+`npx tsc --noEmit` clean + `npx vite build` succeeds. Then the USER looks in-game
+(see PITFALL 1 — no screenshots). Tests are paused entirely (PITFALL 2): none are
+run or written until the user says so. The old `src/world/*` hand-builders are
+retired: left in the tree, not invoked.
