@@ -14,6 +14,7 @@ import { makeAFrameSign } from "../objects/aFrameSign";
 import { makeAsphaltTexture, ROAD_W, GRAIN_M } from "../roads";
 import { PALETTE } from "../palette";
 import { PETAL } from "../objects/objectPalette";
+import { makeFountain } from "../objects/fountain";
 
 // ---------------------------------------------------------------------------
 // ground
@@ -231,5 +232,24 @@ defineObject("aFrameSign", {
     const mesh = makeAFrameSign();
     mesh.castShadow = true;
     return { mesh, obstacles: [{ x: 0, z: 0, w: 0.9, d: 0.7 }] };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// fountain — placeable wrapper around the makeFountain() helper
+// ---------------------------------------------------------------------------
+
+defineObject("fountain", {
+  params: { r: 1.4, tiers: 2 },
+  build(p: { r: number; tiers: number }) {
+    const mesh = tintedMesh(makeFountain({ r: p.r, tiers: p.tiers }));
+    mesh.castShadow = true;
+    // Basin is ~0.22m tall; collider is a low box covering the basin footprint.
+    const basinH = 0.22;
+    return {
+      mesh,
+      colliders: [{ x: 0, y: basinH / 2, z: 0, hx: p.r, hy: basinH / 2, hz: p.r }],
+      obstacles: [{ x: 0, z: 0, w: p.r * 2, d: p.r * 2 }],
+    };
   },
 });
