@@ -186,3 +186,23 @@ for slice #1 — added incrementally once the foundation feels good.
 - The transform helper must handle rotation of colliders/anchors correctly (the
   one piece of non-trivial math); it gets a tiny focused test even during the
   light phase, since it underpins correctness of every placement.
+
+## Assumptions & Decisions
+
+Forks resolved autonomously during planning/build (auto mode):
+
+- Rotation granularity → chose **90° increments only** (`rot ∈ {0,90,180,270}`) —
+  because it keeps collider/obstacle AABBs axis-aligned (simple half-extent swap)
+  and city blocks never need arbitrary angles. Revisit if a diagonal layout is
+  wanted.
+- Old `src/world/*` hand-builders → chose **keep in tree, stop invoking** (not
+  delete) — because deleting risks breaking `tsc` via lingering imports, and they
+  are a free reference until the new world surpasses them.
+- Slice #1 NPCs → chose **disable scripted patrons / static people / NpcCars** —
+  because the slice's goal is a clean two-store look; living content returns in a
+  later slice once the foundation is trusted.
+- HUD / minimap data → chose **leave on existing (now-empty) registries for slice
+  #1** — wiring engine-produced POIs into them is deferred to keep the slice small.
+- Test strategy → chose **quarantine all tests except `transform.test.ts`** —
+  per the user's "too many tests slows us down now"; the transform math is the one
+  unit kept because every placement's correctness rides on it.
