@@ -2,8 +2,8 @@ import type { Placement, Vec2 } from "./system/types";
 import { lot } from "./layout";
 
 export const GROUND_SIZE = 220;
-export const PLAYER_SPAWN: Vec2 = { x: 0, z: 8 };
-export const CAR_SPAWN: Vec2 = { x: 12, z: 10 };
+export const PLAYER_SPAWN: Vec2 = { x: 8, z: 9 };   // sidewalk corner SE of the central junction
+export const CAR_SPAWN: Vec2 = { x: 12, z: 2 };     // in the eastbound lane of the main-h road
 
 // THE MAP. Reading this list is seeing the world. Coordinates are world-space;
 // rot is degrees in {0,90,180,270}. Stores face +z by default (rot:0).
@@ -17,7 +17,11 @@ export const CAR_SPAWN: Vec2 = { x: 12, z: 10 };
 // props sit in front of either glass.
 export const MAP: Placement[] = [
   { kind: "ground", params: { size: GROUND_SIZE } },
-  { kind: "road", x: 0, z: -2, params: { length: 80 } },
+  // The whole street network: a connected grid of roads with paver sidewalks,
+  // curbs, crosswalks, double-yellow, stop bars and lane arrows at the central
+  // junction. Roads at x,z in {-56, 0, 56}; the gap between the two hero shops is
+  // the central cross-v street.
+  { kind: "cityGrid", x: 0, z: 0, params: { pitch: 56, half: 1, length: 140, seed: 1 } },
   // phone-shop lot: the big blue showroom + its full street frontage, authored as
   // one move-together unit. Custom grid puts cell (0,0) exactly at the shop's world
   // spot; every prop is lot-local (+z = toward the street), clear of the centred
@@ -34,13 +38,13 @@ export const MAP: Placement[] = [
         { kind: "tree", x: -11, z: 10.5 }, // street trees flanking the frontage
         { kind: "tree", x: 11, z: 10.5 },
       ] },
-    { originX: -12, originZ: -17, cellW: 8, cellD: 8 },
+    { originX: -22, originZ: -17, cellW: 8, cellD: 8 },
   ),
   // restaurant lot: building + its OWN flanking lamps and corner trees, placed by
   // grid CELL (default 8m grid -> world (16,-24)). Move `cell` and all 5 follow.
   // Props are in lot-local coords: +z = toward the street, x = across the front.
   ...lot({
-    cell: { col: 2, row: -3 },
+    cell: { col: 0, row: 0 },
     building: "restaurant",
     buildingParams: { variant: "bakery", w: 22, d: 24, h: 8 },
     props: [
@@ -49,34 +53,29 @@ export const MAP: Placement[] = [
       { kind: "tree", x: -14, z: -10 },  // back-left corner
       { kind: "tree", x: 14, z: -10 },   // back-right corner
     ],
-  }),
-  // A little loose furniture in the GAP between the two stores — the phone apron
-  // ends at world x=1 and the restaurant deck starts at ~x=4.7, so these sit clear
-  // of both. Independent of either lot, so they stay raw lines.
-  { kind: "flower", x: 2.5, z: -7, params: { color: "red" } },
-  { kind: "flower", x: 3.6, z: -7, params: { color: "yellow" } },
+  }, { originX: 22, originZ: -21, cellW: 8, cellD: 8 }),
 
-  // ── Filler backdrop ──────────────────────────────────────────────────────
-  // North streetwall: two connected terrace rows flanking the real stores,
-  // aligned to the building line (~z=-16). Left row's right edge butts left of
-  // the phone shop (x=-23); right row's left edge butts right of the restaurant (x=27).
-  { kind: "terraceRow", x: -25, z: -16, params: { units: 5, d: 11, district: "south", anchor: "right", seed: 41 } },
-  { kind: "terraceRow", x: 29, z: -16, params: { units: 5, d: 11, district: "east", anchor: "left", seed: 42 } },
+  // ── City blocks ───────────────────────────────────────────────────────────
+  // Connected streetwalls on the block edges (kept ≥6m off every road centerline).
+  // SE block: faces the main-h road from the south (rot 180).
+  { kind: "terraceRow", x: 28, z: 12, rot: 180, params: { units: 3, d: 11, district: "east", anchor: "center", seed: 41 } },
+  // SW-south: faces the z=56 road.
+  { kind: "terraceRow", x: -28, z: 45, params: { units: 3, d: 11, district: "west", anchor: "center", seed: 43 } },
 
-  // Skyline towers: tall glass blocks set well back as a backdrop. Light blue
-  // curtain walls flank a dark-teal glass tower (the reference-art look).
-  { kind: "fillerBuilding", x: -30, z: -44, params: { w: 14, d: 14, stories: 7, style: "glassTower", bodyColor: 0x6aa9c9, roofUnit: false, seed: 21 } },
-  { kind: "fillerBuilding", x: 0, z: -48, params: { w: 16, d: 18, stories: 9, style: "darkGlass", bodyColor: 0x1d3b44, roofUnit: false, seed: 22 } },
-  { kind: "fillerBuilding", x: 32, z: -44, params: { w: 14, d: 14, stories: 6, style: "glassTower", bodyColor: 0x9ac6e0, roofUnit: false, seed: 23 } },
-  // A second dark-glass tower set further back, off-axis, for skyline depth.
-  { kind: "fillerBuilding", x: -56, z: -52, params: { w: 13, d: 13, stories: 8, style: "darkGlass", bodyColor: 0x223f49, roofUnit: false, seed: 24 } },
-  { kind: "fillerBuilding", x: 58, z: -50, params: { w: 13, d: 13, stories: 7, style: "darkGlass", bodyColor: 0x1d3b44, roofUnit: false, seed: 25 } },
+  // North skyline backdrop: freestanding glass towers beyond the z=-56 road,
+  // spread in x and clear of the vertical-road corridors.
+  { kind: "fillerBuilding", x: -40, z: -68, params: { w: 14, d: 14, stories: 7, style: "glassTower", bodyColor: 0x6aa9c9, roofUnit: false, seed: 21 } },
+  { kind: "fillerBuilding", x: -14, z: -72, params: { w: 16, d: 16, stories: 9, style: "darkGlass", bodyColor: 0x1d3b44, roofUnit: false, seed: 22 } },
+  { kind: "fillerBuilding", x: 12, z: -70, params: { w: 14, d: 14, stories: 6, style: "glassTower", bodyColor: 0x9ac6e0, roofUnit: false, seed: 23 } },
+  { kind: "fillerBuilding", x: 38, z: -68, params: { w: 13, d: 13, stories: 8, style: "darkGlass", bodyColor: 0x223f49, roofUnit: false, seed: 24 } },
 
-  // South streetwall: one long connected row across the street, fronts facing
-  // the road (rot 180), set back at z=36 — its front (z≈30.5) clears the park's
-  // north edge (z=28) and the spawn corridor (z=8/10).
-  { kind: "terraceRow", x: 6, z: 36, rot: 180, params: { units: 7, d: 11, district: "west", anchor: "center", seed: 43 } },
+  // Park plaza on the SW block.
+  { kind: "park", x: -28, z: 28, params: { w: 26, d: 20, fountain: true, seed: 5 } },
 
-  // Park plaza: south-west, clear of the (0,8)/(12,10) spawn corridor.
-  { kind: "park", x: -30, z: 18, params: { w: 26, d: 20, fountain: true, seed: 5 } },
+  // Traffic lights at the central intersection corners (signal head faces -z by
+  // default; rot turns each to face its approach).
+  { kind: "trafficLight", x: 7, z: 7, rot: 0 },
+  { kind: "trafficLight", x: -7, z: -7, rot: 180 },
+  { kind: "trafficLight", x: 7, z: -7, rot: 270 },
+  { kind: "trafficLight", x: -7, z: 7, rot: 90 },
 ];
