@@ -12,6 +12,8 @@ export interface DebugInfo {
   look: { x: number; z: number };
   nearest?: { label: string; x: number; z: number; dist: number } | null;
   mode?: string;
+  /** optional perf readout; shown as extra lines when present */
+  perf?: { fps: number; calls: number; tris: number; geoms: number; mats: number };
 }
 
 // +z is SOUTH in this world (street north, houses south). Map a look vector to a
@@ -54,6 +56,14 @@ export class DebugOverlay {
         : `near    -`,
       `axes    +z=S  -z=N  +x=E  -x=W   [F3]`,
     ];
+    if (info.perf) {
+      const p = info.perf;
+      lines.push(
+        `fps     ${p.fps.toFixed(0).padStart(6)}`,
+        `draws   ${String(p.calls).padStart(6)}   tris ${p.tris.toLocaleString()}`,
+        `cache   geom ${p.geoms}   mat ${p.mats}`,
+      );
+    }
     this.el.textContent = lines.filter(Boolean).join("\n");
   }
 

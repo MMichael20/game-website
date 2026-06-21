@@ -19,6 +19,7 @@ import { nextTaxiPhase, type TaxiPhase } from "./taxi";
 import { Phone } from "../ui/Phone";
 import { DebugOverlay } from "../ui/DebugOverlay";
 import { locationPois } from "../world/locations";
+import { assetCounts } from "../world/assets";
 
 const ENTER_RADIUS = 3.5;
 
@@ -39,8 +40,10 @@ export class Game implements Tickable {
   private phone: Phone;
   private debug: DebugOverlay;
   private lookDir = new THREE.Vector3();
+  private fps = 0;
 
   constructor(
+    private renderer: THREE.WebGLRenderer,
     scene: THREE.Scene,
     physics: Physics,
     private input: Input,
@@ -67,15 +70,16 @@ export class Game implements Tickable {
 
     this.car.enabled = false;
     this.character.enabled = true;
-    this.follow.setTarget(this.character.object, 8, 1.6);
+    this.follow.setTarget(this.character.object, 8, 1.6, this.character.rigidBody);
   }
 
   get phoneOpen(): boolean { return this.phone.isOpen; }
-  closePhone(): void { this.phone.close(); this.lockPointer(); }
+  closePhone(): void { this.phone.close(); this.character.setPhonePose(false); this.lockPointer(); }
 
   // Called from the phone's "Call Car" app: your own car drives to you.
   private callCar(): void {
     this.phone.close();
+    this.character.setPhonePose(false);
     this.lockPointer();
     if (this.summonPhase !== "idle" || this.mode !== "onFoot") return;
     const p = { x: this.character.position.x, z: this.character.position.z };
@@ -85,6 +89,13 @@ export class Game implements Tickable {
   }
 
   update(dt: number): void {
+    // Exponentially-smoothed FPS for the debug HUD.
+    if (dt > 0) this.fps += ((1 / dt) - this.fps) * 0.1;
+
+    // Phone raise/lower animation ticks every frame — even while the phone UI is up
+    // and the rest of gameplay is frozen — so the motion plays on open AND close.
+    this.character.tickPhone(dt);
+
     // While the phone is up, freeze gameplay; P (or Esc, via main) closes it.
     if (this.phone.isOpen) {
       if (this.input.justPressed("KeyP")) this.closePhone();
@@ -99,6 +110,7 @@ export class Game implements Tickable {
     // Open the phone (on foot only).
     if (this.input.justPressed("KeyP") && this.mode === "onFoot") {
       this.phone.open();
+      this.character.setPhonePose(true);
       this.input.endFrame();
       return;
     }
@@ -121,7 +133,7 @@ export class Game implements Tickable {
         this.character.enabled = false;
         this.character.object.visible = false;
         this.car.enabled = true;
-        this.follow.setTarget(this.car.object, 14, 1.5);
+        this.follow.setTarget(this.car.object, 14, 1.5, this.car.rigidBody);
       }
     }
 
@@ -139,14 +151,14 @@ export class Game implements Tickable {
         this.character.enabled = false;
         this.character.object.visible = false;
         this.car.enabled = true;
-        this.follow.setTarget(this.car.object, 14, 1.5);
+        this.follow.setTarget(this.car.object, 14, 1.5, this.car.rigidBody);
       } else {
         this.car.enabled = false;
         const exit = safeExitPosition(cPos, this.rects, this.bounds);
         this.character.setPosition(exit.x, exit.z);
         this.character.object.visible = true;
         this.character.enabled = true;
-        this.follow.setTarget(this.character.object, 8, 1.6);
+        this.follow.setTarget(this.character.object, 8, 1.6, this.character.rigidBody);
       }
     }
 
@@ -188,11 +200,14 @@ export class Game implements Tickable {
       const d = Math.hypot(p.x - poi.x, p.z - poi.z);
       if (!nearest || d < nearest.dist) nearest = { label: poi.label, x: poi.x, z: poi.z, dist: d };
     }
+    const renderInfo = this.renderer.info.render;
+    const ac = assetCounts();
     this.debug.update({
       player: { x: p.x, z: p.z },
       look: { x: this.lookDir.x, z: this.lookDir.z },
       nearest,
       mode: this.mode,
+      perf: { fps: this.fps, calls: renderInfo.calls, tris: renderInfo.triangles, geoms: ac.geometries, mats: ac.materials },
     });
   }
 }

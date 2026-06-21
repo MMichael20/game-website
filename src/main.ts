@@ -23,7 +23,7 @@ async function boot() {
   const physics = new Physics();
   const engine = new Engine(container);
   const world = new World(engine.scene, physics);
-  const follow = new FollowCamera(engine.camera);
+  const follow = new FollowCamera(engine.camera, physics);
   const input = new Input();
   const hud = new Hud(container);
   const minimap = new Minimap(container, RISHON_MAP);
@@ -116,7 +116,7 @@ async function boot() {
     return;
   }
 
-  const game = new Game(engine.scene, physics, input, world, follow, engine.camera, hud, minimap, container, lockPointer);
+  const game = new Game(engine.renderer, engine.scene, physics, input, world, follow, engine.camera, hud, minimap, container, lockPointer);
 
   // step physics before game logic each frame
   engine.add({ update: (dt) => physics.step(dt) });
@@ -125,6 +125,7 @@ async function boot() {
 
   hud.setChips([
     ["WASD", "Move"],
+    ["Shift", "Run"],
     ["Mouse", "Look"],
     ["E", "Drive"],
     ["P", "Phone"],
