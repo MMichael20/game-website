@@ -13,6 +13,12 @@ export class Engine {
   private tickables: Tickable[] = [];
   private running = false;
   private readonly onResize = () => this.resize();
+  // Soft ~60 fps cap: on high-refresh displays we skip extra animation frames so
+  // the GPU/CPU don't render more than we need. The small epsilon keeps a true
+  // 60 Hz display from accidentally halving to 30 fps on timing jitter.
+  private acc = 0;
+  private shadowTick = 0;
+  private static readonly MIN_FRAME = 1 / 60 - 0.001;
 
   constructor(private container: HTMLElement) {
     const sunDir = sunPosition(1);
@@ -42,6 +48,8 @@ export class Engine {
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // We drive shadow refreshes manually (see frame()) instead of every frame.
+    this.renderer.shadowMap.autoUpdate = false;
     // Neutral tone mapping keeps saturated flat colors punchy (no ACES desat).
     this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = DAY.exposure;
@@ -83,7 +91,16 @@ export class Engine {
 
   private frame(): void {
     const dt = Math.min(this.clock.getDelta(), 0.05);
-    for (const t of this.tickables) t.update(dt);
+    this.acc += dt;
+    // Skip this refresh tick until ~1/60 s of work has accumulated (caps fps).
+    if (this.acc < Engine.MIN_FRAME) return;
+    const step = Math.min(this.acc, 0.05);
+    this.acc = 0;
+    // Refresh sun shadows on every other rendered frame: the sun is static and
+    // entities move slowly, so 30 Hz shadows are imperceptible but halve the
+    // shadow pass (a second draw of every shadow caster) — a real CPU+GPU win.
+    this.renderer.shadowMap.needsUpdate = (this.shadowTick++ & 1) === 0;
+    for (const t of this.tickables) t.update(step);
     this.renderer.render(this.scene, this.camera);
   }
 
