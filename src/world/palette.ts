@@ -48,6 +48,19 @@ export const PALETTE = {
   storefront: 0x9fd0e8,   // bright ground-floor glass
   cornice: 0xb9b4a8,      // top trim band
   roofCap: 0x9a958c,      // flat roof top
+  // dark-glass curtain wall (reference-art teal storefront/tower look)
+  glassReflect: 0xbfe9f2, // bright cyan reflection pane (sparse minority)
+  darkGlassA: 0x244a55,   // dark teal base pane
+  darkGlassB: 0x16323a,   // deeper shaded pane
+  darkMullion: 0x101d22,  // slim near-black curtain-wall mullion
+  // shared facade detail
+  spandrel: 0x8f8a7e,     // inter-floor spandrel band (warm grey)
+  pierStone: 0xcfcabc,    // vertical pilaster pier (light)
+  sillStone: 0xd2cdbf,    // window sill course
+  // rooftop mechanical cluster
+  tankMetal: 0x7c6f5a,    // rooftop water tank
+  acUnit: 0x9aa0a6,       // rooftop AC condenser
+  ventPipe: 0x5c5f63,     // rooftop vent pipe
   // facade purpose (typed ground-floor identities)
   facadeDoor: 0x4a3b2e,   // dark entrance door
   officeGlass: 0x6f97b8,  // cooler uniform office curtain-wall glass
@@ -68,6 +81,23 @@ export const PALETTE = {
   trashCan: 0x2f6b4a,     // dark-green bin
   hedge: 0x4f9a3a,        // clipped planter hedge
   planterStone: 0xbdb7a8, // planter rim
+  // interior floor tiles (checkerboard)
+  tileCream: 0xe9dec6,     // light tile
+  tileTerracotta: 0xc07a52, // warm dark tile
+  // bakery interior fittings
+  caseWood: 0x6b4226,      // dark wood display-case / counter body
+  caseWoodTop: 0x7d4f2e,   // counter top lip
+  steel: 0xb9bdc4,         // stainless appliance body
+  steelDark: 0x868c93,     // stainless shade / oven front
+  steelLight: 0xd7dade,    // stainless highlight
+  benchRed: 0xb5402f,      // red banquette / bench cushion
+  dumpster: 0x2f6b4a,      // back-alley dumpster green
+  rollDoor: 0x9aa0a6,      // metal roll-up loading door
+  // exterior facade + deck
+  stoneBase: 0x9a958c,     // stone plinth / step course
+  trimBrown: 0x7a5230,     // corner pilasters / railing / deck skirt
+  deckPlankA: 0xb07a43,    // deck plank (light)
+  deckPlankB: 0x9c6a39,    // deck plank (dark)
 } as const;
 
 // Saturated building bodies for the hand-authored core buildings.
