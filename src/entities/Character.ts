@@ -3,9 +3,10 @@ import { Physics, RAPIER } from "../core/Physics";
 import type { Input } from "../core/Input";
 import type { Tickable } from "../core/Engine";
 import type { Vec2 } from "../world/rishonMap";
-import { makeHumanoid, animateWalk, type HumanoidLimbs } from "./Humanoid";
+import { makeHumanoid, animateWalk, animateIdle, applyPhonePose, type HumanoidLimbs } from "./Humanoid";
 
-const SPEED = 8;
+const SPEED = 8;       // walking
+const RUN_SPEED = 13;  // holding Shift
 
 export class Character implements Tickable {
   readonly object = new THREE.Group();
@@ -16,7 +17,15 @@ export class Character implements Tickable {
   private controller: RAPIER.KinematicCharacterController;
   private limbs: HumanoidLimbs;
   private phase = 0;
+  private idlePhase = 0;       // always-advancing clock for the breathing idle
+  private gait = 0;            // eased walk/run amplitude (no snap on Shift/start/stop)
+  private phoneAnim = 0;       // 0 = phone down, 1 = fully raised (eased)
+  private phoneTarget = 0;     // where phoneAnim is heading (set on phone open/close)
+  private phoneSway = 0;       // clock for the looking/scrolling micro-motion
   private tmp = new THREE.Vector3();
+  private tmpRight = new THREE.Vector3();
+  private tmpMove = new THREE.Vector3();
+  private static readonly UP = new THREE.Vector3(0, 1, 0);
   private velY = 0;
   // Set by setPosition(); consumed on the next update() frame. Needed because
   // setNextKinematicTranslation() doesn't update body.translation() until the
@@ -53,6 +62,9 @@ export class Character implements Tickable {
 
   get position(): THREE.Vector3 { return this.object.position; }
 
+  // The Rapier body, so the follow camera can exclude it from its wall-cast.
+  get rigidBody(): RAPIER.RigidBody { return this.body; }
+
   setPosition(x: number, z: number): void {
     this.body.setNextKinematicTranslation({ x, y: 1.0, z });
     this.object.position.set(x, 0, z);
@@ -67,13 +79,16 @@ export class Character implements Tickable {
     const forward = this.tmp.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
     forward.y = 0; forward.normalize();
     // cross(forward, up) with right-hand rule: when forward = -Z, result = +X (screen-right). No negate needed.
-    const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+    const right = this.tmpRight.crossVectors(forward, Character.UP).normalize();
 
-    const move = new THREE.Vector3();
+    const move = this.tmpMove.set(0, 0, 0);
     if (this.input.isDown("KeyW") || this.input.isDown("ArrowUp")) move.add(forward);
     if (this.input.isDown("KeyS") || this.input.isDown("ArrowDown")) move.sub(forward);
     if (this.input.isDown("KeyA") || this.input.isDown("ArrowLeft")) move.sub(right);
     if (this.input.isDown("KeyD") || this.input.isDown("ArrowRight")) move.add(right);
+
+    const running = this.input.isDown("ShiftLeft") || this.input.isDown("ShiftRight");
+    const speed = running ? RUN_SPEED : SPEED;
 
     // Integrate vertical velocity; reset to 0 when grounded (evaluated after previous frame's computeColliderMovement)
     if (this.controller.computedGrounded()) {
@@ -83,15 +98,30 @@ export class Character implements Tickable {
     }
     const gravityDy = this.velY * dt;
 
+    this.idlePhase += dt * 1.6; // breathing clock, always advances
+
     let desired = { x: 0, y: gravityDy, z: 0 };
-    if (move.lengthSq() > 0) {
-      move.normalize().multiplyScalar(SPEED * dt);
+    let bob = 0;
+    const moving = move.lengthSq() > 0;
+    if (moving) {
+      move.normalize().multiplyScalar(speed * dt);
       desired = { x: move.x, y: gravityDy, z: move.z };
       this.object.rotation.y = Math.atan2(move.x, move.z);
-      this.phase += SPEED * dt * 6;
-      animateWalk(this.limbs, this.phase, 0.6);
-    } else {
-      animateWalk(this.limbs, this.phase, 0);
+      this.phase += speed * dt * 6;
+    }
+
+    // Limb animation. The phone pose owns the limbs while it's up (ticked separately
+    // in tickPhone, which runs even when gameplay is frozen); otherwise ease the gait
+    // amplitude toward walk/run/idle so transitions don't snap.
+    if (this.phoneAnim <= 0.01) {
+      const targetGait = moving ? (running ? 0.95 : 0.6) : 0;
+      this.gait += (targetGait - this.gait) * (1 - Math.pow(0.0005, dt));
+      if (moving) {
+        animateWalk(this.limbs, this.phase, this.gait);
+        bob = Math.abs(Math.sin(this.phase)) * (running ? 0.07 : 0.04) * (this.gait / 0.95);
+      } else {
+        animateIdle(this.limbs, this.idlePhase);
+      }
     }
 
     this.controller.computeColliderMovement(this.collider, desired);
@@ -103,6 +133,20 @@ export class Character implements Tickable {
     this.teleportTo = null;
     const nx = t.x + corrected.x, ny = t.y + corrected.y, nz = t.z + corrected.z;
     this.body.setNextKinematicTranslation({ x: nx, y: ny, z: nz });
-    this.object.position.set(nx, ny - 1.0, nz);
+    this.object.position.set(nx, ny - 1.0 + bob, nz);
+  }
+
+  // Aim the phone pose up (on) or down (off). The actual motion is eased in tickPhone.
+  setPhonePose(on: boolean): void {
+    this.phoneTarget = on ? 1 : 0;
+  }
+
+  // Advance + apply the phone raise/lower. Called every frame by Game — including
+  // while the phone UI is up and gameplay (update) is frozen — so the raise plays
+  // with the UI open and the lower plays after it closes.
+  tickPhone(dt: number): void {
+    this.phoneSway += dt * 2.2;
+    this.phoneAnim += (this.phoneTarget - this.phoneAnim) * (1 - Math.pow(0.0009, dt));
+    if (this.phoneAnim > 0.01) applyPhonePose(this.limbs, this.phoneAnim, this.phoneSway);
   }
 }
