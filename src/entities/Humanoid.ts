@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { getGeometry, getMaterial } from "../world/assets";
 
 // Roblox/voxel "City Traveler" avatar, built to the reference turnaround + notes:
 // a full rounded curly block-hair mop on a cube head, a blue open jacket over a
@@ -10,6 +11,8 @@ export interface HumanoidPalette { skin: number; shirt: number; pants: number; h
 export interface HumanoidLimbs {
   leftLeg: THREE.Object3D; rightLeg: THREE.Object3D;
   leftArm: THREE.Object3D; rightArm: THREE.Object3D;
+  head: THREE.Object3D;
+  phone: THREE.Object3D; // a prop in the right hand, hidden until the phone pose
 }
 export interface Humanoid { group: THREE.Group; limbs: HumanoidLimbs }
 
@@ -33,6 +36,15 @@ function darken(hex: number, f: number): number {
   return new THREE.Color(hex).multiplyScalar(f).getHex();
 }
 
+// Shared box geometry keyed by exact dimensions; shared standard material keyed
+// by color. Identical-looking parts across all NPCs collapse to one GPU resource.
+function boxGeo(w: number, h: number, d: number): THREE.BoxGeometry {
+  return getGeometry(`box:${w}x${h}x${d}`, () => new THREE.BoxGeometry(w, h, d)) as THREE.BoxGeometry;
+}
+function stdMat(color: number): THREE.MeshStandardMaterial {
+  return getMaterial(`std:${color}`, () => new THREE.MeshStandardMaterial({ color })) as THREE.MeshStandardMaterial;
+}
+
 // A limb is a pivot at the joint with the limb mesh hanging below, so rotation.x
 // swings the free end. An optional `cap` (hand / shoe) sits at the end and swings
 // with the limb; shoes are deeper so a toe pokes forward.
@@ -43,16 +55,16 @@ function limb(
   const pivot = new THREE.Group();
   pivot.position.set(x, jointY, 0);
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(width, height, depth),
-    new THREE.MeshStandardMaterial({ color }),
+    boxGeo(width, height, depth),
+    stdMat(color),
   );
   mesh.position.y = -height / 2; mesh.castShadow = true;
   pivot.add(mesh);
   if (cap) {
     const d = cap.depth ?? depth * 1.12;
     const capMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(width * 1.08, cap.height, d),
-      new THREE.MeshStandardMaterial({ color: cap.color }),
+      boxGeo(width * 1.08, cap.height, d),
+      stdMat(cap.color),
     );
     capMesh.position.set(0, -height + cap.height / 2, cap.depth ? (cap.depth - depth) / 2 : 0);
     capMesh.castShadow = true;
@@ -111,16 +123,16 @@ function hairGeometry(): THREE.BufferGeometry {
 // The smile is a centre bar plus two raised corner pixels so it reads friendly,
 // not the flat neutral line of the previous build.
 function addFace(head: THREE.Mesh): void {
-  const ink = new THREE.MeshStandardMaterial({ color: INK });
+  const ink = stdMat(INK);
   const fz = 0.225;
   for (const ex of [-0.1, 0.1]) {
-    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.08, 0.02), ink);
+    const eye = new THREE.Mesh(boxGeo(0.07, 0.08, 0.02), ink);
     eye.position.set(ex, 0.04, fz); head.add(eye);
   }
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.035, 0.02), ink);
+  const mouth = new THREE.Mesh(boxGeo(0.12, 0.035, 0.02), ink);
   mouth.position.set(0, -0.14, fz); head.add(mouth);
   for (const cx of [-0.075, 0.075]) {
-    const corner = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.02), ink);
+    const corner = new THREE.Mesh(boxGeo(0.035, 0.035, 0.02), ink);
     corner.position.set(cx, -0.115, fz); head.add(corner);
   }
 }
@@ -130,16 +142,16 @@ function addFace(head: THREE.Mesh): void {
 function makeBackpack(): THREE.Group {
   const pack = new THREE.Group();
   pack.name = "backpack";
-  const brown = new THREE.MeshStandardMaterial({ color: PACK });
-  const dark = new THREE.MeshStandardMaterial({ color: PACK_DARK });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.26), brown);
+  const brown = stdMat(PACK);
+  const dark = stdMat(PACK_DARK);
+  const body = new THREE.Mesh(boxGeo(0.5, 0.62, 0.26), brown);
   body.position.set(0, 1.16, -0.3); body.castShadow = true; pack.add(body);
-  const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.06), dark);
+  const pocket = new THREE.Mesh(boxGeo(0.34, 0.2, 0.06), dark);
   pocket.position.set(0, 1.04, -0.44); pack.add(pocket);
-  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.07), brown);
+  const handle = new THREE.Mesh(boxGeo(0.16, 0.06, 0.07), brown);
   handle.position.set(0, 1.5, -0.34); handle.castShadow = true; pack.add(handle);
   for (const sx of [-0.2, 0.2]) {
-    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.56, 0.06), brown);
+    const strap = new THREE.Mesh(boxGeo(0.07, 0.56, 0.06), brown);
     strap.position.set(sx, 1.17, 0.17); strap.castShadow = true; pack.add(strap);
   }
   return pack;
@@ -153,40 +165,40 @@ export function makeHumanoid(palette: HumanoidPalette): Humanoid {
   // Torso: a blue jacket box, darker side panels, two darker lapel strips, and a
   // thin white front shirt box down the centre.
   const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.72, 0.32),
-    new THREE.MeshStandardMaterial({ color: jacket }),
+    boxGeo(0.52, 0.72, 0.32),
+    stdMat(jacket),
   );
   torso.name = "torso"; torso.position.y = 1.15; torso.castShadow = true;
   group.add(torso);
-  const darkMat = new THREE.MeshStandardMaterial({ color: jacketDark });
+  const darkMat = stdMat(jacketDark);
   for (const sx of [-0.265, 0.265]) {
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.72, 0.34), darkMat);
+    const panel = new THREE.Mesh(boxGeo(0.04, 0.72, 0.34), darkMat);
     panel.position.set(sx, 1.15, 0); panel.castShadow = true; group.add(panel);
   }
   // Open-jacket edges: thin dark strips flanking a wide white tee, so the front
   // reads as "blue jacket open over a white shirt" rather than a busy stripe.
   for (const lx of [-0.15, 0.15]) {
-    const lapel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.62, 0.04), darkMat);
+    const lapel = new THREE.Mesh(boxGeo(0.05, 0.62, 0.04), darkMat);
     lapel.position.set(lx, 1.16, 0.164); group.add(lapel);
   }
   const shirt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.26, 0.6, 0.04),
-    new THREE.MeshStandardMaterial({ color: WHITE_TEE }),
+    boxGeo(0.26, 0.6, 0.04),
+    stdMat(WHITE_TEE),
   );
   shirt.name = "shirt"; shirt.position.set(0, 1.15, 0.161); group.add(shirt);
 
   // Head + ears + face + spiky hair.
   const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.44, 0.44, 0.44),
-    new THREE.MeshStandardMaterial({ color: palette.skin }),
+    boxGeo(0.44, 0.44, 0.44),
+    stdMat(palette.skin),
   );
   head.name = "head"; head.position.y = 1.78; head.castShadow = true;
   for (const sx of [-0.23, 0.23]) {
-    const ear = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.11, 0.12), new THREE.MeshStandardMaterial({ color: palette.skin }));
+    const ear = new THREE.Mesh(boxGeo(0.05, 0.11, 0.12), stdMat(palette.skin));
     ear.position.set(sx, -0.02, 0.02); head.add(ear);
   }
   addFace(head);
-  const hair = new THREE.Mesh(hairGeometry(), new THREE.MeshStandardMaterial({ color: hairColorFor(palette) }));
+  const hair = new THREE.Mesh(getGeometry("humanoid:hair", hairGeometry), stdMat(hairColorFor(palette)));
   hair.name = "hair"; hair.castShadow = true; head.add(hair);
   group.add(head);
 
@@ -202,13 +214,58 @@ export function makeHumanoid(palette: HumanoidPalette): Humanoid {
   const rightArm = limb(0.18, 0.66, 0.2, jacket, 1.46, 0.35, hand);
   group.add(leftLeg, rightLeg, leftArm, rightArm);
 
-  return { group, limbs: { leftLeg, rightLeg, leftArm, rightArm } };
+  // A small phone slab held in the right hand (at the arm's free end), hidden until
+  // the phone pose raises it to the face. Child of the arm so it swings with it.
+  const phone = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.24, 0.03),
+    new THREE.MeshStandardMaterial({ color: 0x12141a, emissive: 0x2a3550, emissiveIntensity: 0.6 }),
+  );
+  phone.position.set(0, -0.62, 0.12); // at the hand, a touch in front of the palm
+  phone.visible = false;
+  rightArm.add(phone);
+
+  return { group, limbs: { leftLeg, rightLeg, leftArm, rightArm, head, phone } };
 }
 
+// Walk/idle gait: legs swing opposed, arms swing opposed with a touch more travel
+// and a slight forward bias so they don't read as ramrod-straight. `intensity` is 0
+// when standing still. Always restores the head/arms to neutral so a prior phone
+// pose is cleared once the character moves again.
 export function animateWalk(limbs: HumanoidLimbs, phase: number, intensity: number): void {
   const s = Math.sin(phase) * intensity;
   limbs.leftLeg.rotation.x = s;
   limbs.rightLeg.rotation.x = -s;
-  limbs.leftArm.rotation.x = -s * 0.8;
-  limbs.rightArm.rotation.x = s * 0.8;
+  limbs.leftArm.rotation.x = -s * 0.95 - 0.05 * intensity;
+  limbs.rightArm.rotation.x = s * 0.95 - 0.05 * intensity;
+  limbs.leftArm.rotation.z = 0;
+  limbs.rightArm.rotation.z = 0;
+  limbs.head.rotation.set(0, 0, 0);
+  limbs.phone.visible = false;
+}
+
+// Gentle idle: a slow breathing sway of the arms and head while standing still, so
+// the character reads as alive rather than frozen. `t` is an always-advancing clock.
+export function animateIdle(limbs: HumanoidLimbs, t: number): void {
+  const s = Math.sin(t);
+  limbs.leftLeg.rotation.x = 0;
+  limbs.rightLeg.rotation.x = 0;
+  limbs.leftArm.rotation.set(0.02 + s * 0.03, 0, 0.05);
+  limbs.rightArm.rotation.set(0.02 - s * 0.03, 0, -0.05);
+  limbs.head.rotation.set(s * 0.015, 0, 0);
+  limbs.phone.visible = false;
+}
+
+// "Looking at the phone" pose, blended by `t` (0 = neutral, 1 = fully raised) so the
+// raise/lower animates smoothly. `sway` drives a subtle scrolling/looking micro-motion
+// and the phone screen's glow ramps up as it comes to the face.
+export function applyPhonePose(limbs: HumanoidLimbs, t: number, sway: number): void {
+  const e = t * t * (3 - 2 * t); // smoothstep
+  limbs.leftLeg.rotation.x = 0;
+  limbs.rightLeg.rotation.x = 0;
+  limbs.rightArm.rotation.set(-1.2 * e, 0, (-0.18 + Math.sin(sway) * 0.03) * e);
+  limbs.leftArm.rotation.set(-1.05 * e, 0, 0.22 * e);
+  limbs.head.rotation.set((-0.42 + Math.sin(sway * 0.9) * 0.02) * e, 0, 0);
+  limbs.phone.visible = t > 0.05;
+  const mat = (limbs.phone as THREE.Mesh).material as THREE.MeshStandardMaterial;
+  if (mat && "emissiveIntensity" in mat) mat.emissiveIntensity = 0.25 + 0.95 * e;
 }
