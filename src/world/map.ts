@@ -22,6 +22,9 @@ export const MAP: Placement[] = [
   // junction. Roads at x,z in {-56, 0, 56}; the gap between the two hero shops is
   // the central cross-v street.
   { kind: "cityGrid", x: 0, z: 0, params: { pitch: 56, half: 1, length: 140, seed: 1 } },
+  // Pave the central blocks (paver stone, same as the sidewalks). Sits just above
+  // the grass and below the road asphalt, so the city core reads paved, not lawn.
+  { kind: "pavement", x: 0, z: 0, params: { w: 112, d: 112 } },
   // phone-shop lot: the big blue showroom + its full street frontage, authored as
   // one move-together unit. Custom grid puts cell (0,0) exactly at the shop's world
   // spot; every prop is lot-local (+z = toward the street), clear of the centred
@@ -69,8 +72,12 @@ export const MAP: Placement[] = [
   { kind: "fillerBuilding", x: 12, z: -70, params: { w: 14, d: 14, stories: 6, style: "glassTower", bodyColor: 0x9ac6e0, roofUnit: false, seed: 23 } },
   { kind: "fillerBuilding", x: 38, z: -68, params: { w: 13, d: 13, stories: 8, style: "darkGlass", bodyColor: 0x223f49, roofUnit: false, seed: 24 } },
 
-  // Park plaza on the SW block.
-  { kind: "park", x: -28, z: 28, params: { w: 26, d: 20, fountain: true, seed: 5 } },
+  // Business plaza on the SW block: fountain, benches, planters, trees, lamps and
+  // two vendor kiosks, sitting on the central pavement.
+  { kind: "plaza", x: -28, z: 28, params: { w: 26, d: 20, seed: 5 } },
+  // A pair of loose vendor kiosks on the open paved strip south of the junction.
+  { kind: "kioskCart", x: -14, z: 8, rot: 0, params: { canopyColor: 0x2e8b57 } },
+  { kind: "kioskCart", x: -20, z: 8, rot: 0, params: { canopyColor: 0xc97b30 } },
 
   // Traffic lights at the central intersection corners (signal head faces -z by
   // default; rot turns each to face its approach).
