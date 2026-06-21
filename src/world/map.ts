@@ -73,8 +73,9 @@ export const MAP: Placement[] = [
   { kind: "fillerBuilding", x: 58, z: -50, params: { w: 13, d: 13, stories: 7, style: "darkGlass", bodyColor: 0x1d3b44, roofUnit: false, seed: 25 } },
 
   // South streetwall: one long connected row across the street, fronts facing
-  // the road (rot 180), set back at z=30 — clear of the spawn corridor and park.
-  { kind: "terraceRow", x: 6, z: 30, rot: 180, params: { units: 7, d: 11, district: "west", anchor: "center", seed: 43 } },
+  // the road (rot 180), set back at z=36 — its front (z≈30.5) clears the park's
+  // north edge (z=28) and the spawn corridor (z=8/10).
+  { kind: "terraceRow", x: 6, z: 36, rot: 180, params: { units: 7, d: 11, district: "west", anchor: "center", seed: 43 } },
 
   // Park plaza: south-west, clear of the (0,8)/(12,10) spawn corridor.
   { kind: "park", x: -30, z: 18, params: { w: 26, d: 20, fountain: true, seed: 5 } },
