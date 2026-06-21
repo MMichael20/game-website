@@ -105,7 +105,7 @@ defineObject("fillerBuilding", {
     const winRows = groundIsShop ? stories - 1 : stories;
 
     const glassA = isTower ? PALETTE.officeGlass : PALETTE.glass;
-    const glassB = isTower ? PALETTE.glassDark : PALETTE.glassDark;
+    const glassB = PALETTE.glassDark; // darker alternating pane (both styles)
     const frame = PALETTE.frame;
     const bigCells = isTower;
 

@@ -63,9 +63,12 @@ defineObject("park", {
         const cz = sz * bedCZ;
         // Stone rim + inset grass top, built as one merged mesh per bed.
         const rimH = 0.32;
+        const grassH = 0.12;
+        const grassCenterY = rimH + 0.04;        // grass slab center
+        const grassTopY = grassCenterY + grassH / 2; // walkable grass surface
         const bedParts = [
           tintedBox(bedW, rimH, bedD, cx, rimH / 2, cz, PALETTE.stoneBase),
-          tintedBox(bedW - 0.5, 0.12, bedD - 0.5, cx, rimH + 0.04, cz, PALETTE.parkGrass),
+          tintedBox(bedW - 0.5, grassH, bedD - 0.5, cx, grassCenterY, cz, PALETTE.parkGrass),
         ];
         const bedMesh = tintedMesh(mergeTinted(bedParts));
         bedMesh.receiveShadow = true;
@@ -84,8 +87,8 @@ defineObject("park", {
           const color = FLOWER_COLORS[Math.floor(rng() * FLOWER_COLORS.length)];
           const flower = buildObject("flower", { color, height: 0.34 });
           const placed = applyTransform(flower, { x: fx, z: fz, rot: 0 });
-          // lift flowers onto the grass top
-          placed.mesh.position.y += 0.36;
+          // lift flowers so their base sits on the bed's grass surface
+          placed.mesh.position.y += grassTopY;
           parts.push(placed);
         }
       }
