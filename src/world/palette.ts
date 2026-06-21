@@ -61,6 +61,13 @@ export const PALETTE = {
   tankMetal: 0x7c6f5a,    // rooftop water tank
   acUnit: 0x9aa0a6,       // rooftop AC condenser
   ventPipe: 0x5c5f63,     // rooftop vent pipe
+  // shopfront display + upper-window detail (reference-art richness)
+  winFrame: 0x33373d,     // chunky dark charcoal window frame / mullion (masonry)
+  shopGlow: 0xffe2a8,     // warm lit shop interior back wall
+  bulkhead: 0x2b2f33,     // dark stall riser under the display window
+  signPanel: 0xeef1f4,    // blank inner sign-board panel
+  shelfWood: 0x6b4226,    // display shelf inside the window
+  pendantCord: 0x2b2b30,  // hanging pendant-light cord
   // facade purpose (typed ground-floor identities)
   facadeDoor: 0x4a3b2e,   // dark entrance door
   officeGlass: 0x6f97b8,  // cooler uniform office curtain-wall glass
