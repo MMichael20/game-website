@@ -62,8 +62,6 @@ export const MAP: Placement[] = [
   // Connected streetwalls on the block edges (kept ≥6m off every road centerline).
   // SE block: faces the main-h road from the south (rot 180).
   { kind: "terraceRow", x: 28, z: 12, rot: 180, params: { units: 3, d: 11, district: "east", anchor: "center", seed: 41 } },
-  // SW-south: faces the z=56 road.
-  { kind: "terraceRow", x: -28, z: 45, params: { units: 3, d: 11, district: "west", anchor: "center", seed: 43 } },
 
   // North skyline backdrop: freestanding glass towers beyond the z=-56 road,
   // spread in x and clear of the vertical-road corridors.
@@ -72,9 +70,9 @@ export const MAP: Placement[] = [
   { kind: "fillerBuilding", x: 12, z: -70, params: { w: 14, d: 14, stories: 6, style: "glassTower", bodyColor: 0x9ac6e0, roofUnit: false, seed: 23 } },
   { kind: "fillerBuilding", x: 38, z: -68, params: { w: 13, d: 13, stories: 8, style: "darkGlass", bodyColor: 0x223f49, roofUnit: false, seed: 24 } },
 
-  // Business plaza on the SW block: fountain, benches, planters, trees, lamps and
-  // two vendor kiosks, sitting on the central pavement.
-  { kind: "plaza", x: -28, z: 28, params: { w: 26, d: 20, seed: 5 } },
+  // Business plaza filling the SW block: a landmark fountain ringed by benches,
+  // planters, trees, lamps and two big vendor kiosks, on the central pavement.
+  { kind: "plaza", x: -28, z: 28, params: { w: 36, d: 28, seed: 5 } },
   // A pair of loose vendor kiosks on the open paved strip south of the junction.
   { kind: "kioskCart", x: -14, z: 8, rot: 0, params: { canopyColor: 0x2e8b57 } },
   { kind: "kioskCart", x: -20, z: 8, rot: 0, params: { canopyColor: 0xc97b30 } },

@@ -11,6 +11,7 @@ import "./cityGrid";
 import "./trafficLight";
 import "./pavement";
 import "./kioskCart";
+import "./grandFountain";
 import "./plaza";
 
 /** Call once at startup to guarantee the catalog modules have been evaluated. */
