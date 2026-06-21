@@ -57,12 +57,11 @@ export const MAP: Placement[] = [
   { kind: "flower", x: 3.6, z: -7, params: { color: "yellow" } },
 
   // ── Filler backdrop ──────────────────────────────────────────────────────
-  // North streetwall: masonry blocks flanking the two real stores, on the
-  // building line (front face +z ≈ z=-9), so the street reads as continuous.
-  { kind: "fillerBuilding", x: -34, z: -16, params: { w: 12, d: 10, stories: 3, bodyColor: 0xe07a5f, ground: "storefront", awningColor: 0xc0392b, seed: 11 } },
-  { kind: "fillerBuilding", x: -47, z: -16, params: { w: 11, d: 10, stories: 4, bodyColor: 0xe9c46a, seed: 12 } },
-  { kind: "fillerBuilding", x: 39, z: -17, params: { w: 12, d: 11, stories: 3, bodyColor: 0x84b06a, ground: "storefront", awningColor: 0x2980b9, seed: 13 } },
-  { kind: "fillerBuilding", x: 52, z: -17, params: { w: 11, d: 11, stories: 4, bodyColor: 0xc98ab0, seed: 14 } },
+  // North streetwall: two connected terrace rows flanking the real stores,
+  // aligned to the building line (~z=-16). Left row's right edge butts left of
+  // the phone shop (x=-23); right row's left edge butts right of the restaurant (x=27).
+  { kind: "terraceRow", x: -25, z: -16, params: { units: 5, d: 11, district: "south", anchor: "right", seed: 41 } },
+  { kind: "terraceRow", x: 29, z: -16, params: { units: 5, d: 11, district: "east", anchor: "left", seed: 42 } },
 
   // Skyline towers: tall glass blocks set well back as a backdrop. Light blue
   // curtain walls flank a dark-teal glass tower (the reference-art look).
@@ -73,12 +72,9 @@ export const MAP: Placement[] = [
   { kind: "fillerBuilding", x: -56, z: -52, params: { w: 13, d: 13, stories: 8, style: "darkGlass", bodyColor: 0x223f49, roofUnit: false, seed: 24 } },
   { kind: "fillerBuilding", x: 58, z: -50, params: { w: 13, d: 13, stories: 7, style: "darkGlass", bodyColor: 0x1d3b44, roofUnit: false, seed: 25 } },
 
-  // South streetwall: a couple of blocks across the road, facing -z (rot 180),
-  // set back behind the spawn corridor.
-  { kind: "fillerBuilding", x: -50, z: 26, rot: 180, params: { w: 12, d: 10, stories: 3, bodyColor: 0xf2c14e, seed: 31 } },
-  { kind: "fillerBuilding", x: 45, z: 26, rot: 180, params: { w: 12, d: 10, stories: 4, bodyColor: 0xd96c5f, ground: "storefront", awningColor: 0xc0392b, seed: 32 } },
-  // A dark-glass mid-rise on the south wall so the moody glass reads at street level too.
-  { kind: "fillerBuilding", x: 8, z: 30, rot: 180, params: { w: 13, d: 11, stories: 5, style: "darkGlass", bodyColor: 0x223f49, seed: 33 } },
+  // South streetwall: one long connected row across the street, fronts facing
+  // the road (rot 180), set back at z=30 — clear of the spawn corridor and park.
+  { kind: "terraceRow", x: 6, z: 30, rot: 180, params: { units: 7, d: 11, district: "west", anchor: "center", seed: 43 } },
 
   // Park plaza: south-west, clear of the (0,8)/(12,10) spawn corridor.
   { kind: "park", x: -30, z: 18, params: { w: 26, d: 20, fountain: true, seed: 5 } },
