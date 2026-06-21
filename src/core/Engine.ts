@@ -44,7 +44,10 @@ export class Engine {
     // screenshot-based visual verification this project relies on; it does not
     // change what is rendered.
     this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Cap render resolution at 1.5x device pixels. The scene is fill-rate bound
+    // (heavy per-fragment: sky scattering, soft shadows, log depth), so on a
+    // high-DPI display this is the single biggest FPS win for a slight softening.
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
