@@ -32,6 +32,7 @@ interface FillerParams {
   awningColor: number;
   roofUnit: boolean;
   seed: number;
+  faces: Axis[];
 }
 
 const WIN_PER_M = 1 / 2.2;   // ~one window column per 2.2 m of facade
@@ -128,15 +129,15 @@ function addPiers(
 // Thin proud spandrel bands at each inter-story line across the three shown faces.
 function addSpandrels(
   parts: THREE.BufferGeometry[],
-  opts: { w: number; d: number; yStart: number; rowH: number; rows: number; color: number },
+  opts: { w: number; d: number; yStart: number; rowH: number; rows: number; color: number; faces: Axis[] },
 ) {
-  const { w, d, yStart, rowH, rows } = opts;
+  const { w, d, yStart, rowH, rows, faces } = opts;
   const proud = WALL_PROUD;
   for (let r = 1; r < rows; r++) {
     const y = yStart + rowH * r;
-    parts.push(tintedBox(w + 0.04, 0.16, 0.06, 0, y, d / 2 + proud, opts.color));
-    parts.push(tintedBox(0.06, 0.16, d + 0.04, w / 2 + proud, y, 0, opts.color));
-    parts.push(tintedBox(0.06, 0.16, d + 0.04, -w / 2 - proud, y, 0, opts.color));
+    if (faces.includes("+z")) parts.push(tintedBox(w + 0.04, 0.16, 0.06, 0, y, d / 2 + proud, opts.color));
+    if (faces.includes("+x")) parts.push(tintedBox(0.06, 0.16, d + 0.04, w / 2 + proud, y, 0, opts.color));
+    if (faces.includes("-x")) parts.push(tintedBox(0.06, 0.16, d + 0.04, -w / 2 - proud, y, 0, opts.color));
   }
 }
 
@@ -145,7 +146,7 @@ defineObject("fillerBuilding", {
     w: 10, d: 9, stories: 3, storyH: 3.0,
     bodyColor: BUILDING_COLORS[0], style: "masonry",
     ground: "plain", awningColor: PALETTE.awningBlue,
-    roofUnit: true, seed: 1,
+    roofUnit: true, seed: 1, faces: ["+z", "+x", "-x"] as Axis[],
   } as FillerParams,
   build(p: FillerParams) {
     const { w, d, stories, storyH } = p;
@@ -177,7 +178,7 @@ defineObject("fillerBuilding", {
     const pierColor = isDark ? PALETTE.darkMullion : isGlass ? PALETTE.frame : PALETTE.pierStone;
     const sillColor = isGlass ? mullion : PALETTE.sillStone;
     const reflect = isGlass ? PALETTE.glassReflect : undefined;
-    const faces: Axis[] = ["+z", "+x", "-x"];
+    const faces: Axis[] = p.faces;
 
     if (winRows > 0) {
       const rowH = (winYEnd - winYStart) / winRows;
@@ -193,7 +194,7 @@ defineObject("fillerBuilding", {
       }
       // Masonry reads as stacked floors: add spandrel bands between stories.
       if (!isGlass) {
-        addSpandrels(opaque, { w, d, yStart: winYStart, rowH, rows: winRows, color: PALETTE.spandrel });
+        addSpandrels(opaque, { w, d, yStart: winYStart, rowH, rows: winRows, color: PALETTE.spandrel, faces });
       }
     }
 
