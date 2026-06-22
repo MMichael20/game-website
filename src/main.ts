@@ -52,20 +52,28 @@ async function boot() {
   const minimap = new Minimap(container, RISHON_MAP);
   // GTA-style camera: capture the pointer so mouse movement orbits the camera.
   const canvas = engine.renderer.domElement;
-  // Touch device? Then show on-screen controls and skip pointer lock (look comes
-  // from the touch look-zone, and requestPointerLock just rejects on mobile).
-  // `?touch` / `#touch` in the URL forces it on for testing on desktop.
-  const isTouch =
-    matchMedia("(pointer: coarse)").matches ||
-    "ontouchstart" in window ||
-    navigator.maxTouchPoints > 0 ||
-    /[?#].*\btouch\b/.test(location.href);
-  const lockPointer = isTouch
-    ? () => {}
-    : () => {
-        const p = canvas.requestPointerLock?.() as unknown as Promise<void> | undefined;
-        if (p && typeof p.catch === "function") p.catch(() => {}); // ignore lock rejections (e.g. headless)
-      };
+  // Touch vs mouse is decided LIVE, not once at boot. Many Windows PCs report touch
+  // capability (maxTouchPoints>0 / ontouchstart) yet are driven by a mouse, which
+  // wrongly showed the on-screen joystick. We seed from the primary-pointer media
+  // query, then flip on the pointerType actually used: a real touch shows the
+  // controls, a mouse hides them (so hybrid touch+mouse PCs behave correctly too).
+  // `?touch` / `#touch` forces touch mode for testing on a desktop.
+  const forceTouch = /[?#].*\btouch\b/.test(location.href);
+  let touchMode = forceTouch || matchMedia("(pointer: coarse)").matches;
+  window.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch") touchMode = true;
+    else if (e.pointerType === "mouse" && !forceTouch) touchMode = false;
+  });
+  window.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse" && !forceTouch) touchMode = false;
+  });
+  // No pointer lock while in touch mode — look comes from the look-zone, and
+  // requestPointerLock just rejects on a phone.
+  const lockPointer = () => {
+    if (touchMode) return;
+    const p = canvas.requestPointerLock?.() as unknown as Promise<void> | undefined;
+    if (p && typeof p.catch === "function") p.catch(() => {}); // ignore lock rejections (e.g. headless)
+  };
 
   // DEV-only aerial screenshot mode: open with #view=<x>,<z> to park the camera
   // over (x,z) and render the static scene (no follow/game), for inspecting
@@ -191,11 +199,9 @@ async function boot() {
   let started = false;
   let primed = false; // has the first world frame rendered at least once?
 
-  // Mobile: on-screen joystick + drag-look + action buttons. Auto-hidden on the
-  // title/pause screens and while the phone UI is open.
-  if (isTouch) {
-    engine.add(new VirtualControls(container, input, follow, () => started && !game.phoneOpen));
-  }
+  // On-screen joystick + drag-look + action buttons. Always created, but only shown
+  // while in touch mode (and in play, phone closed) — on a mouse PC they stay hidden.
+  engine.add(new VirtualControls(container, input, follow, () => started && !game.phoneOpen && touchMode));
   const begin = () => {
     menu.hide();
     started = true;
