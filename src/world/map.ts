@@ -1,39 +1,42 @@
 import type { Placement, Vec2 } from "./system/types";
 import { lot } from "./layout";
 
-export const GROUND_SIZE = 280;
-export const PLAYER_SPAWN: Vec2 = { x: 8, z: 9 };   // sidewalk corner SE of the central junction
+export const GROUND_SIZE = 140;
+export const PLAYER_SPAWN: Vec2 = { x: 8, z: 6 };   // sidewalk corner SE of the central junction
 export const CAR_SPAWN: Vec2 = { x: 12, z: 2 };     // in the eastbound lane of the main-h road
 
 // THE MAP. Reading this list is seeing the world. Coordinates are world-space;
 // rot is degrees in {0,90,180,270}. Stores face +z by default (rot:0).
 //
-// World size: 280m. City grid: 5×5 arterials, pitch=56, half=2 (roads at
-// x,z ∈ {±56,±112}). Core junction at origin; inner-ring block centres ±28;
-// outer-ring block centres ±84. North edge bounded by a divided highway at z=-128.
+// COMPACT CITY (re-plan 2026-06-22). World size: 140m (spans ±70). A single tight
+// ring: one core grid of 4 blocks around the central junction holds all the
+// playable content; the tall multi-storey "storeys" ring the perimeter on three
+// sides; the divided highway forms the north edge.
+//   Core grid: half=1, pitch=44 -> roads at x,z ∈ {0, ±44}. Core blocks ~40m,
+//     centred at (±22, ±22). Central junction at origin (main-h z=0, cross-v x=0).
+//   Core blocks: NW phoneRepairShop, NE restaurant, SW plaza, SE terraceRow.
+//   Perimeter storeys: tall buildingRows at the ±56 bands (S/E/W), facing inward.
+//   North edge: divided highway at z=-56, just behind the hero shops.
 //
 // Building footprints (for placing props clear of them):
-//   phoneRepairShop @ x=-12, w=22 -> x in [-23,-1], front face z=-9 (origin z=-17).
-//   restaurant      @ cell(2,-3)=world(16,-24), w=22 -> x in [5,27], front face z=-12.
-// The road sits at z=-2 (z in [-5,1]); the sidewalk strip in FRONT of both stores
-// is z in [-9,-5]. Both stores now own their full frontage as lot props (the phone
-// shop's flat apron + stoop + lamps/bench/planter/sign/trees, the restaurant's
-// raised deck), so the two frontages move with their buildings and no loose street
-// props sit in front of either glass.
+//   phoneRepairShop lot @ originX=-22 -> body x in [-33,-11], front face z=-9.
+//   restaurant      lot @ originX=22  -> body x in [11,33],   front face z=-9.
+// The main-h road sits at z=0 (z in [-2,2]); both hero shops sit in the north
+// blocks facing south onto it. Both stores own their full frontage as lot props,
+// so the two frontages move with their buildings.
 export const MAP: Placement[] = [
   { kind: "ground", params: { size: GROUND_SIZE } },
-  // The whole street network: a connected grid of roads with paver sidewalks,
-  // curbs, crosswalks, double-yellow, stop bars and lane arrows at the central
-  // junction. Roads at x,z in {-56, 0, 56}; the gap between the two hero shops is
-  // the central cross-v street.
-  { kind: "cityGrid", x: 0, z: 0, params: { pitch: 56, half: 2, length: 260, seed: 1 } },
-  // Pave the central blocks (paver stone, same as the sidewalks). Sits just above
-  // the grass and below the road asphalt, so the city core reads paved, not lawn.
-  { kind: "pavement", x: 0, z: 0, params: { w: 112, d: 112 } },
-  // phone-shop lot: the big blue showroom + its full street frontage, authored as
-  // one move-together unit. Custom grid puts cell (0,0) exactly at the shop's world
-  // spot; every prop is lot-local (+z = toward the street), clear of the centred
-  // entry stoop (x in [-2.5,2.5]) and the door.
+  // The street network: a tight grid with paver sidewalks, curbs, crosswalks,
+  // double-yellow, stop bars and lane arrows at the central junction. Roads at
+  // x,z in {0, ±44}; the gap between the two hero shops is the central cross-v.
+  { kind: "cityGrid", x: 0, z: 0, params: { pitch: 44, half: 1, length: 124, seed: 1 } },
+  // Pave the core blocks (paver stone, same as the sidewalks). Covers the ±44
+  // core so the city centre reads paved, not lawn.
+  { kind: "pavement", x: 0, z: 0, params: { w: 88, d: 88 } },
+  // phone-shop lot (NW block): the big blue showroom + its full street frontage,
+  // authored as one move-together unit. Cell (0,0) sits at the shop's world spot;
+  // every prop is lot-local (+z = toward the street), clear of the centred entry
+  // stoop (x in [-2.5,2.5]) and the door.
   ...lot(
     { cell: { col: 0, row: 0 }, building: "phoneRepairShop",
       buildingParams: { w: 22, d: 16, h: 7 },
@@ -48,8 +51,7 @@ export const MAP: Placement[] = [
       ] },
     { originX: -22, originZ: -17, cellW: 8, cellD: 8 },
   ),
-  // restaurant lot: building + its OWN flanking lamps and corner trees, placed by
-  // grid CELL (default 8m grid -> world (16,-24)). Move `cell` and all 5 follow.
+  // restaurant lot (NE block): building + its OWN flanking lamps and corner trees.
   // Props are in lot-local coords: +z = toward the street, x = across the front.
   ...lot({
     cell: { col: 0, row: 0 },
@@ -63,48 +65,40 @@ export const MAP: Placement[] = [
     ],
   }, { originX: 22, originZ: -21, cellW: 8, cellD: 8 }),
 
-  // ── City blocks ───────────────────────────────────────────────────────────
-  // Connected streetwalls on the block edges (kept ≥6m off every road centerline).
-  // SE block: faces the main-h road from the south (rot 180).
-  { kind: "terraceRow", x: 28, z: 12, rot: 180, params: { units: 3, d: 11, district: "east", anchor: "center", seed: 41 } },
+  // ── SW block: business plaza ────────────────────────────────────────────────
+  // A landmark fountain ringed by benches, planters, trees, lamps and two big
+  // vendor kiosks, on the central pavement. Footprint x∈[-40,-4], z∈[8,36].
+  { kind: "plaza", x: -22, z: 22, params: { w: 36, d: 28, seed: 5 } },
 
-  // ── Outer building rows: one row per outer-ring block, facing inward ────────
-  // The half=2 grid has blocks centred at ±84 (outer ring) and ±28 (inner ring).
-  // Inner-ring blocks are occupied by the two stores, plaza, and terraceRow —
-  // rows are ONLY placed in the outer-ring (±84) blocks.
-  // Each row: units:3 ≈ 40.5m run, d:12, fits a 46.8m block with margin.
+  // ── SE block: terrace of shops ──────────────────────────────────────────────
+  // A continuous streetwall facing north (rot 180) onto the main-h road.
+  { kind: "terraceRow", x: 22, z: 14, rot: 180, params: { units: 3, d: 11, district: "east", anchor: "center", seed: 41 } },
 
-  // ── North band (z=-84): 4 rows facing the city (south, +z, rot:0) ──────────
-  { kind: "buildingRow", x: -84, z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 61 } },
-  { kind: "buildingRow", x: -28, z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 62 } },
-  { kind: "buildingRow", x: 28,  z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 63 } },
-  { kind: "buildingRow", x: 84,  z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 64 } },
+  // A pair of loose vendor kiosks on the paved strip just south of the junction,
+  // north of the plaza.
+  { kind: "kioskCart", x: -14, z: 5, rot: 0, params: { canopyColor: 0x2e8b57 } },
+  { kind: "kioskCart", x: -20, z: 5, rot: 0, params: { canopyColor: 0xc97b30 } },
 
-  // ── South band (z=84): 4 rows facing the city (north, -z, rot:180) ──────────
-  { kind: "buildingRow", x: -84, z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 65 } },
-  { kind: "buildingRow", x: -28, z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 66 } },
-  { kind: "buildingRow", x: 28,  z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 67 } },
-  { kind: "buildingRow", x: 84,  z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 68 } },
+  // ── Perimeter storeys: tall building rows ringing the edge, facing inward ────
+  // Rows sit at block-centre x/z (±22) so they straddle neither the x=0/z=0
+  // arterials nor the ±44 ring roads — the outbound streets run between them.
+  // Each row: units:3 ≈ 40.5m run, d:12. Fronts ~±50, backs ±62, inside the ±70 edge.
 
-  // ── West band (x=-84): 2 rows facing the city (east, +x, rot:90) ───────────
-  { kind: "buildingRow", x: -84, z: -28, rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 71 } },
-  { kind: "buildingRow", x: -84, z: 28,  rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 72 } },
-  // ── East band (x=84): 2 rows facing the city (west, -x, rot:270) ───────────
-  { kind: "buildingRow", x: 84,  z: -28, rot: 270, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 73 } },
-  { kind: "buildingRow", x: 84,  z: 28,  rot: 270, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 74 } },
+  // South band (z=56): faces north (-z, rot:180).
+  { kind: "buildingRow", x: -22, z: 56, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 61 } },
+  { kind: "buildingRow", x: 22,  z: 56, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 62 } },
+  // West band (x=-56): faces east (+x, rot:90).
+  { kind: "buildingRow", x: -56, z: -22, rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 71 } },
+  { kind: "buildingRow", x: -56, z: 22,  rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 72 } },
+  // East band (x=56): faces west (-x, rot:270).
+  { kind: "buildingRow", x: 56,  z: -22, rot: 270, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 73 } },
+  { kind: "buildingRow", x: 56,  z: 22,  rot: 270, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 74 } },
 
-  // ── Highway: a divided multi-lane highway bounding the city to the north. ───
-  // Half-width = medianW/2 + lanes*laneW + shoulderW = 2 + 7.2 + 1.2 = 10.4,
-  // so at z=-128 it spans z ∈ [-138.4,-117.6] — inside the world edge (-140)
-  // with a grass verge between it and the z=-112 arterial.
-  { kind: "highway", x: 0, z: -128, rot: 0, params: { length: 260, lanes: 2, laneW: 3.6, medianW: 4, shoulderW: 1.2, gantry: true, seed: 1 } },
-
-  // Business plaza filling the SW block: a landmark fountain ringed by benches,
-  // planters, trees, lamps and two big vendor kiosks, on the central pavement.
-  { kind: "plaza", x: -28, z: 28, params: { w: 36, d: 28, seed: 5 } },
-  // A pair of loose vendor kiosks on the open paved strip south of the junction.
-  { kind: "kioskCart", x: -14, z: 8, rot: 0, params: { canopyColor: 0x2e8b57 } },
-  { kind: "kioskCart", x: -20, z: 8, rot: 0, params: { canopyColor: 0xc97b30 } },
+  // ── North edge: a divided multi-lane highway, just behind the hero shops. ────
+  // Half-width = medianW/2 + lanes*laneW + shoulderW = 2 + 7.2 + 1.2 = 10.4, so at
+  // z=-56 it spans z ∈ [-66.4,-45.6] — inside the world edge (-70), ~9m behind the
+  // shops (backs at z=-33).
+  { kind: "highway", x: 0, z: -56, rot: 0, params: { length: 124, lanes: 2, laneW: 3.6, medianW: 4, shoulderW: 1.2, gantry: true, seed: 1 } },
 
   // Traffic lights at the central intersection corners (signal head faces -z by
   // default; rot turns each to face its approach).
