@@ -1,8 +1,14 @@
 // src/world/catalog/parkedCar.ts
 //
 // Static scenery parked car — NOT the drivable Car entity.
-// ~4.2m long (x) × 1.8m wide (z) × ~1.5m tall.
+// ~4.2m long (x) × 1.8m wide (z) × ~1.75m tall.
 // All child positions derived from part dimensions.
+//
+// AXIS NOTE: the car's LONG axis is intentionally along local X.
+// A rot:0 placement sits along an east-west curb.
+// FRONT (headlights) faces +x; taillights face -x.
+// This is deliberate — use rot to orient the car at each placement site.
+// Do NOT rotate the geometry here.
 
 import { defineObject } from "../system/registry";
 import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
@@ -87,8 +93,11 @@ defineObject("parkedCar", {
 
     return {
       mesh,
-      colliders: [{ x: 0, y: 0.75, z: 0, hx: 2.1, hy: 0.75, hz: 0.9 }],
-      obstacles: [{ x: 0, z: 0, w: 4.2, d: 1.8 }],
+      // Collider spans full height (0..1.75m) to cover the cabin roof.
+      // center y = 0.875, hy = 0.875 → top = 1.75m.
+      colliders: [{ x: 0, y: 0.875, z: 0, hx: 2.1, hy: 0.875, hz: 0.9 }],
+      // Obstacle depth 2.1 covers wheel overhang proud of the body.
+      obstacles: [{ x: 0, z: 0, w: 4.2, d: 2.1 }],
     };
   },
 });

@@ -14,15 +14,19 @@ const POST_Y = POST_H / 2;  // base at y=0
 const BOX_W = 0.45;
 const BOX_H = 0.30;
 const BOX_D = 0.22;
-// Box sits on top of post.
-const BOX_Y = POST_H + BOX_H / 2 - 0.05;  // slight overlap with post top
+// How far the box overlaps the post top (keeps them visually joined, no gap).
+const BOX_OVERLAP = 0.05;
+// Box sits on top of post, slightly overlapping so there is no visible seam.
+const BOX_Y = POST_H + BOX_H / 2 - BOX_OVERLAP;
 
 const FLAG_W = 0.04;
 const FLAG_H = 0.18;
 const FLAG_D = 0.16;
+// How far the flag rises above the box center (flag door sits mid-height on the side).
+const FLAG_RISE = 0.07;
 // Flag mounts on the right side of the box body, at mid-box height.
 const FLAG_X = BOX_W / 2 + FLAG_W / 2;
-const FLAG_Y = BOX_Y + 0.07;  // slightly above box center
+const FLAG_Y = BOX_Y + FLAG_RISE;  // slightly above box center
 
 defineObject("mailbox", {
   params: {},

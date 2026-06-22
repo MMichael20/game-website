@@ -91,10 +91,26 @@ defineObject("fence", {
       colliders.push({ x: rightCenterX, y: colHy, z: 0, hx: solidHalf / 2, hy: colHy, hz: colHz });
     }
 
+    // ── Obstacles ─────────────────────────────────────────────────────────
+    // When a gate is present, split into two flanking rects so NPCs can
+    // path through the gap. When solid, emit a single full-length rect.
+    type ObstacleRect = { x: number; z: number; w: number; d: number };
+    const obstacles: ObstacleRect[] = [];
+
+    if (!gate) {
+      obstacles.push({ x: 0, z: 0, w: length, d: 0.3 });
+    } else {
+      const solidHalf = (length - GATE_W) / 2;
+      const leftCenterX  = -halfLen + solidHalf / 2;
+      const rightCenterX =  halfLen - solidHalf / 2;
+      obstacles.push({ x: leftCenterX,  z: 0, w: solidHalf, d: 0.3 });
+      obstacles.push({ x: rightCenterX, z: 0, w: solidHalf, d: 0.3 });
+    }
+
     return {
       mesh,
       colliders,
-      obstacles: [{ x: 0, z: 0, w: length, d: 0.3 }],
+      obstacles,
     };
   },
 });
