@@ -17,6 +17,15 @@ export class World {
     const built = buildWorld(MAP);
     scene.add(built.group);
 
+    // The world is fully static after build: compute world matrices once, then
+    // stop per-frame matrix recomputation across every static mesh. Entities
+    // (player, car, NPCs, clouds) are separate objects and are unaffected.
+    built.group.updateMatrixWorld(true);
+    built.group.traverse((obj) => {
+      obj.matrixAutoUpdate = false;
+      obj.matrixWorldAutoUpdate = false;
+    });
+
     const clouds = makeClouds();
     scene.add(clouds);
 
