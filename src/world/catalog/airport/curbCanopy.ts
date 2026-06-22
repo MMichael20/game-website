@@ -18,9 +18,9 @@ function solidBox(x: number, y: number, z: number, bw: number, bh: number, bd: n
 }
 
 // Canopy structural colors
-const ROOF_COL        = 0xd8d4cc;  // light concrete/composite panel
-const ROOF_EDGE_COL   = 0x4a7aa0;  // blue steel fascia
-const FASCIA_SIGN_COL = 0x0038b8;  // Israeli blue sign band
+const ROOF_COL        = 0xf2f0ea;  // white composite canopy panel
+const ROOF_EDGE_COL   = 0xdfe3e8;  // light steel fascia
+const FASCIA_SIGN_COL = 0x15171a;  // dark amber-sign board background
 const COL_COL         = PALETTE.steelLight;
 const COL_BASE_COL    = PALETTE.stoneBase;
 const CURB_COL        = PALETTE.curb;
@@ -81,26 +81,38 @@ defineObject("curbCanopy", {
     parts.push(tintedBox(w + 0.2, FASCIA_H, SIGN_DEPTH, 0, fasciaY + FASCIA_H / 2 - ROOF_H / 2, hD + SIGN_DEPTH / 2, FASCIA_SIGN_COL));
 
     // ── Departures / label sign on fascia ─────────────────────────────────
-    // One centered sign board OR repeated boards every ~20m
-    const signW = Math.min(16, w * 0.8);
+    const signW = Math.min(14, w * 0.7);
     const signH = FASCIA_H * 0.8;
     const signY = fasciaY + FASCIA_H / 2 - ROOF_H / 2 - signH / 2;
-
-    // How many sign repeats fit (one per 20m span, minimum 1)
     const signRepeat = Math.max(1, Math.floor(w / 20));
     const signSpacing = w / signRepeat;
     for (let si = 0; si < signRepeat; si++) {
       const signCX = -hW + signSpacing * (si + 0.5);
       const sign = makeTextSignMesh({
-        text: label,
-        w: signW,
-        h: signH,
-        boardColor: FASCIA_SIGN_COL,
-        textColor: "#ffffff",
-        glow: 0.9,
+        text: label, w: signW, h: signH,
+        boardColor: FASCIA_SIGN_COL, textColor: "#f0b020", glow: 0.95,
       });
       sign.position.set(signCX - signW / 2, signY, hD + SIGN_DEPTH + DECAL_GAP);
       group.add(sign);
+    }
+
+    // ── Hung amber departures boards under the soffit (face +z, traffic) ────
+    const hungW = Math.min(9, w * 0.4);
+    const hungH = 1.1;
+    const hungY = COL_H - 1.4;
+    const hungZ = hD - 1.2;
+    for (let si = 0; si < signRepeat; si++) {
+      const hcx = -hW + signSpacing * (si + 0.5);
+      // Two drop rods from the soffit
+      parts.push(tintedBox(0.06, 0.6, 0.06, hcx - hungW * 0.35, COL_H - 0.7, hungZ, COL_COL));
+      parts.push(tintedBox(0.06, 0.6, 0.06, hcx + hungW * 0.35, COL_H - 0.7, hungZ, COL_COL));
+      const board = makeTextSignMesh({
+        text: label === "Arrivals" ? "ARRIVALS" : "DEPARTURES",
+        w: hungW, h: hungH,
+        boardColor: 0x15171a, textColor: "#f0b020", glow: 0.95,
+      });
+      board.position.set(hcx - hungW / 2, hungY, hungZ + SIGN_DEPTH);
+      group.add(board);
     }
 
     // ── Rear fascia (decorative, -z) ──────────────────────────────────────

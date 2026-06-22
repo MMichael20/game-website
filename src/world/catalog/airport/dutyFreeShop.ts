@@ -39,12 +39,17 @@ interface DutyFreeShopParams {
   d: number;
   name: string;
   accent: number;
+  warm: boolean;
 }
 
 defineObject("dutyFreeShop", {
-  params: { w: 10, d: 8, name: "Duty Free", accent: 0x2980b9 } as DutyFreeShopParams,
+  params: { w: 10, d: 8, name: "Duty Free", accent: 0x2980b9, warm: false } as DutyFreeShopParams,
   build(p: DutyFreeShopParams): ObjectResult {
-    const { w, d, accent } = p;
+    const { w, d, warm } = p;
+    // Warm variant: wooden gondolas + red illuminated sign band.
+    const accent = warm ? 0xcc2222 : p.accent;
+    const gondolaBodyCol = warm ? 0xb07a3a : 0xf0ede6;
+    const shelfEdgeCol = warm ? 0x8a5a2b : SHELF_EDGE;
     const hW = w / 2;
     const hD = d / 2;
     const rng = mulberry32(0xdf001234);
@@ -104,7 +109,7 @@ defineObject("dutyFreeShop", {
       h: signBandH,
       boardColor: accent,
       textColor: "#ffffff",
-      glow: 0.9,
+      glow: warm ? 1.0 : 0.9,
     });
     signBand.position.set(-signBandW / 2, signBandY, hD + DECAL_GAP);
     group.add(signBand);
@@ -120,7 +125,6 @@ defineObject("dutyFreeShop", {
     const GONDOLA_H   = 1.65;
     const GONDOLA_D   = 0.55;
     const SHELF_COUNT = 4;
-    const GONDOLA_COL = 0xf0ede6;
 
     const gondolaZs = [-hD + GONDOLA_D / 2 + 0.35, -hD + GONDOLA_D / 2 + 0.35 + GONDOLA_D + 1.6];
     for (const gz of gondolaZs) {
@@ -128,13 +132,13 @@ defineObject("dutyFreeShop", {
         const gx = -hW + 0.4 + gi * (GONDOLA_W + 0.45) + GONDOLA_W / 2;
 
         // Gondola body (cabinet)
-        floorParts.push(tintedBox(GONDOLA_W, GONDOLA_H, GONDOLA_D, gx, GONDOLA_H / 2, gz, GONDOLA_COL));
+        floorParts.push(tintedBox(GONDOLA_W, GONDOLA_H, GONDOLA_D, gx, GONDOLA_H / 2, gz, gondolaBodyCol));
         // Top cap
-        floorParts.push(tintedBox(GONDOLA_W + 0.04, 0.06, GONDOLA_D + 0.04, gx, GONDOLA_H + 0.03, gz, SHELF_EDGE));
+        floorParts.push(tintedBox(GONDOLA_W + 0.04, 0.06, GONDOLA_D + 0.04, gx, GONDOLA_H + 0.03, gz, shelfEdgeCol));
         // Shelf boards (horizontal dividers)
         for (let si = 1; si < SHELF_COUNT; si++) {
           const sy = (GONDOLA_H / SHELF_COUNT) * si;
-          floorParts.push(tintedBox(GONDOLA_W - 0.04, 0.04, GONDOLA_D - 0.04, gx, sy, gz, SHELF_EDGE));
+          floorParts.push(tintedBox(GONDOLA_W - 0.04, 0.04, GONDOLA_D - 0.04, gx, sy, gz, shelfEdgeCol));
         }
         // Products on each shelf (3 items per shelf, varied colors)
         for (let si = 0; si < SHELF_COUNT; si++) {

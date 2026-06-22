@@ -36,6 +36,16 @@ import "./airport/runway";
 import "./airport/airportMonument";
 import "./airport/palmTree";
 import "./airport/curbCanopy";
+// Airport visual-fidelity props (2026-06-22).
+import "./airport/selfCheckinKiosk";
+import "./airport/queueLane";
+import "./airport/wayfindingSign";
+import "./airport/luggage";
+import "./airport/airportGreenery";
+import "./airport/floodlightMast";
+import "./airport/apronProps";
+import "./airport/cubeCloud";
+import "./airport/airportExtras";
 
 /** Call once at startup to guarantee the catalog modules have been evaluated. */
 export function registerCatalog(): void { /* imports above run the defineObject calls */ }

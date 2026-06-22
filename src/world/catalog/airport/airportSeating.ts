@@ -41,12 +41,19 @@ const ARM_Y      = SEAT_Y + ARM_H;
 interface AirportSeatingParams {
   seats: number;
   back: boolean;
+  scheme: "navy" | "redblue";
 }
 
+// Bold red/blue gang-seat colors (matches the design references).
+const REDBLUE = [
+  { seat: 0xc0392b, back: 0xa6321f, trim: 0xd95a48 }, // red
+  { seat: 0x2c5aa0, back: 0x244a86, trim: 0x4a7ec0 }, // blue
+];
+
 defineObject("airportSeating", {
-  params: { seats: 6, back: true } as AirportSeatingParams,
+  params: { seats: 6, back: true, scheme: "redblue" } as AirportSeatingParams,
   build(p: AirportSeatingParams): ObjectResult {
-    const { seats, back } = p;
+    const { seats, back, scheme } = p;
     const totalW = seats * SEAT_W;
     const hTW = totalW / 2;
 
@@ -81,12 +88,17 @@ defineObject("airportSeating", {
     for (let s = 0; s < seats; s++) {
       const sx = -hTW + (s + 0.5) * SEAT_W;
 
+      // Per-seat colors from the scheme.
+      const seatCol = scheme === "redblue" ? REDBLUE[s % 2].seat : SEAT_COLOR;
+      const backCol = scheme === "redblue" ? REDBLUE[s % 2].back : BACK_COLOR;
+      const trimCol = scheme === "redblue" ? REDBLUE[s % 2].trim : SEAT_TRIM;
+
       // Seat cushion
-      parts.push(tintedBox(SEAT_W - 0.04, SEAT_PAD_H, SEAT_D, sx, SEAT_Y - SEAT_PAD_H / 2, 0, SEAT_COLOR));
+      parts.push(tintedBox(SEAT_W - 0.04, SEAT_PAD_H, SEAT_D, sx, SEAT_Y - SEAT_PAD_H / 2, 0, seatCol));
       // Seat edge trim (front lip)
-      parts.push(tintedBox(SEAT_W - 0.04, 0.04, 0.04, sx, SEAT_Y - SEAT_PAD_H + 0.02, SEAT_D / 2, SEAT_TRIM));
+      parts.push(tintedBox(SEAT_W - 0.04, 0.04, 0.04, sx, SEAT_Y - SEAT_PAD_H + 0.02, SEAT_D / 2, trimCol));
       // Seat surface highlight (subtle lighter centre)
-      parts.push(tintedBox(SEAT_W - 0.12, 0.01, SEAT_D - 0.12, sx, SEAT_Y, 0, 0x2a3e54));
+      parts.push(tintedBox(SEAT_W - 0.12, 0.01, SEAT_D - 0.12, sx, SEAT_Y, 0, seatCol));
 
       // Backrest (if enabled)
       if (back) {
@@ -97,12 +109,12 @@ defineObject("airportSeating", {
         const backTopZ = backBotZ - BACK_TILT;
         const backMidY = (backBotY + backTopY) / 2;
         const backMidZ = (backBotZ + backTopZ) / 2;
-        parts.push(tintedBox(SEAT_W - 0.04, BACK_H, BACK_T, sx, backMidY, backMidZ, BACK_COLOR));
+        parts.push(tintedBox(SEAT_W - 0.04, BACK_H, BACK_T, sx, backMidY, backMidZ, backCol));
         // Backrest top trim
-        parts.push(tintedBox(SEAT_W - 0.04, 0.04, BACK_T + 0.04, sx, backTopY - 0.02, backTopZ, SEAT_TRIM));
+        parts.push(tintedBox(SEAT_W - 0.04, 0.04, BACK_T + 0.04, sx, backTopY - 0.02, backTopZ, trimCol));
         // Horizontal lumbar support stripe
         parts.push(tintedBox(SEAT_W - 0.1, 0.06, BACK_T + 0.02,
-          sx, backBotY + BACK_H * 0.35, backMidZ, SEAT_TRIM));
+          sx, backBotY + BACK_H * 0.35, backMidZ, trimCol));
       }
 
       // Armrests (between every seat, plus ends)

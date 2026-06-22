@@ -43,12 +43,16 @@ const TRIM_H   = 0.08;  // lower trim rail height
 interface CheckInIslandParams {
   len: number;
   desks: number;
+  startNo: number;
 }
 
+// Numbered-lightbox color cycle (in pairs): blue, green, red.
+const NUM_COLORS = [0x2b6fb5, 0x2e9e4f, 0xc0392b];
+
 defineObject("checkInIsland", {
-  params: { len: 10, desks: 4 } as CheckInIslandParams,
+  params: { len: 10, desks: 4, startNo: 1 } as CheckInIslandParams,
   build(p: CheckInIslandParams): ObjectResult {
-    const { len, desks } = p;
+    const { len, desks, startNo } = p;
     const hL = len / 2;
 
     const parts: THREE.BufferGeometry[] = [];
@@ -112,7 +116,7 @@ defineObject("checkInIsland", {
         map: screenTex,
         emissive: 0xffffff,
         emissiveMap: screenTex,
-        emissiveIntensity: 0.9,
+        emissiveIntensity: 1.1,
         roughness: 0.3,
       });
       const screenMesh = new THREE.Mesh(
@@ -183,6 +187,22 @@ defineObject("checkInIsland", {
     });
     depSign.position.set(-Math.min(len * 0.45, 3.8) / 2, barY - 1.28, -CTR_D * 0.35 + DECAL_GAP);
     group.add(depSign);
+
+    // ── Numbered backlit lightboxes — one per desk (colored pairs) ─────────
+    const boxW = Math.min(deskW * 0.62, 1.3);
+    const boxH = 0.5;
+    const boxY = barY - 1.95;
+    for (let d = 0; d < desks; d++) {
+      const dx = -hL + (d + 0.5) * deskW;
+      const nn = String(startNo + d).padStart(2, "0");
+      const col = NUM_COLORS[Math.floor(d / 2) % NUM_COLORS.length];
+      const numBox = makeTextSignMesh({
+        text: nn, w: boxW, h: boxH,
+        boardColor: col, textColor: "#ffffff", glow: 0.95,
+      });
+      numBox.position.set(dx - boxW / 2, boxY, -CTR_D * 0.35 + DECAL_GAP);
+      group.add(numBox);
+    }
 
     // ── Queue stanchions (switchback belt barriers in front, +z side) ─────
     // Stanchion count derived from counter length: one every ~1.5m

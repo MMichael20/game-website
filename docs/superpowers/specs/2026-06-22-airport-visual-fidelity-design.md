@@ -139,3 +139,10 @@ in-game. No unit tests written or run.
   vehicles**, not a full fleet — payoff per object drops off and it's background.
 - Luggage/trolley color variation → **cycle a fixed palette by index** (deterministic),
   not RNG — CLAUDE.md determinism rule.
+- Execution model → **parallel implementer subagents in batches** for the 13
+  independent single-file object tasks; they write files only (no git, no build
+  tools, no `index.ts` edits) to avoid git/index races. Controller integrates
+  `index.ts` + `airportMap.ts` and runs the tsc + vite-build gate centrally, then a
+  final whole-branch review. Adapts SDD to the no-tests project rule + task independence.
+- `cubeCloud` sky height → object carries an `alt` param (default ~42) because
+  `Placement` has no y-coordinate.
