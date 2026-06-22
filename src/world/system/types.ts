@@ -33,3 +33,26 @@ export interface Placement {
   rot?: number;
   params?: Record<string, unknown>;
 }
+
+/** A proximity trigger on a map: stand within r of (x,z), press E, and the world
+ *  switches to map `to`, dropping the player at `toSpawn`. */
+export interface Portal {
+  x: number;
+  z: number;
+  r: number;
+  prompt: string;
+  to: string;
+  toSpawn: Vec2;
+}
+
+/** A self-contained world: its manifest, spawn, portals and (optional) car. */
+export interface MapDescriptor {
+  id: string;
+  map: Placement[];
+  spawn: Vec2;
+  groundSize: number;
+  portals: Portal[];
+  hasCar?: boolean;
+  carSpawn?: Vec2;
+  carSpawnYaw?: number;
+}

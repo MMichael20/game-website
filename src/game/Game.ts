@@ -7,6 +7,9 @@ import { Character } from "../entities/Character";
 import { Car } from "../entities/Car";
 import { nearestPoi, poiPrompt } from "./interactions";
 import type { World } from "../world/World";
+import { MAPS } from "../world/maps";
+import type { Portal } from "../world/system/types";
+import type { FadeOverlay } from "../ui/FadeOverlay";
 import { nextMode, canEnter, type Mode } from "./InteractionSystem";
 import type { Rect } from "./wander";
 import { EntityManager } from "./EntityManager";
@@ -42,18 +45,26 @@ export class Game implements Tickable {
   private lookDir = new THREE.Vector3();
   private fps = 0;
 
+  // Map-switch transition: a fade-out/swap/fade-in state machine, frozen like the
+  // phone while it runs. FADE is the seconds of each half (out, then in).
+  private transition: "idle" | "out" | "in" = "idle";
+  private tT = 0;
+  private pendingPortal: Portal | null = null;
+  private static readonly FADE = 0.45;
+
   constructor(
     private renderer: THREE.WebGLRenderer,
     scene: THREE.Scene,
     physics: Physics,
     private input: Input,
-    world: World,
+    private world: World,
     private follow: FollowCamera,
     private camera: THREE.Camera,
     private hud: Hud,
     private minimap: Minimap,
     container: HTMLElement,
     private lockPointer: () => void,
+    private fade: FadeOverlay,
   ) {
     this.character = new Character(scene, physics, input, world.playerSpawn, camera);
     this.car = new Car(scene, physics, input, world.carSpawn);
@@ -95,6 +106,30 @@ export class Game implements Tickable {
     // Exponentially-smoothed FPS for the debug HUD.
     if (dt > 0) this.fps += ((1 / dt) - this.fps) * 0.1;
 
+    // --- Map-switch transition: ramp the fade, swap worlds at full black, freeze
+    // gameplay throughout (mirrors the phone freeze below). ---
+    if (this.transition !== "idle") {
+      this.tT += dt;
+      const k = Math.min(1, this.tT / Game.FADE);
+      if (this.transition === "out") {
+        this.fade.setOpacity(k);
+        if (k >= 1 && this.pendingPortal) {
+          this.doSwap(this.pendingPortal);
+          this.transition = "in";
+          this.tT = 0;
+        }
+      } else {
+        this.fade.setOpacity(1 - k);
+        if (k >= 1) {
+          this.fade.setOpacity(0);
+          this.transition = "idle";
+          this.pendingPortal = null;
+        }
+      }
+      this.input.endFrame();
+      return;
+    }
+
     // Phone raise/lower animation ticks every frame — even while the phone UI is up
     // and the rest of gameplay is frozen — so the motion plays on open AND close.
     this.character.tickPhone(dt);
@@ -109,6 +144,21 @@ export class Game implements Tickable {
     const ePressed = this.input.justPressed("KeyE");
     const pPos = { x: this.character.position.x, z: this.character.position.z };
     const cPos = { x: this.car.position.x, z: this.car.position.z };
+
+    // --- Map portals: stand on one, press E, fade out and switch worlds. ---
+    let nearPortal: Portal | null = null;
+    if (this.mode === "onFoot") {
+      for (const p of this.world.portals) {
+        if (Math.hypot(pPos.x - p.x, pPos.z - p.z) <= p.r) { nearPortal = p; break; }
+      }
+      if (nearPortal && ePressed) {
+        this.transition = "out";
+        this.tT = 0;
+        this.pendingPortal = nearPortal;
+        this.input.endFrame();
+        return;
+      }
+    }
 
     // Open the phone (on foot only).
     if (this.input.justPressed("KeyP") && this.mode === "onFoot") {
@@ -167,7 +217,9 @@ export class Game implements Tickable {
 
     // --- HUD prompt ---
     const poi = this.mode === "onFoot" ? nearestPoi(pPos) : null;
-    if (this.summonPhase === "toPickup") {
+    if (this.mode === "onFoot" && nearPortal) {
+      this.hud.setPrompt(nearPortal.prompt);
+    } else if (this.summonPhase === "toPickup") {
       this.hud.setPrompt("Your car is on its way...");
     } else if (this.summonPhase === "waiting") {
       this.hud.setPrompt("Press E to get in");
@@ -190,6 +242,33 @@ export class Game implements Tickable {
     this.hud.setSpeed(this.mode === "driving" ? formatSpeed(this.car.speed) : null);
     this.updateDebug();
     this.input.endFrame();
+  }
+
+  // Performed at full black: tear down the current world, build the target, drop
+  // the player at the portal's spawn, and re-aim the camera. The car is drivable
+  // only in the city; elsewhere it is parked far away and hidden.
+  private doSwap(portal: Portal): void {
+    const target = MAPS[portal.to];
+    this.world.unload();
+    this.world.load(target);
+
+    this.mode = "onFoot";
+    this.character.enabled = true;
+    this.character.object.visible = true;
+    this.character.setPosition(portal.toSpawn.x, portal.toSpawn.z);
+
+    if (target.hasCar && target.carSpawn) {
+      this.car.enabled = false;
+      this.car.teleportTo(target.carSpawn.x, target.carSpawn.z, target.carSpawnYaw ?? 0);
+      this.car.object.visible = true;
+    } else {
+      this.car.enabled = false;
+      this.car.object.visible = false;
+      this.car.teleportTo(99999, 99999, 0);
+    }
+
+    // Re-aim + snap the follow camera while the screen is black (no visible pan).
+    this.follow.setTarget(this.character.object, 8, 1.6, this.character.rigidBody);
   }
 
   toggleDebug(): void { this.debug.toggle(); }

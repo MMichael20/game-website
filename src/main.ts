@@ -9,6 +9,7 @@ import { RISHON_MAP } from "./world/worldData";
 import { Game } from "./game/Game";
 import { Menu } from "./ui/Menu";
 import { Hud } from "./ui/Hud";
+import { FadeOverlay } from "./ui/FadeOverlay";
 import { Minimap } from "./ui/Minimap";
 import { makeHumanoid } from "./entities/Humanoid";
 import { OBJECT_LIBRARY, tintedMesh } from "./world/objects";
@@ -26,6 +27,7 @@ async function boot() {
   const follow = new FollowCamera(engine.camera, physics);
   const input = new Input();
   const hud = new Hud(container);
+  const fade = new FadeOverlay(container);
   const minimap = new Minimap(container, RISHON_MAP);
   // GTA-style camera: capture the pointer so mouse movement orbits the camera.
   const canvas = engine.renderer.domElement;
@@ -116,7 +118,7 @@ async function boot() {
     return;
   }
 
-  const game = new Game(engine.renderer, engine.scene, physics, input, world, follow, engine.camera, hud, minimap, container, lockPointer);
+  const game = new Game(engine.renderer, engine.scene, physics, input, world, follow, engine.camera, hud, minimap, container, lockPointer, fade);
 
   // step physics before game logic each frame
   engine.add({ update: (dt) => physics.step(dt) });
