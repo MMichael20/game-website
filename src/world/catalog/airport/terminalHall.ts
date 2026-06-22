@@ -273,7 +273,7 @@ defineObject("terminalHall", {
     group.add(depsign);
 
     const airportSign = makeTextSignMesh({
-      text: "RISHON INTERNATIONAL", w: Math.min(w * 0.26, 26), h: 0.9,
+      text: "BEN GURION INTERNATIONAL", w: Math.min(w * 0.26, 26), h: 0.9,
       boardColor: 0x1a3a5a, textColor: "#c8e0f4", glow: 0.8,
     });
     airportSign.position.set(-Math.min(w * 0.26, 26) / 2, h - 5.3, hD + 0.55 + DECAL_GAP);
