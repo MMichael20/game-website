@@ -1,0 +1,297 @@
+// src/world/catalog/house.ts
+//
+// Seeded placeholder house — a solid NON-walk-in residential backdrop with
+// per-instance variation (body colour, roof style/colour, chimney side).
+// LOCAL space: centered x=z=0, base y=0, FRONT faces +z, ~1u=1m.
+// Deterministic: all variation is driven by mulberry32(seed).
+
+import * as THREE from "three";
+import { defineObject } from "../system/registry";
+import { tintedBox, tintGeo, mergeTinted, tintedMesh } from "../objects/voxel";
+import { PALETTE } from "../palette";
+import { mulberry32 } from "../rng";
+
+// ─── Residential palettes ────────────────────────────────────────────────────
+const BODY_PALETTE = [0xf3d29a, 0xe6b89c, 0x9ac06a, 0x84b06a, 0xe9c46a, 0xc98ab0, 0xeaded0];
+const ROOF_PALETTE = [0xc0392b, 0x8a5230, 0x4f6b7a, 0x5a5a64, 0x7a5230];
+
+const WALL_PROUD = 0.06; // how far window frames sit proud of the wall
+
+// ─── Window grid ─────────────────────────────────────────────────────────────
+// Mirrors fillerBuilding's addWindows but always punched-masonry style and
+// optionally skips the centre column at ground level (for the front door gap).
+function addWindows(
+  parts: THREE.BufferGeometry[],
+  opts: {
+    axis: "+z" | "+x" | "-x";
+    spanW: number;
+    w: number; d: number;
+    yStart: number; yEnd: number; rows: number;
+    skipFrontCentreGround: boolean;
+  },
+): void {
+  const { axis, spanW, w, d, yStart, yEnd, rows } = opts;
+  const cols = Math.max(2, Math.round(spanW / 2.6));
+  const cellW = spanW / cols;
+  const winW = cellW * 0.58;
+  const rowH = (yEnd - yStart) / rows;
+  const winH = rowH * 0.60;
+  const onZ = axis === "+z";
+  const centreCol = Math.floor(cols / 2);
+
+  for (let r = 0; r < rows; r++) {
+    const cy = yStart + rowH * (r + 0.5);
+    for (let c = 0; c < cols; c++) {
+      // Skip centre-column ground row on the front face (leaves room for door).
+      if (opts.skipFrontCentreGround && r === 0 && c === centreCol) continue;
+
+      const off = -spanW / 2 + cellW * (c + 0.5);
+      const glass = (r + c) % 2 === 0 ? PALETTE.glass : PALETTE.glassDark;
+      const fw = winW + 0.12;
+      const fh = winH + 0.12;
+      const sy = cy - winH / 2 - 0.05; // sill just below the pane
+
+      if (onZ) {
+        const sign = axis === "+z" ? 1 : -1;
+        const zBase = sign * d / 2;
+        const zf = zBase + sign * WALL_PROUD;
+        const zg = zBase + sign * WALL_PROUD * 1.4;
+        const zm = zBase + sign * WALL_PROUD * 1.7;
+        parts.push(tintedBox(fw, fh, 0.05, off, cy, zf, PALETTE.winFrame));
+        parts.push(tintedBox(winW, winH, 0.05, off, cy, zg, glass));
+        parts.push(tintedBox(fw + 0.06, 0.08, 0.12, off, sy, zf, PALETTE.sillStone));
+        // Cross mullions (punched masonry style)
+        parts.push(tintedBox(0.06, winH, 0.05, off, cy, zm, PALETTE.winFrame));
+        parts.push(tintedBox(winW, 0.06, 0.05, off, cy, zm, PALETTE.winFrame));
+        parts.push(tintedBox(fw + 0.12, 0.1, 0.13, off, cy + winH / 2 + 0.12, zf, PALETTE.sillStone));
+      } else {
+        const sign = axis === "+x" ? 1 : -1;
+        const xBase = sign * w / 2;
+        const xf = xBase + sign * WALL_PROUD;
+        const xg = xBase + sign * WALL_PROUD * 1.4;
+        const xm = xBase + sign * WALL_PROUD * 1.7;
+        parts.push(tintedBox(0.05, fh, fw, xf, cy, off, PALETTE.winFrame));
+        parts.push(tintedBox(0.05, winH, winW, xg, cy, off, glass));
+        parts.push(tintedBox(0.12, 0.08, fw + 0.06, xf, sy, off, PALETTE.sillStone));
+        // Cross mullions
+        parts.push(tintedBox(0.05, winH, 0.06, xm, cy, off, PALETTE.winFrame));
+        parts.push(tintedBox(0.05, 0.06, winW, xm, cy, off, PALETTE.winFrame));
+        parts.push(tintedBox(0.13, 0.1, fw + 0.12, xf, cy + winH / 2 + 0.12, off, PALETTE.sillStone));
+      }
+    }
+  }
+}
+
+// ─── Object definition ───────────────────────────────────────────────────────
+interface HouseParams {
+  w: number;
+  d: number;
+  stories: number;
+  storyH: number;
+  bodyColor?: number;
+  roofColor?: number;
+  roofStyle?: "gable" | "hip";
+  garage: boolean;
+  porch: boolean;
+  seed: number;
+}
+
+defineObject("house", {
+  params: {
+    w: 8, d: 9, stories: 2, storyH: 2.7,
+    bodyColor: undefined, roofColor: undefined, roofStyle: undefined,
+    garage: false, porch: false, seed: 1,
+  } as HouseParams,
+
+  build(p: HouseParams) {
+    const { w, d, stories, storyH } = p;
+    const totalH = stories * storyH;
+    const rng = mulberry32(p.seed >>> 0);
+
+    // ── Seeded variation ───────────────────────────────────────────────────
+    const bodyColor  = p.bodyColor  ?? BODY_PALETTE[Math.floor(rng() * BODY_PALETTE.length)];
+    const roofColor  = p.roofColor  ?? ROOF_PALETTE[Math.floor(rng() * ROOF_PALETTE.length)];
+    const roofStyle  = p.roofStyle  ?? (rng() < 0.5 ? "gable" : "hip");
+    const chimneySide = rng() < 0.5 ? -1 : 1;
+    const garageSide  = rng() < 0.5 ? -1 : 1;
+
+    const parts: THREE.BufferGeometry[] = [];
+
+    // ── 1. Body + plinth ──────────────────────────────────────────────────
+    parts.push(tintedBox(w, totalH, d, 0, totalH / 2, 0, bodyColor));
+    parts.push(tintedBox(w + 0.1, 0.4, d + 0.1, 0, 0.2, 0, PALETTE.stoneBase));
+
+    // ── 2. Windows ────────────────────────────────────────────────────────
+    const winYStart = 0.6;
+    const winYEnd = totalH - 0.5;
+
+    // Front face (+z): skip centre-column at ground row for the door gap
+    addWindows(parts, {
+      axis: "+z", spanW: w, w, d,
+      yStart: winYStart, yEnd: winYEnd, rows: stories,
+      skipFrontCentreGround: true,
+    });
+    // Side faces
+    addWindows(parts, {
+      axis: "+x", spanW: d, w, d,
+      yStart: winYStart, yEnd: winYEnd, rows: stories,
+      skipFrontCentreGround: false,
+    });
+    addWindows(parts, {
+      axis: "-x", spanW: d, w, d,
+      yStart: winYStart, yEnd: winYEnd, rows: stories,
+      skipFrontCentreGround: false,
+    });
+
+    // ── 3. Front door (+z face) ───────────────────────────────────────────
+    const doorW = 1.1;
+    const doorH = 2.1;
+    const doorZ = d / 2 + 0.04;
+    parts.push(tintedBox(doorW, doorH, 0.12, 0, doorH / 2, doorZ, PALETTE.facadeDoor));
+    // Door frame (two side jambs + head)
+    const jamb = 0.1;
+    parts.push(tintedBox(jamb, doorH + 0.1, 0.08, -(doorW / 2 + jamb / 2), doorH / 2, doorZ, 0x33373d));
+    parts.push(tintedBox(jamb, doorH + 0.1, 0.08, (doorW / 2 + jamb / 2), doorH / 2, doorZ, 0x33373d));
+    parts.push(tintedBox(doorW + jamb * 2, 0.12, 0.08, 0, doorH + 0.06, doorZ, 0x33373d));
+    // Stoop slab
+    const stoopW = 1.6;
+    const stoopD = 0.6;
+    const stoopH = 0.15;
+    parts.push(tintedBox(stoopW, stoopH, stoopD, 0, stoopH / 2, d / 2 + stoopD / 2, PALETTE.curb));
+
+    // ── 4. Roof ──────────────────────────────────────────────────────────
+    const eaveOverhang = 0.3;
+    const ridgeApex = 1.6; // height of apex above totalH
+    const fasciaColor = 0xece7da;
+
+    // Fascia band around the eaves
+    parts.push(tintedBox(w + eaveOverhang * 2, 0.18, d + eaveOverhang * 2, 0, totalH + 0.09, 0, fasciaColor));
+
+    if (roofStyle === "gable") {
+      // Ridge runs along x-axis; two sloped slabs.
+      // Each slab: flat BoxGeometry rotated around X so it slopes up to the ridge.
+      // Width = w + overhangs, thickness = 0.2, length = half the depth + overhangs.
+      const halfSpan = d / 2 + eaveOverhang; // horizontal run from eave to ridge
+      const angle = Math.atan2(ridgeApex, halfSpan); // slope angle
+      // Slant length of the slab (hypotenuse)
+      const slantLen = Math.sqrt(halfSpan * halfSpan + ridgeApex * ridgeApex);
+      const slabThick = 0.22;
+      const slabW = w + eaveOverhang * 2;
+
+      // Back slope (faces -z, tilts forward/up)
+      {
+        const geoBack = new THREE.BoxGeometry(slabW, slabThick, slantLen);
+        geoBack.rotateX(-angle);
+        // Centre of the slab in 3D: midpoint along slope from back-eave to ridge
+        const cy = totalH + ridgeApex / 2;
+        const cz = -(halfSpan / 2);
+        geoBack.translate(0, cy, cz);
+        parts.push(tintGeo(geoBack, roofColor));
+      }
+      // Front slope (faces +z, tilts back/up)
+      {
+        const geoFront = new THREE.BoxGeometry(slabW, slabThick, slantLen);
+        geoFront.rotateX(angle);
+        const cy = totalH + ridgeApex / 2;
+        const cz = halfSpan / 2;
+        geoFront.translate(0, cy, cz);
+        parts.push(tintGeo(geoFront, roofColor));
+      }
+
+      // Gable end triangles (front and back): approximate with a thin wedge box
+      // sitting between the fascia top and the apex.
+      const gableH = ridgeApex + slabThick / 2;
+      const gableThick = 0.15;
+      // Front gable (+z end)
+      parts.push(tintedBox(w, gableH, gableThick, 0, totalH + gableH / 2, d / 2 + gableThick / 2, bodyColor));
+      // Back gable (-z end)
+      parts.push(tintedBox(w, gableH, gableThick, 0, totalH + gableH / 2, -d / 2 - gableThick / 2, bodyColor));
+
+    } else {
+      // Hip roof: 4-sided pyramid via cone (4 segments, rotated 45° so flat sides
+      // face ±x/±z, matching the footprint).
+      const rBottom = Math.max(w, d) * 0.72;
+      const hipH = ridgeApex + 0.8;
+      const hipCY = totalH + hipH / 2;
+      const hipGeo = new THREE.CylinderGeometry(0.05, rBottom, hipH, 4);
+      hipGeo.rotateY(Math.PI / 4); // align flat sides to axes
+      hipGeo.translate(0, hipCY, 0);
+      parts.push(tintGeo(hipGeo, roofColor));
+    }
+
+    // ── 5. Chimney ────────────────────────────────────────────────────────
+    const chimneyX = chimneySide * w * 0.3;
+    const chimneyZ = -d * 0.2;
+    const chimneyH = 1.2;
+    const chimneyBase = totalH + 1.0;
+    // Shaft
+    parts.push(tintedBox(0.6, chimneyH, 0.6, chimneyX, chimneyBase, chimneyZ, 0x8a5230));
+    // Cap
+    parts.push(tintedBox(0.72, 0.12, 0.72, chimneyX, chimneyBase + chimneyH + 0.06, chimneyZ, PALETTE.stoneBase));
+
+    // ── 6. Optional porch ─────────────────────────────────────────────────
+    if (p.porch) {
+      const postW = 0.12;
+      const postH = 2.2;
+      const porchDepth = 1.4;
+      const porchRoofW = w * 0.6;
+      const postCY = postH / 2;
+      const postZ = d / 2 + porchDepth - postW / 2;
+      const postOffX = w / 2 - 0.4;
+      parts.push(tintedBox(postW, postH, postW, -postOffX, postCY, postZ, 0x7a5230));
+      parts.push(tintedBox(postW, postH, postW, postOffX, postCY, postZ, 0x7a5230));
+      // Porch roof slab
+      const porchRoofThick = 0.15;
+      const porchRoofY = postH + porchRoofThick / 2;
+      const porchRoofZ = d / 2 + porchDepth / 2;
+      parts.push(tintedBox(porchRoofW, porchRoofThick, porchDepth, 0, porchRoofY, porchRoofZ, roofColor));
+    }
+
+    // ── 7. Optional garage ───────────────────────────────────────────────
+    const GARAGE_W = 3.2;
+    const GARAGE_D = Math.min(d, 6);
+    const gx = (w / 2 + GARAGE_W / 2) * garageSide;
+    // Keep garage front flush with house front (+d/2).
+    // Garage body centre z = d/2 - GARAGE_D/2.
+    const garageCZFlush = d / 2 - GARAGE_D / 2;
+
+    if (p.garage) {
+      const garageBodyCY = storyH / 2;
+      // Box body
+      parts.push(tintedBox(GARAGE_W, storyH, GARAGE_D, gx, garageBodyCY, garageCZFlush, bodyColor));
+
+      // Roll-up door on +z face: 5 horizontal slat boxes filling GARAGE_W × (storyH - 0.3)
+      const doorPanelH = (storyH - 0.3) / 5;
+      const doorPanelW = GARAGE_W - 0.1;
+      const doorFaceZ = garageCZFlush + GARAGE_D / 2 + 0.05;
+      for (let s = 0; s < 5; s++) {
+        const slat_cy = 0.15 + doorPanelH * (s + 0.5);
+        parts.push(tintedBox(doorPanelW, doorPanelH - 0.02, 0.05, gx, slat_cy, doorFaceZ, PALETTE.rollDoor));
+      }
+
+      // Flat garage roof slab
+      const garageRoofThick = 0.15;
+      parts.push(tintedBox(GARAGE_W + 0.1, garageRoofThick, GARAGE_D + 0.1, gx, storyH + garageRoofThick / 2, garageCZFlush, fasciaColor));
+    }
+
+    // ── 8. Merge into single mesh ─────────────────────────────────────────
+    const mesh = tintedMesh(mergeTinted(parts));
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    // ── 9. Facets ─────────────────────────────────────────────────────────
+    const colliders = [
+      { x: 0, y: totalH / 2, z: 0, hx: w / 2, hy: totalH / 2, hz: d / 2 },
+    ];
+    const obstacles = [
+      { x: 0, z: 0, w, d },
+    ];
+
+    if (p.garage) {
+      colliders.push({ x: gx, y: storyH / 2, z: garageCZFlush, hx: GARAGE_W / 2, hy: storyH / 2, hz: GARAGE_D / 2 });
+      obstacles.push({ x: gx, z: garageCZFlush, w: GARAGE_W, d: GARAGE_D });
+    }
+
+    return { mesh, colliders, obstacles };
+  },
+});
