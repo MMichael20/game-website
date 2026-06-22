@@ -15,19 +15,26 @@
 
 import type { MapDescriptor, Placement } from "./system/types";
 
-const GROUND = 300;
+const GROUND = 360;
+
+// Aircraft stand x-positions — 52 m pitch so the ~40 m-wingspan jets clear their
+// wingtips (the old 30 m pitch overlapped them, the "crammed" look).
+const STAND_X = [-78, -26, 26, 78];
+// Push the whole airside (gates -> bridges -> stands -> apron -> tower -> runway)
+// this far north of its old position, opening a deep apron clear of the terminal.
+const AIRSIDE_N = 18;
 
 // ── Landside spawn / portal anchors ─────────────────────────────────────────
-const SPAWN = { x: 0, z: -104 };
+const SPAWN = { x: 0, z: -134 };
 
 const map: Placement[] = [
   // ── Ground + big paved slabs ───────────────────────────────────────────────
   { kind: "ground", params: { size: GROUND } },
-  { kind: "pavement", x: 0, z: -70, params: { w: 280, d: 120 } },
+  { kind: "pavement", x: 0, z: -84, params: { w: 280, d: 168 } },
   { kind: "pavement", x: 0, z: 55, params: { w: 260, d: 150 } },
 
-  // ── LANDSIDE access road (clean wide flat road across +x, no borders) ──────
-  { kind: "airportRoad", x: 0, z: -122, rot: 0, params: { length: 250, width: 26, lanes: 6 } },
+  // ── LANDSIDE access road (pushed south to open a deep forecourt plaza) ─────
+  { kind: "airportRoad", x: 0, z: -150, rot: 0, params: { length: 250, width: 26, lanes: 6 } },
 
   // ── Drop-off curb canopy (full width, white, amber signage) ────────────────
   { kind: "curbCanopy", x: 0, z: -100, rot: 0, params: { w: 210, d: 14, label: "Departures" } },
@@ -50,9 +57,9 @@ const map: Placement[] = [
   { kind: "parkingLot", x: -150, z: -70, rot: 0, params: { w: 48, d: 56, seed: 0x9a11, fill: 0.55 } },
   { kind: "parkingLot", x: 150, z: -70, rot: 0, params: { w: 48, d: 56, seed: 0x9a12, fill: 0.5 } },
 
-  // Forecourt floodlights at the corners.
-  { kind: "floodlightMast", x: -125, z: -118, params: { h: 18 } },
-  { kind: "floodlightMast", x: 125, z: -118, params: { h: 18 } },
+  // Forecourt floodlights at the corners (by the relocated curb).
+  { kind: "floodlightMast", x: -125, z: -146, params: { h: 18 } },
+  { kind: "floodlightMast", x: 125, z: -146, params: { h: 18 } },
 
   // Curbside vehicles + luggage near the doors.
   { kind: "airportTaxi", x: -30, z: -110, rot: 90, params: { color: 0xf2c21e } },
@@ -67,7 +74,61 @@ const map: Placement[] = [
   { kind: "trashBin", x: -24, z: -94 },
   { kind: "infoDesk", x: 26, z: -94 },
 
-  // ── TERMINAL HALL (hero) — huge, wide, opaque facade ───────────────────────
+  // ── FORECOURT PLAZA (landscaped garden between the curb and the terminal) ──
+  // A formal voxel plaza matching the reference render: a tiered fountain
+  // centerpiece, hedge planter beds dotted with red/white flowers, palm allees,
+  // yellow-band bollard edging, nested luggage carts and lamps. A clear central
+  // walking corridor (|x| < 9) runs from the curb to the terminal doors.
+  { kind: "grandFountain", x: 0, z: -122, params: { r: 5, seed: 0x0a17 } },
+
+  // Clipped-hedge planter beds in a symmetric grid flanking the fountain.
+  ...[-1, 1].flatMap((s): Placement[] => [
+    { kind: "hedgeRow", x: s * 30, z: -130, params: { len: 12, h: 1.0, seed: 0xbed1 } },
+    { kind: "hedgeRow", x: s * 55, z: -130, params: { len: 12, h: 1.0, seed: 0xbed2 } },
+    { kind: "hedgeRow", x: s * 30, z: -114, params: { len: 12, h: 1.0, seed: 0xbed3 } },
+    { kind: "hedgeRow", x: s * 55, z: -114, params: { len: 12, h: 1.0, seed: 0xbed4 } },
+  ]),
+
+  // Red / white flower dots in front of the beds.
+  ...[-1, 1].flatMap((s): Placement[] => [
+    { kind: "flower", x: s * 24, z: -126, params: { color: "white", height: 0.38 } },
+    { kind: "flower", x: s * 30, z: -126, params: { color: "red", height: 0.40 } },
+    { kind: "flower", x: s * 36, z: -126, params: { color: "white", height: 0.38 } },
+    { kind: "flower", x: s * 49, z: -110, params: { color: "red", height: 0.38 } },
+    { kind: "flower", x: s * 55, z: -110, params: { color: "white", height: 0.40 } },
+    { kind: "flower", x: s * 61, z: -110, params: { color: "red", height: 0.38 } },
+  ]),
+
+  // Palm allees flanking the central walk and the plaza edges.
+  ...[-1, 1].flatMap((s): Placement[] => [
+    { kind: "palmTree", x: s * 12, z: -118, params: { h: 6 } },
+    { kind: "palmTree", x: s * 12, z: -130, params: { h: 6 } },
+    { kind: "palmTree", x: s * 70, z: -115, params: { h: 7 } },
+    { kind: "palmTree", x: s * 70, z: -132, params: { h: 7 } },
+  ]),
+
+  // Yellow-band bollards: a curb run flanking the entrance + central-walk edging.
+  { kind: "bollardRow", x: -38, z: -136, rot: 0, params: { len: 44, gap: 3, h: 1.0 } },
+  { kind: "bollardRow", x: 38, z: -136, rot: 0, params: { len: 44, gap: 3, h: 1.0 } },
+  ...[-1, 1].map((s): Placement => ({
+    kind: "bollardRow", x: s * 16, z: -122, rot: 90, params: { len: 28, gap: 3, h: 1.0 },
+  })),
+
+  // Nested luggage-cart trains near the canopy.
+  { kind: "baggageCartTrain", x: -62, z: -110, rot: 0, params: { carts: 5, seed: 0xca41 } },
+  { kind: "baggageCartTrain", x: 62, z: -110, rot: 0, params: { carts: 5, seed: 0xca42 } },
+
+  // Plaza lamps + inward-facing benches + entrance planters.
+  ...[-1, 1].flatMap((s): Placement[] => [
+    { kind: "lamp", x: s * 42, z: -122 },
+    { kind: "lamp", x: s * 66, z: -132 },
+  ]),
+  { kind: "bench", x: -20, z: -122, rot: 90 },
+  { kind: "bench", x: 20, z: -122, rot: 270 },
+  { kind: "pottedPlant", x: -12, z: -136, params: { h: 2.2 } },
+  { kind: "pottedPlant", x: 12, z: -136, params: { h: 2.2 } },
+
+  // ── TERMINAL HALL (hero) — huge, wide, see-through glass facade ────────────
   { kind: "terminalHall", x: 0, z: -60, rot: 180, params: { w: 220, d: 60, h: 20, rearGap: 24, roofRidge: 14, roofSteps: 7 } },
 
   // Big ceiling-hung amber departure boards inside, over the check-in.
@@ -130,43 +191,43 @@ const map: Placement[] = [
 
   // ── GATES ──────────────────────────────────────────────────────────────────
   ...[
-    { x: -45, gate: "B1", route: "TLV - LHR" },
-    { x: -15, gate: "B3", route: "TLV - JFK" },
-    { x: 15, gate: "B5", route: "TLV - CDG" },
-    { x: 45, gate: "B7", route: "TLV - DXB" },
-  ].map((g): Placement => ({
-    kind: "gateLounge", x: g.x, z: 16, rot: 0, params: { w: 18, d: 14, gate: g.gate, route: g.route },
+    { gate: "B1", route: "TLV - LHR" },
+    { gate: "B3", route: "TLV - JFK" },
+    { gate: "B5", route: "TLV - CDG" },
+    { gate: "B7", route: "TLV - DXB" },
+  ].map((g, i): Placement => ({
+    kind: "gateLounge", x: STAND_X[i], z: 16 + AIRSIDE_N, rot: 0, params: { w: 18, d: 14, gate: g.gate, route: g.route },
   })),
-  ...[-45, -15, 15, 45].map((x): Placement => ({ kind: "jetBridge", x: x + 6, z: 26, rot: 90, params: { len: 14 } })),
+  ...STAND_X.map((x): Placement => ({ kind: "jetBridge", x: x + 6, z: 26 + AIRSIDE_N, rot: 90, params: { len: 18 } })),
 
-  // ── AIRSIDE (apron) ─────────────────────────────────────────────────────────
-  ...[-45, -15, 15, 45].map((x): Placement => ({ kind: "apron", x, z: 58, rot: 0, params: { w: 36, d: 44, stand: "B" } })),
+  // ── AIRSIDE (apron) — roomy stands pushed north, jets spaced wingtip-clear ──
+  ...STAND_X.map((x): Placement => ({ kind: "apron", x, z: 58 + AIRSIDE_N, rot: 0, params: { w: 48, d: 44, stand: "B" } })),
   ...[
-    { x: -45, livery: 0xffffff, belly: 0x0038b8, tail: 0x0038b8, reg: "4X-EKA" },
-    { x: -15, livery: 0xffffff, belly: 0x0038b8, tail: 0x0038b8, reg: "4X-EKB" },
-    { x: 15, livery: 0xf2f2f2, belly: 0xb5402f, tail: 0xb5402f, reg: "4X-ABF" },
-    { x: 45, livery: 0xffffff, belly: 0x1f7a4d, tail: 0x1f7a4d, reg: "4X-ECC" },
-  ].map((a): Placement => ({
-    kind: "airliner", x: a.x, z: 64, rot: 90,
+    { livery: 0xffffff, belly: 0x0038b8, tail: 0x0038b8, reg: "4X-EKA" },
+    { livery: 0xffffff, belly: 0x0038b8, tail: 0x0038b8, reg: "4X-EKB" },
+    { livery: 0xf2f2f2, belly: 0xb5402f, tail: 0xb5402f, reg: "4X-ABF" },
+    { livery: 0xffffff, belly: 0x1f7a4d, tail: 0x1f7a4d, reg: "4X-ECC" },
+  ].map((a, i): Placement => ({
+    kind: "airliner", x: STAND_X[i], z: 64 + AIRSIDE_N, rot: 90,
     params: { livery: a.livery, belly: a.belly, tail: a.tail, reg: a.reg },
   })),
 
-  { kind: "apronVehicle", x: -52, z: 48, rot: 0, params: { variant: "tug" } },
-  { kind: "apronVehicle", x: -22, z: 48, rot: 0, params: { variant: "fuel" } },
-  { kind: "apronVehicle", x: 8, z: 48, rot: 0, params: { variant: "pushback" } },
-  { kind: "apronVehicle", x: 38, z: 48, rot: 0, params: { variant: "stairs" } },
-  { kind: "apronVehicle", x: -38, z: 80, rot: 180, params: { variant: "catering" } },
-  { kind: "apronVehicle", x: 22, z: 80, rot: 180, params: { variant: "tug" } },
-  { kind: "baggageCartTrain", x: -64, z: 50, rot: 0, params: { carts: 4, seed: 0xca31 } },
-  { kind: "baggageCartTrain", x: 64, z: 52, rot: 0, params: { carts: 5, seed: 0xca32 } },
-  { kind: "apronContainers", x: -115, z: 60, rot: 0, params: { w: 18, d: 14, seed: 0xc0a71 } },
+  { kind: "apronVehicle", x: -84, z: 48 + AIRSIDE_N, rot: 0, params: { variant: "tug" } },
+  { kind: "apronVehicle", x: -32, z: 48 + AIRSIDE_N, rot: 0, params: { variant: "fuel" } },
+  { kind: "apronVehicle", x: 20, z: 48 + AIRSIDE_N, rot: 0, params: { variant: "pushback" } },
+  { kind: "apronVehicle", x: 72, z: 48 + AIRSIDE_N, rot: 0, params: { variant: "stairs" } },
+  { kind: "apronVehicle", x: -52, z: 80 + AIRSIDE_N, rot: 180, params: { variant: "catering" } },
+  { kind: "apronVehicle", x: 46, z: 80 + AIRSIDE_N, rot: 180, params: { variant: "tug" } },
+  { kind: "baggageCartTrain", x: -108, z: 50 + AIRSIDE_N, rot: 0, params: { carts: 4, seed: 0xca31 } },
+  { kind: "baggageCartTrain", x: 108, z: 52 + AIRSIDE_N, rot: 0, params: { carts: 5, seed: 0xca32 } },
+  { kind: "apronContainers", x: -140, z: 60 + AIRSIDE_N, rot: 0, params: { w: 18, d: 14, seed: 0xc0a71 } },
 
-  { kind: "controlTower", x: 110, z: 40, rot: 0, params: { h: 42 } },
+  { kind: "controlTower", x: 130, z: 40 + AIRSIDE_N, rot: 0, params: { h: 42 } },
 
-  ...[-110, -55, 0, 55, 110].map((x): Placement => ({ kind: "floodlightMast", x, z: 100, params: { h: 20 } })),
+  ...[-140, -70, 0, 70, 140].map((x): Placement => ({ kind: "floodlightMast", x, z: 100 + AIRSIDE_N, params: { h: 20 } })),
 
-  { kind: "runway", x: 0, z: 92, rot: 0, params: { length: 260, taxiway: true } },
-  { kind: "runway", x: 0, z: 116, rot: 0, params: { length: 280, taxiway: false } },
+  { kind: "runway", x: 0, z: 92 + AIRSIDE_N, rot: 0, params: { length: 300, taxiway: true } },
+  { kind: "runway", x: 0, z: 116 + AIRSIDE_N, rot: 0, params: { length: 320, taxiway: false } },
 
   // ── SKY: cube clouds ────────────────────────────────────────────────────────
   { kind: "cubeCloud", x: -80, z: -70, params: { size: 9, alt: 50, seed: 0xc1d1 } },

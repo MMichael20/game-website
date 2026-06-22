@@ -5,16 +5,18 @@
 // ~1u = 1m. Fully deterministic — no Math.random / Date.now.
 //
 // Signature look (from the design references): a bold-blue GLAZED SAWTOOTH ROOF
-// that ridges high toward the rear and steps down to the entrance, an OPAQUE
-// dark-glass CURTAIN WALL across the front (you only discover the interior once
-// you walk in through the door gap), a clean RED/YELLOW/BLUE/GREEN block band
-// across the top fascia, and colored accent tiles on the columns.
+// that ridges high toward the rear and steps down to the entrance, a SEE-THROUGH
+// tinted-glass CURTAIN WALL across the front and sides (the lit interior reads
+// from the forecourt), a CLOSED roof (ceiling deck + clerestory infill seal the
+// building), a clean RED/YELLOW/BLUE/GREEN block band across the top fascia, and
+// colored accent tiles on the columns.
 
 import * as THREE from "three";
 import { defineObject } from "../../system/registry";
 import {
   tintedBox, mergeTinted, tintedMesh, DECAL_GAP,
 } from "../../objects/voxel";
+import { makeGlassPaneMaterial } from "../../objects/glass";
 import { makeTextSignMesh } from "../../objects/textSign";
 import { PALETTE } from "../../palette";
 import type { ObjectResult, Box } from "../../system/types";
@@ -33,8 +35,8 @@ function curtainWall(
   cx: number, z: number, panW: number, panH: number, faceSign: number,
 ): void {
   const t = 0.3;
-  // Dark glass field
-  parts.push(tintedBox(panW, panH, t, cx, panH / 2 + 0.4, z, DARK_GLASS));
+  // (The see-through glass field itself is added separately as a transparent
+  // pane mesh — see glassPane(); here we only lay the opaque mullion grid.)
   // Vertical mullions
   const nV = Math.max(2, Math.round(panW / 2.4));
   for (let i = 0; i <= nV; i++) {
@@ -61,12 +63,30 @@ const BEAM_COLOR    = 0xd8d5ce;
 const ROOF_FRAME    = 0xf2eee8;   // white roof mullion frame
 const ROOF_BLUE     = 0x2f63b0;   // bold blue glazed roof panel (OPAQUE)
 const ROOF_BLUE_DK  = 0x1f3a6b;   // deep blue riser between steps
-const DARK_GLASS    = 0x24506e;   // opaque curtain-wall glass
+const DARK_GLASS    = 0x24506e;   // opaque glass (kept for the door transom only)
 const MULLION       = 0xc6ccd2;   // curtain-wall frame
 const GLASS_REFLECT = 0x6f9fc4;   // reflection highlight cell
+const GLASS_TINT    = 0x3f7fb5;   // see-through curtain-wall glazing (blue)
+const GLASS_OPACITY = 0.5;        // tinted enough to read as glass, clear enough to see in
 const WALL_T        = 0.4;
 const COL_SIZE      = 0.9;
 const COL_BAY       = 9.0;
+
+// A single see-through glazing pane (its own transparent mesh — transparent
+// materials cannot be vertex-merged with the opaque structure). `axis` is the
+// wall the pane lies in: "z" faces ±z (front/back), "x" faces ±x (sides).
+function glassPane(
+  w: number, h: number, cx: number, cy: number, cz: number, axis: "z" | "x",
+): THREE.Mesh {
+  const geo = new THREE.PlaneGeometry(w, h);
+  const mat = makeGlassPaneMaterial({ w, h, tint: GLASS_TINT, opacity: GLASS_OPACITY });
+  const m = new THREE.Mesh(geo, mat);
+  if (axis === "x") m.rotation.y = Math.PI / 2;  // turn the pane to face ±x
+  m.position.set(cx, cy, cz);
+  m.castShadow = false;
+  m.receiveShadow = false;
+  return m;
+}
 
 const BLOCK_COLORS = [0xd23b2e, 0xf2c12e, 0x2b6fb5, 0x2e9e4f];
 const COL_ACCENTS  = [0x2b6fb5, 0xd23b2e, 0xf2c12e];
@@ -90,6 +110,7 @@ defineObject("terminalHall", {
 
     const parts: THREE.BufferGeometry[] = [];
     const colliders: Box[] = [];
+    const glassMeshes: THREE.Mesh[] = [];   // transparent panes (kept off the merge)
     const group = new THREE.Group();
 
     // ── Floor slab ─────────────────────────────────────────────────────────
@@ -132,7 +153,8 @@ defineObject("terminalHall", {
         const bayD = Math.abs(nextCX - cx) - COL_SIZE;
         for (const sgn of [-1, 1]) {
           const wallX = sgn * (hW - WALL_T / 2);
-          parts.push(tintedBox(WALL_T, h - 0.6, bayD, wallX, (h - 0.6) / 2 + 0.5, midZ, DARK_GLASS));
+          // See-through glazing pane in this side bay (transparent mesh)
+          glassMeshes.push(glassPane(bayD, h - 0.6, wallX, (h - 0.6) / 2 + 0.5, midZ, "x"));
           // mullions
           parts.push(tintedBox(WALL_T + 0.05, h - 0.6, 0.1, wallX, (h - 0.6) / 2 + 0.5, midZ - bayD / 2 + 0.05, MULLION));
         }
@@ -149,11 +171,12 @@ defineObject("terminalHall", {
     colliders.push(solidBox( hW - backSegW / 2, hH, -hD, backSegW, h, WALL_T));
     parts.push(tintedBox(rearGap, 1.0, WALL_T, 0, h - 0.5, -hD, COLUMN_COLOR));
 
-    // ── FRONT (+z): OPAQUE curtain wall + centered door gap ────────────────
+    // ── FRONT (+z): SEE-THROUGH curtain wall + centered door gap ───────────
     const frontSegW = (w - rearGap) / 2;
     for (const sgn of [-1, 1]) {
       const segCx = sgn * (rearGap / 2 + frontSegW / 2);
-      curtainWall(parts, segCx, hD, frontSegW, h - 0.5, 1);
+      curtainWall(parts, segCx, hD, frontSegW, h - 0.5, 1);   // opaque mullion grid
+      glassMeshes.push(glassPane(frontSegW, h - 0.5, segCx, (h - 0.5) / 2 + 0.4, hD, "z"));
       colliders.push(solidBox(segCx, hH, hD, frontSegW, h, WALL_T));
     }
     // Door reveal: dark recessed jambs + lintel around the open entrance gap.
@@ -189,12 +212,28 @@ defineObject("terminalHall", {
       parts.push(tintedBox(w, 0.5, 0.3, 0, beamY, -hD + (b * d) / nBeamsZ, BEAM_COLOR));
     }
 
+    // ── CLOSED CEILING DECK — caps the interior so no sky shows from inside ─
+    const WALL_TOP = h - 0.1;   // approx top of the side/front glazing
+    parts.push(tintedBox(w - 0.2, 0.3, d - 0.2, 0, h, 0, ROOF_FRAME));
+
     // ── BOLD-BLUE GLAZED SAWTOOTH ROOF (opaque) ────────────────────────────
     // Ridges high toward the rear (-z), steps down to the entrance (+z).
     const bandDepth = d / roofSteps;
     for (let i = 0; i < roofSteps; i++) {
       const zCenter = hD - (i + 0.5) * bandDepth;
       const topY = h + (roofRidge * (i + 1)) / roofSteps;
+      // Perimeter clerestory infill: seal the open band between the wall top and
+      // this roof step on both sides (and across the front for the lowest step),
+      // so the building reads fully closed from outside too.
+      const cH = topY - WALL_TOP;
+      if (cH > 0) {
+        for (const sgn of [-1, 1]) {
+          parts.push(tintedBox(WALL_T, cH, bandDepth, sgn * (hW - WALL_T / 2), WALL_TOP + cH / 2, zCenter, WALL_COLOR));
+        }
+        if (i === 0) {
+          parts.push(tintedBox(w, cH, WALL_T, 0, WALL_TOP + cH / 2, hD - WALL_T / 2, WALL_COLOR));
+        }
+      }
       // White frame slab
       parts.push(tintedBox(w + 0.8, 0.4, bandDepth + 0.1, 0, topY, zCenter, ROOF_FRAME));
       // Bold-blue glazed top panel
@@ -245,6 +284,9 @@ defineObject("terminalHall", {
     opaqueMesh.castShadow = true;
     opaqueMesh.receiveShadow = true;
     group.add(opaqueMesh);
+
+    // Transparent glazing panes (front + sides) — added after the opaque mesh.
+    for (const gm of glassMeshes) group.add(gm);
 
     return {
       mesh: group,

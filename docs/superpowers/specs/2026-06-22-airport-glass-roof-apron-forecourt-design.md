@@ -143,3 +143,12 @@ and the terminal front) to match the render. Paving (`pavement`) already covers 
 - Forecourt layout → **hand-composed placements in `airportMap.ts`** (not a new
   `airportPlaza` composite) — because it is a one-off bespoke forecourt; explicit
   placements are clearer here and the map is the manifest.
+- Airside northward shift scope → **also moved the gates + jet bridges +18 north**
+  (not only the aprons) — because the terminal opens almost onto the curbside;
+  translating the whole gate→bridge→stand chain together keeps it connected while
+  still pulling the jets clear of the building.
+- Plaza depth → **pushed the access road south (z −122 → −150) and the spawn to the
+  new plaza edge (z −104 → −134), widening the front pavement to cover it** — because
+  the terminal door sat ~3 m from the drop-off canopy with no room for a plaza; this
+  opens a ~30 m-deep landscaped forecourt the player crosses on approach. (City-merge
+  arrival is via the expressway, so moving the standalone-map spawn is low-risk.)

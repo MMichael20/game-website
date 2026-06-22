@@ -47,6 +47,7 @@ import "./airport/apronProps";
 import "./airport/cubeCloud";
 import "./airport/airportExtras";
 import "./airport/airportRoad";
+import "./airport/bollard";
 
 // Residential suburb props.
 import "./playerHouse";
