@@ -3,6 +3,12 @@
 Date: 2026-06-22
 Status: Approved (auto mode — self-brainstormed)
 
+> **Scale directive (user, 2026-06-22):** "Make it ALL way bigger. MORE details.
+> MORE MORE MORE." Targets below are amped accordingly: ~**70+ houses** on a
+> 3-avenue / 4-cross grid, a genuinely **huge** mansion, **30+** exterior detail
+> types, plus district amenities (pocket park, greenery, lamps everywhere). The only
+> ceiling is the gate: `npx tsc --noEmit` + `npx vite build` must stay green.
+
 ## Goal
 
 Grow the residential neighbourhood into a real district on the **opposite side of
