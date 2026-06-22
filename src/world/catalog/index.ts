@@ -49,6 +49,7 @@ import "./airport/airportExtras";
 import "./airport/airportRoad";
 
 // Residential suburb props.
+import "./playerHouse";
 import "./house";
 import "./fence";
 import "./parkedCar";
