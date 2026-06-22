@@ -37,7 +37,13 @@ function addWindows(
   const rowH = (yEnd - yStart) / rows;
   const winH = rowH * 0.60;
   const onZ = axis === "+z";
-  const centreCol = Math.floor(cols / 2);
+  // Find the column whose centre x is nearest to 0 (works for both odd and even cols).
+  let centreCol = 0;
+  let bestDist = Infinity;
+  for (let ci = 0; ci < cols; ci++) {
+    const cx = -spanW / 2 + cellW * (ci + 0.5);
+    if (Math.abs(cx) < bestDist) { bestDist = Math.abs(cx); centreCol = ci; }
+  }
 
   for (let r = 0; r < rows; r++) {
     const cy = yStart + rowH * (r + 0.5);
@@ -220,14 +226,17 @@ defineObject("house", {
     }
 
     // ── 5. Chimney ────────────────────────────────────────────────────────
+    // Shaft bottom is inside the roof (~0.3 below the eave), top is ~0.5 above the ridge.
     const chimneyX = chimneySide * w * 0.3;
     const chimneyZ = -d * 0.2;
-    const chimneyH = 1.2;
-    const chimneyBase = totalH + 1.0;
+    const chimneyBottom = totalH - 0.3;
+    const chimneyTop    = totalH + ridgeApex + 0.5;
+    const chimneyH      = chimneyTop - chimneyBottom;
+    const chimneyMidY   = chimneyBottom + chimneyH / 2;
     // Shaft
-    parts.push(tintedBox(0.6, chimneyH, 0.6, chimneyX, chimneyBase, chimneyZ, 0x8a5230));
+    parts.push(tintedBox(0.6, chimneyH, 0.6, chimneyX, chimneyMidY, chimneyZ, 0x8a5230));
     // Cap
-    parts.push(tintedBox(0.72, 0.12, 0.72, chimneyX, chimneyBase + chimneyH + 0.06, chimneyZ, PALETTE.stoneBase));
+    parts.push(tintedBox(0.72, 0.12, 0.72, chimneyX, chimneyTop + 0.06, chimneyZ, PALETTE.stoneBase));
 
     // ── 6. Optional porch ─────────────────────────────────────────────────
     if (p.porch) {
