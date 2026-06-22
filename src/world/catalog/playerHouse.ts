@@ -68,11 +68,13 @@ defineObject("playerHouse", {
 
     const PROUD = 0.06;      // window proudness off wall face
 
-    // Exterior body colors (seeded, subtle).
-    const BODY_CHOICES = [PALETTE.houseBody, 0xeaded0, 0xe6c79a, 0xe9c46a];
-    const ROOF_CHOICES = [PALETTE.houseRoof, 0x8a5230, 0x4f6b7a, 0x7a5230];
-    const bodyColor = BODY_CHOICES[Math.floor(rng() * BODY_CHOICES.length)];
-    const roofColor = ROOF_CHOICES[Math.floor(rng() * ROOF_CHOICES.length)];
+    // Hero villa uses a FIXED designed palette (no seeded body/roof color) so it
+    // reliably matches the concept art. `seed`/`rng` still drives incidental
+    // variation only (e.g. the front-yard bloom color start offset).
+    const bodyColor = PALETTE.villaStucco;   // main stucco walls
+    const roofColor = PALETTE.villaRoof;     // dark charcoal shed roof
+    const STONE = PALETTE.villaStone;        // stacked-stone veneer
+    const WOOD = PALETTE.villaWood;          // vertical wood-slat cladding
     const WALL_IN = 0xf0ede6;   // interior wall / floor color
     const TRIM = 0x33373d;      // dark window/door frame
 
@@ -154,17 +156,56 @@ defineObject("playerHouse", {
       // Door knob.
       parts.push(tintedBox(0.1, 0.1, 0.08, DOOR_W / 2 - 0.35, DOOR_H * 0.45, dzf + 0.06, 0xd9c089));
 
-      // Windows: both storeys, exterior faces. Derive rows from floor heights.
+      // ── FRONT material accents (stone base course + stone entry pillar + wood) ──
+      // Stacked-stone base course across the front ground floor.
+      parts.push(tintedBox(W, FLOOR_H * 0.5, 0.12, 0, FLOOR_H * 0.25, D / 2 + 0.06, STONE));
+      // Full-height stone entry pillar just LEFT of the door gap (concept's stone column).
+      const pillarW = 1.4;
+      const pillarCX = -(DOOR_W / 2 + pillarW / 2);
+      parts.push(tintedBox(pillarW, totalH, 0.5, pillarCX, totalH / 2, D / 2 + 0.1, STONE));
+
+      // Windows: derive rows from floor heights.
       const winW = 1.2, winH = 1.3;
       const row1Y = FLOOR_H * 0.55;
       const row2Y = FLOOR_H + FLOOR_H * 0.55;
-      // Front (+z): flank the door on the ground floor; full pair upstairs.
       const frontOff = DOOR_W / 2 + segW / 2;
+      // Front (+z): keep the LEFT-of-door windows (over the stone base). The right
+      // half of the front is the double-height glass bay + a wood-slat panel.
       addWindow(parts, "+z", -frontOff, row1Y, winW, winH, PALETTE.glass);
-      addWindow(parts, "+z", frontOff, row1Y, winW, winH, PALETTE.glassDark);
       addWindow(parts, "+z", -frontOff, row2Y, winW, winH, PALETTE.glassDark);
-      addWindow(parts, "+z", frontOff, row2Y, winW, winH, PALETTE.glass);
-      addWindow(parts, "+z", 0, row2Y, winW, winH, PALETTE.glass); // over the porch/balcony
+
+      // Right-front band x-extent (from the door edge to the right corner).
+      const rs = DOOR_W / 2;                 // inner edge of the right front segment
+      const re = W / 2;                       // outer edge
+      // DOUBLE-HEIGHT GLASS BAY (inner-right, beside the door): warm interior
+      // backing + dark mullion grid + glass, spanning both storeys.
+      const bayW = (re - rs) * 0.42;
+      const bayCX = rs + 0.2 + bayW / 2;
+      const bayH = totalH * 0.86, bayCY = bayH / 2 + 0.3;
+      const bayZ = D / 2;
+      parts.push(tintedBox(bayW + 0.2, bayH + 0.2, 0.06, bayCX, bayCY, bayZ + 0.04, PALETTE.shopGlow)); // lit interior
+      parts.push(tintedBox(bayW, bayH, 0.05, bayCX, bayCY, bayZ + 0.09, PALETTE.glassDark));            // glass
+      for (let m = 1; m < 4; m++) {
+        const mx = bayCX - bayW / 2 + bayW * m / 4;
+        parts.push(tintedBox(0.07, bayH, 0.05, mx, bayCY, bayZ + 0.12, PALETTE.winFrame));
+      }
+      for (let m = 1; m < 4; m++) {
+        const my = (bayCY - bayH / 2) + bayH * m / 4;
+        parts.push(tintedBox(bayW, 0.07, 0.05, bayCX, my, bayZ + 0.12, PALETTE.winFrame));
+      }
+      parts.push(tintedBox(bayW + 0.16, bayH + 0.16, 0.04, bayCX, bayCY, bayZ + 0.07, PALETTE.winFrame)); // outer frame
+      // VERTICAL WOOD-SLAT accent panel (outer-right of the bay), full-height battens.
+      const slatStart = bayCX + bayW / 2 + 0.3;
+      const slatEnd = re - 0.1;
+      const slatPanelW = slatEnd - slatStart;
+      const slatPanelCX = (slatStart + slatEnd) / 2;
+      const battenN = 7;
+      for (let b = 0; b < battenN; b++) {
+        const bx = slatStart + slatPanelW * (b + 0.5) / battenN;
+        parts.push(tintedBox(slatPanelW / battenN - 0.04, totalH * 0.9, 0.1, bx, totalH * 0.45, D / 2 + 0.08, WOOD));
+      }
+      // A modern dark-framed window on the outer-right upper storey (over the slats).
+      addWindow(parts, "+z", slatPanelCX, row2Y, winW * 1.3, winH, PALETTE.glassDark);
       // Right (+x) face: both storeys, two columns.
       for (const oz of [-D * 0.25, D * 0.25]) {
         addWindow(parts, "+x", oz, row1Y, winW, winH, PALETTE.glass);
@@ -180,16 +221,8 @@ defineObject("playerHouse", {
         addWindow(parts, "-x", oz, row2Y, winW, winH, PALETTE.glass);
       }
 
-      // Small upstairs balcony over the porch (+z), at the 2nd-floor level.
-      const balW = DOOR_W + 1.6, balD = 1.2;
-      const balY = FLOOR_H;
-      const balZ = D / 2 + balD / 2;
-      parts.push(tintedBox(balW, 0.15, balD, 0, balY + 0.075, balZ, PALETTE.deckPlankA));
-      // Balcony rail (front + two sides).
-      const railH = 0.5;
-      parts.push(tintedBox(balW, railH, 0.08, 0, balY + 0.15 + railH / 2, balZ + balD / 2, PALETTE.balconyRail));
-      parts.push(tintedBox(0.08, railH, balD, -balW / 2, balY + 0.15 + railH / 2, balZ, PALETTE.balconyRail));
-      parts.push(tintedBox(0.08, railH, balD, balW / 2, balY + 0.15 + railH / 2, balZ, PALETTE.balconyRail));
+      // (The old small porch balcony is gone — replaced by the upper terrace in
+      // makeTerrace(), built on the front-right at the 2nd-floor level.)
 
       // ── COLLIDERS (buildingShell style) ──
       const hh = totalH / 2;
@@ -754,7 +787,7 @@ defineObject("playerHouse", {
       const bedW = segW * 0.7;
       const bedD = 1.4;
       const bedZ = faceZ + bedD / 2 + 0.1;              // just in front of the façade
-      let bloomIdx = 0;
+      let bloomIdx = Math.floor(rng() * 6);             // seeded bloom-color start offset (incidental)
       for (const sx of [-1, 1]) {
         const bedCX = sx * (stoopW / 2 + bedW / 2 + 0.2);
         parts.push(tintedBox(bedW, 0.22, bedD, bedCX, 0.11, bedZ, SOIL));
