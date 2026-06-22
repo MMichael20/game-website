@@ -14,6 +14,7 @@ import "./kioskCart";
 import "./grandFountain";
 import "./plaza";
 import "./highway";
+import "./buildingRow";
 
 /** Call once at startup to guarantee the catalog modules have been evaluated. */
 export function registerCatalog(): void { /* imports above run the defineObject calls */ }
