@@ -142,3 +142,9 @@ the user looks in-game themselves.
 - Risk control → chose to leave landside/terminal/forecourt/concourse unchanged and
   expand only airside + grounds — to keep the change focused and low-regression.
 - Spawn/portal → chose to leave untouched — out of scope.
+- City `GROUND_SIZE` bump landed in `src/world/map.ts` while the user was
+  concurrently reworking that file (moving the suburb to a south district). Chose to
+  apply + verify my one-line bump in the working tree but NOT commit it — so the
+  user's in-progress rework is not swept into my commit. Flagged for the user to
+  commit alongside their own changes. (Updated 820→1500; the user's new south
+  district reaches z≈-330, so ±750 still covers both extremes.)
