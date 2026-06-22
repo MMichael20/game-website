@@ -48,6 +48,10 @@ import "./airport/cubeCloud";
 import "./airport/airportExtras";
 import "./airport/airportRoad";
 import "./airport/bollard";
+import "./airport/perimeterFence";
+import "./airport/hangar";
+import "./airport/windsock";
+import "./airport/concoursePier";
 
 // Residential suburb props.
 import "./playerHouse";
@@ -55,6 +59,7 @@ import "./house";
 import "./fence";
 import "./parkedCar";
 import "./mailbox";
+import "./driveway";
 
 /** Call once at startup to guarantee the catalog modules have been evaluated. */
 export function registerCatalog(): void { /* imports above run the defineObject calls */ }

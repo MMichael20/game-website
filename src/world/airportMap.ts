@@ -12,17 +12,53 @@
 // 2026-06-22: huge wide terminal with an OPAQUE facade (interior is discovered on
 // entry), a bold-blue glazed roof, a full-width white drop-off canopy, and a
 // multi-lane access road running right across the landside.
+//
+// 2026-06-22 (airfield expansion): the airside is now a full, much bigger airport.
+// All aircraft park OUTSIDE on marked stands: a WIDE 10-gate contact apron, a
+// SATELLITE concourse pier with its own ring of stands, a REMOTE apron (east), a
+// CARGO/maintenance ramp with hangars (west), a taxiway network and DUAL parallel
+// runways far north. A PERIMETER security fence rings the whole field — the only
+// airside access is through the terminal, so the airport reads as "closed".
 
 import type { MapDescriptor, Placement } from "./system/types";
 
-const GROUND = 360;
+// Big enough to hold the whole expanded airfield (landside road at z=-150 up to
+// the north perimeter fence at z=+392, and ±360 across).
+const GROUND = 820;
 
-// Aircraft stand x-positions — 52 m pitch so the ~40 m-wingspan jets clear their
-// wingtips (the old 30 m pitch overlapped them, the "crammed" look).
-const STAND_X = [-78, -26, 26, 78];
-// Push the whole airside (gates -> bridges -> stands -> apron -> tower -> runway)
-// this far north of its old position, opening a deep apron clear of the terminal.
-const AIRSIDE_N = 18;
+// ── AIRSIDE LAYOUT (a much bigger, realistic airfield) ───────────────────────
+// +z = airside / north. Every aircraft parks OUTSIDE on a marked stand; the whole
+// field is ringed by a security fence. Stand pitch clears the ~40 m wingspans.
+
+// MAIN CONTACT APRON — a wide east-west frontage of 10 gates/stands. Jets park
+// nose-in (rot 90 → nose points -z, toward the terminal). The z deltas reuse the
+// proven gate -> bridge -> apron -> jet spacing, just pushed further out.
+const FRONT_X = [-234, -182, -130, -78, -26, 26, 78, 130, 182, 234];
+const FRONT_GATE_Z   = 40;
+const FRONT_BRIDGE_Z = 50;
+const FRONT_APRON_Z  = 82;
+const FRONT_JET_Z    = 88;
+const FRONT_ROUTES = [
+  "TLV - LHR", "TLV - JFK", "TLV - CDG", "TLV - DXB", "TLV - BKK",
+  "TLV - FRA", "TLV - IST", "TLV - ATH", "TLV - LCA", "TLV - AMS",
+];
+
+// SATELLITE CONCOURSE — an island pier north of the main apron, contact stands on
+// both long sides (east jets nose-in west = rot 180, west jets nose-in east = rot 0).
+const SAT_Z = 175;
+const SAT_STAND_Z = [130, 175, 220];
+const SAT_JET_X = 38;
+
+// Varied flag-carrier liveries, cycled across the stands; plus a cargo freighter.
+const LIVERIES = [
+  { livery: 0xffffff, belly: 0x0038b8, tail: 0x0038b8, reg: "4X-EKA" },
+  { livery: 0xffffff, belly: 0x0038b8, tail: 0x0038b8, reg: "4X-EKB" },
+  { livery: 0xf2f2f2, belly: 0xb5402f, tail: 0xb5402f, reg: "4X-ABF" },
+  { livery: 0xffffff, belly: 0x1f7a4d, tail: 0x1f7a4d, reg: "4X-ECC" },
+  { livery: 0xeef2f6, belly: 0x33415c, tail: 0x33415c, reg: "4X-EDD" },
+  { livery: 0xffffff, belly: 0xe08a1e, tail: 0xe08a1e, reg: "4X-EFE" },
+];
+const FREIGHTER = { livery: 0xdfe3e7, belly: 0x555b63, tail: 0x8a1f1f, reg: "4X-EFX" };
 
 // ── Landside spawn / portal anchors ─────────────────────────────────────────
 const SPAWN = { x: 0, z: -134 };
@@ -189,55 +225,101 @@ const map: Placement[] = [
   { kind: "pottedPlant", x: -24, z: -2, params: { h: 2.4 } },
   { kind: "pottedPlant", x: 24, z: -2, params: { h: 2.4 } },
 
-  // ── GATES ──────────────────────────────────────────────────────────────────
-  ...[
-    { gate: "B1", route: "TLV - LHR" },
-    { gate: "B3", route: "TLV - JFK" },
-    { gate: "B5", route: "TLV - CDG" },
-    { gate: "B7", route: "TLV - DXB" },
-  ].map((g, i): Placement => ({
-    kind: "gateLounge", x: STAND_X[i], z: 16 + AIRSIDE_N, rot: 0, params: { w: 18, d: 14, gate: g.gate, route: g.route },
-  })),
-  ...STAND_X.map((x): Placement => ({ kind: "jetBridge", x: x + 6, z: 26 + AIRSIDE_N, rot: 90, params: { len: 18 } })),
+  // ════════════════════════════════════════════════════════════════════════════
+  // AIRSIDE — a full realistic airfield: a wide contact apron, a satellite
+  // concourse, remote + cargo aprons, a taxiway network, dual runways, all ringed
+  // by a perimeter security fence. Every aircraft parks OUTSIDE on a marked stand.
+  // ════════════════════════════════════════════════════════════════════════════
 
-  // ── AIRSIDE (apron) — roomy stands pushed north, jets spaced wingtip-clear ──
-  ...STAND_X.map((x): Placement => ({ kind: "apron", x, z: 58 + AIRSIDE_N, rot: 0, params: { w: 48, d: 44, stand: "B" } })),
-  ...[
-    { livery: 0xffffff, belly: 0x0038b8, tail: 0x0038b8, reg: "4X-EKA" },
-    { livery: 0xffffff, belly: 0x0038b8, tail: 0x0038b8, reg: "4X-EKB" },
-    { livery: 0xf2f2f2, belly: 0xb5402f, tail: 0xb5402f, reg: "4X-ABF" },
-    { livery: 0xffffff, belly: 0x1f7a4d, tail: 0x1f7a4d, reg: "4X-ECC" },
-  ].map((a, i): Placement => ({
-    kind: "airliner", x: STAND_X[i], z: 64 + AIRSIDE_N, rot: 90,
-    params: { livery: a.livery, belly: a.belly, tail: a.tail, reg: a.reg },
-  })),
+  // ── MAIN CONTACT APRON: 10 gates + jet bridges + marked stands + nose-in jets ─
+  ...FRONT_X.flatMap((x, i): Placement[] => [
+    { kind: "gateLounge", x, z: FRONT_GATE_Z, rot: 0,
+      params: { w: 18, d: 14, gate: `A${i + 1}`, route: FRONT_ROUTES[i] } },
+    { kind: "jetBridge", x: x + 6, z: FRONT_BRIDGE_Z, rot: 90, params: { len: 18 } },
+    { kind: "apron", x, z: FRONT_APRON_Z, rot: 0, params: { w: 48, d: 44, stand: `A${i + 1}` } },
+    { kind: "airliner", x, z: FRONT_JET_Z, rot: 90, params: LIVERIES[i % LIVERIES.length] },
+  ]),
+  // Apron service taxilane just north of the parked tails (east-west).
+  { kind: "runway", x: 0, z: 120, rot: 0, params: { length: 540, taxiway: true } },
 
-  { kind: "apronVehicle", x: -84, z: 48 + AIRSIDE_N, rot: 0, params: { variant: "tug" } },
-  { kind: "apronVehicle", x: -32, z: 48 + AIRSIDE_N, rot: 0, params: { variant: "fuel" } },
-  { kind: "apronVehicle", x: 20, z: 48 + AIRSIDE_N, rot: 0, params: { variant: "pushback" } },
-  { kind: "apronVehicle", x: 72, z: 48 + AIRSIDE_N, rot: 0, params: { variant: "stairs" } },
-  { kind: "apronVehicle", x: -52, z: 80 + AIRSIDE_N, rot: 180, params: { variant: "catering" } },
-  { kind: "apronVehicle", x: 46, z: 80 + AIRSIDE_N, rot: 180, params: { variant: "tug" } },
-  { kind: "baggageCartTrain", x: -108, z: 50 + AIRSIDE_N, rot: 0, params: { carts: 4, seed: 0xca31 } },
-  { kind: "baggageCartTrain", x: 108, z: 52 + AIRSIDE_N, rot: 0, params: { carts: 5, seed: 0xca32 } },
-  { kind: "apronContainers", x: -140, z: 60 + AIRSIDE_N, rot: 0, params: { w: 18, d: 14, seed: 0xc0a71 } },
+  // Ground service equipment scattered across the contact apron.
+  { kind: "apronVehicle", x: -208, z: 110, rot: 0, params: { variant: "tug" } },
+  { kind: "apronVehicle", x: -104, z: 110, rot: 0, params: { variant: "fuel" } },
+  { kind: "apronVehicle", x: 0, z: 110, rot: 0, params: { variant: "pushback" } },
+  { kind: "apronVehicle", x: 104, z: 110, rot: 0, params: { variant: "catering" } },
+  { kind: "apronVehicle", x: 208, z: 110, rot: 0, params: { variant: "stairs" } },
+  { kind: "baggageCartTrain", x: -156, z: 108, rot: 0, params: { carts: 5, seed: 0xca31 } },
+  { kind: "baggageCartTrain", x: 156, z: 108, rot: 0, params: { carts: 4, seed: 0xca32 } },
 
-  { kind: "controlTower", x: 130, z: 40 + AIRSIDE_N, rot: 0, params: { h: 42 } },
+  // ── SATELLITE CONCOURSE (island pier) + a ring of 6 contact stands ──────────
+  { kind: "concoursePier", x: 0, z: SAT_Z, rot: 0, params: { len: 120, w: 18, h: 9 } },
+  // East side stands (jets nose-in west, rot 180):
+  ...SAT_STAND_Z.flatMap((z, i): Placement[] => [
+    { kind: "apron", x: SAT_JET_X, z, rot: 0, params: { w: 48, d: 44, stand: `C${21 + i * 2}` } },
+    { kind: "airliner", x: SAT_JET_X, z, rot: 180, params: LIVERIES[(i + 2) % LIVERIES.length] },
+  ]),
+  // West side stands (jets nose-in east, rot 0):
+  ...SAT_STAND_Z.flatMap((z, i): Placement[] => [
+    { kind: "apron", x: -SAT_JET_X, z, rot: 0, params: { w: 48, d: 44, stand: `D${22 + i * 2}` } },
+    { kind: "airliner", x: -SAT_JET_X, z, rot: 0, params: LIVERIES[(i + 4) % LIVERIES.length] },
+  ]),
 
-  ...[-140, -70, 0, 70, 140].map((x): Placement => ({ kind: "floodlightMast", x, z: 100 + AIRSIDE_N, params: { h: 20 } })),
+  // ── TAXIWAY NETWORK linking the aprons to the runways ───────────────────────
+  { kind: "runway", x: -90, z: 185, rot: 90, params: { length: 150, taxiway: true } },
+  { kind: "runway", x:  90, z: 185, rot: 90, params: { length: 150, taxiway: true } },
+  { kind: "runway", x: 0, z: 255, rot: 0, params: { length: 600, taxiway: true } },
+  { kind: "runway", x: 0, z: 330, rot: 0, params: { length: 560, taxiway: true } },
 
-  { kind: "runway", x: 0, z: 92 + AIRSIDE_N, rot: 0, params: { length: 300, taxiway: true } },
-  { kind: "runway", x: 0, z: 116 + AIRSIDE_N, rot: 0, params: { length: 320, taxiway: false } },
+  // ── DUAL PARALLEL RUNWAYS (far north) ───────────────────────────────────────
+  { kind: "runway", x: 0, z: 300, rot: 0, params: { length: 520, taxiway: false } },
+  { kind: "runway", x: 0, z: 360, rot: 0, params: { length: 480, taxiway: false } },
 
-  // ── SKY: cube clouds ────────────────────────────────────────────────────────
-  { kind: "cubeCloud", x: -80, z: -70, params: { size: 9, alt: 50, seed: 0xc1d1 } },
-  { kind: "cubeCloud", x: -20, z: -120, params: { size: 8, alt: 56, seed: 0xc1d2 } },
-  { kind: "cubeCloud", x: 50, z: -100, params: { size: 10, alt: 52, seed: 0xc1d3 } },
-  { kind: "cubeCloud", x: 95, z: -30, params: { size: 7, alt: 58, seed: 0xc1d4 } },
-  { kind: "cubeCloud", x: -100, z: 20, params: { size: 9, alt: 54, seed: 0xc1d5 } },
-  { kind: "cubeCloud", x: 15, z: 35, params: { size: 8, alt: 60, seed: 0xc1d6 } },
-  { kind: "cubeCloud", x: 80, z: 95, params: { size: 10, alt: 50, seed: 0xc1d7 } },
-  { kind: "cubeCloud", x: -55, z: 115, params: { size: 8, alt: 55, seed: 0xc1d8 } },
+  // ── REMOTE STAND APRON (east) — stairs/bus boarding, no jet bridge ───────────
+  ...[40, 92, 144, 196].flatMap((z, i): Placement[] => [
+    { kind: "apron", x: 300, z, rot: 0, params: { w: 48, d: 46, stand: `R${i + 1}` } },
+    { kind: "airliner", x: 300, z, rot: 90, params: LIVERIES[(i + 1) % LIVERIES.length] },
+    { kind: "apronVehicle", x: 274, z, rot: 0, params: { variant: "stairs" } },
+  ]),
+  { kind: "baggageCartTrain", x: 262, z: 70, rot: 90, params: { carts: 5, seed: 0xca51 } },
+  { kind: "apronContainers", x: 262, z: 150, rot: 0, params: { w: 18, d: 14, seed: 0xc0a72 } },
+
+  // ── CARGO / MAINTENANCE (west) — hangars + freighters + containers ──────────
+  { kind: "hangar", x: -305, z: 70, rot: 90, params: { w: 80, d: 60, h: 28, name: "EL AL CARGO" } },
+  { kind: "hangar", x: -305, z: 165, rot: 90, params: { w: 80, d: 60, h: 26, name: "MAINTENANCE" } },
+  { kind: "apron", x: -245, z: 70, rot: 0, params: { w: 50, d: 46, stand: "F1" } },
+  { kind: "apron", x: -245, z: 165, rot: 0, params: { w: 50, d: 46, stand: "F2" } },
+  { kind: "airliner", x: -245, z: 70, rot: 180, params: FREIGHTER },
+  { kind: "airliner", x: -245, z: 165, rot: 180, params: { ...FREIGHTER, reg: "4X-EFY" } },
+  { kind: "apronContainers", x: -200, z: 110, rot: 0, params: { w: 20, d: 16, seed: 0xc0a73 } },
+  { kind: "apronVehicle", x: -208, z: 70, rot: 0, params: { variant: "tug" } },
+
+  // ── FIELD FURNITURE: control tower, floodlight masts, windsocks ─────────────
+  { kind: "controlTower", x: 170, z: 150, rot: 0, params: { h: 46 } },
+  ...[-260, -130, 0, 130, 260].flatMap((x): Placement[] => [
+    { kind: "floodlightMast", x, z: 116, params: { h: 22 } },
+    { kind: "floodlightMast", x, z: 240, params: { h: 22 } },
+  ]),
+  { kind: "windsock", x: -210, z: 285, params: { h: 9 } },
+  { kind: "windsock", x: 250, z: 330, params: { h: 9 } },
+
+  // ── PERIMETER SECURITY FENCE — rings the airfield ("closed" airport) ────────
+  // North run, the two side runs, and two south runs flanking the terminal (the
+  // terminal building itself closes the centre of the south boundary).
+  { kind: "perimeterFence", x: 0, z: 392, rot: 0, params: { length: 740, h: 3.2, gateGap: 0 } },
+  { kind: "perimeterFence", x: -360, z: 185, rot: 90, params: { length: 430, h: 3.2, gateGap: 0 } },
+  { kind: "perimeterFence", x: 360, z: 185, rot: 90, params: { length: 430, h: 3.2, gateGap: 0 } },
+  { kind: "perimeterFence", x: -235, z: -28, rot: 0, params: { length: 250, h: 3.2, gateGap: 0 } },
+  { kind: "perimeterFence", x: 235, z: -28, rot: 0, params: { length: 250, h: 3.2, gateGap: 0 } },
+
+  // ── SKY: cube clouds spread across the bigger field ─────────────────────────
+  { kind: "cubeCloud", x: -180, z: -60, params: { size: 10, alt: 54, seed: 0xc1d1 } },
+  { kind: "cubeCloud", x: 120, z: -90, params: { size: 9, alt: 58, seed: 0xc1d2 } },
+  { kind: "cubeCloud", x: -90, z: 90, params: { size: 11, alt: 56, seed: 0xc1d3 } },
+  { kind: "cubeCloud", x: 200, z: 60, params: { size: 9, alt: 60, seed: 0xc1d4 } },
+  { kind: "cubeCloud", x: -250, z: 200, params: { size: 10, alt: 54, seed: 0xc1d5 } },
+  { kind: "cubeCloud", x: 40, z: 240, params: { size: 9, alt: 62, seed: 0xc1d6 } },
+  { kind: "cubeCloud", x: 260, z: 320, params: { size: 11, alt: 52, seed: 0xc1d7 } },
+  { kind: "cubeCloud", x: -150, z: 350, params: { size: 9, alt: 58, seed: 0xc1d8 } },
 ];
 
 /** The airport placements translated by (ox, oz), with its own ground dropped so
