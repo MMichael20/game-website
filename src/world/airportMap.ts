@@ -26,8 +26,8 @@ const map: Placement[] = [
   { kind: "pavement", x: 0, z: -70, params: { w: 280, d: 120 } },
   { kind: "pavement", x: 0, z: 55, params: { w: 260, d: 150 } },
 
-  // ── LANDSIDE access road (multi-lane, runs across +x) ──────────────────────
-  { kind: "highway", x: 0, z: -122, rot: 0, params: { length: 300, lanes: 3, laneW: 3.6, medianW: 5, shoulderW: 1.4 } },
+  // ── LANDSIDE access road (clean wide flat road across +x, no borders) ──────
+  { kind: "airportRoad", x: 0, z: -122, rot: 0, params: { length: 250, width: 26, lanes: 6 } },
 
   // ── Drop-off curb canopy (full width, white, amber signage) ────────────────
   { kind: "curbCanopy", x: 0, z: -100, rot: 0, params: { w: 210, d: 14, label: "Departures" } },
@@ -46,8 +46,9 @@ const map: Placement[] = [
     { kind: "palmTree", x, z: -100, params: { h: 6 } },
     { kind: "palmTree", x, z: -60, params: { h: 6 } },
   ]),
-  { kind: "hedgeRow", x: -60, z: -112, rot: 0, params: { len: 70, h: 1.0, seed: 0x4101 } },
-  { kind: "hedgeRow", x: 60, z: -112, rot: 0, params: { len: 70, h: 1.0, seed: 0x4102 } },
+  // Parking lots flanking the drop-off (instead of green blocks).
+  { kind: "parkingLot", x: -150, z: -70, rot: 0, params: { w: 48, d: 56, seed: 0x9a11, fill: 0.55 } },
+  { kind: "parkingLot", x: 150, z: -70, rot: 0, params: { w: 48, d: 56, seed: 0x9a12, fill: 0.5 } },
 
   // Forecourt floodlights at the corners.
   { kind: "floodlightMast", x: -125, z: -118, params: { h: 18 } },

@@ -78,18 +78,17 @@ export const MAP: Placement[] = [
   { kind: "plaza", x: -16, z: 16, params: { w: 24, d: 22, seed: 5 } },
 
   // ── Airport approach: drive NORTH out of the city to Ben Gurion ──────────────
-  // The x=0 arterial continues north as a divided expressway from the city edge
-  // (z≈64) to the airport landside (drop-off road at z≈138). The full airport sits
+  // The x=0 arterial continues north as a clean wide road from the city edge
+  // (z≈64) to the airport landside (drop-off at z≈138). The full airport sits
   // beyond, its glass facade facing back toward the city — a seamless drive-in.
-  { kind: "highway", x: 0, z: 101, rot: 90, params: { length: 84, lanes: 2, laneW: 3.6, medianW: 4, shoulderW: 1.2 } },
+  { kind: "airportRoad", x: 0, z: 101, rot: 90, params: { length: 90, width: 22, lanes: 4 } },
   ...[72, 92, 112, 130].flatMap((z): Placement[] => [
-    { kind: "lamp", x: 13, z },
-    { kind: "lamp", x: -13, z },
+    { kind: "lamp", x: 14, z },
+    { kind: "lamp", x: -14, z },
   ]),
-  ...[80, 120].flatMap((z): Placement[] => [
-    { kind: "tree", x: 20, z },
-    { kind: "tree", x: -20, z },
-  ]),
+  // Parking lots flanking the approach (instead of bare green).
+  { kind: "parkingLot", x: -40, z: 108, rot: 0, params: { w: 40, d: 26, seed: 0x9a01, fill: 0.6 } },
+  { kind: "parkingLot", x: 40, z: 108, rot: 0, params: { w: 40, d: 26, seed: 0x9a02, fill: 0.5 } },
 
   // ── The merged airport, offset to the north (its landside faces the city) ────
   ...airportPlacements(0, 260),
