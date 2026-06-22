@@ -115,6 +115,11 @@ export const PALETTE = {
   villaDeck: 0xd7d2c6,      // pale terrace floor stone
   villaPergola: 0x6a3f20,   // pergola louver wood (a touch darker than villaWood)
   villaRail: 0x23262b,      // near-black thin metal terrace rail
+  glassDeep: 0x1b2733,      // dark interior reveal behind a transparent window pane
+  poolWater: 0x2aa6d8,      // bright glassy pool water (rendered translucent)
+  poolFloor: 0x8fe0f2,      // light pool-floor tile (shows through the water)
+  poolLane: 0x16455f,       // dark lane-line "stroke" on the pool floor
+  garageDoor: 0x3a3f45,     // dark charcoal sectional garage-door panel
 } as const;
 
 // Saturated building bodies for the hand-authored core buildings.

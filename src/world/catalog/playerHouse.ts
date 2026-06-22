@@ -39,6 +39,12 @@ defineObject("playerHouse", {
   build(p: PlayerHouseParams) {
     const rng = mulberry32((p.seed >>> 0) || 1);
 
+    // TRANSPARENT facets. The house body merges into ONE opaque mesh, but glass and
+    // pool water need real transparency, so sub-builders push those geometries here
+    // and assemble() turns each list into its own translucent mesh on the group.
+    const glassParts: THREE.BufferGeometry[] = [];   // window / curtain-wall panes
+    const waterParts: THREE.BufferGeometry[] = [];   // pool water
+
     // ── DIMENSIONS (declared once; everything derives from these) ────────────
     const W = 26;            // main block width (x)
     const D = 20;            // main block depth (z)
@@ -97,7 +103,10 @@ defineObject("playerHouse", {
         const zg = zb + sign * PROUD * 1.4;
         const zm = zb + sign * PROUD * 1.7;
         parts.push(tintedBox(fw, fh, 0.05, off, cy, zf, PALETTE.winFrame));
-        parts.push(tintedBox(ww, wh, 0.05, off, cy, zg, glassHex));
+        // Dark recessed reveal just inside the wall face — so the TRANSPARENT pane
+        // reads as a real window opening (interior depth) rather than glass on stucco.
+        parts.push(tintedBox(ww, wh, 0.04, off, cy, zb - sign * 0.04, PALETTE.glassDeep));
+        glassParts.push(tintedBox(ww, wh, 0.05, off, cy, zg, glassHex));   // see-through pane
         parts.push(tintedBox(fw + 0.06, 0.08, 0.12, off, sy, zf, PALETTE.sillStone));
         parts.push(tintedBox(0.06, wh, 0.05, off, cy, zm, PALETTE.winFrame));
         parts.push(tintedBox(ww, 0.06, 0.05, off, cy, zm, PALETTE.winFrame));
@@ -108,7 +117,8 @@ defineObject("playerHouse", {
         const xg = xb + sign * PROUD * 1.4;
         const xm = xb + sign * PROUD * 1.7;
         parts.push(tintedBox(0.05, fh, fw, xf, cy, off, PALETTE.winFrame));
-        parts.push(tintedBox(0.05, wh, ww, xg, cy, off, glassHex));
+        parts.push(tintedBox(0.04, wh, ww, xb - sign * 0.04, cy, off, PALETTE.glassDeep)); // reveal
+        glassParts.push(tintedBox(0.05, wh, ww, xg, cy, off, glassHex));   // see-through pane
         parts.push(tintedBox(0.12, 0.08, fw + 0.06, xf, sy, off, PALETTE.sillStone));
         parts.push(tintedBox(0.05, wh, 0.06, xm, cy, off, PALETTE.winFrame));
         parts.push(tintedBox(0.05, 0.06, ww, xm, cy, off, PALETTE.winFrame));
@@ -184,7 +194,7 @@ defineObject("playerHouse", {
       const bayH = totalH * 0.86, bayCY = bayH / 2 + 0.3;
       const bayZ = D / 2;
       parts.push(tintedBox(bayW + 0.2, bayH + 0.2, 0.06, bayCX, bayCY, bayZ + 0.04, PALETTE.shopGlow)); // lit interior
-      parts.push(tintedBox(bayW, bayH, 0.05, bayCX, bayCY, bayZ + 0.09, PALETTE.glassDark));            // glass
+      glassParts.push(tintedBox(bayW, bayH, 0.05, bayCX, bayCY, bayZ + 0.09, PALETTE.glassDark));       // see-through pane
       for (let m = 1; m < 4; m++) {
         const mx = bayCX - bayW / 2 + bayW * m / 4;
         parts.push(tintedBox(0.07, bayH, 0.05, mx, bayCY, bayZ + 0.12, PALETTE.winFrame));
@@ -300,9 +310,21 @@ defineObject("playerHouse", {
       const doorW = GAR_W - 0.5;
       for (let s = 0; s < slatCount; s++) {
         const cy = 0.2 + slatH * (s + 0.5);
-        // Top slat reads as a window band (glassDark); the rest are charcoal panels.
-        const col = s === slatCount - 1 ? PALETTE.glassDark : PALETTE.rollDoor;
-        parts.push(tintedBox(doorW, slatH - 0.04, 0.06, garCX, cy, doorFaceZ, col));
+        if (s === slatCount - 1) {
+          // Top row = a real glazed window band: dark reveal + TRANSPARENT panes,
+          // split into little lights by thin mullions.
+          parts.push(tintedBox(doorW, slatH - 0.06, 0.04, garCX, cy, doorFaceZ - 0.03, PALETTE.glassDeep));
+          glassParts.push(tintedBox(doorW, slatH - 0.08, 0.05, garCX, cy, doorFaceZ + 0.03, PALETTE.glass));
+          const lights = 5;
+          for (let m = 1; m < lights; m++) {
+            const mx = garCX - doorW / 2 + doorW * m / lights;
+            parts.push(tintedBox(0.05, slatH - 0.06, 0.07, mx, cy, doorFaceZ + 0.04, TRIM));
+          }
+        } else {
+          // Charcoal sectional panel + a thin groove line at its bottom edge.
+          parts.push(tintedBox(doorW, slatH - 0.05, 0.06, garCX, cy, doorFaceZ, PALETTE.garageDoor));
+          parts.push(tintedBox(doorW, 0.03, 0.07, garCX, cy - slatH / 2 + 0.02, doorFaceZ + 0.01, 0x23262b));
+        }
       }
       // Vertical wood-slat cladding on the surround (left + right returns of the door).
       const surroundW = (GAR_W - doorW) / 2;
@@ -690,18 +712,34 @@ defineObject("playerHouse", {
       colliders.push({ x: shedX, y: shedH / 2, z: shedZ, hx: shedW / 2, hy: shedH / 2, hz: shedD / 2 });
       obstacles.push({ x: shedX, z: shedZ, w: shedW, d: shedD });
 
-      // POOL (recessed water slab ringed by a curb coping rim) on the back yard.
-      const poolW = 3.4, poolD = 2.4;
-      const poolX = W * 0.2;
-      const poolZ = -D / 2 - patioD - 1.0;
-      const rim = 0.3;
-      // Coping rim (a frame of 4 curb bars around the water).
-      parts.push(tintedBox(poolW + rim * 2, 0.12, rim, poolX, 0.06, poolZ - poolD / 2 - rim / 2, PALETTE.curb));
-      parts.push(tintedBox(poolW + rim * 2, 0.12, rim, poolX, 0.06, poolZ + poolD / 2 + rim / 2, PALETTE.curb));
-      parts.push(tintedBox(rim, 0.12, poolD, poolX - poolW / 2 - rim / 2, 0.06, poolZ, PALETTE.curb));
-      parts.push(tintedBox(rim, 0.12, poolD, poolX + poolW / 2 + rim / 2, 0.06, poolZ, PALETTE.curb));
-      // Shallow water slab (slightly recessed look — thin, just above ground).
-      parts.push(tintedBox(poolW, 0.08, poolD, poolX, 0.04, poolZ, 0x3a8fb0));
+      // ── SWIMMING POOL — LARGE, in the side yard to the RIGHT (+x local) of the
+      // house. ~50x the old footprint. Light tile floor with dark lane-line
+      // "strokes"; the water is a TRANSPARENT blue slab built into waterParts so it
+      // renders as its own translucent mesh (see assemble()).
+      const poolW = 26, poolD = 16;                // 416 m² ≈ 51x the old 3.4×2.4 pool
+      const poolX = W / 2 + 2.5 + poolW / 2;        // out in the +x side yard
+      const poolZ = -1;                             // runs alongside the house depth
+      const rim = 0.6;                              // coping width
+      const apron = 1.8;                            // paved deck around the coping
+      // Paved deck apron under/around the pool.
+      parts.push(tintedBox(poolW + (rim + apron) * 2, 0.06, poolD + (rim + apron) * 2, poolX, 0.03, poolZ, PALETTE.entryPad));
+      // Light stone coping rim (frame of 4 bars on top of the apron).
+      const copingY = 0.18;
+      parts.push(tintedBox(poolW + rim * 2, copingY, rim, poolX, copingY / 2, poolZ - poolD / 2 - rim / 2, PALETTE.curb));
+      parts.push(tintedBox(poolW + rim * 2, copingY, rim, poolX, copingY / 2, poolZ + poolD / 2 + rim / 2, PALETTE.curb));
+      parts.push(tintedBox(rim, copingY, poolD, poolX - poolW / 2 - rim / 2, copingY / 2, poolZ, PALETTE.curb));
+      parts.push(tintedBox(rim, copingY, poolD, poolX + poolW / 2 + rim / 2, copingY / 2, poolZ, PALETTE.curb));
+      // Light tile pool floor (shows THROUGH the transparent water).
+      parts.push(tintedBox(poolW, 0.06, poolD, poolX, 0.05, poolZ, PALETTE.poolFloor));
+      // Dark lane-line "strokes" on the floor, running the long (x) axis.
+      const lanes = 7;
+      for (let l = 1; l < lanes; l++) {
+        const lz = poolZ - poolD / 2 + poolD * l / lanes;
+        parts.push(tintedBox(poolW - 0.8, 0.02, 0.2, poolX, 0.08, lz, PALETTE.poolLane));
+      }
+      // TRANSPARENT blue water slab (just below the coping top).
+      waterParts.push(tintedBox(poolW, 0.12, poolD, poolX, 0.12, poolZ, PALETTE.poolWater));
+      obstacles.push({ x: poolX, z: poolZ, w: poolW + rim * 2, d: poolD + rim * 2 });
 
       return { parts, colliders, obstacles };
     }
@@ -991,6 +1029,28 @@ defineObject("playerHouse", {
     merged.castShadow = true;
     merged.receiveShadow = true;
     group.add(merged);
+
+    // TRANSPARENT facets — their own translucent meshes, NOT merged into the opaque
+    // body. Glass (windows + curtain-wall bay + garage window band) is see-through;
+    // pool water is a translucent blue slab the floor/lane-lines show through.
+    if (glassParts.length) {
+      const glassMat = new THREE.MeshStandardMaterial({
+        vertexColors: true, transparent: true, opacity: 0.42, roughness: 0.08, metalness: 0.0,
+      });
+      const glassMesh = new THREE.Mesh(mergeTinted(glassParts), glassMat);
+      glassMesh.castShadow = false;
+      glassMesh.receiveShadow = false;
+      group.add(glassMesh);
+    }
+    if (waterParts.length) {
+      const waterMat = new THREE.MeshStandardMaterial({
+        vertexColors: true, transparent: true, opacity: 0.6, roughness: 0.12, metalness: 0.0,
+      });
+      const waterMesh = new THREE.Mesh(mergeTinted(waterParts), waterMat);
+      waterMesh.castShadow = false;
+      waterMesh.receiveShadow = true;
+      group.add(waterMesh);
+    }
 
     const colliders: Box[] = [
       ...(shell.colliders ?? []),
