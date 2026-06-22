@@ -133,6 +133,6 @@ export const AIRPORT: MapDescriptor = {
   hasCar: false,
   // Stand at the monument/curb and press E to fly back to the city.
   portals: [
-    { x: 0, z: -90, r: 6, prompt: "Press E to return to the city", to: "city", toSpawn: { x: 16, z: 12 } },
+    { x: 0, z: -90, r: 6, prompt: "Press E to return to the city", to: "city", toSpawn: { x: 24, z: 12 } },
   ],
 };

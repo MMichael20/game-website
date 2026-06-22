@@ -28,3 +28,16 @@ export function disposeAssets(): void {
 export function assetCounts(): { geometries: number; materials: number } {
   return { geometries: geometries.size, materials: materials.size };
 }
+
+// Snapshot of the resources the shared cache OWNS. A map-switch teardown
+// (World.unload) must not dispose these — they are reused across maps and by
+// other objects — so it disposes only the fresh, per-build resources NOT in here.
+export function cachedAssetSets(): {
+  geometries: Set<THREE.BufferGeometry>;
+  materials: Set<THREE.Material>;
+} {
+  return {
+    geometries: new Set(geometries.values()),
+    materials: new Set(materials.values()),
+  };
+}

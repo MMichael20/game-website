@@ -4,6 +4,7 @@ import { makeClouds } from "./clouds";
 import { registerCatalog } from "./catalog";
 import { buildWorld, type ResolvedPoi } from "./system/engine";
 import { MAPS } from "./maps";
+import { cachedAssetSets } from "./assets";
 import type { MapDescriptor, Portal, Vec2 } from "./system/types";
 
 // The world is now RELOADABLE: load() builds a manifest and tracks every mesh +
@@ -62,12 +63,17 @@ export class World {
   unload(): void {
     if (this.group) {
       this.scene.remove(this.group);
+      // Dispose ONLY the fresh per-build resources. Geometries/materials owned by
+      // the process-wide cache (assets.ts — shared glass/prop materials, reused
+      // across maps) must survive; disposing them would corrupt the cache and
+      // break rendering on the next load.
+      const cached = cachedAssetSets();
       this.group.traverse((obj) => {
         const m = obj as THREE.Mesh;
-        if (m.geometry) m.geometry.dispose();
+        if (m.geometry && !cached.geometries.has(m.geometry)) m.geometry.dispose();
         const mat = m.material as THREE.Material | THREE.Material[] | undefined;
-        if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
-        else if (mat) mat.dispose();
+        if (Array.isArray(mat)) mat.forEach((x) => { if (!cached.materials.has(x)) x.dispose(); });
+        else if (mat && !cached.materials.has(mat)) mat.dispose();
       });
       this.group = null;
     }
