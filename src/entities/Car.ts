@@ -61,6 +61,9 @@ export class Car implements Tickable {
 
   get position(): THREE.Vector3 { return this.object.position; }
 
+  // The Rapier body, so the follow camera can exclude it from its wall-cast.
+  get rigidBody(): RAPIER.RigidBody { return this.body; }
+
   get speed(): number {
     const v = this.body.linvel();
     return Math.hypot(v.x, v.z);

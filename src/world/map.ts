@@ -1,17 +1,22 @@
 import type { Placement, Vec2 } from "./system/types";
 import { lot, blockWalls } from "./layout";
 import { airportPlacements } from "./airportMap";
-import { suburbPlacements } from "./suburbMap";
+import { suburbPlacements, suburbAnchors } from "./suburbMap";
 
-// Large enough to hold the city core (origin) AND the merged airport to the north.
-export const GROUND_SIZE = 820;
-// Player spawns on the south sidewalk just east of the central junction (clear of
-// every block wall), in the dense core.
-export const PLAYER_SPAWN: Vec2 = { x: 6, z: 3.8 };
-// Car spawns in the RIGHT-HAND (eastbound) lane of the main-h road — south of the
-// centerline (z=+1.5), facing east (+x) so you pull away driving on the right.
-export const CAR_SPAWN: Vec2 = { x: 8, z: 1.5 };
-export const CAR_SPAWN_YAW = Math.PI / 2;           // local +z (forward) -> +x (east)
+// Large enough to hold the city core (origin), the EXPANDED airport to the north
+// (embedded at z≈+260, its airfield now reaching city z≈+655), AND the big south
+// district (z down to ≈-330). 1500 (=> ±750) covers both extremes.
+export const GROUND_SIZE = 1500;
+
+// The south residential district origin (opposite the northern airport).
+const SUBURB_OX = 0, SUBURB_OZ = -210;
+const HOME = suburbAnchors(SUBURB_OX, SUBURB_OZ);
+
+// The player now wakes up AT HOME — on the entry walk of the hero mansion in the
+// south district, with the drivable car parked on its driveway facing the avenue.
+export const PLAYER_SPAWN: Vec2 = HOME.spawn;
+export const CAR_SPAWN: Vec2 = HOME.carSpawn;
+export const CAR_SPAWN_YAW = HOME.carYaw;           // face south, out toward the avenue
 
 // ── Dense city: pack every grid cell ────────────────────────────────────────
 // A tight 4×4 block grid that fills the whole map. Roads at x,z ∈ {0, ±32, ±64};
@@ -94,22 +99,22 @@ export const MAP: Placement[] = [
   // ── The merged airport, offset to the north (its landside faces the city) ────
   ...airportPlacements(0, 260),
 
-  // ── West connector expressway: city west edge (x≈-64) → suburb (x≈-160) ──
-  // An airportRoad along x at z=0, bridging the gap. The city west road ends at
-  // x=-64; the suburb's east avenue end is at x≈-160. We centre this slab at
-  // x=-112 (half-way), length=96 so it spans x∈[-160,-64] — flush joins both.
-  { kind: "airportRoad", x: -112, z: 0, rot: 0,
-    params: { length: 96, width: 16, lanes: 2 } },
-  // Lamps along the connector (z=±10, every ~24 m).
-  { kind: "lamp", x: -80,  z:  10 },
-  { kind: "lamp", x: -80,  z: -10 },
-  { kind: "lamp", x: -112, z:  10 },
-  { kind: "lamp", x: -112, z: -10 },
-  { kind: "lamp", x: -144, z:  10 },
-  { kind: "lamp", x: -144, z: -10 },
+  // ── South connector expressway: city south edge (z≈-64) → district (z≈-114) ──
+  // An airportRoad along z (rot 90) at x=0, mirroring the northbound airport drive.
+  // The city south road ends at z=-64; the district's north avenue is at z=-114.
+  // Centre the slab at z=-89, length=52 so it spans z∈[-115,-63] — flush joins both.
+  { kind: "airportRoad", x: 0, z: -89, rot: 90,
+    params: { length: 52, width: 16, lanes: 2 } },
+  // Lamps along the connector (x=±10, every ~18 m).
+  { kind: "lamp", x: 10,  z: -71 },
+  { kind: "lamp", x: -10, z: -71 },
+  { kind: "lamp", x: 10,  z: -89 },
+  { kind: "lamp", x: -10, z: -89 },
+  { kind: "lamp", x: 10,  z: -107 },
+  { kind: "lamp", x: -10, z: -107 },
 
-  // ── West suburb: residential neighbourhood at x≈-205, z≈0 ─────────────────
-  ...suburbPlacements(-205, 0),
+  // ── South residential district: ~70 homes on a road grid (opposite the airport) ─
+  ...suburbPlacements(SUBURB_OX, SUBURB_OZ),
 
   // ── Every other cell: packed streetwall blocks ──────────────────────────────
   ...filledBlocks,

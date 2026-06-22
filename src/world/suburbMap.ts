@@ -1,253 +1,201 @@
 // src/world/suburbMap.ts
 //
-// West residential suburb — a small but believable neighbourhood west of the
-// city, reachable by driving west on the x=0 road and turning onto the
-// connector expressway.
+// SOUTH residential district — a big neighbourhood on the OPPOSITE side of town
+// from the airport (the airport is NORTH at z=+260; the homes are SOUTH). Reached
+// by driving south on the x=0 arterial onto the south connector expressway.
 //
 // LOCAL AXIS FACTS (confirmed):
-//   road / airportRoad both run along +X at rot 0.
-//   An E-W street → rot 0.  A N-S street → rot 90.
-//   house FRONT faces +z (local).  rot 180 → front faces world -z (south).
-//                                   rot   0 → front faces world +z (north).
+//   road / airportRoad run along +X at rot 0 (ROAD_W = 6 → half = 3).
+//   An E-W avenue → rot 0.  A N-S cross-street → rot 90.
+//   house / playerHouse FRONT faces +z (local).
+//     rot 180 → front faces world -z (south).   rot 0 → front faces world +z (north).
+//   driveway runs ALONG +z (length on z); rot 0 keeps it along z.
 //
-// ORIGIN: suburbPlacements(-205, 0).
-//   Avenue (E-W) runs along x at z = oz = 0.
-//   Two N-S cross-streets at x = ox-20 (-225) and x = ox+20 (-185).
-//   playerHouse centred at (ox-5, oz+18) = (-210, 18) with rot 180 (faces south).
-//
-// OVERLAP VERIFICATION (all in world coords, ox=-205, oz=0):
-//
-//   Avenue road     : z∈[-3,+3]          (ROAD_W=6, half=3)
-//   West cross      : x∈[-228,-222]       (centre -225, ROAD_W half=3)
-//   East cross      : x∈[-188,-182]       (centre -185, ROAD_W half=3)
-//
-//   playerHouse footprint (rot 180 applied):
-//     Main block  local x∈[-6,+6]  → world x∈[-216,-204]
-//     Garage wing local x∈[-12,-6] → world x∈[-204,-198]  (garage on right in world after flip)
-//     Combined x  : [-216, -198]
-//     z (front=-z): local z∈[-5.5,+5.5] → world z∈[12.5,23.5]
-//     → SOUTH FACE at world z=12.5.  Gap from avenue north edge (+3): 9.5 m ✓
-//     → WEST  FACE at world x=-216.  Gap from west-cross east edge (-222): 6 m ✓
-//     → EAST  FACE at world x=-198.  Gap from east-cross west edge (-188): 10 m ✓
-//
-//   Placeholder houses (w=8, d=9 default → halfX=4, halfZ=4.5):
-//     North side z=+14: south face at 14-4.5=9.5.  Gap from avenue +3: 6.5 m ✓
-//     South side z=-14: north face at -14+4.5=-9.5. Gap from avenue -3: 6.5 m ✓
-//     Cross-street side lots: set back 13 m from each cross.
-//     All house x-centres chosen so house x-extents don't enter road bands or hero lot.
-//
-//   House–house separation:
-//     Pitch along avenue = 16 m (halfX=4 each side → 8 m gap between footprints). ✓
-//     Hero lot vs nearest north-side house: hero x∈[-216,-198], next house at x=-165
-//     → clear gap of 33 m.  No overlap. ✓
+// LAYOUT (origin O = suburbPlacements(0, -210)):
+//   5 E-W avenues at z = oz + {+96,+48,0,-48,-96}  (spacing 48; len 264, x∈[ox-132,ox+132]).
+//   4 N-S cross streets at x = ox + {-99,-33,+33,+99}  (len 210, z∈[oz-105,oz+105]).
+//   Houses line BOTH sides of every avenue, set back 16 m, placed per street-segment
+//   (between consecutive crosses) so their footprints never enter a road band.
+//   Every house gets a `driveway` from its avenue up to its front.
+//   Hero playerHouse sits on the NORTH frontage of the north avenue, by the connector
+//   mouth — the first home you see arriving from the city.
+//   A pocket-park `plaza` occupies the central back-block.
 
-import type { Placement } from "./system/types";
+import type { Placement, Vec2 } from "./system/types";
 import { row } from "./layout/helpers";
 
-// ── Dimensions referenced during layout ─────────────────────────────────────
-// road half-width (ROAD_W = 6 in roads.ts → half = 3)
-const ROAD_HALF = 3;
-// Suburb avenue and cross-street parameters
-const AVENUE_LENGTH = 90;
-const CROSS_LENGTH  = 70;
+const HALF = 3;                       // road half-width (ROAD_W = 6)
+
+// ── Hero playerHouse footprint (MIRRORS catalog/playerHouse.ts dimension consts) ──
+// If those change, update here. Combined local footprint after the garage wing:
+//   main block x∈[-13,13], garage wing x∈[-24,-13]  → local x∈[-24,13], width 37
+//   depth z∈[-10,10]
+const HW = 26;                        // main block width  (playerHouse W)
+const HD = 20;                        // main block depth  (playerHouse D)
+const HGARW = 11;                     // garage wing width (playerHouse GAR_W)
+
+// Avenue/cross geometry — shared by the layout and the hero-anchor helper.
+const avenuesOf = (oz: number) => [oz + 96, oz + 48, oz, oz - 48, oz - 96];
+const AV_LEN = 264;                                  // x∈[ox-132, ox+132]
+const crossesOf = (ox: number) => [ox - 99, ox - 33, ox + 33, ox + 99];
+const CROSS_LEN = 210;                               // z∈[oz-105, oz+105]
+
+// All hero-lot geometry derived from the origin + footprint constants. Pure, so both
+// suburbPlacements() and map.ts compute identical values for the same origin.
+function heroLot(ox: number, oz: number) {
+  const avNorth = avenuesOf(oz)[0];          // oz + 96
+  const HERO_X = ox - 66;
+  const HERO_Z = avNorth + 22;               // north of the north avenue
+  const heroMainL = HERO_X - HW / 2;         // main-block west edge
+  const heroGarR = HERO_X + HW / 2 + HGARW;  // garage east edge (garage flips to +x at rot 180)
+  const heroFrontZ = HERO_Z - HD / 2;        // south face (toward avenue)
+  const heroBackZ = HERO_Z + HD / 2;         // north face
+  const garCenterX = HERO_X + HW / 2 + HGARW / 2;
+  const FX_LEFT = heroMainL - 1.5;
+  const FX_RIGHT = heroGarR + 1.5;
+  const FZ_FRONT = heroFrontZ - 1.5;         // south fence line
+  const FZ_BACK = heroBackZ + 1.5;           // north fence line
+  return { avNorth, HERO_X, HERO_Z, heroMainL, heroGarR, heroFrontZ, heroBackZ,
+    garCenterX, FX_LEFT, FX_RIGHT, FZ_FRONT, FZ_BACK };
+}
+
+/** World-space spawn + drivable-car anchors for the hero mansion at this origin. */
+export function suburbAnchors(ox: number, oz: number): {
+  spawn: Vec2; carSpawn: Vec2; carYaw: number;
+} {
+  const h = heroLot(ox, oz);
+  return {
+    spawn: { x: h.HERO_X, z: h.FZ_FRONT - 3.5 },        // on the entry walk, outside the gate
+    carSpawn: { x: h.garCenterX, z: h.FZ_FRONT - 3.5 }, // on the driveway
+    carYaw: Math.PI,                                    // face south, out toward the avenue
+  };
+}
 
 export function suburbPlacements(ox: number, oz: number): Placement[] {
   const out: Placement[] = [];
+  const AVENUES = avenuesOf(oz);                        // N→S, world z
+  const CROSSES = crossesOf(ox);                        // N-S streets, world x
 
-  // ── 1. ROADS ───────────────────────────────────────────────────────────────
-
-  // Main avenue: E-W, runs along x, centred at (ox, oz).
-  out.push({ kind: "road", x: ox, z: oz, rot: 0, params: { length: AVENUE_LENGTH } });
-
-  // Two N-S cross-streets: rot 90 so they run along z.
-  const CROSS_W = ox - 20;   // world x = -225
-  const CROSS_E = ox + 20;   // world x = -185
-  out.push({ kind: "road", x: CROSS_W, z: oz, rot: 90, params: { length: CROSS_LENGTH } });
-  out.push({ kind: "road", x: CROSS_E, z: oz, rot: 90, params: { length: CROSS_LENGTH } });
-
-  // ── 2. STREET LAMPS along the avenue ──────────────────────────────────────
-  // Lamps both sides of the avenue (z = ±(ROAD_HALF+3) = ±6),
-  // spaced every 16 m along x starting at ox-40, 6 lamps each side.
-  const LAMP_Z_OFF = ROAD_HALF + 3;   // = 6
-  const LAMP_START_X = ox - 40;
-  const LAMP_COUNT  = 6;
-  const LAMP_GAP    = 16;
-  out.push(...row("lamp", { x: LAMP_START_X, z: oz + LAMP_Z_OFF, count: LAMP_COUNT, gap: LAMP_GAP, axis: "x" }));
-  out.push(...row("lamp", { x: LAMP_START_X, z: oz - LAMP_Z_OFF, count: LAMP_COUNT, gap: LAMP_GAP, axis: "x" }));
-
-  // ── 3. HERO LOT — playerHouse + yard ──────────────────────────────────────
-  //
-  // PLACEMENT: centre (-210, 18), rot 180 (front faces south toward avenue).
-  //
-  // With rot 180:
-  //   local +z (front) → world -z: front door at world z = 18-5.5 = 12.5
-  //   local -x (garage) → world +x: garage spans world x∈[-204,-198]
-  //   Overall world footprint: x∈[-216,-198], z∈[12.5,23.5]
-  //
-  // Fence perimeter (derive from footprint; add 1.5 m margin all around):
-  //   Fence lot: x∈[-217.5,-196.5], z∈[11,25]
-  //   Width along x: 21 m  (fence runs along x → rot 0 for E-W segments)
-  //   Width along z: 14 m  (fence runs along z → rot 90 for N-S segments)
-  //   Fence centres: front z=11, back z=25, left x=-217.5, right x=-196.5
-  //
-  //   playerHouse driveway anchor (local): x=garCX=-9, z=D/2+4=9.5
-  //   With rot 180: world x=-210-(-9)=-201, world z=18-9.5=8.5
-  //   Driveway is at world (-201, 8.5) — just outside the south fence.
-
-  const HERO_X = ox - 5;    // -210
-  const HERO_Z = oz + 18;   // +18
-
-  out.push({ kind: "playerHouse", x: HERO_X, z: HERO_Z, rot: 180, params: { seed: 42 } });
-
-  // Fence perimeter — derived from hero footprint + 1.5 m margin.
-  // Footprint world: x∈[-216,-198], z∈[12.5,23.5]
-  // Fence lot:       x∈[-217.5,-196.5], z∈[11,25]
-  const FX_LEFT  = HERO_X - 12 - 1.5;  // -217.5  (leftmost edge)
-  const FX_RIGHT = HERO_X +  6 + 1.5;  // -198.5  (rightmost edge — garage side)
-  const FZ_FRONT = HERO_Z - 5.5 - 1.5; // 11      (south front fence)
-  const FZ_BACK  = HERO_Z + 5.5 + 1.5; // 25      (north back fence)
-
-  const FENCE_EW_LEN = FX_RIGHT - FX_LEFT;  // ~19 m — E-W segments (run along x, rot 0)
-  const FENCE_NS_LEN = FZ_BACK  - FZ_FRONT; // ~14 m — N-S segments (run along z, rot 90)
-
-  const FENCE_MID_X = (FX_LEFT + FX_RIGHT) / 2;
-  const FENCE_MID_Z = (FZ_FRONT + FZ_BACK)  / 2;
-
-  // Front fence (south, z=FZ_FRONT): has a gate for the entry path.
-  out.push({ kind: "fence", x: FENCE_MID_X, z: FZ_FRONT, rot: 0,
-    params: { length: FENCE_EW_LEN, gate: true, color: 0xece7da } });
-  // Back fence (north, z=FZ_BACK): solid.
-  out.push({ kind: "fence", x: FENCE_MID_X, z: FZ_BACK, rot: 0,
-    params: { length: FENCE_EW_LEN, gate: false, color: 0xece7da } });
-  // Left fence (west, x=FX_LEFT): N-S segment, rot 90 (runs along z).
-  out.push({ kind: "fence", x: FX_LEFT, z: FENCE_MID_Z, rot: 90,
-    params: { length: FENCE_NS_LEN, gate: false, color: 0xece7da } });
-  // Right fence (east, x=FX_RIGHT): N-S segment, rot 90.
-  out.push({ kind: "fence", x: FX_RIGHT, z: FENCE_MID_Z, rot: 90,
-    params: { length: FENCE_NS_LEN, gate: false, color: 0xece7da } });
-
-  // Parked car on the driveway.
-  // Driveway anchor (local): garCX=-9, z=D/2+4=9.5.  After rot 180: world (-201, 8.5).
-  // Park the car pointing E-W (rot 0 → car long axis along x).
-  out.push({ kind: "parkedCar", x: HERO_X + 9, z: HERO_Z - 9.5, rot: 0,
-    params: { color: 0x3a6ea5 } });
-
-  // Mailbox at the front curb (just outside the front fence, near the gate).
-  out.push({ kind: "mailbox", x: FENCE_MID_X - 2, z: FZ_FRONT - 1.5 });
-
-  // Two trees in the yard (inside fence, derive from fence corners).
-  out.push({ kind: "tree", x: FX_LEFT  + 3, z: FZ_BACK  - 3 });
-  out.push({ kind: "tree", x: FX_RIGHT - 3, z: FZ_BACK  - 3 });
-
-  // Two planters near the front fence inside the yard.
-  out.push({ kind: "planter", x: FENCE_MID_X - 3, z: FZ_FRONT + 2 });
-  out.push({ kind: "planter", x: FENCE_MID_X + 3, z: FZ_FRONT + 2 });
-
-  // ── 4. PLACEHOLDER HOUSES ──────────────────────────────────────────────────
-  //
-  // Strategy:
-  //   North side of avenue: z=+14, rot 180 (front faces south). d=9→ z∈[9.5,18.5].
-  //   South side of avenue: z=-14, rot   0 (front faces north). d=9→ z∈[-18.5,-9.5].
-  //   Along-x pitch: 16 m (house w≈8-10, gap ≥6 m).
-  //
-  //   Positions must clear:
-  //     West cross road band:  x∈[-228,-222] → keep house x-extents outside.
-  //     East cross road band:  x∈[-188,-182] → keep house x-extents outside.
-  //     Hero lot world x∈[-216,-198], z∈[12.5,23.5] → north-side houses clear.
-  //
-  //   Chosen x-centres (house halfX=4.5 for w=9, halfX=4 for w=8):
-  //     West group  (x<-230):  -244  (-248.5→-239.5: clear of west road band) ✓
-  //     Middle group avoids hero lot x∈[-216,-198].
-  //     East group  (x>-180):  -165, -149  (-169→-161, -153→-145: east of east road band) ✓
-  //
-  //   North-side middle-group: hero z∈[12.5,23.5] overlaps north-side z∈[9.5,18.5]
-  //     so skip any x∈[-216,-198] on the north side.  Use -232 (just west of west-road
-  //     east edge -222: -232+4.5=-227.5 < -222? No: -227.5 < -222 means it IS inside
-  //     the road band gap.  Let's check: -232+4.5=-227.5, road band x∈[-228,-222],
-  //     -227.5 < -222 → house east edge at -227.5 → still in road band [-228,-222]!
-  //     Need east edge > -222 → centre > -222+4.5 = -217.5.
-  //     But also centre < -216-1 (gap from hero west edge) → centre < -217.
-  //     No valid position fits between west road and hero lot. Skip north-middle.
-  //
-  //   South side middle-group: south-side z∈[-18.5,-9.5]; hero z∈[12.5,23.5] → no z overlap.
-  //     Can place south-side houses in x∈[-220,-200] freely (no hero conflict in z).
-  //     Must clear road bands: west x∈[-228,-222] and east x∈[-188,-182].
-  //     x=-210 (i=4, w=9): ±4.5 → [-214.5,-205.5] — clear of both road bands ✓
-  //     x=-196 (i=5, w=10): ±5   → [-201,-191] — east edge -191 vs road west edge -188: gap 3 m ✓
-  //     x=-232 would give x∈[-236.5,-227.5] → overlaps west road band [-228,-222]. SKIP.
-
-  // House variation helper (all deterministic from index i).
-  // i=0..11; seed=300+i*7; alternating garage/porch.
-  // w cycles 8,9,10,8,9,10...; d cycles 9,10,11,9,10,11...
-  type HouseSlot = { x: number; z: number; rot: 0 | 90 | 180 | 270; i: number };
-  const slots: HouseSlot[] = [
-    // ── North side (rot 180, face south) ──────────────────────────────
-    // West group
-    { x: ox - 39, z: oz + 14, rot: 180, i: 0  },  // x=-244
-    // skip ox-20±range (west-road band, and hero lot gap has no valid slot)
-    // East group
-    { x: ox + 40, z: oz + 14, rot: 180, i: 1  },  // x=-165
-    { x: ox + 56, z: oz + 18, rot: 180, i: 2  },  // x=-149, z=18 (south face 12.5, 4.5m clear of connector +8)
-
-    // ── South side (rot 0, face north) ────────────────────────────────
-    // West of west cross (only one slot — no room for a second without road overlap)
-    { x: ox - 39, z: oz - 14, rot: 0, i: 3  },  // x=-244  x∈[-248,-240]: clear ✓
-    // Between crosses (middle) — clear of hero lot in z (south side z<-9)
-    { x: ox - 5,  z: oz - 14, rot: 0, i: 4  },  // x=-210  x∈[-214,-206]: clear ✓
-    { x: ox + 9,  z: oz - 14, rot: 0, i: 5  },  // x=-196 (east edge -191, 3m clear of east cross west edge -188)
-    // East of east cross
-    { x: ox + 40, z: oz - 14, rot: 0, i: 6  },  // x=-165  x∈[-170,-160]: clear ✓
-    { x: ox + 56, z: oz - 18, rot: 0, i: 7  },  // x=-149, z=-18 (north face -13, 5m clear of connector -8)
-
-    // ── Along west cross-street (x=-225), side lots ───────────────────
-    // Lots on the NORTH arm of west cross, set back 13 m west of cross (x=-225-13=-238).
-    // These houses face EAST (rot 270 → front faces local -x which is world +x after rot 270 → east).
-    // Actually: rot 270 means local +z → world +x. So front faces +x (east). But
-    // cross-street is at x=-225 (world), houses are west of it, should face east (rot 270).
-    { x: ox - 33, z: oz + 25, rot: 270, i: 8  },  // x=-238, z=25 (east edge -232.5, 4.5m clear of cross west edge -228)
-    { x: ox - 33, z: oz - 25, rot: 270, i: 9  },  // x=-238, z=-25 (east edge -232.5, 4.5m clear of cross west edge -228)
-
-    // Lot on EAST arm of east cross, faces west (rot 90 → front faces -x, west).
-    { x: ox + 30, z: oz + 25, rot: 90, i: 10 },   // x=-175, z=25
-  ];
-
-  for (const s of slots) {
-    const i = s.i;
-    const wsz = 8 + (i % 3);             // cycles 8,9,10
-    const wsd = 9 + (i % 3);             // cycles 9,10,11
-    const hasGarage = (i % 4) < 2;       // true for i=0,1,4,5,8,9
-    const hasPorch  = !hasGarage && (i % 2 === 0);
-    out.push({
-      kind: "house",
-      x: s.x,
-      z: s.z,
-      rot: s.rot,
-      params: {
-        w: wsz,
-        d: wsd,
-        stories: 2,
-        storyH: 2.7,
-        garage: hasGarage,
-        porch: hasPorch,
-        seed: 300 + i * 7,
-      },
-    });
+  // ── 1. ROADS — the grid that connects every house ──────────────────────────
+  for (const z of AVENUES) {
+    out.push({ kind: "road", x: ox, z, rot: 0, params: { length: AV_LEN } });
+  }
+  for (const x of CROSSES) {
+    out.push({ kind: "road", x, z: oz, rot: 90, params: { length: CROSS_LEN } });
   }
 
-  // ── 5. SCATTERED TREES for greenery ──────────────────────────────────────
-  // A few trees between lots and along the perimeter.
-  // All chosen to be outside road bands and house footprints.
-  out.push({ kind: "tree", x: ox - 50, z: oz + 8  });   // far west, north sidewalk
-  out.push({ kind: "tree", x: ox - 50, z: oz - 8  });   // far west, south sidewalk
-  out.push({ kind: "tree", x: ox + 65, z: oz + 8  });   // far east, north sidewalk
-  out.push({ kind: "tree", x: ox + 65, z: oz - 8  });   // far east, south sidewalk
-  out.push({ kind: "tree", x: ox - 35, z: oz + 22 });   // north of avenue, between lots
-  out.push({ kind: "tree", x: ox + 35, z: oz + 22 });
-  out.push({ kind: "tree", x: ox - 35, z: oz - 22 });
-  out.push({ kind: "tree", x: ox + 35, z: oz - 22 });
-  out.push({ kind: "tree", x: ox,      z: oz + 30 });   // north end of middle gap
-  out.push({ kind: "tree", x: ox - 30, z: oz + 32 });   // perimeter north-west
-  out.push({ kind: "tree", x: ox + 30, z: oz + 32 });   // perimeter north-east
+  // ── 2. HERO LOT — the big mansion + yard, on the north avenue frontage ──────
+  const h = heroLot(ox, oz);
+  out.push({ kind: "playerHouse", x: h.HERO_X, z: h.HERO_Z, rot: 180, params: { seed: 42 } });
+
+  const mainFrontRight = h.HERO_X + HW / 2;            // main block east edge (garage starts here)
+  const frontSegLen = mainFrontRight - h.FX_LEFT;
+  const frontSegMidX = (h.FX_LEFT + mainFrontRight) / 2;
+  const fenceMidZ = (h.FZ_FRONT + h.FZ_BACK) / 2;
+  const fenceNSLen = h.FZ_BACK - h.FZ_FRONT;
+  const fenceEWLen = h.FX_RIGHT - h.FX_LEFT;
+
+  // Front fence (south) — main-block frontage only, with a gate; garage bay open.
+  out.push({ kind: "fence", x: frontSegMidX, z: h.FZ_FRONT, rot: 0,
+    params: { length: frontSegLen, gate: true, color: 0xece7da } });
+  out.push({ kind: "fence", x: (h.FX_LEFT + h.FX_RIGHT) / 2, z: h.FZ_BACK, rot: 0,
+    params: { length: fenceEWLen, gate: false, color: 0xece7da } });
+  out.push({ kind: "fence", x: h.FX_LEFT, z: fenceMidZ, rot: 90,
+    params: { length: fenceNSLen, gate: false, color: 0xece7da } });
+  out.push({ kind: "fence", x: h.FX_RIGHT, z: fenceMidZ, rot: 90,
+    params: { length: fenceNSLen, gate: false, color: 0xece7da } });
+
+  // Hero driveway: from the avenue north kerb up to the garage front (south face).
+  const heroDriveZ0 = h.avNorth + HALF;               // street end
+  const heroDriveZ1 = h.heroFrontZ;                   // garage/front end
+  out.push({ kind: "driveway", x: h.garCenterX, z: (heroDriveZ0 + heroDriveZ1) / 2,
+    rot: 0, params: { length: heroDriveZ1 - heroDriveZ0 + 1.0, width: 4 } });
+
+  // Mailbox at the curb by the gate; yard trees + planters (derived from the fence).
+  out.push({ kind: "mailbox", x: frontSegMidX - 3, z: h.FZ_FRONT - 1.2 });
+  out.push({ kind: "tree", x: h.FX_LEFT + 3, z: h.FZ_BACK - 3 });
+  out.push({ kind: "tree", x: h.FX_RIGHT - 3, z: h.FZ_BACK - 3 });
+  out.push({ kind: "planter", x: h.FX_LEFT + 3, z: h.FZ_FRONT + 2.5 });
+  out.push({ kind: "planter", x: mainFrontRight - 2, z: h.FZ_FRONT + 2.5 });
+
+  // ── 3. PLACEHOLDER HOUSES — both sides of every avenue, per street segment ───
+  const segBounds = [ox - 132, ...CROSSES, ox + 132];
+  const M = 14;        // end margin (road half + max house half-width + slack)
+  const PITCH = 20;
+
+  function segXs(a: number, b: number): number[] {
+    const lo = a + M, hi = b - M;
+    if (hi <= lo) return [];
+    const span = hi - lo;
+    const n = Math.max(1, Math.floor(span / PITCH) + 1);
+    if (n === 1) return [(lo + hi) / 2];
+    const xs: number[] = [];
+    for (let k = 0; k < n; k++) xs.push(lo + (span * k) / (n - 1));
+    return xs;
+  }
+
+  const heroSkip = (x: number, z: number) =>
+    x > h.heroMainL - 10 && x < h.heroGarR + 10 && z > h.heroFrontZ - 8 && z < h.heroBackZ + 8;
+
+  const PARK_X = ox, PARK_Z = oz + 24, PARK_W = 24, PARK_D = 16;
+  const parkSkip = (x: number, z: number) =>
+    Math.abs(x - PARK_X) < PARK_W / 2 + 6 && Math.abs(z - PARK_Z) < PARK_D / 2 + 8;
+
+  let hi = 0; // house index → seeded variation
+  for (const avZ of AVENUES) {
+    for (const side of [+1, -1] as const) {
+      const rot: 0 | 180 = side > 0 ? 180 : 0;  // north side faces south; south faces north
+      const rowZ = avZ + side * 16;
+      for (let s = 0; s < segBounds.length - 1; s++) {
+        for (const x of segXs(segBounds[s], segBounds[s + 1])) {
+          if (Math.abs(x - ox) < 9 && avZ === AVENUES[0] && side > 0) continue; // connector mouth
+          if (heroSkip(x, rowZ)) continue;
+          if (parkSkip(x, rowZ)) continue;
+
+          const w = [9, 10, 11][hi % 3];
+          const d = [10, 11, 12][hi % 3];
+          const stories = hi % 3 === 2 ? 3 : 2;
+          const hasGarage = hi % 2 === 0;
+          const hasPorch = !hasGarage;
+          out.push({
+            kind: "house", x, z: rowZ, rot,
+            params: { w, d, stories, storyH: 2.8, garage: hasGarage, porch: hasPorch, seed: 400 + hi * 7 },
+          });
+
+          const frontZ = rowZ - side * (d / 2);   // face toward the avenue
+          const streetZ = avZ + side * HALF;       // avenue kerb on this side
+          out.push({ kind: "driveway", x, z: (frontZ + streetZ) / 2, rot: 0,
+            params: { length: Math.abs(frontZ - streetZ) + 1.0, width: 3 } });
+
+          hi++;
+        }
+      }
+    }
+  }
+
+  // ── 4. POCKET PARK — central back-block green (between the 2nd & 3rd avenues) ─
+  out.push({ kind: "plaza", x: PARK_X, z: PARK_Z, params: { w: PARK_W, d: PARK_D, seed: 7 } });
+  for (const dx of [-PARK_W / 2 - 2, PARK_W / 2 + 2]) {
+    out.push({ kind: "tree", x: PARK_X + dx, z: PARK_Z });
+    out.push({ kind: "planter", x: PARK_X + dx, z: PARK_Z - 4 });
+  }
+  out.push({ kind: "bench", x: PARK_X, z: PARK_Z - PARK_D / 2 - 1.5 });
+
+  // ── 5. STREET FURNITURE — lamps + trees along every avenue (MORE greenery) ───
+  for (const avZ of AVENUES) {
+    for (const side of [+1, -1] as const) {
+      const sz = avZ + side * (HALF + 2.5);     // on the verge between road and lots
+      out.push(...row("lamp", { x: ox - 120, z: sz, count: 12, gap: 22, axis: "x" }));
+    }
+  }
+  for (const x of [ox - 126, ox - 60, ox + 6, ox + 72, ox + 126]) {
+    out.push({ kind: "tree", x, z: AVENUES[0] + 9 });
+    out.push({ kind: "tree", x, z: AVENUES[AVENUES.length - 1] - 9 });
+  }
+  for (const z of [oz + 72, oz + 24, oz - 24, oz - 72]) {
+    out.push({ kind: "tree", x: ox - 130, z });
+    out.push({ kind: "tree", x: ox + 130, z });
+  }
 
   return out;
 }

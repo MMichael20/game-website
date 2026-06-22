@@ -40,15 +40,15 @@ defineObject("playerHouse", {
     const rng = mulberry32((p.seed >>> 0) || 1);
 
     // ── DIMENSIONS (declared once; everything derives from these) ────────────
-    const W = 12;            // main block width (x)
-    const D = 11;            // main block depth (z)
-    const FLOOR_H = 3;       // per-storey height
+    const W = 26;            // main block width (x)
+    const D = 20;            // main block depth (z)
+    const FLOOR_H = 3.3;     // per-storey height
     const FLOORS = 2;
     const T = 0.3;           // wall / slab thickness
     const totalH = FLOORS * FLOOR_H;
 
-    const GAR_W = 6;         // garage wing width (x) on the LEFT (-x)
-    const GAR_D = 7;         // garage depth (z)
+    const GAR_W = 11;        // garage wing width (x) on the LEFT (-x) — 3-car garage
+    const GAR_D = 9;         // garage depth (z)
     const GAR_H = 3;         // garage height
     const garCX = -(W / 2 + GAR_W / 2);   // garage center x (shares house left wall)
     // Garage front flush with house front (+z). Its center z so that front = D/2.
@@ -258,14 +258,28 @@ defineObject("playerHouse", {
       parts.push(tintedBox(T, GAR_H, GAR_D, outerX, GAR_H / 2, garCZ, bodyColor));
       // (Shared +x wall omitted — it is the house's left wall.)
 
-      // Up-and-over garage door on +z: stacked horizontal slats.
+      // Up-and-over garage door on +z: 3 bays (3-car garage), each a stack of
+      // horizontal slats, separated by vertical mullions. Bay width derives from
+      // GAR_W and the bay count so it scales with the garage.
       const slatCount = 6;
       const doorAreaH = GAR_H - 0.4;
       const slatH = doorAreaH / slatCount;
       const doorFaceZ = frontZ + 0.05;
-      for (let s = 0; s < slatCount; s++) {
-        const cy = 0.2 + slatH * (s + 0.5);
-        parts.push(tintedBox(GAR_W - 0.2, slatH - 0.03, 0.06, garCX, cy, doorFaceZ, PALETTE.rollDoor));
+      const BAYS = 3;
+      const bayGap = 0.12;
+      const bayW = (GAR_W - 0.4 - bayGap * (BAYS - 1)) / BAYS;
+      const bay0CX = garCX - GAR_W / 2 + 0.2 + bayW / 2;
+      for (let b = 0; b < BAYS; b++) {
+        const bcx = bay0CX + b * (bayW + bayGap);
+        for (let s = 0; s < slatCount; s++) {
+          const cy = 0.2 + slatH * (s + 0.5);
+          parts.push(tintedBox(bayW, slatH - 0.03, 0.06, bcx, cy, doorFaceZ, PALETTE.rollDoor));
+        }
+      }
+      // Vertical mullions between/around the bays.
+      for (let m = 0; m <= BAYS; m++) {
+        const mx = bay0CX - bayW / 2 - bayGap / 2 + m * (bayW + bayGap);
+        parts.push(tintedBox(bayGap, doorAreaH, 0.07, mx, 0.2 + doorAreaH / 2, doorFaceZ, TRIM));
       }
       // Door surround frame.
       parts.push(tintedBox(GAR_W + 0.1, 0.12, 0.1, garCX, doorAreaH + 0.2, doorFaceZ, TRIM));
@@ -671,15 +685,233 @@ defineObject("playerHouse", {
       return { parts, colliders, obstacles };
     }
 
+    // ════════════════════════════════════════════════════════════════════════
+    // makeFrontYard — a HUGE front-yard detail layer on the +z side
+    // ════════════════════════════════════════════════════════════════════════
+    // Everything derives from W / D / DOOR_W / FLOOR_H and the porch metrics.
+    // The house front face is at z = D/2; the door gap is centered at x=0.
+    // HARD CONSTRAINT: the player spawns on the entry walk. Its CENTER LINE
+    // (|x| <= WALK_CLEAR) stays clear — NO colliders and NO props on it.
+    function makeFrontYard(): Piece {
+      const parts: THREE.BufferGeometry[] = [];
+      const colliders: Box[] = [];
+      const obstacles: Rect[] = [];
+
+      const faceZ = D / 2;                       // front façade plane
+      const slabTop = T;                          // top of the ground-floor slab
+      const WALK_CLEAR = 1.2;                     // half-width of the protected spawn corridor
+      // Front-window x offset — SAME formula makeShell uses for its front windows.
+      const segW = (W - DOOR_W) / 2;
+      const frontOff = DOOR_W / 2 + segW / 2;
+      // Mirror porch metrics (kept in sync with makePorchAndYard).
+      const porchDepth = 1.6;
+      const porchW = DOOR_W + 2.0;
+
+      // Bloom color cycle (deterministic — index only, no rng needed for order).
+      const BLOOMS = [0xe14b4b, 0xf2c14e, 0xd664c8, 0xff8a3d, 0x6fa8ff, 0xf5f0e6];
+      const FOLIAGE = 0x3f8f3a;
+      const FOLIAGE_DK = 0x2f6f2c;
+      const SOIL = 0x5a3a24;
+      const STONE = PALETTE.entryPad;
+      const HEDGE = 0x386b34;
+
+      // 1) STOOP — 3 steps rising to the ground-floor slab top, in front of door.
+      const STOOP_STEPS = 3;
+      const stoopRise = slabTop / STOOP_STEPS;          // top step meets slabTop
+      const stoopW = DOOR_W + 1.2;
+      const stoopRun = 0.42;                            // tread depth (z)
+      // Step s (0=bottom, furthest out) ascends toward the door (-z direction).
+      for (let s = 0; s < STOOP_STEPS; s++) {
+        const topY = stoopRise * (s + 1);
+        // Bottom step furthest from door; top step flush against the façade.
+        const stepCZ = faceZ + stoopRun * (STOOP_STEPS - s - 0.5);
+        parts.push(tintedBox(stoopW, topY, stoopRun, 0, topY / 2, stepCZ, PALETTE.entryPad));
+        // Full-block collider to tread top (same pattern as the interior stairs).
+        colliders.push({ x: 0, y: topY / 2, z: stepCZ, hx: stoopW / 2, hy: topY / 2, hz: stoopRun / 2 });
+      }
+      const stoopOuterZ = faceZ + stoopRun * STOOP_STEPS;   // outer edge of the stoop
+
+      // 2) GRAND ENTRY WALK — paved slabs from the stoop out to z = D/2 + 11.
+      const walkW = WALK_CLEAR * 2 + 0.4;               // a touch wider than protected band
+      const walkZ0 = stoopOuterZ;
+      const walkZ1 = faceZ + 11;
+      const walkLen = walkZ1 - walkZ0;
+      const walkSlabs = 11;
+      const walkSlabD = walkLen / walkSlabs;
+      for (let i = 0; i < walkSlabs; i++) {
+        const pz = walkZ0 + walkSlabD * (i + 0.5);
+        const tone = i % 2 === 0 ? STONE : PALETTE.curb;
+        parts.push(tintedBox(walkW, 0.06, walkSlabD - 0.05, 0, 0.03, pz, tone));
+      }
+      // Lawn pad flanking the walk (visual grass strips, no collider).
+      for (const sx of [-1, 1]) {
+        const lawnW = (W / 2 + 6) - walkW / 2;
+        const lawnCX = sx * (walkW / 2 + lawnW / 2);
+        parts.push(tintedBox(lawnW, 0.04, walkLen, lawnCX, 0.02, (walkZ0 + walkZ1) / 2, 0x4e8c40));
+      }
+
+      // 3) FLOWER BEDS (2) flanking the stoop — soil box + grid of voxel flowers.
+      const bedW = segW * 0.7;
+      const bedD = 1.4;
+      const bedZ = faceZ + bedD / 2 + 0.1;              // just in front of the façade
+      let bloomIdx = 0;
+      for (const sx of [-1, 1]) {
+        const bedCX = sx * (stoopW / 2 + bedW / 2 + 0.2);
+        parts.push(tintedBox(bedW, 0.22, bedD, bedCX, 0.11, bedZ, SOIL));
+        parts.push(tintedBox(bedW + 0.12, 0.12, bedD + 0.12, bedCX, 0.18, bedZ, PALETTE.curb)); // edging
+        // 3x3 grid of flowers = 9 per bed.
+        for (let gx = 0; gx < 3; gx++) {
+          for (let gz = 0; gz < 3; gz++) {
+            const fx = bedCX - bedW / 2 + bedW * (gx + 0.5) / 3;
+            const fz = bedZ - bedD / 2 + bedD * (gz + 0.5) / 3;
+            parts.push(tintedBox(0.05, 0.28, 0.05, fx, 0.22 + 0.14, fz, FOLIAGE)); // stem
+            parts.push(tintedBox(0.16, 0.16, 0.16, fx, 0.22 + 0.34, fz, BLOOMS[bloomIdx++ % BLOOMS.length]));
+          }
+        }
+      }
+
+      // 4) FLOWER BORDER ROWS lining BOTH sides of the entry walk.
+      const borderRows = 9;
+      for (const sx of [-1, 1]) {
+        const bx = sx * (walkW / 2 + 0.25);
+        for (let i = 0; i < borderRows; i++) {
+          const bz = walkZ0 + walkLen * (i + 0.5) / borderRows;
+          parts.push(tintedBox(0.05, 0.22, 0.05, bx, 0.11, bz, FOLIAGE)); // stem
+          parts.push(tintedBox(0.13, 0.13, 0.13, bx, 0.28, bz, BLOOMS[(i + (sx > 0 ? 3 : 0)) % BLOOMS.length]));
+        }
+      }
+
+      // 5) HEDGES (2) — long low boxes along the façade on each side of the walk.
+      const hedgeH = 0.6;
+      const hedgeD = 0.55;
+      const hedgeZ = faceZ + 0.4;
+      for (const sx of [-1, 1]) {
+        const hedgeOuter = sx * (W / 2);
+        const hedgeInner = sx * (walkW / 2 + 0.6);
+        const hedgeLen = Math.abs(hedgeOuter - hedgeInner);
+        const hedgeCX = (hedgeOuter + hedgeInner) / 2;
+        parts.push(tintedBox(hedgeLen, hedgeH, hedgeD, hedgeCX, hedgeH / 2, hedgeZ, HEDGE));
+        // collider off the walk center (hedge sits outside WALK_CLEAR).
+        colliders.push({ x: hedgeCX, y: hedgeH / 2, z: hedgeZ, hx: hedgeLen / 2, hy: hedgeH / 2, hz: hedgeD / 2 });
+      }
+
+      // 6) TOPIARY BALLS / SHRUBS (>=4) — short cylinders flanking the stoop & walk.
+      const topiaryR = 0.35;
+      const topiaryPositions: Vec2[] = [
+        { x: -(stoopW / 2 + 0.5), z: stoopOuterZ + 0.3 },
+        { x: (stoopW / 2 + 0.5), z: stoopOuterZ + 0.3 },
+        { x: -(walkW / 2 + 1.4), z: faceZ + 5.5 },
+        { x: (walkW / 2 + 1.4), z: faceZ + 5.5 },
+        { x: -(walkW / 2 + 1.4), z: faceZ + 8.5 },
+        { x: (walkW / 2 + 1.4), z: faceZ + 8.5 },
+      ];
+      for (const tp of topiaryPositions) {
+        parts.push(tintedBox(0.12, 0.4, 0.12, tp.x, 0.2, tp.z, 0x6b4a2a)); // trunk
+        parts.push(cylinderY(topiaryR, topiaryR * 1.6, tp.x, 0.4 + topiaryR * 0.8, tp.z, FOLIAGE, 10));
+        parts.push(cylinderY(topiaryR * 0.7, topiaryR * 0.7, tp.x, 0.4 + topiaryR * 1.6 + 0.15, tp.z, FOLIAGE_DK, 8));
+      }
+
+      // 7) TWO LAMP POSTS / LANTERNS at the mouth of the walk.
+      const lampH = 2.2;
+      const lampZ = walkZ1 - 0.6;
+      for (const sx of [-1, 1]) {
+        const lx = sx * (walkW / 2 + 0.5);
+        parts.push(tintedBox(0.12, lampH, 0.12, lx, lampH / 2, lampZ, 0x2b2f33)); // post
+        parts.push(tintedBox(0.3, 0.34, 0.3, lx, lampH + 0.05, lampZ, PALETTE.lantern)); // lantern
+        parts.push(tintedBox(0.36, 0.08, 0.36, lx, lampH + 0.26, lampZ, 0x2b2f33)); // cap
+        colliders.push({ x: lx, y: lampH / 2, z: lampZ, hx: 0.12, hy: lampH / 2, hz: 0.12 });
+      }
+
+      // 8) GARDEN BENCH on the lawn (seat + back + legs), off to the +x side.
+      const benchX = W / 2 - 1.6;
+      const benchZ = faceZ + 7.0;
+      const benchW = 1.6, benchSeatH = 0.45, benchSeatD = 0.5;
+      parts.push(tintedBox(benchW, 0.08, benchSeatD, benchX, benchSeatH, benchZ, PALETTE.benchWood));
+      parts.push(tintedBox(benchW, 0.5, 0.08, benchX, benchSeatH + 0.25, benchZ + benchSeatD / 2 - 0.04, PALETTE.benchWood));
+      for (const lx of [-1, 1]) for (const lz of [-1, 1]) {
+        parts.push(tintedBox(0.07, benchSeatH, 0.07, benchX + lx * (benchW / 2 - 0.1), benchSeatH / 2, benchZ + lz * (benchSeatD / 2 - 0.06), PALETTE.caseWood));
+      }
+      colliders.push({ x: benchX, y: benchSeatH / 2, z: benchZ, hx: benchW / 2, hy: benchSeatH / 2, hz: benchSeatD / 2 });
+
+      // 9) POTTED PLANTS (>=4) — pot box + foliage box, on the porch & beside door.
+      const potPositions: Vec2[] = [
+        { x: -(porchW / 2 - 0.25), z: faceZ + porchDepth - 0.4 },
+        { x: (porchW / 2 - 0.25), z: faceZ + porchDepth - 0.4 },
+        { x: -(DOOR_W / 2 + 0.55), z: faceZ + 0.35 },
+        { x: (DOOR_W / 2 + 0.55), z: faceZ + 0.35 },
+        { x: -(stoopW / 2 + 1.4), z: stoopOuterZ - 0.2 },
+        { x: (stoopW / 2 + 1.4), z: stoopOuterZ - 0.2 },
+      ];
+      for (const pp of potPositions) {
+        parts.push(tintedBox(0.34, 0.34, 0.34, pp.x, slabTop + 0.17, pp.z, 0xb5642f)); // pot (on slab)
+        parts.push(tintedBox(0.3, 0.32, 0.3, pp.x, slabTop + 0.34 + 0.16, pp.z, FOLIAGE)); // foliage
+        parts.push(tintedBox(0.14, 0.14, 0.14, pp.x, slabTop + 0.34 + 0.34, pp.z, BLOOMS[bloomIdx++ % BLOOMS.length])); // bloom
+      }
+
+      // 10) WINDOW FLOWER BOXES under each front ground-floor window (frontOff).
+      for (const sx of [-1, 1]) {
+        const wx = sx * frontOff;
+        const wfbY = FLOOR_H * 0.55 - 1.3 / 2 - 0.18;   // just under the window sill
+        parts.push(tintedBox(1.3, 0.22, 0.28, wx, wfbY, faceZ + 0.2, 0x7a5230)); // box
+        for (let f = 0; f < 4; f++) {
+          const fx = wx - 0.5 + f * (1.0 / 3);
+          parts.push(tintedBox(0.05, 0.18, 0.05, fx, wfbY + 0.2, faceZ + 0.2, FOLIAGE));
+          parts.push(tintedBox(0.12, 0.12, 0.12, fx, wfbY + 0.34, faceZ + 0.2, BLOOMS[(f + sx + 2) % BLOOMS.length]));
+        }
+      }
+
+      // 11) PATH EDGE LIGHTS / EDGING STONES along the walk (>=4 per side).
+      const edgeCount = 5;
+      for (const sx of [-1, 1]) {
+        const ex = sx * (walkW / 2 + 0.12);
+        for (let i = 0; i < edgeCount; i++) {
+          const ez = walkZ0 + walkLen * (i + 0.5) / edgeCount;
+          parts.push(tintedBox(0.16, 0.5, 0.16, ex, 0.25, ez, 0x3a3f45));       // short bollard
+          parts.push(tintedBox(0.2, 0.12, 0.2, ex, 0.52, ez, PALETTE.lantern)); // glow cap
+        }
+      }
+
+      // 12) TWO FRONT-YARD TREES (trunk cylinder + foliage boxes) at lot corners.
+      for (const sx of [-1, 1]) {
+        const trX = sx * (W / 2 + 3.5);
+        const trZ = faceZ + 9.5;
+        parts.push(cylinderY(0.3, 3.0, trX, 1.5, trZ, 0x6b4a2a, 8));        // trunk
+        parts.push(tintedBox(2.4, 1.6, 2.4, trX, 3.4, trZ, FOLIAGE));       // canopy lower
+        parts.push(tintedBox(1.8, 1.3, 1.8, trX, 4.5, trZ, FOLIAGE_DK));    // canopy upper
+        parts.push(tintedBox(1.2, 1.0, 1.2, trX, 5.4, trZ, FOLIAGE));       // canopy top
+        colliders.push({ x: trX, y: 1.5, z: trZ, hx: 0.3, hy: 1.5, hz: 0.3 });
+        obstacles.push({ x: trX, z: trZ, w: 2.4, d: 2.4 });
+      }
+
+      // 13) BIRD BATH / garden ornament centerpiece, off to the -x side.
+      const bbX = -(W / 2 - 1.8);
+      const bbZ = faceZ + 6.0;
+      parts.push(cylinderY(0.18, 0.9, bbX, 0.45, bbZ, PALETTE.sillStone, 12));  // pedestal
+      parts.push(cylinderY(0.45, 0.18, bbX, 0.95, bbZ, PALETTE.sillStone, 14)); // basin
+      parts.push(cylinderY(0.36, 0.06, bbX, 1.02, bbZ, 0x6fb6cf, 14));          // water
+      colliders.push({ x: bbX, y: 0.45, z: bbZ, hx: 0.2, hy: 0.45, hz: 0.2 });
+
+      // 14) WELCOME MAT — thin colored slab at the door threshold (on the slab).
+      parts.push(tintedBox(DOOR_W + 0.4, 0.03, 0.6, 0, slabTop + 0.015, faceZ + 0.35, 0x8a4b3a));
+      parts.push(tintedBox(DOOR_W, 0.035, 0.4, 0, slabTop + 0.02, faceZ + 0.35, 0xc9a24b)); // inner border
+
+      // 15) HOUSE-NUMBER PLAQUE beside the door (on the right return).
+      parts.push(tintedBox(0.5, 0.3, 0.05, DOOR_W / 2 + 0.55, DOOR_H - 0.4, faceZ + 0.08, 0x2b2f33));
+      parts.push(tintedBox(0.42, 0.22, 0.06, DOOR_W / 2 + 0.55, DOOR_H - 0.4, faceZ + 0.1, PALETTE.lantern));
+
+      return { parts, colliders, obstacles };
+    }
+
     // ── ASSEMBLE ──────────────────────────────────────────────────────────────
     const shell = makeShell();
     const garage = makeGarage();
     const roof = makeRoof();
     const interior = makeInterior();
     const yard = makePorchAndYard();
+    const front = makeFrontYard();
 
     const allParts: THREE.BufferGeometry[] = [
-      ...shell.parts, ...garage.parts, ...roof.parts, ...interior.parts, ...yard.parts,
+      ...shell.parts, ...garage.parts, ...roof.parts, ...interior.parts, ...yard.parts, ...front.parts,
     ];
     const group = new THREE.Group();
     const merged = tintedMesh(mergeTinted(allParts));
@@ -692,6 +924,7 @@ defineObject("playerHouse", {
       ...(garage.colliders ?? []),
       ...(interior.colliders ?? []),
       ...(yard.colliders ?? []),
+      ...(front.colliders ?? []),
     ];
 
     // Obstacles: house footprint + garage footprint + shed (from yard) for NPC avoidance.
@@ -699,6 +932,7 @@ defineObject("playerHouse", {
       { x: 0, z: 0, w: W, d: D },
       { x: garCX, z: garCZ, w: GAR_W, d: GAR_D },
       ...(yard.obstacles ?? []),
+      ...(front.obstacles ?? []),
     ];
 
     const anchors: Record<string, Vec2 | Seat> = {

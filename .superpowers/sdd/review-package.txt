@@ -1,0 +1,426 @@
+e56159c feat(world): place filler streetwall, skyline towers & a park plaza
+9665e3b feat(world): add park composite (beds, fountain, trees, benches, lamps)
+dd8193c feat(world): add fillerBuilding (masonry + glassTower backdrop blocks)
+67de085 feat(world): register fountain as a placeable catalog kind
+===STAT===
+ src/world/catalog/fillerBuilding.ts | 167 ++++++++++++++++++++++++++++++++++++
+ src/world/catalog/index.ts          |   2 +
+ src/world/catalog/park.ts           | 118 +++++++++++++++++++++++++
+ src/world/catalog/primitives.ts     |  20 +++++
+ src/world/map.ts                    |  21 +++++
+ 5 files changed, 328 insertions(+)
+===DIFF===
+diff --git a/src/world/catalog/fillerBuilding.ts b/src/world/catalog/fillerBuilding.ts
+new file mode 100644
+index 0000000..b72ac4b
+--- /dev/null
++++ b/src/world/catalog/fillerBuilding.ts
+@@ -0,0 +1,167 @@
++// src/world/catalog/fillerBuilding.ts
++//
++// A decorative multi-story block with NO walk-in interior — pure backdrop for
++// the streetwall / skyline. Facade windows are baked opaque vertex-colored
++// boxes (cheap; flat stylized look). Two styles:
++//   "masonry"   — warm body, punched windows + cornice, optional ground awning.
++//   "glassTower"— cool body, uniform curtain-wall grid, flat parapet.
++//
++// LOCAL space: centered x=z=0, base y=0, FRONT +z, ~1u=1m. Deterministic.
++
++import * as THREE from "three";
++import { defineObject } from "../system/registry";
++import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
++import { makeAwning } from "../objects/awning";
++import { PALETTE, BUILDING_COLORS } from "../palette";
++import { mulberry32 } from "../rng";
++
++interface FillerParams {
++  w: number;
++  d: number;
++  stories: number;
++  storyH: number;
++  bodyColor: number;
++  style: "masonry" | "glassTower";
++  ground: "plain" | "storefront" | "none";
++  awningColor: number;
++  roofUnit: boolean;
++  seed: number;
++}
++
++const WIN_PER_M = 1 / 2.2;   // ~one window column per 2.2 m of facade
++const WALL_PROUD = 0.06;     // how far frames/windows sit proud of the wall
++
++// Build a window grid onto one face. `axis` picks the facade plane:
++//   "+z"/"-z" → window plane at z=±d/2, spanning x; "+x"/"-x" → at x=±w/2, spanning z.
++function addWindows(
++  parts: THREE.BufferGeometry[],
++  opts: {
++    axis: "+z" | "-z" | "+x" | "-x";
++    spanW: number;      // facade width to fill (x for ±z faces, z for ±x faces)
++    w: number; d: number;
++    yStart: number; yEnd: number; rows: number;
++    glassA: number; glassB: number; frame: number;
++    bigCells: boolean;  // glassTower → larger cells, thinner frame
++  },
++) {
++  const { axis, spanW, w, d, yStart, yEnd, rows } = opts;
++  const cols = Math.max(2, Math.round(spanW * WIN_PER_M));
++  const cellW = spanW / cols;
++  const winW = cellW * (opts.bigCells ? 0.82 : 0.62);
++  const rowH = (yEnd - yStart) / rows;
++  const winH = rowH * (opts.bigCells ? 0.78 : 0.58);
++  const framePad = opts.bigCells ? 0.05 : 0.08;
++
++  for (let r = 0; r < rows; r++) {
++    const cy = yStart + rowH * (r + 0.5);
++    for (let c = 0; c < cols; c++) {
++      const off = -spanW / 2 + cellW * (c + 0.5);
++      const glass = (r + c) % 2 === 0 ? opts.glassA : opts.glassB;
++      // frame (slightly bigger, proud), then glass (inset a hair more)
++      const fw = winW + framePad;
++      const fh = winH + framePad;
++      if (axis === "+z" || axis === "-z") {
++        const zf = axis === "+z" ? d / 2 + WALL_PROUD : -d / 2 - WALL_PROUD;
++        const zg = axis === "+z" ? d / 2 + WALL_PROUD * 1.4 : -d / 2 - WALL_PROUD * 1.4;
++        parts.push(tintedBox(fw, fh, 0.05, off, cy, zf, opts.frame));
++        parts.push(tintedBox(winW, winH, 0.05, off, cy, zg, glass));
++      } else {
++        const xf = axis === "+x" ? w / 2 + WALL_PROUD : -w / 2 - WALL_PROUD;
++        const xg = axis === "+x" ? w / 2 + WALL_PROUD * 1.4 : -w / 2 - WALL_PROUD * 1.4;
++        parts.push(tintedBox(0.05, fh, fw, xf, cy, off, opts.frame));
++        parts.push(tintedBox(0.05, winH, winW, xg, cy, off, glass));
++      }
++    }
++  }
++}
++
++defineObject("fillerBuilding", {
++  params: {
++    w: 10, d: 9, stories: 3, storyH: 3.0,
++    bodyColor: BUILDING_COLORS[0], style: "masonry",
++    ground: "plain", awningColor: PALETTE.awningBlue,
++    roofUnit: true, seed: 1,
++  } as FillerParams,
++  build(p: FillerParams) {
++    const { w, d, stories, storyH } = p;
++    const totalH = stories * storyH;
++    const rng = mulberry32(p.seed >>> 0);
++    const isTower = p.style === "glassTower";
++
++    const opaque: THREE.BufferGeometry[] = [];
++
++    // Body
++    opaque.push(tintedBox(w, totalH, d, 0, totalH / 2, 0, p.bodyColor));
++
++    // Base plinth (proud band at the bottom)
++    const plinthH = 0.5;
++    opaque.push(tintedBox(w + 0.12, plinthH, d + 0.12, 0, plinthH / 2, 0, PALETTE.stoneBase));
++
++    // Window band vertical extent: skip the ground floor when it has its own
++    // storefront treatment, otherwise windows cover all floors.
++    const groundIsShop = p.ground === "storefront" && !isTower;
++    const winYStart = groundIsShop ? storyH + 0.3 : plinthH + 0.4;
++    const winYEnd = totalH - 0.4;
++    const winRows = groundIsShop ? stories - 1 : stories;
++
++    const glassA = isTower ? PALETTE.officeGlass : PALETTE.glass;
++    const glassB = isTower ? PALETTE.glassDark : PALETTE.glassDark;
++    const frame = PALETTE.frame;
++    const bigCells = isTower;
++
++    if (winRows > 0) {
++      for (const axis of ["+z", "+x", "-x"] as const) {
++        addWindows(opaque, {
++          axis, spanW: axis === "+z" ? w : d, w, d,
++          yStart: winYStart, yEnd: winYEnd, rows: winRows,
++          glassA, glassB, frame, bigCells,
++        });
++      }
++    }
++
++    // Top: cornice (masonry) or flat parapet (tower)
++    if (isTower) {
++      opaque.push(tintedBox(w + 0.1, 0.4, d + 0.1, 0, totalH + 0.2, 0, PALETTE.roofCap));
++    } else {
++      opaque.push(tintedBox(w + 0.3, 0.4, d + 0.3, 0, totalH + 0.05, 0, PALETTE.cornice));
++    }
++    // Flat roof slab
++    opaque.push(tintedBox(w, 0.2, d, 0, totalH + 0.1, 0, PALETTE.roofCap));
++
++    // Rooftop unit (small box for silhouette), placed off-center deterministically.
++    if (p.roofUnit) {
++      const ux = (rng() - 0.5) * (w * 0.4);
++      const uz = (rng() - 0.5) * (d * 0.4);
++      opaque.push(tintedBox(w * 0.28, 0.9, d * 0.28, ux, totalH + 0.65, uz, PALETTE.steelDark));
++    }
++
++    const group = new THREE.Group();
++    group.add(tintedMesh(mergeTinted(opaque)));
++    (group.children[0] as THREE.Mesh).castShadow = true;
++    (group.children[0] as THREE.Mesh).receiveShadow = true;
++
++    // Ground-floor storefront band + awning (masonry only).
++    if (groundIsShop) {
++      const bandH = storyH * 0.7;
++      const bandParts: THREE.BufferGeometry[] = [];
++      // recessed dark glass band across the front
++      bandParts.push(tintedBox(w - 0.6, bandH, 0.1, 0, plinthH + bandH / 2, d / 2 + 0.02, PALETTE.glassDark));
++      // base trim under it
++      bandParts.push(tintedBox(w - 0.4, 0.25, 0.16, 0, plinthH + 0.12, d / 2 + 0.04, PALETTE.curb));
++      group.add(tintedMesh(mergeTinted(bandParts)));
++      // striped awning at the band top, protruding +z
++      const awning = tintedMesh(
++        makeAwning({ w: w - 0.6, colorA: p.awningColor, colorB: PALETTE.awningStripe, depth: 1.0 }),
++      );
++      awning.position.set(0, plinthH + bandH, d / 2 + 0.05);
++      awning.castShadow = true;
++      group.add(awning);
++    }
++
++    return {
++      mesh: group,
++      colliders: [{ x: 0, y: totalH / 2, z: 0, hx: w / 2, hy: totalH / 2, hz: d / 2 }],
++      obstacles: [{ x: 0, z: 0, w, d }],
++    };
++  },
++});
+diff --git a/src/world/catalog/index.ts b/src/world/catalog/index.ts
+index f8a8d90..edc692e 100644
+--- a/src/world/catalog/index.ts
++++ b/src/world/catalog/index.ts
+@@ -1,9 +1,11 @@
+ // src/world/catalog/index.ts
+ //
+ // Importing this module registers every catalog object (side-effect imports).
+ import "./primitives";
+ import "./buildings";
+ import "./stores";
++import "./fillerBuilding";
++import "./park";
+ 
+ /** Call once at startup to guarantee the catalog modules have been evaluated. */
+ export function registerCatalog(): void { /* imports above run the defineObject calls */ }
+diff --git a/src/world/catalog/park.ts b/src/world/catalog/park.ts
+new file mode 100644
+index 0000000..778409c
+--- /dev/null
++++ b/src/world/catalog/park.ts
+@@ -0,0 +1,118 @@
++// src/world/catalog/park.ts
++//
++// A paved plaza with a 2×2 grid of stone-bordered grass beds, a central
++// fountain, perimeter lamps, path benches, and trees/flowers in the beds.
++// Composed from existing catalog kinds via buildObject + applyTransform.
++//
++// LOCAL space: centered x=z=0, base y=0, ~1u=1m. Deterministic.
++
++import * as THREE from "three";
++import { defineObject, buildObject } from "../system/registry";
++import { applyTransform } from "../system/transform";
++import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
++import { PALETTE } from "../palette";
++import { mulberry32 } from "../rng";
++import type { ObjectResult, Box, Rect } from "../system/types";
++
++function compose(parts: ObjectResult[]): ObjectResult {
++  const group = new THREE.Group();
++  const colliders: Box[] = [];
++  const obstacles: Rect[] = [];
++  for (const p of parts) {
++    group.add(p.mesh);
++    if (p.colliders) colliders.push(...p.colliders);
++    if (p.obstacles) obstacles.push(...p.obstacles);
++  }
++  return { mesh: group, colliders, obstacles };
++}
++
++interface ParkParams {
++  w: number;
++  d: number;
++  fountain: boolean;
++  seed: number;
++}
++
++const FLOWER_COLORS = ["red", "yellow", "white"] as const;
++
++defineObject("park", {
++  params: { w: 26, d: 20, fountain: true, seed: 1 } as ParkParams,
++  build(p: ParkParams) {
++    const { w, d } = p;
++    const rng = mulberry32(p.seed >>> 0);
++    const parts: ObjectResult[] = [];
++
++    // Paved plaza floor (thin slab over the grass).
++    const floor: ObjectResult = {
++      mesh: tintedMesh(tintedBox(w, 0.06, d, 0, 0.03, 0, PALETTE.sidewalk)),
++    };
++    (floor.mesh as THREE.Mesh).receiveShadow = true;
++    parts.push(floor);
++
++    // Bed grid geometry. Central cross-path of PATH wide; perimeter margin MARGIN.
++    const PATH = 3.0;
++    const MARGIN = 1.6;
++    const bedW = (w - PATH - MARGIN * 2) / 2;
++    const bedD = (d - PATH - MARGIN * 2) / 2;
++    const bedCX = (PATH / 2 + bedW / 2);
++    const bedCZ = (PATH / 2 + bedD / 2);
++
++    for (const sx of [-1, 1] as const) {
++      for (const sz of [-1, 1] as const) {
++        const cx = sx * bedCX;
++        const cz = sz * bedCZ;
++        // Stone rim + inset grass top, built as one merged mesh per bed.
++        const rimH = 0.32;
++        const bedParts = [
++          tintedBox(bedW, rimH, bedD, cx, rimH / 2, cz, PALETTE.stoneBase),
++          tintedBox(bedW - 0.5, 0.12, bedD - 0.5, cx, rimH + 0.04, cz, PALETTE.parkGrass),
++        ];
++        const bedMesh = tintedMesh(mergeTinted(bedParts));
++        bedMesh.receiveShadow = true;
++        parts.push({
++          mesh: bedMesh,
++          colliders: [{ x: cx, y: rimH / 2, z: cz, hx: bedW / 2, hy: rimH / 2, hz: bedD / 2 }],
++          obstacles: [{ x: cx, z: cz, w: bedW, d: bedD }],
++        });
++        // One tree near the bed's outer corner.
++        const tree = buildObject("tree", {});
++        parts.push(applyTransform(tree, { x: cx + sx * bedW * 0.22, z: cz + sz * bedD * 0.22, rot: 0 }));
++        // A few flowers in the bed (color chosen by rng; positions derived).
++        for (let i = 0; i < 3; i++) {
++          const fx = cx + (i - 1) * (bedW * 0.22);
++          const fz = cz - sz * bedD * 0.18;
++          const color = FLOWER_COLORS[Math.floor(rng() * FLOWER_COLORS.length)];
++          const flower = buildObject("flower", { color, height: 0.34 });
++          const placed = applyTransform(flower, { x: fx, z: fz, rot: 0 });
++          // lift flowers onto the grass top
++          placed.mesh.position.y += 0.36;
++          parts.push(placed);
++        }
++      }
++    }
++
++    // Central fountain.
++    if (p.fountain) {
++      const fountain = buildObject("fountain", { r: 1.4, tiers: 2 });
++      parts.push(applyTransform(fountain, { x: 0, z: 0, rot: 0 }));
++    }
++
++    // Perimeter lamps at the four corners (inside the margin).
++    const lampX = w / 2 - 0.8;
++    const lampZ = d / 2 - 0.8;
++    for (const sx of [-1, 1] as const) {
++      for (const sz of [-1, 1] as const) {
++        const lamp = buildObject("lamp", {});
++        parts.push(applyTransform(lamp, { x: sx * lampX, z: sz * lampZ, rot: 0 }));
++      }
++    }
++
++    // Benches flanking the central vertical path, facing outward along z.
++    for (const sz of [-1, 1] as const) {
++      const bench = buildObject("bench", {});
++      parts.push(applyTransform(bench, { x: 0, z: sz * (PATH / 2 + 0.4), rot: sz === 1 ? 0 : 180 }));
++    }
++
++    return compose(parts);
++  },
++});
+diff --git a/src/world/catalog/primitives.ts b/src/world/catalog/primitives.ts
+index 57c9c8e..84295ff 100644
+--- a/src/world/catalog/primitives.ts
++++ b/src/world/catalog/primitives.ts
+@@ -5,24 +5,25 @@
+ // front faces +z, ~1 unit = 1 metre. The engine applies position/rotation after.
+ //
+ // NO Math.random / Date.now — fully deterministic.
+ 
+ import * as THREE from "three";
+ import { defineObject } from "../system/registry";
+ import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
+ import { makeFlower } from "../objects/flower";
+ import { makeAFrameSign } from "../objects/aFrameSign";
+ import { makeAsphaltTexture, ROAD_W, GRAIN_M } from "../roads";
+ import { PALETTE } from "../palette";
+ import { PETAL } from "../objects/objectPalette";
++import { makeFountain } from "../objects/fountain";
+ 
+ // ---------------------------------------------------------------------------
+ // ground
+ // ---------------------------------------------------------------------------
+ 
+ defineObject("ground", {
+   params: { size: 220 },
+   build(p: { size: number }) {
+     const geo = new THREE.PlaneGeometry(p.size, p.size);
+     geo.rotateX(-Math.PI / 2);
+     const mat = new THREE.MeshStandardMaterial({ color: PALETTE.parkGrass });
+     const mesh = new THREE.Mesh(geo, mat);
+@@ -224,12 +225,31 @@ defineObject("bench", {
+ // ---------------------------------------------------------------------------
+ // aFrameSign
+ // ---------------------------------------------------------------------------
+ 
+ defineObject("aFrameSign", {
+   params: {},
+   build(_p: Record<string, never>) {
+     const mesh = makeAFrameSign();
+     mesh.castShadow = true;
+     return { mesh, obstacles: [{ x: 0, z: 0, w: 0.9, d: 0.7 }] };
+   },
+ });
++
++// ---------------------------------------------------------------------------
++// fountain — placeable wrapper around the makeFountain() helper
++// ---------------------------------------------------------------------------
++
++defineObject("fountain", {
++  params: { r: 1.4, tiers: 2 },
++  build(p: { r: number; tiers: number }) {
++    const mesh = tintedMesh(makeFountain({ r: p.r, tiers: p.tiers }));
++    mesh.castShadow = true;
++    // Basin is ~0.22m tall; collider is a low box covering the basin footprint.
++    const basinH = 0.22;
++    return {
++      mesh,
++      colliders: [{ x: 0, y: basinH / 2, z: 0, hx: p.r, hy: basinH / 2, hz: p.r }],
++      obstacles: [{ x: 0, z: 0, w: p.r * 2, d: p.r * 2 }],
++    };
++  },
++});
+diff --git a/src/world/map.ts b/src/world/map.ts
+index d53322b..4394b5d 100644
+--- a/src/world/map.ts
++++ b/src/world/map.ts
+@@ -46,13 +46,34 @@ export const MAP: Placement[] = [
+     props: [
+       { kind: "lamp", x: -12, z: 10 },   // flanks entrance, left corner
+       { kind: "lamp", x: 12, z: 10 },    // flanks entrance, right corner
+       { kind: "tree", x: -14, z: -10 },  // back-left corner
+       { kind: "tree", x: 14, z: -10 },   // back-right corner
+     ],
+   }),
+   // A little loose furniture in the GAP between the two stores — the phone apron
+   // ends at world x=1 and the restaurant deck starts at ~x=4.7, so these sit clear
+   // of both. Independent of either lot, so they stay raw lines.
+   { kind: "flower", x: 2.5, z: -7, params: { color: "red" } },
+   { kind: "flower", x: 3.6, z: -7, params: { color: "yellow" } },
++
++  // ── Filler backdrop ──────────────────────────────────────────────────────
++  // North streetwall: masonry blocks flanking the two real stores, on the
++  // building line (front face +z ≈ z=-9), so the street reads as continuous.
++  { kind: "fillerBuilding", x: -34, z: -16, params: { w: 12, d: 10, stories: 3, bodyColor: 0xe07a5f, ground: "storefront", awningColor: 0xc0392b, seed: 11 } },
++  { kind: "fillerBuilding", x: -47, z: -16, params: { w: 11, d: 10, stories: 4, bodyColor: 0xe9c46a, seed: 12 } },
++  { kind: "fillerBuilding", x: 39, z: -17, params: { w: 12, d: 11, stories: 3, bodyColor: 0x84b06a, ground: "storefront", awningColor: 0x2980b9, seed: 13 } },
++  { kind: "fillerBuilding", x: 52, z: -17, params: { w: 11, d: 11, stories: 4, bodyColor: 0xc98ab0, seed: 14 } },
++
++  // Skyline towers: tall cool glass blocks set well back as a backdrop.
++  { kind: "fillerBuilding", x: -30, z: -44, params: { w: 14, d: 14, stories: 7, style: "glassTower", bodyColor: 0x6aa9c9, roofUnit: false, seed: 21 } },
++  { kind: "fillerBuilding", x: 0, z: -48, params: { w: 16, d: 16, stories: 8, style: "glassTower", bodyColor: 0x7fb5d6, roofUnit: false, seed: 22 } },
++  { kind: "fillerBuilding", x: 32, z: -44, params: { w: 14, d: 14, stories: 6, style: "glassTower", bodyColor: 0x9ac6e0, roofUnit: false, seed: 23 } },
++
++  // South streetwall: a couple of blocks across the road, facing -z (rot 180),
++  // set back behind the spawn corridor.
++  { kind: "fillerBuilding", x: -50, z: 26, rot: 180, params: { w: 12, d: 10, stories: 3, bodyColor: 0xf2c14e, seed: 31 } },
++  { kind: "fillerBuilding", x: 45, z: 26, rot: 180, params: { w: 12, d: 10, stories: 4, bodyColor: 0xd96c5f, ground: "storefront", awningColor: 0xc0392b, seed: 32 } },
++
++  // Park plaza: south-west, clear of the (0,8)/(12,10) spawn corridor.
++  { kind: "park", x: -30, z: 18, params: { w: 26, d: 20, fountain: true, seed: 5 } },
+ ];

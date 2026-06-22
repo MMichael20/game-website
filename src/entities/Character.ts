@@ -7,6 +7,7 @@ import { makeHumanoid, animateWalk, animateIdle, applyPhonePose, type HumanoidLi
 
 const SPEED = 8;       // walking
 const RUN_SPEED = 13;  // holding Shift
+const TURBO_SPEED = 120; // holding Space: dev-only fly-through to scan the map fast
 
 export class Character implements Tickable {
   readonly object = new THREE.Group();
@@ -87,8 +88,9 @@ export class Character implements Tickable {
     if (this.input.isDown("KeyA") || this.input.isDown("ArrowLeft")) move.sub(right);
     if (this.input.isDown("KeyD") || this.input.isDown("ArrowRight")) move.add(right);
 
+    const turbo = this.input.isDown("Space"); // dev: hold to zoom around the map
     const running = this.input.isDown("ShiftLeft") || this.input.isDown("ShiftRight");
-    const speed = running ? RUN_SPEED : SPEED;
+    const speed = turbo ? TURBO_SPEED : running ? RUN_SPEED : SPEED;
 
     // Integrate vertical velocity; reset to 0 when grounded (evaluated after previous frame's computeColliderMovement)
     if (this.controller.computedGrounded()) {

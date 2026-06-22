@@ -4,6 +4,7 @@ import { Input } from "./core/Input";
 import { Physics } from "./core/Physics";
 import { FollowCamera } from "./core/FollowCamera";
 import { World } from "./world/World";
+import { SkyTraffic } from "./world/SkyTraffic";
 import { validateMap } from "./world/rishonMap";
 import { RISHON_MAP } from "./world/worldData";
 import { Game } from "./game/Game";
@@ -14,6 +15,25 @@ import { Minimap } from "./ui/Minimap";
 import { makeHumanoid } from "./entities/Humanoid";
 import { OBJECT_LIBRARY, tintedMesh } from "./world/objects";
 import { DebugOverlay } from "./ui/DebugOverlay";
+
+// Loading screen control (the static #r3d-loading overlay in index.html). We
+// toggle it rather than remove it so it can cover BOTH waits: the initial boot,
+// and the post-"Start" first-frame shader compile (which otherwise shows a black
+// canvas). Idempotent — safe to call from any path.
+function showLoading(): void {
+  const el = document.getElementById("r3d-loading");
+  if (!el) return;
+  el.style.display = "flex";
+  void el.offsetWidth; // force reflow so the opacity transition runs from 0
+  el.classList.remove("r3d-hide");
+}
+function hideLoading(): void {
+  const el = document.getElementById("r3d-loading");
+  if (!el) return;
+  el.classList.add("r3d-hide");
+  // After the fade, drop it out of the layout so it can't eat clicks on the menu.
+  window.setTimeout(() => { if (el.classList.contains("r3d-hide")) el.style.display = "none"; }, 400);
+}
 
 async function boot() {
   const container = document.getElementById("app")!;
@@ -55,6 +75,7 @@ async function boot() {
     engine.camera.position.set(tx, h, tz + dist);
     engine.camera.lookAt(tx, h <= 15 ? 2 : 6, tz);
     DebugOverlay.viewCaption(container, tx, tz, h, dist);
+    hideLoading();
     engine.start();
     return;
   }
@@ -76,6 +97,7 @@ async function boot() {
     });
     engine.camera.position.set(0, 1.4, 4.2);
     engine.camera.lookAt(0, 1.15, 0);
+    hideLoading();
     engine.start();
     return;
   }
@@ -114,32 +136,65 @@ async function boot() {
     });
     engine.camera.position.set(0, 7.5, OBJECT_LIBRARY.length * ROW * 0.7 + 6);
     engine.camera.lookAt(0, 0.6, 0);
+    hideLoading();
     engine.start();
     return;
   }
 
   const game = new Game(engine.renderer, engine.scene, physics, input, world, follow, engine.camera, hud, minimap, container, lockPointer, fade);
 
+  // Ambient air traffic: a few airliners flying circuits high overhead. Added
+  // straight to the scene + tick list (not the per-map world group) so they
+  // persist across the city↔airport switch. registerCatalog() already ran in
+  // the World constructor above, so the "airliner" kind is available to build.
+  const skyTraffic = new SkyTraffic();
+  engine.scene.add(skyTraffic.group);
+
   // step physics before game logic each frame
   engine.add({ update: (dt) => physics.step(dt) });
   engine.add(game);
   engine.add(follow);
+  engine.add(skyTraffic);
 
-  hud.setChips([
-    ["WASD", "Move"],
-    ["Shift", "Run"],
-    ["Mouse", "Look"],
-    ["E", "Drive"],
-    ["P", "Phone"],
-    ["M", "Map"],
-    ["Esc", "Pause"],
-  ]);
+  // No control-legend chips: the game teaches itself, and contextual prompts
+  // (e.g. "Press E to drive") still appear via hud.setPrompt when relevant.
+
+  // Transient on-screen note for the dev perf hotkeys (F4-F7), so the new state
+  // is visible while pointer-locked without opening the console.
+  const toastEl = document.createElement("div");
+  toastEl.style.cssText =
+    "position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:8;" +
+    "pointer-events:none;font:13px ui-monospace,Consolas,monospace;color:#eaffea;" +
+    "background:rgba(10,16,22,0.8);border:1px solid rgba(120,255,160,0.4);" +
+    "border-radius:6px;padding:6px 12px;opacity:0;transition:opacity .15s;";
+  container.appendChild(toastEl);
+  let toastTimer = 0;
+  const perfToast = (label: string) => {
+    toastEl.textContent = label;
+    toastEl.style.opacity = "1";
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => { toastEl.style.opacity = "0"; }, 1400);
+  };
 
   const menu = new Menu(container);
   let started = false;
-  const begin = () => { menu.hide(); engine.start(); started = true; lockPointer(); };
+  let primed = false; // has the first world frame rendered at least once?
+  const begin = () => {
+    menu.hide();
+    started = true;
+    if (!primed) {
+      // First start: the first render compiles all shaders (a black-screen stall),
+      // so keep the loading screen up until that frame lands, THEN reveal + lock.
+      showLoading();
+      engine.onFirstFrame = () => { primed = true; hideLoading(); lockPointer(); };
+    } else {
+      lockPointer(); // resume from pause — already primed, no stall, no loader
+    }
+    engine.start();
+  };
   menu.onStart(begin);
   menu.showTitle();
+  hideLoading(); // world is built and the title is up — drop the loading screen
 
   // Re-acquire pointer lock if the user clicks back into the canvas while playing.
   canvas.addEventListener("click", () => { if (started) lockPointer(); });
@@ -155,6 +210,13 @@ async function boot() {
     }
     if (e.code === "KeyM" && started) minimap.toggle();
     if (e.code === "F3") game.toggleDebug();
+    // Dev perf levers — watch the F3 fps readout as you toggle each to find the
+    // real bottleneck. F4 shadows on/off, F5 render resolution, F6 shadow-map
+    // size, F7 shadow refresh cadence. preventDefault so F5 doesn't reload the tab.
+    if (e.code === "F4") { e.preventDefault(); perfToast(engine.toggleShadows()); }
+    if (e.code === "F5") { e.preventDefault(); perfToast(engine.cyclePixelRatio()); }
+    if (e.code === "F6") { e.preventDefault(); perfToast(engine.cycleShadowSize()); }
+    if (e.code === "F7") { e.preventDefault(); perfToast(engine.cycleShadowEvery()); }
   });
   window.addEventListener("blur", () => input.clear());
 }

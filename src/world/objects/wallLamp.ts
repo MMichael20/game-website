@@ -15,6 +15,13 @@ export interface WallLampConfig {
   armLen?: number
   /** Unused — kept for API compat. Callers should translate to mount height. */
   mountY?: number
+  /** Cast a real point light from the bulb (default true). The emissive glow
+   *  bulb is always present; set false in dense rows to keep light count down. */
+  emitLight?: boolean
+  /** Point-light intensity (default 6). */
+  lightIntensity?: number
+  /** Point-light range in metres (default 9). */
+  lightRange?: number
 }
 
 export function makeWallLamp(cfg: WallLampConfig = {}): THREE.BufferGeometry {
@@ -46,6 +53,38 @@ export function makeWallLamp(cfg: WallLampConfig = {}): THREE.BufferGeometry {
   return mergeTinted(parts)
 }
 
-export function makeWallLampMesh(cfg: WallLampConfig = {}): THREE.Mesh {
-  return tintedMesh(makeWallLamp(cfg))
+/**
+ * A wall lamp that actually lights its surroundings: the bracket/shade geometry,
+ * an always-on emissive "bulb" so it reads as lit, and (by default) a real warm
+ * PointLight at the bulb. Returns a Group so the light travels with the lamp.
+ */
+export function makeWallLampMesh(cfg: WallLampConfig = {}): THREE.Group {
+  const armLen = cfg.armLen ?? 0.38
+  const emitLight = cfg.emitLight ?? true
+
+  // Bulb position mirrors makeWallLamp(): the shade bottom at the arm end.
+  const dropH = 0.14
+  const shadeH = 0.18
+  const bulbX = armLen
+  const bulbY = 0.10 - dropH - shadeH
+
+  const group = new THREE.Group()
+  group.add(tintedMesh(makeWallLamp(cfg)))
+
+  // Always-on emissive bulb so the lamp visibly glows, even in daylight.
+  const bulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 8, 6),
+    new THREE.MeshStandardMaterial({ color: 0xffe7b0, emissive: 0xffce6a, emissiveIntensity: 1.7 }),
+  )
+  bulb.position.set(bulbX, bulbY, 0)
+  group.add(bulb)
+
+  if (emitLight) {
+    const light = new THREE.PointLight(0xffce7a, cfg.lightIntensity ?? 6, cfg.lightRange ?? 9, 2)
+    light.castShadow = false
+    light.position.set(bulbX, bulbY - 0.05, 0)
+    group.add(light)
+  }
+
+  return group
 }

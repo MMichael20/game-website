@@ -1,0 +1,281 @@
+diff --git a/src/world/catalog/fence.ts b/src/world/catalog/fence.ts
+new file mode 100644
+index 0000000..1875fba
+--- /dev/null
++++ b/src/world/catalog/fence.ts
+@@ -0,0 +1,100 @@
++// src/world/catalog/fence.ts
++//
++// Picket fence segment running along X. Pickets face +z.
++// Params: length (m), gate (boolean gap in the center), color.
++// All placement is derived from part dimensions — no magic offsets.
++
++import { defineObject } from "../system/registry";
++import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
++
++const POST_H  = 1.0;
++const PICKET_H = 0.85;
++const POST_W  = 0.12;
++const RAIL_T  = 0.06;
++const PITCH   = 0.28;  // center-to-center picket spacing
++const GATE_W  = 1.4;   // clear width of the gate gap
++const PICKET_W = 0.08;
++const PICKET_D = 0.04;
++
++/** Slightly darker hex for posts. */
++function darken(hex: number): number {
++  const r = ((hex >> 16) & 0xff) * 0.78;
++  const g = ((hex >>  8) & 0xff) * 0.78;
++  const b = ( hex        & 0xff) * 0.78;
++  return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
++}
++
++defineObject("fence", {
++  params: { length: 6, gate: false, color: 0xece7da },
++  build(p: { length: number; gate: boolean; color: number }) {
++    const { length, gate, color } = p;
++    const darker = darken(color);
++    const halfLen = length / 2;
++
++    const parts: ReturnType<typeof tintedBox>[] = [];
++
++    // ── Pickets ────────────────────────────────────────────────────────────
++    const count = Math.round(length / PITCH);
++    const firstX = -((count - 1) / 2) * PITCH; // center pickets on x=0
++    for (let i = 0; i < count; i++) {
++      const px = firstX + i * PITCH;
++      if (gate && Math.abs(px) < GATE_W / 2) continue;
++      parts.push(tintedBox(PICKET_W, PICKET_H, PICKET_D, px, PICKET_H / 2, 0, color));
++    }
++
++    // ── Rails ──────────────────────────────────────────────────────────────
++    // Two rail heights: top near PICKET_H, bottom lower.
++    const RAIL_TOP = 0.80;
++    const RAIL_BOT = 0.30;
++
++    if (!gate) {
++      // Single full-length rail at each height.
++      parts.push(tintedBox(length, RAIL_T, RAIL_T, 0, RAIL_TOP, 0, color));
++      parts.push(tintedBox(length, RAIL_T, RAIL_T, 0, RAIL_BOT, 0, color));
++    } else {
++      // Split each rail into left and right segments around the gate gap.
++      // Left segment spans from -halfLen to -(GATE_W/2); right from +(GATE_W/2) to +halfLen.
++      const solidHalf = (length - GATE_W) / 2; // length of each side segment
++      const leftCenterX  = -halfLen + solidHalf / 2;  // derived from boundary
++      const rightCenterX =  halfLen - solidHalf / 2;
++
++      for (const railY of [RAIL_TOP, RAIL_BOT]) {
++        parts.push(tintedBox(solidHalf, RAIL_T, RAIL_T, leftCenterX,  railY, 0, color));
++        parts.push(tintedBox(solidHalf, RAIL_T, RAIL_T, rightCenterX, railY, 0, color));
++      }
++    }
++
++    // ── Posts (every length/4) ─────────────────────────────────────────────
++    // Place posts at x = -halfLen, -halfLen/2, 0, +halfLen/2, +halfLen (5 posts).
++    const postPositions = [-halfLen, -halfLen / 2, 0, halfLen / 2, halfLen];
++    for (const px of postPositions) {
++      parts.push(tintedBox(POST_W, POST_H, POST_W, px, POST_H / 2, 0, darker));
++    }
++
++    const mesh = tintedMesh(mergeTinted(parts));
++    mesh.castShadow = true;
++
++    // ── Colliders ──────────────────────────────────────────────────────────
++    // One thin box collider per solid rail span (full height of fence, thin depth).
++    const colHy = POST_H / 2;
++    const colHz = 0.08;
++    type BoxCollider = { x: number; y: number; z: number; hx: number; hy: number; hz: number };
++    const colliders: BoxCollider[] = [];
++
++    if (!gate) {
++      colliders.push({ x: 0, y: colHy, z: 0, hx: halfLen, hy: colHy, hz: colHz });
++    } else {
++      const solidHalf = (length - GATE_W) / 2;
++      const leftCenterX  = -halfLen + solidHalf / 2;
++      const rightCenterX =  halfLen - solidHalf / 2;
++      colliders.push({ x: leftCenterX,  y: colHy, z: 0, hx: solidHalf / 2, hy: colHy, hz: colHz });
++      colliders.push({ x: rightCenterX, y: colHy, z: 0, hx: solidHalf / 2, hy: colHy, hz: colHz });
++    }
++
++    return {
++      mesh,
++      colliders,
++      obstacles: [{ x: 0, z: 0, w: length, d: 0.3 }],
++    };
++  },
++});
+diff --git a/src/world/catalog/index.ts b/src/world/catalog/index.ts
+index ef828fb..776b213 100644
+--- a/src/world/catalog/index.ts
++++ b/src/world/catalog/index.ts
+@@ -41,12 +41,17 @@ import "./airport/selfCheckinKiosk";
+ import "./airport/queueLane";
+ import "./airport/wayfindingSign";
+ import "./airport/luggage";
+ import "./airport/airportGreenery";
+ import "./airport/floodlightMast";
+ import "./airport/apronProps";
+ import "./airport/cubeCloud";
+ import "./airport/airportExtras";
+ import "./airport/airportRoad";
+ 
++// Residential suburb props.
++import "./fence";
++import "./parkedCar";
++import "./mailbox";
++
+ /** Call once at startup to guarantee the catalog modules have been evaluated. */
+ export function registerCatalog(): void { /* imports above run the defineObject calls */ }
+diff --git a/src/world/catalog/mailbox.ts b/src/world/catalog/mailbox.ts
+new file mode 100644
+index 0000000..1c37285
+--- /dev/null
++++ b/src/world/catalog/mailbox.ts
+@@ -0,0 +1,47 @@
++// src/world/catalog/mailbox.ts
++//
++// Residential mailbox on a post.
++// Post + box body + red flag. No params. No collider (small prop).
++
++import { defineObject } from "../system/registry";
++import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
++
++// Part dimensions — positions derived from these.
++const POST_H = 1.0;
++const POST_W = 0.1;
++const POST_Y = POST_H / 2;  // base at y=0
++
++const BOX_W = 0.45;
++const BOX_H = 0.30;
++const BOX_D = 0.22;
++// Box sits on top of post.
++const BOX_Y = POST_H + BOX_H / 2 - 0.05;  // slight overlap with post top
++
++const FLAG_W = 0.04;
++const FLAG_H = 0.18;
++const FLAG_D = 0.16;
++// Flag mounts on the right side of the box body, at mid-box height.
++const FLAG_X = BOX_W / 2 + FLAG_W / 2;
++const FLAG_Y = BOX_Y + 0.07;  // slightly above box center
++
++defineObject("mailbox", {
++  params: {},
++  build(_p: Record<string, never>) {
++    const parts = [
++      // Post
++      tintedBox(POST_W, POST_H, POST_W, 0, POST_Y, 0, 0x6b4226),
++      // Box body
++      tintedBox(BOX_W, BOX_H, BOX_D, 0, BOX_Y, 0, 0x9aa0a6),
++      // Red flag on right side
++      tintedBox(FLAG_W, FLAG_H, FLAG_D, FLAG_X, FLAG_Y, 0, 0xe0524a),
++    ];
++
++    const mesh = tintedMesh(mergeTinted(parts));
++    mesh.castShadow = true;
++
++    return {
++      mesh,
++      obstacles: [{ x: 0, z: 0, w: 0.5, d: 0.3 }],
++    };
++  },
++});
+diff --git a/src/world/catalog/parkedCar.ts b/src/world/catalog/parkedCar.ts
+new file mode 100644
+index 0000000..859a2f8
+--- /dev/null
++++ b/src/world/catalog/parkedCar.ts
+@@ -0,0 +1,94 @@
++// src/world/catalog/parkedCar.ts
++//
++// Static scenery parked car — NOT the drivable Car entity.
++// ~4.2m long (x) × 1.8m wide (z) × ~1.5m tall.
++// All child positions derived from part dimensions.
++
++import { defineObject } from "../system/registry";
++import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
++import { PALETTE } from "../palette";
++
++// Part dimensions — used to derive positions.
++const BODY_W = 4.2;
++const BODY_H = 0.7;
++const BODY_D = 1.7;
++const BODY_Y = BODY_H / 2 + 0.35;       // body sits above wheel centers (~0.35m off ground)
++
++const CABIN_W = 2.4;
++const CABIN_H = 0.7;
++const CABIN_D = 1.5;
++const CABIN_Y = BODY_Y + BODY_H / 2 + CABIN_H / 2;  // cabin sits on top of body
++
++const WHEEL_W = 0.7;
++const WHEEL_H = 0.7;
++const WHEEL_D = 0.32;
++const WHEEL_Y = WHEEL_H / 2;                          // base at y=0
++const WHEEL_X = 1.3;                                  // from center (axle offset)
++const WHEEL_Z = (BODY_D / 2 - WHEEL_D / 2) + 0.18;  // flush with body side
++
++// Glass panel thickness (thin decal panels on cabin faces)
++const GLASS_T = 0.04;
++const GLASS_COLOR = PALETTE.glass;
++
++// Light dimensions
++const LIGHT_W = 0.18;
++const LIGHT_H = 0.14;
++const LIGHT_D = 0.06;
++const LIGHT_Y = BODY_Y + 0.05;   // mid-height on body end face
++const LIGHT_Z_OFFSET = 0.38;     // left/right of center
++const LIGHT_X = BODY_W / 2 + LIGHT_D / 2;  // flush with body end face
++
++defineObject("parkedCar", {
++  params: { color: 0x3366aa },
++  build(p: { color: number }) {
++    const { color } = p;
++
++    const parts: ReturnType<typeof tintedBox>[] = [];
++
++    // Lower body
++    parts.push(tintedBox(BODY_W, BODY_H, BODY_D, 0, BODY_Y, 0, color));
++
++    // Cabin
++    parts.push(tintedBox(CABIN_W, CABIN_H, CABIN_D, 0, CABIN_Y, 0, color));
++
++    // Windscreen (front cabin face, +x side)
++    const windscreenX = CABIN_W / 2 - GLASS_T / 2;
++    parts.push(tintedBox(GLASS_T, CABIN_H * 0.85, CABIN_D * 0.85, windscreenX, CABIN_Y, 0, GLASS_COLOR));
++
++    // Rear window (-x side)
++    parts.push(tintedBox(GLASS_T, CABIN_H * 0.85, CABIN_D * 0.85, -windscreenX, CABIN_Y, 0, GLASS_COLOR));
++
++    // Side windows (z faces of cabin)
++    const sideGlassZ = CABIN_D / 2 - GLASS_T / 2;
++    parts.push(tintedBox(CABIN_W * 0.75, CABIN_H * 0.75, GLASS_T, 0, CABIN_Y, sideGlassZ,  GLASS_COLOR));
++    parts.push(tintedBox(CABIN_W * 0.75, CABIN_H * 0.75, GLASS_T, 0, CABIN_Y, -sideGlassZ, GLASS_COLOR));
++
++    // 4 wheels
++    const wheelColor = 0x1a1a1e;
++    for (const sx of [1, -1]) {
++      for (const sz of [1, -1]) {
++        parts.push(tintedBox(WHEEL_W, WHEEL_H, WHEEL_D, sx * WHEEL_X, WHEEL_Y, sz * WHEEL_Z, wheelColor));
++      }
++    }
++
++    // Headlights (front, +x)
++    for (const sz of [1, -1]) {
++      parts.push(tintedBox(LIGHT_D, LIGHT_H, LIGHT_W, LIGHT_X, LIGHT_Y, sz * LIGHT_Z_OFFSET, 0xfff4e0));
++    }
++
++    // Taillights (rear, -x)
++    for (const sz of [1, -1]) {
++      parts.push(tintedBox(LIGHT_D, LIGHT_H, LIGHT_W, -LIGHT_X, LIGHT_Y, sz * LIGHT_Z_OFFSET, 0xe0524a));
++    }
++
++    const mesh = tintedMesh(mergeTinted(parts));
++    mesh.castShadow = true;
++    mesh.receiveShadow = true;
++
++    return {
++      mesh,
++      colliders: [{ x: 0, y: 0.75, z: 0, hx: 2.1, hy: 0.75, hz: 0.9 }],
++      obstacles: [{ x: 0, z: 0, w: 4.2, d: 1.8 }],
++    };
++  },
++});

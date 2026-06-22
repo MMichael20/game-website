@@ -5,13 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>H&amp;M Adventures</title>
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1a2e; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0a0c18; }
       #app { position: fixed; inset: 0; }
       canvas { display: block; }
+
+      /* Loading overlay: hidden on boot (we go straight to the title screen).
+         It is only shown later — by boot()'s showLoading() — to mask the one-time
+         shader-compile black screen right after the player presses Play. */
+      #r3d-loading {
+        position: fixed; inset: 0; z-index: 20; display: none;
+        align-items: center; justify-content: center;
+        background: #0a0c18; font-family: system-ui, sans-serif;
+        transition: opacity .35s ease;
+      }
+      #r3d-loading.r3d-hide { opacity: 0; }
+      #r3d-loading .card { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+      #r3d-loading .title {
+        font-size: clamp(34px, 7vw, 64px); letter-spacing: 3px; font-weight: 800; line-height: 1;
+        background: linear-gradient(180deg, #ffe9b0, #ff9d3d);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+        text-shadow: 0 4px 22px rgba(255, 150, 50, .35);
+      }
+      #r3d-loading .spinner {
+        width: 42px; height: 42px; border-radius: 50%;
+        border: 4px solid rgba(159, 208, 255, .22); border-top-color: #9fd0ff;
+        animation: r3dSpin .8s linear infinite;
+      }
+      #r3d-loading .msg { color: #9fd0ff; opacity: .85; font-size: 14px; letter-spacing: 2px; }
+      @keyframes r3dSpin { to { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
     <div id="app"></div>
+    <div id="r3d-loading">
+      <div class="card">
+        <div class="title">H&amp;M ADVENTURES</div>
+        <div class="spinner"></div>
+        <div class="msg">Loading the city&hellip;</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

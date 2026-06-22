@@ -1,0 +1,386 @@
+=== commits d9a54be..HEAD ===
+2e97f7d feat(world): restructure map into a city grid with building rows + highway
+dfff7ec docs: fit-fix city layout (3-unit outer-band rows, drop towers, highway z=-128)
+f777236 perf(world): freeze static world transforms (no per-frame matrix recompute)
+6187035 feat(world): add buildingRow catalog object
+0b2d1ba feat(world): add highway catalog object
+
+=== diffstat ===
+ docs/plans/2026-06-22-city-vibe-expansion-plan.md  |  58 +++++------
+ .../specs/2026-06-22-city-vibe-expansion-design.md |  12 ++-
+ src/world/World.ts                                 |   9 ++
+ src/world/catalog/buildingRow.ts                   |  87 ++++++++++++++++
+ src/world/catalog/highway.ts                       | 112 +++++++++++++++++++++
+ src/world/catalog/index.ts                         |   2 +
+ src/world/map.ts                                   |  45 +++++++--
+ 7 files changed, 283 insertions(+), 42 deletions(-)
+
+=== full diff (code only) ===
+diff --git a/src/world/World.ts b/src/world/World.ts
+index 0ebb20c..853bb01 100644
+--- a/src/world/World.ts
++++ b/src/world/World.ts
+@@ -10,20 +10,29 @@ import { MAP, PLAYER_SPAWN, CAR_SPAWN, GROUND_SIZE } from "./map";
+ export class World {
+   readonly pois: ResolvedPoi[];
+   readonly groundSize = GROUND_SIZE;
+   readonly groundCenter = { x: 0, z: 0 };
+ 
+   constructor(scene: THREE.Scene, physics: Physics) {
+     registerCatalog();
+     const built = buildWorld(MAP);
+     scene.add(built.group);
+ 
++    // The world is fully static after build: compute world matrices once, then
++    // stop per-frame matrix recomputation across every static mesh. Entities
++    // (player, car, NPCs, clouds) are separate objects and are unaffected.
++    built.group.updateMatrixWorld(true);
++    built.group.traverse((obj) => {
++      obj.matrixAutoUpdate = false;
++      obj.matrixWorldAutoUpdate = false;
++    });
++
+     const clouds = makeClouds();
+     scene.add(clouds);
+ 
+     for (const c of built.colliders) {
+       const body = physics.world.createRigidBody(
+         RAPIER.RigidBodyDesc.fixed().setTranslation(c.x, c.y, c.z),
+       );
+       physics.world.createCollider(RAPIER.ColliderDesc.cuboid(c.hx, c.hy, c.hz), body);
+     }
+     this.pois = built.pois;
+diff --git a/src/world/catalog/buildingRow.ts b/src/world/catalog/buildingRow.ts
+new file mode 100644
+index 0000000..68c169d
+--- /dev/null
++++ b/src/world/catalog/buildingRow.ts
+@@ -0,0 +1,87 @@
++// src/world/catalog/buildingRow.ts
++//
++// A row of N FREESTANDING backdrop buildings spaced along +x with a gap between
++// them (contrast terraceRow, which butts units edge-to-edge). Reuses
++// fillerBuilding. Each unit's center x is the running sum of prior (width+gap)
++// — derived, never a magic offset (PITFALL 3). Fronts face +z. Deterministic.
++//
++// LOCAL space: origin set by `anchor` (center/left/right edge of the whole run),
++// base y=0, FRONT +z, ~1u=1m.
++
++import * as THREE from "three";
++import { defineObject, buildObject } from "../system/registry";
++import { applyTransform } from "../system/transform";
++import { DISTRICT_PALETTES, PALETTE } from "../palette";
++import { mulberry32 } from "../rng";
++import type { ObjectResult, Box, Rect } from "../system/types";
++
++type Axis = "+z" | "-z" | "+x" | "-x";
++
++function compose(parts: ObjectResult[]): ObjectResult {
++  const group = new THREE.Group();
++  const colliders: Box[] = [];
++  const obstacles: Rect[] = [];
++  for (const p of parts) {
++    group.add(p.mesh);
++    if (p.colliders) colliders.push(...p.colliders);
++    if (p.obstacles) obstacles.push(...p.obstacles);
++  }
++  return { mesh: group, colliders, obstacles };
++}
++
++interface UnitSpec {
++  w: number; stories: number; bodyColor: number;
++  style: "masonry" | "glassTower" | "darkGlass";
++  ground: "plain" | "storefront";
++  awningColor: number;
++}
++
++interface RowParams {
++  units: number;
++  gap: number;
++  d: number;
++  storyH: number;
++  district: string;
++  anchor: "center" | "left" | "right";
++  faces: Axis[];
++  seed: number;
++}
++
++const AWNINGS = [PALETTE.awningRed, PALETTE.awningBlue, 0x2e8b57, 0xc97b30, 0x7a4ea0];
++
++function genUnit(rng: () => number, palette: number[]): UnitSpec {
++  const w = 10 + Math.floor(rng() * 6);            // 10..15
++  const stories = 3 + Math.floor(rng() * 5);       // 3..7
++  const bodyColor = palette[Math.floor(rng() * palette.length)];
++  const r = rng();
++  const style: UnitSpec["style"] = r < 0.18 ? "glassTower" : r < 0.30 ? "darkGlass" : "masonry";
++  const isShop = style === "masonry" && rng() < 0.6;
++  return { w, stories, bodyColor, style, ground: isShop ? "storefront" : "plain", awningColor: AWNINGS[Math.floor(rng() * AWNINGS.length)] };
++}
++
++defineObject("buildingRow", {
++  params: { units: 5, gap: 1.5, d: 12, storyH: 3.0, district: "north", anchor: "center", faces: ["+z", "+x", "-x"] as Axis[], seed: 1 } as RowParams,
++  build(p: RowParams) {
++    const rng = mulberry32(p.seed >>> 0);
++    const palette = DISTRICT_PALETTES[p.district] ?? DISTRICT_PALETTES.east;
++    const specs: UnitSpec[] = Array.from({ length: p.units }, () => genUnit(rng, palette));
++
++    // Total run width = sum of widths + gaps between (units-1 gaps).
++    const totalW = specs.reduce((s, u) => s + u.w, 0) + p.gap * Math.max(0, specs.length - 1);
++    const leftEdge = p.anchor === "center" ? -totalW / 2 : p.anchor === "left" ? 0 : -totalW;
++
++    const parts: ObjectResult[] = [];
++    let cursor = leftEdge;
++    specs.forEach((u, i) => {
++      const cx = cursor + u.w / 2;
++      cursor += u.w + p.gap;
++      const unit = buildObject("fillerBuilding", {
++        w: u.w, d: p.d, stories: u.stories, storyH: p.storyH,
++        bodyColor: u.bodyColor, style: u.style, ground: u.ground,
++        awningColor: u.awningColor, roofUnit: true, faces: p.faces, seed: p.seed + i + 1,
++      });
++      parts.push(applyTransform(unit, { x: cx, z: 0, rot: 0 }));
++    });
++    return compose(parts);
++  },
++});
+diff --git a/src/world/catalog/highway.ts b/src/world/catalog/highway.ts
+new file mode 100644
+index 0000000..2fe6a7c
+--- /dev/null
++++ b/src/world/catalog/highway.ts
+@@ -0,0 +1,112 @@
++// src/world/catalog/highway.ts
++//
++// A divided highway segment running along +x, centered on z=0. Two asphalt
++// carriageways flank a raised planted center median; low guardrails run the
++// outer edges. Drivable surface (no collider); median + guardrails are
++// colliders so the highway reads bounded. Lane dashes are one instanced draw.
++// All z-positions derive from lane math (PITFALL 3). Deterministic.
++
++import * as THREE from "three";
++import { defineObject } from "../system/registry";
++import { tintedBox, mergeTinted, tintedMesh } from "../objects/voxel";
++import { makeAsphaltTexture, GRAIN_M } from "../roads";
++import { makeInstanced, type Placement } from "../InstancedProps";
++import { PALETTE } from "../palette";
++import type { Box, Rect } from "../system/types";
++
++interface HighwayParams {
++  length: number;
++  lanes: number;     // lanes per carriageway
++  laneW: number;     // width of one lane
++  medianW: number;   // center median width
++  shoulderW: number; // outer shoulder width (between outer lane and guardrail)
++  gantry: boolean;
++  seed: number;
++}
++
++defineObject("highway", {
++  params: { length: 260, lanes: 2, laneW: 3.6, medianW: 4, shoulderW: 1.2, gantry: false, seed: 1 } as HighwayParams,
++  build(p: HighwayParams) {
++    const group = new THREE.Group();
++    const carW = p.lanes * p.laneW + p.shoulderW;        // one carriageway width
++    const carCenter = p.medianW / 2 + carW / 2;          // |z| of each carriageway center
++    const half = p.medianW / 2 + carW;                   // |z| of the outer edge
++
++    // Two asphalt carriageways (one mesh each; surface is drivable, no collider).
++    for (const sign of [-1, 1] as const) {
++      const tex = makeAsphaltTexture();
++      tex.repeat.set(Math.max(1, Math.round(p.length / GRAIN_M)), Math.max(1, Math.round(carW / GRAIN_M)));
++      const geo = new THREE.PlaneGeometry(p.length, carW);
++      geo.rotateX(-Math.PI / 2);
++      const surf = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex }));
++      surf.position.set(0, 0.02, sign * carCenter);
++      surf.receiveShadow = true;
++      group.add(surf);
++    }
++
++    // Raised planted center median: concrete kerb + green strip on top (collider).
++    const medParts: THREE.BufferGeometry[] = [];
++    const kerbH = 0.25;
++    medParts.push(tintedBox(p.length, kerbH, p.medianW, 0, kerbH / 2, 0, PALETTE.curb));
++    medParts.push(tintedBox(p.length, 0.12, p.medianW - 0.5, 0, kerbH + 0.06, 0, PALETTE.parkGrass));
++    group.add(tintedMesh(mergeTinted(medParts)));
++
++    // Outer guardrails: low steel barriers on each outer edge (colliders + obstacles).
++    const railH = 0.7;
++    const railT = 0.2;
++    const railParts: THREE.BufferGeometry[] = [];
++    for (const sign of [-1, 1] as const) {
++      railParts.push(tintedBox(p.length, railH, railT, 0, railH / 2, sign * half, PALETTE.steelDark));
++    }
++    const railMesh = tintedMesh(mergeTinted(railParts));
++    railMesh.castShadow = true;
++    group.add(railMesh);
++
++    // Lane dashes: white dashes down each carriageway's lane boundaries, one
++    // instanced draw. Long axis along +x → rotate the dash quad 90°.
++    const DASH_LEN = 3, DASH_GAP = 6;
++    const period = DASH_LEN + DASH_GAP;
++    const count = Math.max(0, Math.floor(p.length / period));
++    const start = -count * period / 2 + period / 2;
++    const places: Placement[] = [];
++    for (const sign of [-1, 1] as const) {
++      // interior lane boundaries within a carriageway (lanes-1 of them)
++      for (let b = 1; b < p.lanes; b++) {
++        const zEdge = sign * (p.medianW / 2 + b * p.laneW);
++        for (let i = 0; i < count; i++) places.push({ x: start + i * period, z: zEdge, rotationY: Math.PI / 2 });
++      }
++    }
++    if (places.length) {
++      const dashGeo = new THREE.PlaneGeometry(0.2, DASH_LEN);
++      dashGeo.rotateX(-Math.PI / 2);
++      const dashMat = new THREE.MeshStandardMaterial({ color: PALETTE.laneLine });
++      const dashes = makeInstanced(dashGeo, dashMat, places, 0.03);
++      dashes.castShadow = false;
++      group.add(dashes);
++    }
++
++    // Optional overhead sign gantry (off by default): a portal frame + blank green panel.
++    if (p.gantry) {
++      const gParts: THREE.BufferGeometry[] = [];
++      const postH = 5.5;
++      for (const sign of [-1, 1] as const) {
++        gParts.push(tintedBox(0.4, postH, 0.4, 0, postH / 2, sign * (half - 0.3), PALETTE.steelDark));
++      }
++      gParts.push(tintedBox(0.4, 0.4, 2 * half, 0, postH, 0, PALETTE.steelDark));      // top beam
++      gParts.push(tintedBox(0.2, 1.6, 5, 0, postH - 1.1, 0, 0x2e7d32));                // green sign panel
++      group.add(tintedMesh(mergeTinted(gParts)));
++    }
++
++    const colliders: Box[] = [
++      { x: 0, y: kerbH / 2, z: 0, hx: p.length / 2, hy: kerbH / 2 + 0.06, hz: p.medianW / 2 }, // median
++      { x: 0, y: railH / 2, z: half, hx: p.length / 2, hy: railH / 2, hz: railT / 2 },          // +z rail
++      { x: 0, y: railH / 2, z: -half, hx: p.length / 2, hy: railH / 2, hz: railT / 2 },         // -z rail
++    ];
++    const obstacles: Rect[] = [
++      { x: 0, z: 0, w: p.length, d: p.medianW },
++      { x: 0, z: half, w: p.length, d: railT },
++      { x: 0, z: -half, w: p.length, d: railT },
++    ];
++    return { mesh: group, colliders, obstacles };
++  },
++});
+diff --git a/src/world/catalog/index.ts b/src/world/catalog/index.ts
+index d834e0f..84e6aac 100644
+--- a/src/world/catalog/index.ts
++++ b/src/world/catalog/index.ts
+@@ -6,13 +6,15 @@ import "./buildings";
+ import "./stores";
+ import "./fillerBuilding";
+ import "./terraceRow";
+ import "./park";
+ import "./cityGrid";
+ import "./trafficLight";
+ import "./pavement";
+ import "./kioskCart";
+ import "./grandFountain";
+ import "./plaza";
++import "./highway";
++import "./buildingRow";
+ 
+ /** Call once at startup to guarantee the catalog modules have been evaluated. */
+ export function registerCatalog(): void { /* imports above run the defineObject calls */ }
+diff --git a/src/world/map.ts b/src/world/map.ts
+index ce365e1..ebf71fa 100644
+--- a/src/world/map.ts
++++ b/src/world/map.ts
+@@ -1,34 +1,39 @@
+ import type { Placement, Vec2 } from "./system/types";
+ import { lot } from "./layout";
+ 
+-export const GROUND_SIZE = 220;
++export const GROUND_SIZE = 280;
+ export const PLAYER_SPAWN: Vec2 = { x: 8, z: 9 };   // sidewalk corner SE of the central junction
+ export const CAR_SPAWN: Vec2 = { x: 12, z: 2 };     // in the eastbound lane of the main-h road
+ 
+ // THE MAP. Reading this list is seeing the world. Coordinates are world-space;
+ // rot is degrees in {0,90,180,270}. Stores face +z by default (rot:0).
++//
++// World size: 280m. City grid: 5×5 arterials, pitch=56, half=2 (roads at
++// x,z ∈ {±56,±112}). Core junction at origin; inner-ring block centres ±28;
++// outer-ring block centres ±84. North edge bounded by a divided highway at z=-128.
++//
+ // Building footprints (for placing props clear of them):
+ //   phoneRepairShop @ x=-12, w=22 -> x in [-23,-1], front face z=-9 (origin z=-17).
+ //   restaurant      @ cell(2,-3)=world(16,-24), w=22 -> x in [5,27], front face z=-12.
+ // The road sits at z=-2 (z in [-5,1]); the sidewalk strip in FRONT of both stores
+ // is z in [-9,-5]. Both stores now own their full frontage as lot props (the phone
+ // shop's flat apron + stoop + lamps/bench/planter/sign/trees, the restaurant's
+ // raised deck), so the two frontages move with their buildings and no loose street
+ // props sit in front of either glass.
+ export const MAP: Placement[] = [
+   { kind: "ground", params: { size: GROUND_SIZE } },
+   // The whole street network: a connected grid of roads with paver sidewalks,
+   // curbs, crosswalks, double-yellow, stop bars and lane arrows at the central
+   // junction. Roads at x,z in {-56, 0, 56}; the gap between the two hero shops is
+   // the central cross-v street.
+-  { kind: "cityGrid", x: 0, z: 0, params: { pitch: 56, half: 1, length: 140, seed: 1 } },
++  { kind: "cityGrid", x: 0, z: 0, params: { pitch: 56, half: 2, length: 260, seed: 1 } },
+   // Pave the central blocks (paver stone, same as the sidewalks). Sits just above
+   // the grass and below the road asphalt, so the city core reads paved, not lawn.
+   { kind: "pavement", x: 0, z: 0, params: { w: 112, d: 112 } },
+   // phone-shop lot: the big blue showroom + its full street frontage, authored as
+   // one move-together unit. Custom grid puts cell (0,0) exactly at the shop's world
+   // spot; every prop is lot-local (+z = toward the street), clear of the centred
+   // entry stoop (x in [-2.5,2.5]) and the door.
+   ...lot(
+     { cell: { col: 0, row: 0 }, building: "phoneRepairShop",
+       buildingParams: { w: 22, d: 16, h: 7 },
+@@ -56,26 +61,50 @@ export const MAP: Placement[] = [
+       { kind: "tree", x: -14, z: -10 },  // back-left corner
+       { kind: "tree", x: 14, z: -10 },   // back-right corner
+     ],
+   }, { originX: 22, originZ: -21, cellW: 8, cellD: 8 }),
+ 
+   // ── City blocks ───────────────────────────────────────────────────────────
+   // Connected streetwalls on the block edges (kept ≥6m off every road centerline).
+   // SE block: faces the main-h road from the south (rot 180).
+   { kind: "terraceRow", x: 28, z: 12, rot: 180, params: { units: 3, d: 11, district: "east", anchor: "center", seed: 41 } },
+ 
+-  // North skyline backdrop: freestanding glass towers beyond the z=-56 road,
+-  // spread in x and clear of the vertical-road corridors.
+-  { kind: "fillerBuilding", x: -40, z: -68, params: { w: 14, d: 14, stories: 7, style: "glassTower", bodyColor: 0x6aa9c9, roofUnit: false, seed: 21 } },
+-  { kind: "fillerBuilding", x: -14, z: -72, params: { w: 16, d: 16, stories: 9, style: "darkGlass", bodyColor: 0x1d3b44, roofUnit: false, seed: 22 } },
+-  { kind: "fillerBuilding", x: 12, z: -70, params: { w: 14, d: 14, stories: 6, style: "glassTower", bodyColor: 0x9ac6e0, roofUnit: false, seed: 23 } },
+-  { kind: "fillerBuilding", x: 38, z: -68, params: { w: 13, d: 13, stories: 8, style: "darkGlass", bodyColor: 0x223f49, roofUnit: false, seed: 24 } },
++  // ── Outer building rows: one row per outer-ring block, facing inward ────────
++  // The half=2 grid has blocks centred at ±84 (outer ring) and ±28 (inner ring).
++  // Inner-ring blocks are occupied by the two stores, plaza, and terraceRow —
++  // rows are ONLY placed in the outer-ring (±84) blocks.
++  // Each row: units:3 ≈ 40.5m run, d:12, fits a 46.8m block with margin.
++
++  // ── North band (z=-84): 4 rows facing the city (south, +z, rot:0) ──────────
++  { kind: "buildingRow", x: -84, z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 61 } },
++  { kind: "buildingRow", x: -28, z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 62 } },
++  { kind: "buildingRow", x: 28,  z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 63 } },
++  { kind: "buildingRow", x: 84,  z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 64 } },
++
++  // ── South band (z=84): 4 rows facing the city (north, -z, rot:180) ──────────
++  { kind: "buildingRow", x: -84, z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 65 } },
++  { kind: "buildingRow", x: -28, z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 66 } },
++  { kind: "buildingRow", x: 28,  z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 67 } },
++  { kind: "buildingRow", x: 84,  z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 68 } },
++
++  // ── West band (x=-84): 2 rows facing the city (east, +x, rot:90) ───────────
++  { kind: "buildingRow", x: -84, z: -28, rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 71 } },
++  { kind: "buildingRow", x: -84, z: 28,  rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 72 } },
++  // ── East band (x=84): 2 rows facing the city (west, -x, rot:270) ───────────
++  { kind: "buildingRow", x: 84,  z: -28, rot: 270, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 73 } },
++  { kind: "buildingRow", x: 84,  z: 28,  rot: 270, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 74 } },
++
++  // ── Highway: a divided multi-lane highway bounding the city to the north. ───
++  // Half-width = medianW/2 + lanes*laneW + shoulderW = 2 + 7.2 + 1.2 = 10.4,
++  // so at z=-128 it spans z ∈ [-138.4,-117.6] — inside the world edge (-140)
++  // with a grass verge between it and the z=-112 arterial.
++  { kind: "highway", x: 0, z: -128, rot: 0, params: { length: 260, lanes: 2, laneW: 3.6, medianW: 4, shoulderW: 1.2, gantry: true, seed: 1 } },
+ 
+   // Business plaza filling the SW block: a landmark fountain ringed by benches,
+   // planters, trees, lamps and two big vendor kiosks, on the central pavement.
+   { kind: "plaza", x: -28, z: 28, params: { w: 36, d: 28, seed: 5 } },
+   // A pair of loose vendor kiosks on the open paved strip south of the junction.
+   { kind: "kioskCart", x: -14, z: 8, rot: 0, params: { canopyColor: 0x2e8b57 } },
+   { kind: "kioskCart", x: -20, z: 8, rot: 0, params: { canopyColor: 0xc97b30 } },
+ 
+   // Traffic lights at the central intersection corners (signal head faces -z by
+   // default; rot turns each to face its approach).
