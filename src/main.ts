@@ -16,6 +16,7 @@ import { makeHumanoid } from "./entities/Humanoid";
 import { OBJECT_LIBRARY, tintedMesh } from "./world/objects";
 import { DebugOverlay } from "./ui/DebugOverlay";
 import { VirtualControls } from "./ui/VirtualControls";
+import { getQuality, registerQualityApplier } from "./core/quality";
 
 // Loading screen control (the static #r3d-loading overlay in index.html). We
 // toggle it rather than remove it so it can cover BOTH waits: the initial boot,
@@ -43,7 +44,10 @@ async function boot() {
 
   await Physics.init();
   const physics = new Physics();
-  const engine = new Engine(container);
+  // Graphics quality: phones default to "low" (smooth out of the box); the choice is
+  // persisted and changed live from the pause menu / phone Settings app.
+  const engine = new Engine(container, getQuality());
+  registerQualityApplier((q) => engine.setQuality(q));
   const world = new World(engine.scene, physics);
   const follow = new FollowCamera(engine.camera, physics);
   const input = new Input();

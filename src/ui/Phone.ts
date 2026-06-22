@@ -1,3 +1,5 @@
+import { makeQualitySelector } from "./qualitySelector";
+
 let phoneStyleInjected = false;
 function injectPhoneStyle(): void {
   if (phoneStyleInjected || document.getElementById("r3d-phone-style")) { phoneStyleInjected = true; return; }
@@ -32,6 +34,14 @@ function injectPhoneStyle(): void {
     "border-radius:5px 5px 0 0;background:#fff;}",
     ".r3d-car-glyph::after{content:'';position:absolute;left:2px;bottom:-3px;width:19px;height:0;",
     "box-shadow:2px 0 0 2px #16131f,16px 0 0 2px #16131f;}",
+    ".r3d-icon-set{background:linear-gradient(150deg,#9aa7c4,#5f6a86);}",
+    // Settings sub-view (Graphics quality) — swaps in over the app grid.
+    ".r3d-phone-set{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;",
+    "gap:16px;padding:18px 14px;color:#fff;}",
+    ".r3d-set-title{font-size:18px;font-weight:800;letter-spacing:1px;text-shadow:0 1px 2px rgba(0,0,0,.4);}",
+    ".r3d-set-note{font-size:11px;opacity:.85;text-align:center;line-height:1.5;text-shadow:0 1px 2px rgba(0,0,0,.4);}",
+    ".r3d-set-back{cursor:pointer;border:0;background:rgba(255,255,255,.2);color:#fff;",
+    "font:700 13px system-ui,sans-serif;padding:9px 24px;border-radius:10px;}",
     ".r3d-phone-home{height:22px;display:flex;align-items:center;justify-content:center;}",
     ".r3d-phone-home .bar{width:92px;height:4px;border-radius:3px;background:rgba(255,255,255,.6);}",
     ".r3d-phone-hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);color:#eaeaf0;",
@@ -55,13 +65,18 @@ export class Phone {
       '<div class="r3d-phone">',
       '<div class="r3d-phone-screen">',
       '<div class="r3d-phone-status"><span>6:45</span><span class="r3d-dots">. . .  ▮</span></div>',
-      '<div class="r3d-phone-grid">',
+      '<div class="r3d-phone-grid" id="r3d-home-view">',
       '<button class="r3d-app" id="r3d-app-car"><span class="r3d-icon r3d-icon-car"><span class="r3d-car-glyph"></span></span>Call Car</button>',
       '<button class="r3d-app r3d-soon" disabled><span class="r3d-icon r3d-icon-dim"></span>Map</button>',
       '<button class="r3d-app r3d-soon" disabled><span class="r3d-icon r3d-icon-dim"></span>Contacts</button>',
       '<button class="r3d-app r3d-soon" disabled><span class="r3d-icon r3d-icon-dim"></span>Music</button>',
       '<button class="r3d-app r3d-soon" disabled><span class="r3d-icon r3d-icon-dim"></span>Photos</button>',
-      '<button class="r3d-app r3d-soon" disabled><span class="r3d-icon r3d-icon-dim"></span>Soon</button>',
+      '<button class="r3d-app" id="r3d-app-set"><span class="r3d-icon r3d-icon-set"></span>Settings</button>',
+      "</div>",
+      '<div class="r3d-phone-set" id="r3d-set-view">',
+      '<div class="r3d-set-title">Settings</div>',
+      '<div class="r3d-set-note">Lower = smoother on phones.<br>Antialiasing applies after reload.</div>',
+      '<button class="r3d-set-back" id="r3d-set-back">Back</button>',
       "</div>",
       '<div class="r3d-phone-home"><div class="bar"></div></div>',
       "</div>",
@@ -70,12 +85,29 @@ export class Phone {
     ].join("");
     container.appendChild(this.back);
     (this.back.querySelector("#r3d-app-car") as HTMLButtonElement).onclick = () => this.callCb();
+
+    // Settings app: swap the app grid for a Graphics-quality picker (and back).
+    const home = this.back.querySelector("#r3d-home-view") as HTMLElement;
+    const setView = this.back.querySelector("#r3d-set-view") as HTMLElement;
+    const showSettings = (on: boolean) => {
+      home.style.display = on ? "none" : "grid";
+      setView.style.display = on ? "flex" : "none";
+    };
+    // Mount the shared quality selector above the explanatory note.
+    setView.insertBefore(makeQualitySelector(), setView.querySelector(".r3d-set-note"));
+    (this.back.querySelector("#r3d-app-set") as HTMLButtonElement).onclick = () => showSettings(true);
+    (this.back.querySelector("#r3d-set-back") as HTMLButtonElement).onclick = () => showSettings(false);
+    this.showSettings = showSettings;
   }
+
+  // Reset to the app grid whenever the phone reopens (set in the constructor).
+  private showSettings: (on: boolean) => void = () => {};
 
   onCallCar(cb: () => void): void { this.callCb = cb; }
 
   open(): void {
     this.isOpen = true;
+    this.showSettings(false); // always reopen on the app grid, not a left-open sub-view
     this.back.style.display = "flex";
     document.exitPointerLock?.();
   }

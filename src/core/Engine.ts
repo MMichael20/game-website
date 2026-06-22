@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
 import { DAY, sunPosition } from "./sky";
+import { QUALITY, FOG_COLOR, type QualityLevel } from "./quality";
 
 export interface Tickable { update(dt: number): void }
 
@@ -14,11 +15,11 @@ export class Engine {
   private running = false;
   private sun!: THREE.DirectionalLight;
   private readonly onResize = () => this.resize();
-  // Live perf levers (toggled by dev hotkeys, see main.ts) so the real bottleneck
-  // can be isolated in-game by watching the F3 fps readout.
-  private pixelRatioCap = 1.5;
-  private shadowSize = 2048;
-  private shadowEvery = 2; // refresh sun shadows every Nth rendered frame
+  // Live perf levers, seeded from the active quality preset and changed live by
+  // setQuality() (settings UI) or the dev hotkeys (see main.ts).
+  private pixelRatioCap: number;
+  private shadowSize: number;
+  private shadowEvery: number; // refresh sun shadows every Nth rendered frame
   // Soft ~60 fps cap: on high-refresh displays we skip extra animation frames so
   // the GPU/CPU don't render more than we need. The small epsilon keeps a true
   // 60 Hz display from accidentally halving to 30 fps on timing jitter.
@@ -26,7 +27,11 @@ export class Engine {
   private shadowTick = 0;
   private static readonly MIN_FRAME = 1 / 60 - 0.001;
 
-  constructor(private container: HTMLElement) {
+  constructor(private container: HTMLElement, quality: QualityLevel) {
+    const p = QUALITY[quality];
+    this.pixelRatioCap = p.pixelRatio;
+    this.shadowSize = p.shadowSize;
+    this.shadowEvery = p.shadowEvery;
     const sunDir = sunPosition(1);
 
     // Sky dome: physically-based scattering tuned to a bright clear midday.
@@ -40,13 +45,14 @@ export class Engine {
     u.sunPosition.value.copy(sunDir);
     this.scene.add(sky);
 
-    // No fog: distant districts stay crisp and colorful in the daytime look.
-    this.scene.fog = null;
+    // Fog only on the low tier (masks the short draw distance); high/medium stay
+    // crisp to the far plane. See setQuality() for live changes.
+    this.scene.fog = p.fog != null ? new THREE.Fog(FOG_COLOR, p.fog, p.far) : null;
 
     // Far plane is 2400 (not 1000) so the high, distant SkyTraffic airliners
     // don't pop in/out at the horizon. The Sky dome renders independently of the
     // far plane (its shader pins depth to far), so this only affects real geometry.
-    this.camera = new THREE.PerspectiveCamera(60, this.aspect(), 0.3, 2400);
+    this.camera = new THREE.PerspectiveCamera(60, this.aspect(), 0.3, p.far);
     this.camera.position.set(0, 8, 14);
 
     // No logarithmicDepthBuffer: it writes gl_FragDepth on every fragment, which
@@ -56,13 +62,13 @@ export class Engine {
     // a precision range a normal depth buffer handles fine. No preserveDrawingBuffer
     // either: it only existed for canvas read-back (toDataURL screenshots), which
     // this project doesn't do, and it can block driver fast-paths.
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: p.antialias });
     // Cap render resolution at 1.5x device pixels. The scene is fill-rate bound
     // (heavy per-fragment: sky scattering, soft shadows), so on a high-DPI display
     // this is a big FPS win for a slight softening. Live-tunable via cyclePixelRatio.
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.pixelRatioCap));
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = p.shadows;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // We drive shadow refreshes manually (see frame()) instead of every frame.
     this.renderer.shadowMap.autoUpdate = false;
@@ -75,7 +81,7 @@ export class Engine {
     this.scene.add(hemi);
     const sun = new THREE.DirectionalLight(DAY.sunColor, DAY.sunIntensity);
     sun.position.copy(sunPosition(120));
-    sun.castShadow = true;
+    sun.castShadow = p.shadows;
     sun.shadow.mapSize.set(this.shadowSize, this.shadowSize);
     const s = 100;
     sun.shadow.camera.left = -s; sun.shadow.camera.right = s;
@@ -138,8 +144,8 @@ export class Engine {
 
   // Toggle all sun shadows. Disabling needs a one-time material recompile, so we
   // flag every scene material for update; the resulting hitch is expected.
-  toggleShadows(): string {
-    const on = !this.renderer.shadowMap.enabled;
+  private setShadows(on: boolean): void {
+    if (this.renderer.shadowMap.enabled === on) return;
     this.renderer.shadowMap.enabled = on;
     this.sun.castShadow = on;
     this.scene.traverse((obj) => {
@@ -148,7 +154,35 @@ export class Engine {
       else if (m) m.needsUpdate = true;
     });
     this.renderer.shadowMap.needsUpdate = on;
-    return `shadows ${on ? "ON" : "OFF"}`;
+  }
+
+  toggleShadows(): string {
+    this.setShadows(!this.renderer.shadowMap.enabled);
+    return `shadows ${this.renderer.shadowMap.enabled ? "ON" : "OFF"}`;
+  }
+
+  // Apply a quality preset live (settings UI). Resolution, shadows, shadow-map size,
+  // refresh cadence and draw distance/fog all change immediately. Antialias is fixed
+  // at renderer creation, so changing it only takes effect on the next page reload.
+  setQuality(q: QualityLevel): void {
+    const p = QUALITY[q];
+    this.pixelRatioCap = p.pixelRatio;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.pixelRatioCap));
+    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+
+    this.setShadows(p.shadows);
+    this.shadowEvery = p.shadowEvery;
+    if (this.shadowSize !== p.shadowSize) {
+      this.shadowSize = p.shadowSize;
+      this.sun.shadow.mapSize.set(p.shadowSize, p.shadowSize);
+      this.sun.shadow.map?.dispose();
+      this.sun.shadow.map = null as unknown as THREE.WebGLRenderTarget;
+      this.renderer.shadowMap.needsUpdate = true;
+    }
+
+    this.camera.far = p.far;
+    this.camera.updateProjectionMatrix();
+    this.scene.fog = p.fog != null ? new THREE.Fog(FOG_COLOR, p.fog, p.far) : null;
   }
 
   // Cycle the render resolution cap (1.5 -> 1.0 -> 0.75 -> back). Lower = fewer

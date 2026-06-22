@@ -2,6 +2,8 @@
 // extruded logo over the concept-art background, and a tactile PLAY button that
 // physically presses down. No control legend — the game teaches itself.
 
+import { makeQualitySelector } from "./qualitySelector";
+
 let menuStyleInjected = false;
 function injectMenuStyle(): void {
   if (menuStyleInjected || document.getElementById("r3d-menu-style")) { menuStyleInjected = true; return; }
@@ -87,6 +89,7 @@ export class Menu {
       "</div>",
     ].join("");
     (this.root.querySelector("#r3d-start") as HTMLButtonElement).onclick = () => this.startCb();
+    this.root.querySelector(".r3d-hero")?.appendChild(makeQualitySelector());
     this.root.style.display = "flex";
   }
 
@@ -99,6 +102,7 @@ export class Menu {
       "</div>",
     ].join("");
     (this.root.querySelector("#r3d-resume") as HTMLButtonElement).onclick = () => this.startCb();
+    this.root.querySelector(".r3d-hero")?.appendChild(makeQualitySelector());
     this.root.style.display = "flex";
   }
 
