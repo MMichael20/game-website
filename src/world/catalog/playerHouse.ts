@@ -754,35 +754,6 @@ defineObject("playerHouse", {
       colliders.push({ x: shedX, y: shedH / 2, z: shedZ, hx: shedW / 2, hy: shedH / 2, hz: shedD / 2 });
       obstacles.push({ x: shedX, z: shedZ, w: shedW, d: shedD });
 
-      // ── SWIMMING POOL — LARGE, in the side yard to the RIGHT (+x local) of the
-      // house. ~50x the old footprint. Light tile floor with dark lane-line
-      // "strokes"; the water is a TRANSPARENT blue slab built into waterParts so it
-      // renders as its own translucent mesh (see assemble()).
-      const poolW = 26, poolD = 16;                // 416 m² ≈ 51x the old 3.4×2.4 pool
-      const poolX = W / 2 + 2.5 + poolW / 2;        // out in the +x side yard
-      const poolZ = -1;                             // runs alongside the house depth
-      const rim = 0.6;                              // coping width
-      const apron = 1.8;                            // paved deck around the coping
-      // Paved deck apron under/around the pool.
-      parts.push(tintedBox(poolW + (rim + apron) * 2, 0.06, poolD + (rim + apron) * 2, poolX, 0.03, poolZ, PALETTE.entryPad));
-      // Light stone coping rim (frame of 4 bars on top of the apron).
-      const copingY = 0.18;
-      parts.push(tintedBox(poolW + rim * 2, copingY, rim, poolX, copingY / 2, poolZ - poolD / 2 - rim / 2, PALETTE.curb));
-      parts.push(tintedBox(poolW + rim * 2, copingY, rim, poolX, copingY / 2, poolZ + poolD / 2 + rim / 2, PALETTE.curb));
-      parts.push(tintedBox(rim, copingY, poolD, poolX - poolW / 2 - rim / 2, copingY / 2, poolZ, PALETTE.curb));
-      parts.push(tintedBox(rim, copingY, poolD, poolX + poolW / 2 + rim / 2, copingY / 2, poolZ, PALETTE.curb));
-      // Light tile pool floor (shows THROUGH the transparent water).
-      parts.push(tintedBox(poolW, 0.06, poolD, poolX, 0.05, poolZ, PALETTE.poolFloor));
-      // Dark lane-line "strokes" on the floor, running the long (x) axis.
-      const lanes = 7;
-      for (let l = 1; l < lanes; l++) {
-        const lz = poolZ - poolD / 2 + poolD * l / lanes;
-        parts.push(tintedBox(poolW - 0.8, 0.02, 0.2, poolX, 0.08, lz, PALETTE.poolLane));
-      }
-      // TRANSPARENT blue water slab (just below the coping top).
-      waterParts.push(tintedBox(poolW, 0.12, poolD, poolX, 0.12, poolZ, PALETTE.poolWater));
-      obstacles.push({ x: poolX, z: poolZ, w: poolW + rim * 2, d: poolD + rim * 2 });
-
       return { parts, colliders, obstacles };
     }
 
