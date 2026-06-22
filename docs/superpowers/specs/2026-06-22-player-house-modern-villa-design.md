@@ -132,6 +132,14 @@ stays — it already matches the concept's landscaping.
   rule and the facet contract.
 - Isolation → chose to work ON MASTER (no worktree) — per the user's standing
   "work on master only" instruction, which overrides the generic worktree step.
+- Roof form (implementation) → chose a PRIMARY front-high deep-eave shed plane +
+  a SECONDARY lower stepped slab over the right wing + the garage's own mono-pitch
+  (rather than a pair of perfectly meeting slabs) — because a single dominant plane
+  is geometrically robust to author blind, removes the old gable/dormers, and reads
+  as the modern stepped silhouette. Easy to add more stepping on in-game review.
+- rng kept-alive → removing the seeded body/roof color left `rng` unused (tsconfig
+  has noUnusedLocals/Parameters); chose to reconnect `rng` to the front-yard bloom
+  color START OFFSET (incidental, deterministic) rather than delete the seed infra.
 
 ## Verification
 
