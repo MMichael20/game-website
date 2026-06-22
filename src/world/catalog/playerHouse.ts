@@ -923,6 +923,56 @@ defineObject("playerHouse", {
       return { parts, colliders, obstacles };
     }
 
+    // ════════════════════════════════════════════════════════════════════════
+    // makeTerrace — upper front-right terrace + wood pergola (visual; NO collider:
+    // it sits at head height and is not walkable, so a collider could trap the
+    // player — same reasoning the old porch balcony used)
+    // ════════════════════════════════════════════════════════════════════════
+    function makeTerrace(): Piece {
+      const parts: THREE.BufferGeometry[] = [];
+      const deckW = W * 0.34, deckD = 2.6;
+      const deckCX = W / 2 - deckW / 2 - 0.4;          // hug the right (+x) side
+      const deckY = FLOOR_H;                            // 2nd-floor level
+      const deckZ = D / 2 + deckD / 2;                  // projects forward of the façade
+      // Deck floor.
+      parts.push(tintedBox(deckW, 0.16, deckD, deckCX, deckY + 0.08, deckZ, PALETTE.villaDeck));
+      // Two slim support posts down to the ground (believable overhang).
+      for (const sx of [-1, 1] as const) {
+        const px = deckCX + sx * (deckW / 2 - 0.2);
+        parts.push(tintedBox(0.18, deckY, 0.18, px, deckY / 2, deckZ + deckD / 2 - 0.2, PALETTE.villaWood));
+      }
+      // Near-black metal rail: front + two sides.
+      const railH = 0.55, railY = deckY + 0.16 + railH / 2;
+      parts.push(tintedBox(deckW, railH, 0.06, deckCX, railY, deckZ + deckD / 2, PALETTE.villaRail));
+      parts.push(tintedBox(0.06, railH, deckD, deckCX - deckW / 2, railY, deckZ, PALETTE.villaRail));
+      parts.push(tintedBox(0.06, railH, deckD, deckCX + deckW / 2, railY, deckZ, PALETTE.villaRail));
+      // Baluster ticks along the front rail.
+      const balN = 8;
+      for (let b = 0; b < balN; b++) {
+        const bx = deckCX - deckW / 2 + deckW * (b + 0.5) / balN;
+        parts.push(tintedBox(0.04, railH, 0.04, bx, railY, deckZ + deckD / 2, PALETTE.villaRail));
+      }
+      // PERGOLA over the right end: 2 posts + horizontal louvers.
+      const pergY = deckY + 0.16;
+      const pergH = 2.2, pergW = deckW * 0.5, pergCX = deckCX + deckW / 2 - pergW / 2;
+      for (const sx of [-1, 1] as const) {
+        const px = pergCX + sx * (pergW / 2 - 0.1);
+        parts.push(tintedBox(0.12, pergH, 0.12, px, pergY + pergH / 2, deckZ - deckD / 2 + 0.3, PALETTE.villaPergola));
+        parts.push(tintedBox(0.12, pergH, 0.12, px, pergY + pergH / 2, deckZ + deckD / 2 - 0.3, PALETTE.villaPergola));
+      }
+      // Louvers (horizontal slats across the top).
+      const louvN = 6;
+      for (let l = 0; l < louvN; l++) {
+        const lz = deckZ - deckD / 2 + 0.3 + (deckD - 0.6) * l / (louvN - 1);
+        parts.push(tintedBox(pergW, 0.08, 0.16, pergCX, pergY + pergH, lz, PALETTE.villaPergola));
+      }
+      // One potted plant on the deck.
+      const potX = deckCX - deckW / 2 + 0.5, potZ = deckZ + deckD / 2 - 0.5;
+      parts.push(tintedBox(0.34, 0.34, 0.34, potX, deckY + 0.16 + 0.17, potZ, 0xb5642f));
+      parts.push(tintedBox(0.3, 0.36, 0.3, potX, deckY + 0.16 + 0.52, potZ, 0x3f8f3a));
+      return { parts };
+    }
+
     // ── ASSEMBLE ──────────────────────────────────────────────────────────────
     const shell = makeShell();
     const garage = makeGarage();
@@ -930,9 +980,11 @@ defineObject("playerHouse", {
     const interior = makeInterior();
     const yard = makePorchAndYard();
     const front = makeFrontYard();
+    const terrace = makeTerrace();
 
     const allParts: THREE.BufferGeometry[] = [
-      ...shell.parts, ...garage.parts, ...roof.parts, ...interior.parts, ...yard.parts, ...front.parts,
+      ...shell.parts, ...garage.parts, ...roof.parts, ...interior.parts,
+      ...yard.parts, ...front.parts, ...terrace.parts,
     ];
     const group = new THREE.Group();
     const merged = tintedMesh(mergeTinted(allParts));
