@@ -655,30 +655,58 @@ defineObject("playerHouse", {
       const patioZ = -D / 2 - patioD / 2 - 0.2;
       parts.push(tintedBox(W * 0.7, 0.06, patioD, 0, 0.03, patioZ, PALETTE.curb));
 
-      // BBQ (body + lid + grill bars) on the patio, to one side.
-      const bbqX = -W * 0.22;
-      const bbqZ = -D / 2 - 1.0;
+      // ════ POOL COURTYARD — the house's "court", in the side yard to the RIGHT
+      // (+x local). A shrunk pool ringed by a paved deck, with BBQ + dining table +
+      // sun benches all DERIVED from the pool / apron extents.
+      const poolW = 16, poolD = 10;               // ~2x smaller than the previous 26x16
+      const poolX = W / 2 + 1.5 + poolW / 2;       // out in the +x side yard
+      const poolZ = -1;
+      const rim = 0.6;                             // coping width
+      const apron = 1.8;                           // paved deck around the coping
+      const apronHX = poolW / 2 + rim + apron;     // apron half-extent (x)
+      const apronHZ = poolD / 2 + rim + apron;     // apron half-extent (z)
+      // Paved deck apron under/around the pool.
+      parts.push(tintedBox(apronHX * 2, 0.06, apronHZ * 2, poolX, 0.03, poolZ, PALETTE.entryPad));
+      // Light stone coping rim (frame of 4 bars on top of the apron).
+      const copingY = 0.18;
+      parts.push(tintedBox(poolW + rim * 2, copingY, rim, poolX, copingY / 2, poolZ - poolD / 2 - rim / 2, PALETTE.curb));
+      parts.push(tintedBox(poolW + rim * 2, copingY, rim, poolX, copingY / 2, poolZ + poolD / 2 + rim / 2, PALETTE.curb));
+      parts.push(tintedBox(rim, copingY, poolD, poolX - poolW / 2 - rim / 2, copingY / 2, poolZ, PALETTE.curb));
+      parts.push(tintedBox(rim, copingY, poolD, poolX + poolW / 2 + rim / 2, copingY / 2, poolZ, PALETTE.curb));
+      // Light tile floor (shows THROUGH the transparent water).
+      parts.push(tintedBox(poolW, 0.06, poolD, poolX, 0.05, poolZ, PALETTE.poolFloor));
+      // Dark lane-line "strokes" on the floor (long x axis).
+      const lanes = 5;
+      for (let l = 1; l < lanes; l++) {
+        const lz = poolZ - poolD / 2 + poolD * l / lanes;
+        parts.push(tintedBox(poolW - 0.8, 0.02, 0.18, poolX, 0.08, lz, PALETTE.poolLane));
+      }
+      // TRANSPARENT blue water slab (its own translucent mesh — see assemble()).
+      waterParts.push(tintedBox(poolW, 0.12, poolD, poolX, 0.12, poolZ, PALETTE.poolWater));
+      obstacles.push({ x: poolX, z: poolZ, w: apronHX * 2, d: apronHZ * 2 });
+
+      // BBQ (body + lid + grill bars) at the BACK (-z) edge of the courtyard.
+      const bbqX = poolX - poolW / 2 + 1.2;
+      const bbqZ = poolZ - apronHZ - 0.7;
       const bbqBodyH = 0.8;
       parts.push(tintedBox(0.7, bbqBodyH, 0.5, bbqX, bbqBodyH / 2, bbqZ, 0x2b2f33));
       parts.push(tintedBox(0.74, 0.18, 0.54, bbqX, bbqBodyH + 0.09, bbqZ, 0x14171c)); // lid
       for (let g = 0; g < 4; g++) {
         parts.push(tintedBox(0.6, 0.02, 0.03, bbqX, bbqBodyH - 0.02, bbqZ - 0.18 + g * 0.12, PALETTE.steel));
       }
-      // BBQ legs.
       for (const lx of [-1, 1]) for (const lz of [-1, 1]) {
         parts.push(tintedBox(0.05, 0.4, 0.05, bbqX + lx * 0.3, 0.2, bbqZ + lz * 0.2, 0x1c1f22));
       }
       colliders.push({ x: bbqX, y: bbqBodyH / 2, z: bbqZ, hx: 0.37, hy: bbqBodyH / 2, hz: 0.27 });
 
-      // GARDEN TABLE + 4 chairs (derive chair positions from table half-extents).
-      const gtX = W * 0.18;
-      const gtZ = -D / 2 - 2.2;
+      // DINING TABLE + 4 chairs at the FRONT (+z) edge — the "eat" spot.
+      const gtX = poolX + poolW / 2 - 1.5;
+      const gtZ = poolZ + apronHZ + 0.9;
       const gtR = 0.7;                  // round table radius
       const gtTopH = 0.08, gtLegH = 0.72;
       const gtHalf = gtR;               // table footprint half-extent
       parts.push(cylinderY(gtR, gtTopH, gtX, gtLegH + gtTopH / 2, gtZ, PALETTE.deckPlankA, 16));
       parts.push(cylinderY(0.08, gtLegH, gtX, gtLegH / 2, gtZ, PALETTE.caseWood));
-      // Chairs: derive distance = tableHalf + chairHalf + GAP.
       const chairHalf = 0.25, GAP = 0.18;
       const chairDist = gtHalf + chairHalf + GAP;
       const chairSeatH = 0.45;
@@ -687,10 +715,24 @@ defineObject("playerHouse", {
         const cxp = gtX + dx * chairDist;
         const czp = gtZ + dz * chairDist;
         parts.push(tintedBox(chairHalf * 2, 0.06, chairHalf * 2, cxp, chairSeatH, czp, PALETTE.benchWood));
-        // backrest on the side away from the table.
         parts.push(tintedBox(chairHalf * 2, 0.4, 0.05, cxp + dx * chairHalf, chairSeatH + 0.2, czp + dz * chairHalf, PALETTE.benchWood));
         for (const lx of [-1, 1]) for (const lz of [-1, 1]) {
           parts.push(tintedBox(0.04, chairSeatH, 0.04, cxp + lx * (chairHalf - 0.04), chairSeatH / 2, czp + lz * (chairHalf - 0.04), PALETTE.caseWood));
+        }
+      }
+
+      // SUN BENCHES around the pool (2 per long side), facing the water.
+      const benchSeatH = 0.4, benchW = 1.8, benchD = 0.5;
+      for (const sz of [-1, 1] as const) {
+        const bz = poolZ + sz * (poolD / 2 + rim + 0.5);
+        for (const bxFrac of [-0.28, 0.28]) {
+          const bx = poolX + bxFrac * poolW;
+          parts.push(tintedBox(benchW, 0.08, benchD, bx, benchSeatH, bz, PALETTE.deckPlankA));
+          parts.push(tintedBox(benchW, 0.35, 0.06, bx, benchSeatH + 0.18, bz + sz * (benchD / 2 - 0.03), PALETTE.deckPlankB)); // backrest outward
+          for (const lx of [-1, 1]) {
+            parts.push(tintedBox(0.06, benchSeatH, 0.06, bx + lx * (benchW / 2 - 0.1), benchSeatH / 2, bz, PALETTE.caseWood));
+          }
+          colliders.push({ x: bx, y: benchSeatH / 2, z: bz, hx: benchW / 2, hy: benchSeatH / 2, hz: benchD / 2 });
         }
       }
 

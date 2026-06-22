@@ -72,6 +72,16 @@ const map: Placement[] = [
   // ── LANDSIDE access road (pushed south to open a deep forecourt plaza) ─────
   { kind: "airportRoad", x: 0, z: -150, rot: 0, params: { length: 250, width: 26, lanes: 6 } },
 
+  // ── DEPARTURES DROP-OFF LOOP ───────────────────────────────────────────────
+  // A curbside lane right under the canopy where cars pull up to drop passengers,
+  // joined back to the main access road by two connector ramps at the east/west
+  // ends. The fountain plaza sits in the median of the loop, exactly as at a real
+  // terminal forecourt. airportRoad has no collider, so this just paints drivable
+  // asphalt under the existing taxis/curb props — drive in, drop off, drive out.
+  { kind: "airportRoad", x: 0, z: -108, rot: 0, params: { length: 170, width: 9, lanes: 2 } },
+  { kind: "airportRoad", x: -85, z: -129, rot: 90, params: { length: 46, width: 9, lanes: 2 } },
+  { kind: "airportRoad", x: 85, z: -129, rot: 90, params: { length: 46, width: 9, lanes: 2 } },
+
   // ── Drop-off curb canopy (full width, white, amber signage) ────────────────
   { kind: "curbCanopy", x: 0, z: -100, rot: 0, params: { w: 210, d: 14, label: "Departures" } },
 
