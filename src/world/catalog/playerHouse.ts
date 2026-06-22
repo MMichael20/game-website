@@ -291,30 +291,30 @@ defineObject("playerHouse", {
       parts.push(tintedBox(T, GAR_H, GAR_D, outerX, GAR_H / 2, garCZ, bodyColor));
       // (Shared +x wall omitted — it is the house's left wall.)
 
-      // Up-and-over garage door on +z: 3 bays (3-car garage), each a stack of
-      // horizontal slats, separated by vertical mullions. Bay width derives from
-      // GAR_W and the bay count so it scales with the garage.
+      // ONE wide modern SECTIONAL door on +z: horizontal slat panels + a thin top
+      // window band, framed by vertical wood-slat cladding on the surround returns.
       const slatCount = 6;
       const doorAreaH = GAR_H - 0.4;
       const slatH = doorAreaH / slatCount;
       const doorFaceZ = frontZ + 0.05;
-      const BAYS = 3;
-      const bayGap = 0.12;
-      const bayW = (GAR_W - 0.4 - bayGap * (BAYS - 1)) / BAYS;
-      const bay0CX = garCX - GAR_W / 2 + 0.2 + bayW / 2;
-      for (let b = 0; b < BAYS; b++) {
-        const bcx = bay0CX + b * (bayW + bayGap);
-        for (let s = 0; s < slatCount; s++) {
-          const cy = 0.2 + slatH * (s + 0.5);
-          parts.push(tintedBox(bayW, slatH - 0.03, 0.06, bcx, cy, doorFaceZ, PALETTE.rollDoor));
+      const doorW = GAR_W - 0.5;
+      for (let s = 0; s < slatCount; s++) {
+        const cy = 0.2 + slatH * (s + 0.5);
+        // Top slat reads as a window band (glassDark); the rest are charcoal panels.
+        const col = s === slatCount - 1 ? PALETTE.glassDark : PALETTE.rollDoor;
+        parts.push(tintedBox(doorW, slatH - 0.04, 0.06, garCX, cy, doorFaceZ, col));
+      }
+      // Vertical wood-slat cladding on the surround (left + right returns of the door).
+      const surroundW = (GAR_W - doorW) / 2;
+      for (const sx of [-1, 1] as const) {
+        const cx = garCX + sx * (doorW / 2 + surroundW / 2);
+        const surBattenN = 4;
+        for (let b = 0; b < surBattenN; b++) {
+          const bx = cx - surroundW / 2 + surroundW * (b + 0.5) / surBattenN;
+          parts.push(tintedBox(surroundW / surBattenN - 0.03, GAR_H, 0.09, bx, GAR_H / 2, doorFaceZ, PALETTE.villaWood));
         }
       }
-      // Vertical mullions between/around the bays.
-      for (let m = 0; m <= BAYS; m++) {
-        const mx = bay0CX - bayW / 2 - bayGap / 2 + m * (bayW + bayGap);
-        parts.push(tintedBox(bayGap, doorAreaH, 0.07, mx, 0.2 + doorAreaH / 2, doorFaceZ, TRIM));
-      }
-      // Door surround frame.
+      // Door head trim.
       parts.push(tintedBox(GAR_W + 0.1, 0.12, 0.1, garCX, doorAreaH + 0.2, doorFaceZ, TRIM));
 
       // Colliders: floor, back, outer wall, roof. Front bay left open (walk-in).
