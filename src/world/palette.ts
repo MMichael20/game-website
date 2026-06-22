@@ -105,6 +105,16 @@ export const PALETTE = {
   trimBrown: 0x7a5230,     // corner pilasters / railing / deck skirt
   deckPlankA: 0xb07a43,    // deck plank (light)
   deckPlankB: 0x9c6a39,    // deck plank (dark)
+  // modern-villa hero house (player-house-modern-villa-concept-v1)
+  villaStucco: 0xe9ddc7,    // warm cream stucco (main upper walls)
+  villaStuccoWarm: 0xd9c39a, // deeper tan stucco accent
+  villaStone: 0xbfb3a0,     // beige stacked-stone veneer (entry pillar, base, chimney)
+  villaWood: 0x7c4a25,      // warm vertical wood-slat cladding
+  villaRoof: 0x2a2c30,      // dark charcoal shed roof
+  villaSoffit: 0x4a4d52,    // lighter grey eave underside
+  villaDeck: 0xd7d2c6,      // pale terrace floor stone
+  villaPergola: 0x6a3f20,   // pergola louver wood (a touch darker than villaWood)
+  villaRail: 0x23262b,      // near-black thin metal terrace rail
 } as const;
 
 // Saturated building bodies for the hand-authored core buildings.
