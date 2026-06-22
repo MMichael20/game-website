@@ -87,6 +87,9 @@ export class Character implements Tickable {
     if (this.input.isDown("KeyS") || this.input.isDown("ArrowDown")) move.sub(forward);
     if (this.input.isDown("KeyA") || this.input.isDown("ArrowLeft")) move.sub(right);
     if (this.input.isDown("KeyD") || this.input.isDown("ArrowRight")) move.add(right);
+    // Analog joystick (mobile): additive with the keys, camera-relative.
+    move.addScaledVector(forward, this.input.move.y);
+    move.addScaledVector(right, this.input.move.x);
 
     const turbo = this.input.isDown("Space"); // dev: hold to zoom around the map
     const running = this.input.isDown("ShiftLeft") || this.input.isDown("ShiftRight");
@@ -104,9 +107,12 @@ export class Character implements Tickable {
 
     let desired = { x: 0, y: gravityDy, z: 0 };
     let bob = 0;
-    const moving = move.lengthSq() > 0;
+    const moving = move.lengthSq() > 1e-6;
     if (moving) {
-      move.normalize().multiplyScalar(speed * dt);
+      // Scale by clamped magnitude so a partial joystick push walks slowly; a
+      // single key or keyboard diagonal both clamp to 1 (keyboard feel unchanged).
+      const mag = Math.min(1, move.length());
+      move.normalize().multiplyScalar(speed * dt * mag);
       desired = { x: move.x, y: gravityDy, z: move.z };
       this.object.rotation.y = Math.atan2(move.x, move.z);
       this.phase += speed * dt * 6;

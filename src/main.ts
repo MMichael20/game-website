@@ -15,6 +15,7 @@ import { Minimap } from "./ui/Minimap";
 import { makeHumanoid } from "./entities/Humanoid";
 import { OBJECT_LIBRARY, tintedMesh } from "./world/objects";
 import { DebugOverlay } from "./ui/DebugOverlay";
+import { VirtualControls } from "./ui/VirtualControls";
 
 // Loading screen control (the static #r3d-loading overlay in index.html). We
 // toggle it rather than remove it so it can cover BOTH waits: the initial boot,
@@ -51,10 +52,20 @@ async function boot() {
   const minimap = new Minimap(container, RISHON_MAP);
   // GTA-style camera: capture the pointer so mouse movement orbits the camera.
   const canvas = engine.renderer.domElement;
-  const lockPointer = () => {
-    const p = canvas.requestPointerLock?.() as unknown as Promise<void> | undefined;
-    if (p && typeof p.catch === "function") p.catch(() => {}); // ignore lock rejections (e.g. headless)
-  };
+  // Touch device? Then show on-screen controls and skip pointer lock (look comes
+  // from the touch look-zone, and requestPointerLock just rejects on mobile).
+  // `?touch` / `#touch` in the URL forces it on for testing on desktop.
+  const isTouch =
+    matchMedia("(pointer: coarse)").matches ||
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    /[?#].*\btouch\b/.test(location.href);
+  const lockPointer = isTouch
+    ? () => {}
+    : () => {
+        const p = canvas.requestPointerLock?.() as unknown as Promise<void> | undefined;
+        if (p && typeof p.catch === "function") p.catch(() => {}); // ignore lock rejections (e.g. headless)
+      };
 
   // DEV-only aerial screenshot mode: open with #view=<x>,<z> to park the camera
   // over (x,z) and render the static scene (no follow/game), for inspecting
@@ -179,6 +190,12 @@ async function boot() {
   const menu = new Menu(container);
   let started = false;
   let primed = false; // has the first world frame rendered at least once?
+
+  // Mobile: on-screen joystick + drag-look + action buttons. Auto-hidden on the
+  // title/pause screens and while the phone UI is open.
+  if (isTouch) {
+    engine.add(new VirtualControls(container, input, follow, () => started && !game.phoneOpen));
+  }
   const begin = () => {
     menu.hide();
     started = true;

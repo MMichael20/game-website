@@ -82,8 +82,9 @@ export class Car implements Tickable {
   }
 
   update(dt: number): void {
-    const accel = this.input.isDown("KeyW") || this.input.isDown("ArrowUp");
-    const reverse = this.input.isDown("KeyS") || this.input.isDown("ArrowDown");
+    const mx = this.input.move.x, my = this.input.move.y;
+    const accel = this.input.isDown("KeyW") || this.input.isDown("ArrowUp") || my > 0.15;
+    const reverse = this.input.isDown("KeyS") || this.input.isDown("ArrowDown") || my < -0.15;
     const left = this.input.isDown("KeyA") || this.input.isDown("ArrowLeft");
     const right = this.input.isDown("KeyD") || this.input.isDown("ArrowRight");
     const braking = this.input.isDown("Space");
@@ -106,6 +107,7 @@ export class Car implements Tickable {
     if (this.enabled) {
       if (left) steer = MAX_STEER;
       else if (right) steer = -MAX_STEER;
+      if (Math.abs(mx) > 0.05) steer = -mx * MAX_STEER; // analog joystick steering
     }
 
     // rear-wheel drive (indices 2,3), front-wheel steer (indices 0,1)
