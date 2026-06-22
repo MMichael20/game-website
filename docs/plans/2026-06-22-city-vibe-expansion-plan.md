@@ -337,51 +337,43 @@ git commit -m "perf(world): freeze static world transforms (no per-frame matrix 
 
 - [ ] **Step 2: Keep the core lots, plaza, kiosks, traffic lights** exactly as they are (the two `...lot(...)` blocks, `plaza`, two `kioskCart`s, four `trafficLight`s, the SE `terraceRow`). These are valid against the unchanged core junction.
 
-- [ ] **Step 3: Add building rows filling the blocks.** Append these placements (coordinates keep buildings ≥6m off every road centerline; arterials are at ±56, ±112). Block interiors between arterials are centered at ±28 and ±84 on each axis. Rows face their fronting street via `rot`.
+- [ ] **Step 3: Add building rows in the empty OUTER blocks.** Append these placements. The `half=2` grid has arterials at x,z ∈ {±56, ±112}; block interiors are ~46.8m square, centered at ±28 and ±84 on each axis. The INNER-ring blocks (±28, ±28) are already occupied by the two stores, the plaza and the terraceRow — **do not place rows there**. Each row is `units:3` (≈40.5m run) so it fits a 46.8m block with margin. Rows face inward toward the city via `rot` (front is local +z). All `d:12`.
 
 ```ts
-  // ── North district: two rows of buildings between the core and the highway ──
-  // Row A faces the z=-56 arterial from the north (back row of the core blocks),
-  // fronts facing +z toward the road → rot 0 puts fronts at higher z; we want
-  // fronts toward the road (south), so rot 180.
-  { kind: "buildingRow", x: -28, z: -40, rot: 0, params: { units: 4, d: 12, district: "north", anchor: "center", seed: 61 } },
-  { kind: "buildingRow", x: 28, z: -40, rot: 0, params: { units: 4, d: 12, district: "north", anchor: "center", seed: 62 } },
-  // Row B sits in the -56..-112 blocks, fronts facing the z=-56 road (south) → rot 180.
-  { kind: "buildingRow", x: -28, z: -84, rot: 180, params: { units: 4, d: 13, district: "north", anchor: "center", seed: 63 } },
-  { kind: "buildingRow", x: 28, z: -84, rot: 180, params: { units: 4, d: 13, district: "north", anchor: "center", seed: 64 } },
+  // ── North band (z=-84 blocks): 4 rows facing the city (south, +z) ──
+  { kind: "buildingRow", x: -84, z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 61 } },
+  { kind: "buildingRow", x: -28, z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 62 } },
+  { kind: "buildingRow", x: 28,  z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 63 } },
+  { kind: "buildingRow", x: 84,  z: -84, rot: 0, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 64 } },
 
-  // ── East & West rows facing the cross-v / ±56 vertical arterials ──
-  // West block interior at x=-28: a row running along z, fronts facing +x (east)
-  // toward the cross-v road → rot 90 maps local +z (front) to world +x.
-  { kind: "buildingRow", x: -84, z: 28, rot: 90, params: { units: 4, d: 12, district: "west", anchor: "center", seed: 71 } },
-  { kind: "buildingRow", x: -84, z: -28, rot: 90, params: { units: 4, d: 12, district: "west", anchor: "center", seed: 72 } },
-  // East block interior at x=84: fronts facing -x (west) → rot 270.
-  { kind: "buildingRow", x: 84, z: 28, rot: 270, params: { units: 4, d: 12, district: "east", anchor: "center", seed: 73 } },
-  { kind: "buildingRow", x: 84, z: -28, rot: 270, params: { units: 4, d: 12, district: "east", anchor: "center", seed: 74 } },
+  // ── South band (z=84 blocks): 4 rows facing the city (north, -z) ──
+  { kind: "buildingRow", x: -84, z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 65 } },
+  { kind: "buildingRow", x: -28, z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 66 } },
+  { kind: "buildingRow", x: 28,  z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 67 } },
+  { kind: "buildingRow", x: 84,  z: 84, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 68 } },
+
+  // ── West band (x=-84 blocks): 2 rows facing the city (east, +x) → rot 90 ──
+  { kind: "buildingRow", x: -84, z: -28, rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 71 } },
+  { kind: "buildingRow", x: -84, z: 28,  rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 72 } },
+  // ── East band (x=84 blocks): 2 rows facing the city (west, -x) → rot 270 ──
+  { kind: "buildingRow", x: 84,  z: -28, rot: 270, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 73 } },
+  { kind: "buildingRow", x: 84,  z: 28,  rot: 270, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 74 } },
 ```
 
-NOTE on `rot`: verify front-facing visually is the user's job (PITFALL 1). The implementer's job is only that footprints don't overlap roads/each other and tsc/build pass. If the engine logs a footprint-overlap warning at build time, nudge the offending row's x/z so its derived footprint clears the corridor, then re-run.
+NOTE on `rot`: which way fronts visually face is the user's call in-game (PITFALL 1). The implementer's job is only that footprints don't overlap and tsc/build pass.
 
-- [ ] **Step 4: Relocate the four filler towers into a north skyline back row near the highway**, between the city and the highway (highway will sit at z≈-126). Replace the four existing `fillerBuilding` lines (currently at z=-68..-72) with a spread just south of the highway:
+- [ ] **Step 4: Remove the four standalone filler towers.** Delete the four existing `{ kind: "fillerBuilding", ... }` lines (currently the north-skyline towers at z=-68..-72). Skyline height variety now comes from `buildingRow`'s glass-tower / dark-glass units (its `genUnit` emits `glassTower`/`darkGlass` styles and up to 7 stories). Do not add replacement towers.
 
-```ts
-  // North skyline backdrop: glass towers just south of the highway.
-  { kind: "fillerBuilding", x: -56, z: -112, params: { w: 14, d: 14, stories: 8, style: "glassTower", bodyColor: 0x6aa9c9, roofUnit: true, seed: 21 } },
-  { kind: "fillerBuilding", x: -20, z: -116, params: { w: 16, d: 16, stories: 10, style: "darkGlass", bodyColor: 0x1d3b44, roofUnit: true, seed: 22 } },
-  { kind: "fillerBuilding", x: 20, z: -116, params: { w: 14, d: 14, stories: 7, style: "glassTower", bodyColor: 0x9ac6e0, roofUnit: true, seed: 23 } },
-  { kind: "fillerBuilding", x: 56, z: -112, params: { w: 13, d: 13, stories: 9, style: "darkGlass", bodyColor: 0x223f49, roofUnit: true, seed: 24 } },
-```
-
-- [ ] **Step 5: Place the highway along the north edge.**
+- [ ] **Step 5: Place the highway beyond the north arterial.** The highway half-width is `medianW/2 + lanes*laneW + shoulderW = 2 + 7.2 + 1.2 = 10.4`, so at z=-128 it spans z ∈ [-138.4, -117.6] — inside the world edge (-140) with a grass verge between it and the z=-112 arterial.
 
 ```ts
   // ── Highway: a divided multi-lane highway bounding the city to the north. ──
-  { kind: "highway", x: 0, z: -126, rot: 0, params: { length: 260, lanes: 2, laneW: 3.6, medianW: 4, shoulderW: 1.2, gantry: true, seed: 1 } },
+  { kind: "highway", x: 0, z: -128, rot: 0, params: { length: 260, lanes: 2, laneW: 3.6, medianW: 4, shoulderW: 1.2, gantry: true, seed: 1 } },
 ```
 
 - [ ] **Step 6: Typecheck.** Run: `npx tsc --noEmit` — Expected: clean.
 
-- [ ] **Step 7: Check for footprint-overlap warnings.** Since the dev server can't run (PITFALL 1), inspect the engine's overlap logic isn't triggered by construction: the only colliders/obstacles in play are buildings (footprints at their placement x/z, sizes from their `w`/`d`), the highway (z=-126±~10), and core objects. Confirm by reasoning that no two placed footprints' AABBs intersect (rows centered at ±28/±84 with d≈12–13; towers at z=-112..-116; highway at z=-126). If any pair could overlap, nudge coordinates and note it. (No runtime check available — this is a static reasoning step.)
+- [ ] **Step 7: Confirm no footprint overlaps by construction (static reasoning — no runtime).** All new rows sit in distinct outer blocks (north z=-84 band at x∈{±84,±28}; south z=84 band; west x=-84 at z=±28; east x=84 at z=±28); each ≈40.5m run + d=12 fits its 46.8m block. The highway (z ∈ [-138.4,-117.6]) is north of every building (northernmost building footprint reaches z≈-90). The inner-ring core content (|x|,|z| ≲ 30) is untouched and far from every new outer-band row. No two placed footprint AABBs intersect. If `npx tsc` is clean and this reasoning holds, proceed.
 
 - [ ] **Step 8: Commit.**
 
@@ -409,7 +401,7 @@ git commit -m "feat(world): restructure map into a city grid with building rows 
 - `highway` object → Task 1. ✓
 - `buildingRow` object → Task 2. ✓
 - Map restructure: core kept + mid rows + north skyline + highway → Task 4. ✓
-- Multiple rows of buildings → Task 4 Steps 3–4 (8 building rows + tower back row). ✓
+- Multiple rows of buildings → Task 4 Step 3 (12 building rows in the outer N/S/E/W bands, 3 buildings each = 36 backdrop buildings). ✓
 - Two stores on the street → kept in Task 4 Step 2 (existing lots). ✓
 - Perf: freeze static transforms → Task 3; single-mesh/instanced surfaces → Task 1 (carriageways, instanced dashes, merged rails). ✓
 - No lighting/post changes → constraint stated; no task touches Engine.ts. ✓

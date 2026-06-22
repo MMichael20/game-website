@@ -166,4 +166,14 @@ Then the user looks in-game themselves.
   **no lighting/post changes** → respects "prioritize content over rendering" while
   still giving a real, safe perf win that scales with the bigger city.
 - Sign gantry on the highway **off by default** → keep the first pass cheap; can be
-  switched on per placement later.
+  switched on per placement later. (Map turns it on for the single placement.)
+- **Layout fit-fix (caught during execution):** building rows use `units:3` (≈40.5m,
+  fits the ~46.8m block interior) and are placed ONLY in the empty OUTER bands (north
+  z=-84, south z=84, west x=-84, east x=84) — chose this because the inner-ring blocks
+  are already occupied by the two stores, the plaza and the terraceRow, and 4-unit rows
+  overflowed block interiors onto roads.
+- **Standalone north towers dropped** → the `half=2` north band (z=-112 arterial + verge
+  + highway) had no clean room for them; skyline height variety now comes from
+  `buildingRow`'s glassTower/darkGlass units, so no separate towers are needed.
+- **Highway at z=-128** (not -126) → derived half-width 10.4 keeps it inside the world
+  edge (-140) with a grass verge above the z=-112 arterial.
