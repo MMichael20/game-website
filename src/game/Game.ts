@@ -51,6 +51,9 @@ export class Game implements Tickable {
   private tT = 0;
   private pendingPortal: Portal | null = null;
   private static readonly FADE = 0.45;
+  // Where the car was parked when we left the city, so it's still there on return.
+  private savedCarPose: { x: number; z: number; yaw: number } | null = null;
+  private readonly _euler = new THREE.Euler();
 
   constructor(
     private renderer: THREE.WebGLRenderer,
@@ -249,6 +252,14 @@ export class Game implements Tickable {
   // only in the city; elsewhere it is parked far away and hidden.
   private doSwap(portal: Portal): void {
     const target = MAPS[portal.to];
+
+    // Leaving the city for a car-less map: remember where the car is parked so
+    // it's waiting in the same spot when we come back.
+    if (this.world.currentId === "city" && !target.hasCar) {
+      this._euler.setFromQuaternion(this.car.object.quaternion, "YXZ");
+      this.savedCarPose = { x: this.car.position.x, z: this.car.position.z, yaw: this._euler.y };
+    }
+
     this.world.unload();
     this.world.load(target);
 
@@ -258,10 +269,16 @@ export class Game implements Tickable {
     this.character.setPosition(portal.toSpawn.x, portal.toSpawn.z);
 
     if (target.hasCar && target.carSpawn) {
+      // Restore the car where we parked it (if saved), else its default spawn.
+      const pose = target.id === "city" && this.savedCarPose
+        ? this.savedCarPose
+        : { x: target.carSpawn.x, z: target.carSpawn.z, yaw: target.carSpawnYaw ?? 0 };
       this.car.enabled = false;
-      this.car.teleportTo(target.carSpawn.x, target.carSpawn.z, target.carSpawnYaw ?? 0);
+      this.car.teleportTo(pose.x, pose.z, pose.yaw);
       this.car.object.visible = true;
+      if (target.id === "city") this.savedCarPose = null;
     } else {
+      // Car-less map: hide it and park its body far away so it can't block anyone.
       this.car.enabled = false;
       this.car.object.visible = false;
       this.car.teleportTo(99999, 99999, 0);

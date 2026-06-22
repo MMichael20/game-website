@@ -1,7 +1,7 @@
 import type { Placement, Vec2 } from "./system/types";
 import { lot, blockWalls } from "./layout";
 
-export const GROUND_SIZE = 140;
+export const GROUND_SIZE = 260;
 // Player spawns on the south sidewalk just east of the central junction (clear of
 // every block wall), in the dense core.
 export const PLAYER_SPAWN: Vec2 = { x: 6, z: 3.8 };
@@ -20,7 +20,7 @@ export const CAR_SPAWN_YAW = Math.PI / 2;           // local +z (forward) -> +x 
 // of the road. The result is a street-canyon city with no empty aprons.
 const CELLS = [-48, -16, 16, 48];
 const BLOCK = 23;                                   // wall span inside each 26m cell
-const HERO_CELLS = new Set(["-16,-16", "16,-16", "-16,16", "16,16"]); // phone, restaurant, plaza, airport
+const HERO_CELLS = new Set(["-16,-16", "16,-16", "-16,16"]); // phone, restaurant, plaza
 const DISTRICTS = ["north", "east", "west"];
 
 const filledBlocks: Placement[] = [];
@@ -75,17 +75,39 @@ export const MAP: Placement[] = [
   // The one open square in the dense core — used space, not an empty apron.
   { kind: "plaza", x: -16, z: 16, params: { w: 24, d: 22, seed: 5 } },
 
-  // ── Inner SE cell (16,16): the AIRPORT terminal entrance ("Terminal 3") ──────
-  // A detailed terminal facade whose open front faces the junction (-z, rot:180).
-  // Standing at its door (the city portal at x:16,z:8) and pressing E flies you to
-  // the Ben Gurion airport map (see world/maps.ts + airportMap.ts).
-  { kind: "terminalHall", x: 16, z: 16, rot: 180, params: { w: 24, d: 16, h: 9, rearGap: 8 } },
-  { kind: "airportMonument", x: 16, z: 6, rot: 0 },
-  { kind: "palmTree", x: 7, z: 7, params: { h: 6 } },
-  { kind: "palmTree", x: 25, z: 7, params: { h: 6 } },
-  { kind: "lamp", x: 10, z: 8 },
-  { kind: "lamp", x: 22, z: 8 },
-  { kind: "planter", x: 16, z: 9.5 },
+  // ── Airport expressway: drive EAST out of the city to the edge ───────────────
+  // The main arterial (z=0) continues east as a long drivable road from the city
+  // edge (x≈62) out to the airport terminal at the map's east edge (x≈118). Take
+  // the highway, park, walk to the door, press E (city portal at x:108,z:0).
+  { kind: "road", x: 90, z: 0, params: { length: 64 } },        // x ≈ 58..122 at z=0
+  ...[64, 76, 88, 100].flatMap((x): Placement[] => [
+    { kind: "lamp", x, z: 6 },
+    { kind: "lamp", x, z: -6 },
+  ]),
+  // Roadside greenery so the outskirts read as a landscaped airport approach.
+  ...[70, 94].flatMap((x): Placement[] => [
+    { kind: "tree", x, z: 10 },
+    { kind: "tree", x, z: -10 },
+  ]),
+
+  // ── Airport terminal entrance ("Terminal 3") on the EAST EDGE ────────────────
+  // Open front (local +z) turned to face WEST toward the incoming road (rot:270);
+  // its door lands at x≈108,z≈0. A forecourt apron, drop-off and signage frame it.
+  { kind: "pavement", x: 100, z: 0, params: { w: 46, d: 60 } },
+  { kind: "terminalHall", x: 118, z: 0, rot: 270, params: { w: 30, d: 20, h: 10, rearGap: 10 } },
+  { kind: "airportMonument", x: 100, z: 14, rot: 270 },
+  { kind: "curbCanopy", x: 104, z: -16, rot: 0, params: { w: 30, d: 10, label: "Departures" } },
+  ...[90, 104].flatMap((x): Placement[] => [
+    { kind: "palmTree", x, z: 12, params: { h: 7 } },
+    { kind: "palmTree", x, z: -12, params: { h: 7 } },
+  ]),
+  { kind: "lamp", x: 110, z: 9 },
+  { kind: "lamp", x: 110, z: -9 },
+  { kind: "bench", x: 100, z: 6 },
+  { kind: "bench", x: 100, z: -6 },
+  // A couple of ground vehicles parked at the terminal forecourt.
+  { kind: "apronVehicle", x: 96, z: 22, rot: 0, params: { variant: "stairs" } },
+  { kind: "apronVehicle", x: 108, z: 22, rot: 0, params: { variant: "catering" } },
 
   // ── Every other cell: packed streetwall blocks ──────────────────────────────
   ...filledBlocks,

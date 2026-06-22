@@ -4,9 +4,8 @@ import type { MapDescriptor } from "./system/types";
 import { MAP, PLAYER_SPAWN, CAR_SPAWN, CAR_SPAWN_YAW, GROUND_SIZE } from "./map";
 import { AIRPORT } from "./airportMap";
 
-// The city. Its one portal is the Terminal-3 entrance in the SE hero cell (16,16);
-// stand at its door (which faces the junction, i.e. its open front is at -z of the
-// cell) and press E to fly out to the airport landside curb.
+// The city. Drive the eastbound expressway out to the Terminal-3 building on the
+// east edge (door at x~108,z=0), park, and press E to fly to the airport landside.
 const CITY: MapDescriptor = {
   id: "city",
   map: MAP,
@@ -16,7 +15,7 @@ const CITY: MapDescriptor = {
   carSpawn: CAR_SPAWN,
   carSpawnYaw: CAR_SPAWN_YAW,
   portals: [
-    { x: 16, z: 8, r: 5, prompt: "Press E to enter the airport", to: "airport", toSpawn: { x: 0, z: -98 } },
+    { x: 108, z: 0, r: 5, prompt: "Press E to enter the airport", to: "airport", toSpawn: { x: 0, z: -98 } },
   ],
 };
 

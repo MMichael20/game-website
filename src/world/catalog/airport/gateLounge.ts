@@ -95,11 +95,7 @@ defineObject("gateLounge", {
     const monBase = deskH + 0.07;
     // Monitor arm / stand
     parts.push(tintedBox(0.06, 0.32, 0.06, deskX + 0.5, monBase + 0.16, deskZ - 0.1, MONITOR_BODY));
-    // Monitor body (angled slightly)
-    const monGeo = new THREE.BoxGeometry(0.56, 0.38, 0.06);
-    monGeo.translate(deskX + 0.5, monBase + 0.46, deskZ - 0.1);
-    parts.push(new THREE.BufferGeometry().copy(monGeo));
-    // Tint monitor body dark
+    // Monitor body (dark, tinted so it merges with the rest)
     const monBodyGeo = tintedBox(0.56, 0.38, 0.06, deskX + 0.5, monBase + 0.46, deskZ - 0.1, MONITOR_BODY);
     parts.push(monBodyGeo);
     // Screen surface (slightly proud, glowing blue)

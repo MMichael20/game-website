@@ -266,4 +266,31 @@ returning to the city).
   density comes from props, seating, planes, vehicles.
 - Car-return policy → **car returns to `CAR_SPAWN`** when you re-enter the city
   (not persisted to last-parked) — simpler, avoids cross-map pose bookkeeping.
+- Execution → **engine task (Task 1) implemented inline** (plan carries its
+  complete code; it touches core runtime, so correctness beats delegation);
+  **content objects (Tasks 2–5) built by parallel implementer subagents over
+  disjoint files**, with the controller owning `catalog/index.ts` imports to
+  remove the one shared-file conflict — much faster, conflict-free.
+- Review → **per-task TDD reviews replaced by controller-run `npx tsc --noEmit`
+  after each batch + a final whole-branch code review** — the project bans tests
+  (CLAUDE.md PITFALL 2); the binding gate is tsc + vite build.
+
+## Revisions (post-build user feedback, 2026-06-22)
+
+- **Black screen on entering the airport** — root cause: `gateLounge` pushed an
+  untinted `BoxGeometry` into a `mergeTinted` batch, so `mergeGeometries` failed,
+  `build()` threw, `buildWorld(AIRPORT)` threw, and the frame loop died at full
+  black. Fixed by removing the stray untinted geometry. A headless smoke script
+  (`scripts/airport-smoke.ts`, stubs the 2D canvas) now builds every placement of
+  both maps and reports any throwing object — a one-shot debug tool, not a test.
+- **Airport relocated to the map edge + expressway** (user request "put the
+  airport on the edge and expand the map so we take the highway to get to it"):
+  the city `GROUND_SIZE` grew 140 → 260; the SE entrance moved out of the core to
+  the **east edge** at the end of a long drivable `road` expressway extending the
+  main arterial (the divided `highway` object's center median would block the
+  car's lane, so an aligned single-carriageway road is used as the expressway).
+  Drive east, park, walk to the Terminal-3 door (city portal at x:108,z:0).
+- **Car stays parked at the airport** — `Game.doSwap` now saves the car's pose
+  when leaving the city and restores it on return, so you re-enter the city right
+  next to where you parked (instead of the car snapping back to its core spawn).
 ```
