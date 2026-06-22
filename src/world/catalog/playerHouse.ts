@@ -398,16 +398,23 @@ defineObject("playerHouse", {
       parts.push(tintedBox(0.08, FLOOR_H, STAIR_LEN, STAIR_CX - STAIR_W / 2, FLOOR_H / 2, STAIR_Z0 + STAIR_LEN / 2, 0x5a3c22));
 
       // ── LIVING ROOM (front-left area) ──
-      // Coordinates derive from the living region rectangle.
-      const livCX = (livingMaxX + (-inX)) / 2 * 0.0 - 2.0;  // bias slightly left-center
+      // Coordinates derive from the living region rectangle. livCX is the REAL
+      // geometric center of the living region (between the -x interior wall and
+      // the kitchen band), NOT a hand-typed constant.
+      const livCX = (livingMaxX + (-inX)) / 2;              // = (2.7 + -5.7)/2 = -1.5
       const livFrontZ = inZ - 0.4;                          // near the front
-      // Rug on the floor.
-      parts.push(tintedBox(3.6, 0.04, 2.6, livCX, floorY + 0.02, livFrontZ - 1.2, 0xb5402f));
-
-      // Sofa (base + backrest + two arms), facing -z (back to the front wall),
-      // so it faces the TV on the back wall. Place near the front.
+      // The centered front-door gap is at x in [-DOOR_W/2, +DOOR_W/2] with an
+      // entry corridor x in [-1.0, 1.0] that MUST stay clear of furniture
+      // colliders near the door (z within ~2.5m of the +z door). So we bias the
+      // sofa cluster off the derived center toward the left wall: enough that the
+      // sofa's right edge clears x=-1.0, while its left edge stays clear of the
+      // back-left staircase (x in [-5.6, -4.4]) and the -x interior wall (-inX).
       const sofaW = 2.4, sofaD = 0.9, sofaSeatH = 0.45, sofaBackH = 0.9, armW = 0.22;
-      const sofaCX = livCX;
+      // sofaCX so the right edge sits at x=-1.4 (clears the [-1.0,1.0] corridor):
+      const sofaCX = livCX - 1.1;                           // = -2.6 → x-extent [-3.8, -1.4]
+      // Rug on the floor (under the sofa cluster, biased with it).
+      parts.push(tintedBox(3.6, 0.04, 2.6, sofaCX, floorY + 0.02, livFrontZ - 1.2, 0xb5402f));
+
       const sofaCZ = livFrontZ - sofaD / 2;
       const sofaBaseY = floorY;
       // base
@@ -428,8 +435,10 @@ defineObject("playerHouse", {
         parts.push(tintedBox(0.08, ctLegH, 0.08, ctCX + lx * (ctW / 2 - 0.1), floorY + ctLegH / 2, ctCZ + lz * (ctD / 2 - 0.1), PALETTE.caseWood));
       }
 
-      // Armchair beside the sofa.
-      const acX = sofaCX + sofaW / 2 + 0.8;
+      // Armchair beside the sofa, on the OUTSIDE (toward the -x wall, away from
+      // the central entry corridor at x=0). Placing it at sofaCX + ... would land
+      // it on the entry axis and trap the player at the door; we mirror it left.
+      const acX = sofaCX - sofaW / 2 - 0.8;                 // = -4.6 → x-extent [-5.05, -4.15]
       const acZ = sofaCZ;
       parts.push(tintedBox(0.9, sofaSeatH, 0.9, acX, floorY + sofaSeatH / 2, acZ, PALETTE.benchRed));
       parts.push(tintedBox(0.9, sofaBackH, 0.2, acX, floorY + sofaBackH / 2, acZ + 0.35, 0x9c3528));
@@ -488,12 +497,16 @@ defineObject("playerHouse", {
         parts.push(cylinderY(0.08, 0.03, cntCX + ax, floorY + cntH + 0.02, stoveCZ + az, 0x1c1f22));
       }
 
-      // Fridge (steel) at the back end of the kitchen.
-      const fridgeY = 1.0;
-      const fridgeCZ = cntZ0 - 0.2;
-      parts.push(tintedBox(0.8, fridgeY * 2, 0.8, kitchenWallX - 0.4, fridgeY, fridgeCZ, PALETTE.steel));
+      // Fridge (steel) at the back end of the kitchen. Derive its center z so its
+      // BACK face sits flush against the inner back wall (z = -inZ), not through
+      // it: fridgeCZ = -inZ + halfDepth (so the whole box is INSIDE the room).
+      const fridgeY = 1.0;                         // half-height
+      const fridgeDepth = 0.8;
+      const fridgeHalfDepth = fridgeDepth / 2;     // = 0.4
+      const fridgeCZ = -inZ + fridgeHalfDepth;     // = -5.2 + 0.4 = -4.8 (back face at -5.2)
+      parts.push(tintedBox(0.8, fridgeY * 2, fridgeDepth, kitchenWallX - 0.4, fridgeY, fridgeCZ, PALETTE.steel));
       parts.push(tintedBox(0.05, 1.4, 0.05, kitchenWallX - 0.8, fridgeY, fridgeCZ + 0.25, PALETTE.steelDark)); // handle
-      colliders.push({ x: kitchenWallX - 0.4, y: fridgeY, z: fridgeCZ, hx: 0.4, hy: fridgeY, hz: 0.4 });
+      colliders.push({ x: kitchenWallX - 0.4, y: fridgeY, z: fridgeCZ, hx: 0.4, hy: fridgeY, hz: fridgeHalfDepth });
 
       // Kitchen table + 2 chairs (in the kitchen's open center).
       const ktX = kitchenWallX - 1.8;
