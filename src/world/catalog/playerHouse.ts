@@ -685,9 +685,9 @@ defineObject("playerHouse", {
       waterParts.push(tintedBox(poolW, 0.12, poolD, poolX, 0.12, poolZ, PALETTE.poolWater));
       obstacles.push({ x: poolX, z: poolZ, w: apronHX * 2, d: apronHZ * 2 });
 
-      // BBQ (body + lid + grill bars) at the BACK (-z) edge of the courtyard.
-      const bbqX = poolX - poolW / 2 + 1.2;
-      const bbqZ = poolZ - apronHZ - 0.7;
+      // BBQ (body + lid + grill bars) on the deck at the NEAR (house-side) end.
+      const bbqX = poolX - apronHX + 1.0;
+      const bbqZ = poolZ;
       const bbqBodyH = 0.8;
       parts.push(tintedBox(0.7, bbqBodyH, 0.5, bbqX, bbqBodyH / 2, bbqZ, 0x2b2f33));
       parts.push(tintedBox(0.74, 0.18, 0.54, bbqX, bbqBodyH + 0.09, bbqZ, 0x14171c)); // lid
@@ -699,9 +699,9 @@ defineObject("playerHouse", {
       }
       colliders.push({ x: bbqX, y: bbqBodyH / 2, z: bbqZ, hx: 0.37, hy: bbqBodyH / 2, hz: 0.27 });
 
-      // DINING TABLE + 4 chairs at the FRONT (+z) edge — the "eat" spot.
-      const gtX = poolX + poolW / 2 - 1.5;
-      const gtZ = poolZ + apronHZ + 0.9;
+      // DINING TABLE + 4 chairs on the deck at the FAR end — the "eat" spot.
+      const gtX = poolX + apronHX - 1.4;
+      const gtZ = poolZ;
       const gtR = 0.7;                  // round table radius
       const gtTopH = 0.08, gtLegH = 0.72;
       const gtHalf = gtR;               // table footprint half-extent
@@ -721,11 +721,11 @@ defineObject("playerHouse", {
         }
       }
 
-      // SUN BENCHES around the pool (2 per long side), facing the water.
+      // SUN BENCHES / loungers lining the two LONG sides of the pool (3 per side).
       const benchSeatH = 0.4, benchW = 1.8, benchD = 0.5;
       for (const sz of [-1, 1] as const) {
-        const bz = poolZ + sz * (poolD / 2 + rim + 0.5);
-        for (const bxFrac of [-0.28, 0.28]) {
+        const bz = poolZ + sz * (poolD / 2 + rim + 0.6);
+        for (const bxFrac of [-0.32, 0, 0.32]) {
           const bx = poolX + bxFrac * poolW;
           parts.push(tintedBox(benchW, 0.08, benchD, bx, benchSeatH, bz, PALETTE.deckPlankA));
           parts.push(tintedBox(benchW, 0.35, 0.06, bx, benchSeatH + 0.18, bz + sz * (benchD / 2 - 0.03), PALETTE.deckPlankB)); // backrest outward

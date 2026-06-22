@@ -34,6 +34,10 @@ const HALF = 3;                       // road half-width (ROAD_W = 6)
 const HW = 26;                        // main block width  (playerHouse W)
 const HD = 20;                        // main block depth  (playerHouse D)
 const HGARW = 11;                     // garage wing width (playerHouse GAR_W)
+// Pool courtyard reaches this far along LOCAL +x (= world -x at rot 180), so the
+// fence can enclose it. MIRRORS playerHouse: W/2 + gap(1.5) + poolW(16) + rim(0.6)
+// + apron(1.8) = 32.9. Keep in sync if the pool changes.
+const HPOOL_OUT = 32.9;               // pool-deck outer edge, local +x
 
 // Avenue/cross geometry — shared by the layout and the hero-anchor helper.
 const avenuesOf = (oz: number) => [oz + 96, oz + 48, oz, oz - 48, oz - 96];
@@ -45,7 +49,6 @@ const CROSS_LEN = 210;                               // z∈[oz-105, oz+105]
 // suburbPlacements() and map.ts compute identical values for the same origin.
 function heroLot(ox: number, oz: number) {
   const avHero = avenuesOf(oz)[2];           // CENTRAL avenue (z = oz) — house sits mid-neighbourhood
-  const POOL_REACH = 34;                      // how far the pool courtyard extends to world -x of the house
   const HERO_X = ox + 4;                      // shift so the asymmetric (pool-side) footprint stays centred in the block
   const HERO_Z = avHero + 18;                 // NORTH frontage of the central avenue (front faces south, rot 180)
   const heroMainL = HERO_X - HW / 2;          // main-block west edge
@@ -53,13 +56,14 @@ function heroLot(ox: number, oz: number) {
   const heroFrontZ = HERO_Z - HD / 2;         // south face (toward the avenue)
   const heroBackZ = HERO_Z + HD / 2;          // north face
   const garCenterX = HERO_X + HW / 2 + HGARW / 2;
-  const heroPoolL = HERO_X - POOL_REACH;      // west edge of the pool courtyard (world -x)
-  const FX_LEFT = heroMainL - 1.5;
+  const heroPoolL = HERO_X - HPOOL_OUT;       // west edge of the pool deck (world -x)
+  const FX_LEFT = heroMainL - 1.5;            // fence line just west of the main block
+  const FX_WEST = heroPoolL - 0.6;            // OUTER fence line — west of the whole pool deck
   const FX_RIGHT = heroGarR + 1.5;
   const FZ_FRONT = heroFrontZ - 1.5;          // south fence line
   const FZ_BACK = heroBackZ + 1.5;            // north fence line
   return { avHero, HERO_X, HERO_Z, heroMainL, heroGarR, heroFrontZ, heroBackZ,
-    garCenterX, heroPoolL, FX_LEFT, FX_RIGHT, FZ_FRONT, FZ_BACK };
+    garCenterX, heroPoolL, FX_LEFT, FX_WEST, FX_RIGHT, FZ_FRONT, FZ_BACK };
 }
 
 /** World-space spawn + drivable-car anchors for the hero mansion at this origin. */
@@ -91,22 +95,30 @@ export function suburbPlacements(ox: number, oz: number): Placement[] {
   const h = heroLot(ox, oz);
   out.push({ kind: "playerHouse", x: h.HERO_X, z: h.HERO_Z, rot: 180, params: { seed: 42 } });
 
+  const FENCE_COL = 0xece7da;
   const mainFrontRight = h.HERO_X + HW / 2;            // main block east edge (garage starts here)
-  const frontSegLen = mainFrontRight - h.FX_LEFT;
-  const frontSegMidX = (h.FX_LEFT + mainFrontRight) / 2;
+  const frontSegLen = mainFrontRight - h.FX_LEFT;       // house-frontage span (gated)
+  const frontSegMidX = (h.FX_LEFT + mainFrontRight) / 2; // gate centres near the entry walk
+  const poolFrontLen = h.FX_LEFT - h.FX_WEST;           // pool-frontage span (no gate)
+  const poolFrontMidX = (h.FX_WEST + h.FX_LEFT) / 2;
   const fenceMidZ = (h.FZ_FRONT + h.FZ_BACK) / 2;
   const fenceNSLen = h.FZ_BACK - h.FZ_FRONT;
-  const fenceEWLen = h.FX_RIGHT - h.FX_LEFT;
+  const fenceEWLen = h.FX_RIGHT - h.FX_WEST;            // full width INCLUDING the pool deck
 
-  // Front fence (south) — main-block frontage only, with a gate; garage bay open.
+  // Front fence (south): pool-deck frontage (solid) + house frontage (with gate);
+  // the garage bay east of the house stays open for the driveway.
+  out.push({ kind: "fence", x: poolFrontMidX, z: h.FZ_FRONT, rot: 0,
+    params: { length: poolFrontLen, gate: false, color: FENCE_COL } });
   out.push({ kind: "fence", x: frontSegMidX, z: h.FZ_FRONT, rot: 0,
-    params: { length: frontSegLen, gate: true, color: 0xece7da } });
-  out.push({ kind: "fence", x: (h.FX_LEFT + h.FX_RIGHT) / 2, z: h.FZ_BACK, rot: 0,
-    params: { length: fenceEWLen, gate: false, color: 0xece7da } });
-  out.push({ kind: "fence", x: h.FX_LEFT, z: fenceMidZ, rot: 90,
-    params: { length: fenceNSLen, gate: false, color: 0xece7da } });
+    params: { length: frontSegLen, gate: true, color: FENCE_COL } });
+  // Back fence (north) — full width, enclosing house + pool deck.
+  out.push({ kind: "fence", x: (h.FX_WEST + h.FX_RIGHT) / 2, z: h.FZ_BACK, rot: 0,
+    params: { length: fenceEWLen, gate: false, color: FENCE_COL } });
+  // Side fences: WEST now sits past the pool deck so the pool is inside the yard.
+  out.push({ kind: "fence", x: h.FX_WEST, z: fenceMidZ, rot: 90,
+    params: { length: fenceNSLen, gate: false, color: FENCE_COL } });
   out.push({ kind: "fence", x: h.FX_RIGHT, z: fenceMidZ, rot: 90,
-    params: { length: fenceNSLen, gate: false, color: 0xece7da } });
+    params: { length: fenceNSLen, gate: false, color: FENCE_COL } });
 
   // Hero driveway: from the central-avenue north kerb up to the garage front (south face).
   const heroDriveZ0 = h.avHero + HALF;                 // street end
