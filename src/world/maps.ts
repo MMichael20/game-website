@@ -16,7 +16,7 @@ const CITY: MapDescriptor = {
   carSpawn: CAR_SPAWN,
   carSpawnYaw: CAR_SPAWN_YAW,
   portals: [
-    { x: 16, z: 8, r: 5, prompt: "Press E to enter the airport", to: "airport", toSpawn: { x: 0, z: -104 } },
+    { x: 16, z: 8, r: 5, prompt: "Press E to enter the airport", to: "airport", toSpawn: { x: 0, z: -98 } },
   ],
 };
 

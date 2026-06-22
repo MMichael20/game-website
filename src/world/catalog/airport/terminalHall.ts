@@ -68,7 +68,9 @@ defineObject("terminalHall", {
       const gz = -hD + j * TILE_PITCH;
       parts.push(tintedBox(w, floorT + 0.01, 0.04, 0, floorT / 2, gz, 0xd0cdc6));
     }
-    colliders.push(solidBox(0, floorT / 2, 0, w, floorT, d));
+    // No floor collider: the global ground plane supports the player, and a
+    // full-footprint collider here would make every interior fitting register as
+    // an overlapping placement in the engine's authoring guard.
 
     // ── Side walls (left x = -w/2, right x = +w/2) ────────────────────────
     // Between structural columns the side walls are glazed — we add opaque wall
@@ -243,7 +245,9 @@ defineObject("terminalHall", {
     return {
       mesh: group,
       colliders,
-      obstacles: [{ x: 0, z: 0, w, d }],
+      // No whole-hall obstacle: the hall is walk-in, so a full footprint would
+      // both block any future NPCs and trip the placement-overlap guard against
+      // every interior fitting. Walls/columns carry the real collision above.
       anchors: {
         concourseGap: { x: 0, z: -hD },
         door: { x: 0, z: hD },

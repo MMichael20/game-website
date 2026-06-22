@@ -20,7 +20,7 @@ export const CAR_SPAWN_YAW = Math.PI / 2;           // local +z (forward) -> +x 
 // of the road. The result is a street-canyon city with no empty aprons.
 const CELLS = [-48, -16, 16, 48];
 const BLOCK = 23;                                   // wall span inside each 26m cell
-const HERO_CELLS = new Set(["-16,-16", "16,-16", "-16,16"]); // phone, restaurant, plaza
+const HERO_CELLS = new Set(["-16,-16", "16,-16", "-16,16", "16,16"]); // phone, restaurant, plaza, airport
 const DISTRICTS = ["north", "east", "west"];
 
 const filledBlocks: Placement[] = [];
@@ -74,6 +74,18 @@ export const MAP: Placement[] = [
   // ── Inner SW cell (-16,16): a compact plaza (fountain + seating + kiosks) ────
   // The one open square in the dense core — used space, not an empty apron.
   { kind: "plaza", x: -16, z: 16, params: { w: 24, d: 22, seed: 5 } },
+
+  // ── Inner SE cell (16,16): the AIRPORT terminal entrance ("Terminal 3") ──────
+  // A detailed terminal facade whose open front faces the junction (-z, rot:180).
+  // Standing at its door (the city portal at x:16,z:8) and pressing E flies you to
+  // the Ben Gurion airport map (see world/maps.ts + airportMap.ts).
+  { kind: "terminalHall", x: 16, z: 16, rot: 180, params: { w: 24, d: 16, h: 9, rearGap: 8 } },
+  { kind: "airportMonument", x: 16, z: 6, rot: 0 },
+  { kind: "palmTree", x: 7, z: 7, params: { h: 6 } },
+  { kind: "palmTree", x: 25, z: 7, params: { h: 6 } },
+  { kind: "lamp", x: 10, z: 8 },
+  { kind: "lamp", x: 22, z: 8 },
+  { kind: "planter", x: 16, z: 9.5 },
 
   // ── Every other cell: packed streetwall blocks ──────────────────────────────
   ...filledBlocks,
