@@ -71,8 +71,10 @@ export const MAP: Placement[] = [
   { kind: "plaza", x: -22, z: 22, params: { w: 36, d: 28, seed: 5 } },
 
   // ── SE block: terrace of shops ──────────────────────────────────────────────
-  // A continuous streetwall facing north (rot 180) onto the main-h road.
-  { kind: "terraceRow", x: 22, z: 14, rot: 180, params: { units: 3, d: 11, district: "east", anchor: "center", seed: 41 } },
+  // A continuous streetwall facing north (rot 180) onto the main-h road. units:2
+  // (run ≤ ~28m) so its ends stay clear of the cross-v road and the x=44 road —
+  // units:3 ran wide enough to poke a corner into the cross-v lane by the junction.
+  { kind: "terraceRow", x: 22, z: 14, rot: 180, params: { units: 2, d: 11, district: "east", anchor: "center", seed: 41 } },
 
   // A pair of loose vendor kiosks on the paved strip just south of the junction,
   // north of the plaza.
@@ -82,17 +84,18 @@ export const MAP: Placement[] = [
   // ── Perimeter storeys: tall building rows ringing the edge, facing inward ────
   // Rows sit at block-centre x/z (±22) so they straddle neither the x=0/z=0
   // arterials nor the ±44 ring roads — the outbound streets run between them.
-  // Each row: units:3 ≈ 40.5m run, d:12. Fronts ~±50, backs ±62, inside the ±70 edge.
+  // Each row: units:2 (run ≤ ~31m), d:12 — sized to fit between the x=0/±44 roads
+  // so no row leaks onto a lane. Fronts ~±50, backs ±62, inside the ±70 edge.
 
   // South band (z=56): faces north (-z, rot:180).
-  { kind: "buildingRow", x: -22, z: 56, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 61 } },
-  { kind: "buildingRow", x: 22,  z: 56, rot: 180, params: { units: 3, d: 12, district: "east", anchor: "center", seed: 62 } },
+  { kind: "buildingRow", x: -22, z: 56, rot: 180, params: { units: 2, d: 12, district: "east", anchor: "center", seed: 61 } },
+  { kind: "buildingRow", x: 22,  z: 56, rot: 180, params: { units: 2, d: 12, district: "east", anchor: "center", seed: 62 } },
   // West band (x=-56): faces east (+x, rot:90).
-  { kind: "buildingRow", x: -56, z: -22, rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 71 } },
-  { kind: "buildingRow", x: -56, z: 22,  rot: 90, params: { units: 3, d: 12, district: "west", anchor: "center", seed: 72 } },
+  { kind: "buildingRow", x: -56, z: -22, rot: 90, params: { units: 2, d: 12, district: "west", anchor: "center", seed: 71 } },
+  { kind: "buildingRow", x: -56, z: 22,  rot: 90, params: { units: 2, d: 12, district: "west", anchor: "center", seed: 72 } },
   // East band (x=56): faces west (-x, rot:270).
-  { kind: "buildingRow", x: 56,  z: -22, rot: 270, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 73 } },
-  { kind: "buildingRow", x: 56,  z: 22,  rot: 270, params: { units: 3, d: 12, district: "north", anchor: "center", seed: 74 } },
+  { kind: "buildingRow", x: 56,  z: -22, rot: 270, params: { units: 2, d: 12, district: "north", anchor: "center", seed: 73 } },
+  { kind: "buildingRow", x: 56,  z: 22,  rot: 270, params: { units: 2, d: 12, district: "north", anchor: "center", seed: 74 } },
 
   // ── North edge: a divided multi-lane highway, just behind the hero shops. ────
   // Half-width = medianW/2 + lanes*laneW + shoulderW = 2 + 7.2 + 1.2 = 10.4, so at
