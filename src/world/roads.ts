@@ -167,13 +167,17 @@ export function stopLineRects(road: RoadDef, intersections: Intersection[]): Rec
       if (road.horizontal) {
         const cx = it.x + t;
         if (Math.abs(cx - road.x) > halfLen + 1e-6) continue;
-        // half-width bar on the approaching (right-hand) lane of this side
-        const laneOff = (side > 0 ? 1 : -1) * ROAD_W / 4;
+        // half-width bar on the approaching (right-hand) lane of this side.
+        // RIGHT-HAND TRAFFIC: the east approach (side>0) carries WESTbound cars,
+        // which keep right = the north lane (z<0), so laneOff is negative there.
+        const laneOff = (side > 0 ? -1 : 1) * ROAD_W / 4;
         out.push({ x: cx, z: road.z + laneOff, w: STOP_LINE_W, d: ROAD_W / 2 });
       } else {
         const cz = it.z + t;
         if (Math.abs(cz - road.z) > halfLen + 1e-6) continue;
-        const laneOff = (side > 0 ? -1 : 1) * ROAD_W / 4;
+        // RIGHT-HAND TRAFFIC: the south approach (side>0) carries NORTHbound cars,
+        // which keep right = the east lane (x>0), so laneOff is positive there.
+        const laneOff = (side > 0 ? 1 : -1) * ROAD_W / 4;
         out.push({ x: road.x + laneOff, z: cz, w: ROAD_W / 2, d: STOP_LINE_W });
       }
     }
@@ -269,9 +273,13 @@ export function laneArrows(
       const pos = (road.horizontal ? it.x : it.z) + side * ARROW_BACK;
       const onAxis = road.horizontal ? road.x : road.z;
       if (Math.abs(pos - onAxis) > halfLen + 1e-6) continue;
+      // RIGHT-HAND TRAFFIC: the arrow sits in the right-hand lane for its
+      // direction of travel. East/south approaches (side>0) carry west/north-bound
+      // cars (keep right = north/east lane), so the horizontal offset is negative
+      // and the vertical offset positive — the mirror of left-hand placement.
       const laneOff = (road.horizontal
-        ? (side > 0 ? 1 : -1)
-        : (side > 0 ? -1 : 1)) * ROAD_W / 4;
+        ? (side > 0 ? -1 : 1)
+        : (side > 0 ? 1 : -1)) * ROAD_W / 4;
       const kind = arrowKindFor(road.id, approach);
       // glyph points along +z by default; rotate so its tip faces the junction.
       let rot: number;

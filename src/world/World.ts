@@ -3,7 +3,7 @@ import { Physics, RAPIER } from "../core/Physics";
 import { makeClouds } from "./clouds";
 import { registerCatalog } from "./catalog";
 import { buildWorld, type ResolvedPoi } from "./system/engine";
-import { MAP, PLAYER_SPAWN, CAR_SPAWN, GROUND_SIZE } from "./map";
+import { MAP, PLAYER_SPAWN, CAR_SPAWN, CAR_SPAWN_YAW, GROUND_SIZE } from "./map";
 
 // New world: the whole scene comes from the manifest + engine. core/ runtime,
 // player, camera, physics and sky are unchanged. Old hand-builders are retired.
@@ -40,4 +40,5 @@ export class World {
 
   get playerSpawn() { return PLAYER_SPAWN; }
   get carSpawn() { return CAR_SPAWN; }
+  get carSpawnYaw() { return CAR_SPAWN_YAW; }
 }

@@ -57,6 +57,9 @@ export class Game implements Tickable {
   ) {
     this.character = new Character(scene, physics, input, world.playerSpawn, camera);
     this.car = new Car(scene, physics, input, world.carSpawn);
+    // Park the spawned car in its right-hand lane facing along the road (drive on
+    // the right), instead of the default +z heading.
+    this.car.teleportTo(world.carSpawn.x, world.carSpawn.z, world.carSpawnYaw);
     const rects: Rect[] = [];
     const gc = world.groundCenter;
     const bounds = Math.max(Math.abs(gc.x), Math.abs(gc.z)) + world.groundSize / 2 - 2;

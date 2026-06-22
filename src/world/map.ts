@@ -3,7 +3,10 @@ import { lot } from "./layout";
 
 export const GROUND_SIZE = 140;
 export const PLAYER_SPAWN: Vec2 = { x: 8, z: 6 };   // sidewalk corner SE of the central junction
-export const CAR_SPAWN: Vec2 = { x: 12, z: 2 };     // in the eastbound lane of the main-h road
+// In the RIGHT-HAND (eastbound) lane of the main-h road: south of the centerline
+// (z=+1.5), facing east (+x) so you pull away driving on the right.
+export const CAR_SPAWN: Vec2 = { x: 12, z: 1.5 };
+export const CAR_SPAWN_YAW = Math.PI / 2;           // local +z (forward) -> +x (east)
 
 // THE MAP. Reading this list is seeing the world. Coordinates are world-space;
 // rot is degrees in {0,90,180,270}. Stores face +z by default (rot:0).
