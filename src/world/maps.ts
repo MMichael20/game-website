@@ -4,8 +4,8 @@ import type { MapDescriptor } from "./system/types";
 import { MAP, PLAYER_SPAWN, CAR_SPAWN, CAR_SPAWN_YAW, GROUND_SIZE } from "./map";
 import { AIRPORT } from "./airportMap";
 
-// The city. Drive the eastbound expressway out to the Terminal-3 building on the
-// east edge (door at x~108,z=0), park, and press E to fly to the airport landside.
+// The city — now with the full Ben Gurion airport merged in to the north. Drive
+// the x=0 expressway straight out of the city to the terminal; no portal, no fade.
 const CITY: MapDescriptor = {
   id: "city",
   map: MAP,
@@ -14,9 +14,9 @@ const CITY: MapDescriptor = {
   hasCar: true,
   carSpawn: CAR_SPAWN,
   carSpawnYaw: CAR_SPAWN_YAW,
-  portals: [
-    { x: 108, z: 0, r: 5, prompt: "Press E to enter the airport", to: "airport", toSpawn: { x: 0, z: -98 } },
-  ],
+  portals: [],
 };
 
+// AIRPORT kept registered for standalone testing, but the city no longer portals
+// to it — the airport content is embedded directly in the city map.
 export const MAPS: Record<string, MapDescriptor> = { city: CITY, airport: AIRPORT };

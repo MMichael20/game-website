@@ -178,6 +178,15 @@ const map: Placement[] = [
   { kind: "cubeCloud", x: -55, z: 115, params: { size: 8, alt: 55, seed: 0xc1d8 } },
 ];
 
+/** The airport placements translated by (ox, oz), with its own ground dropped so
+ *  it can be embedded into a host map that already owns the floor. Used to merge
+ *  the airport into the city map (seamless drive-in, no portal). */
+export function airportPlacements(ox: number, oz: number): Placement[] {
+  return map
+    .filter((p) => p.kind !== "ground")
+    .map((p) => ({ ...p, x: (p.x ?? 0) + ox, z: (p.z ?? 0) + oz }));
+}
+
 export const AIRPORT: MapDescriptor = {
   id: "airport",
   map,

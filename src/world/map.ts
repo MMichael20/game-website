@@ -1,7 +1,9 @@
 import type { Placement, Vec2 } from "./system/types";
 import { lot, blockWalls } from "./layout";
+import { airportPlacements } from "./airportMap";
 
-export const GROUND_SIZE = 260;
+// Large enough to hold the city core (origin) AND the merged airport to the north.
+export const GROUND_SIZE = 820;
 // Player spawns on the south sidewalk just east of the central junction (clear of
 // every block wall), in the dense core.
 export const PLAYER_SPAWN: Vec2 = { x: 6, z: 3.8 };
@@ -75,39 +77,22 @@ export const MAP: Placement[] = [
   // The one open square in the dense core — used space, not an empty apron.
   { kind: "plaza", x: -16, z: 16, params: { w: 24, d: 22, seed: 5 } },
 
-  // ── Airport expressway: drive EAST out of the city to the edge ───────────────
-  // The main arterial (z=0) continues east as a long drivable road from the city
-  // edge (x≈62) out to the airport terminal at the map's east edge (x≈118). Take
-  // the highway, park, walk to the door, press E (city portal at x:108,z:0).
-  { kind: "road", x: 90, z: 0, params: { length: 64 } },        // x ≈ 58..122 at z=0
-  ...[64, 76, 88, 100].flatMap((x): Placement[] => [
-    { kind: "lamp", x, z: 6 },
-    { kind: "lamp", x, z: -6 },
+  // ── Airport approach: drive NORTH out of the city to Ben Gurion ──────────────
+  // The x=0 arterial continues north as a divided expressway from the city edge
+  // (z≈64) to the airport landside (drop-off road at z≈138). The full airport sits
+  // beyond, its glass facade facing back toward the city — a seamless drive-in.
+  { kind: "highway", x: 0, z: 101, rot: 90, params: { length: 84, lanes: 2, laneW: 3.6, medianW: 4, shoulderW: 1.2 } },
+  ...[72, 92, 112, 130].flatMap((z): Placement[] => [
+    { kind: "lamp", x: 13, z },
+    { kind: "lamp", x: -13, z },
   ]),
-  // Roadside greenery so the outskirts read as a landscaped airport approach.
-  ...[70, 94].flatMap((x): Placement[] => [
-    { kind: "tree", x, z: 10 },
-    { kind: "tree", x, z: -10 },
+  ...[80, 120].flatMap((z): Placement[] => [
+    { kind: "tree", x: 20, z },
+    { kind: "tree", x: -20, z },
   ]),
 
-  // ── Airport terminal entrance ("Terminal 3") on the EAST EDGE ────────────────
-  // Open front (local +z) turned to face WEST toward the incoming road (rot:270);
-  // its door lands at x≈108,z≈0. A forecourt apron, drop-off and signage frame it.
-  { kind: "pavement", x: 100, z: 0, params: { w: 46, d: 60 } },
-  { kind: "terminalHall", x: 118, z: 0, rot: 270, params: { w: 30, d: 20, h: 10, rearGap: 10 } },
-  { kind: "airportMonument", x: 100, z: 14, rot: 270 },
-  { kind: "curbCanopy", x: 104, z: -16, rot: 0, params: { w: 30, d: 10, label: "Departures" } },
-  ...[90, 104].flatMap((x): Placement[] => [
-    { kind: "palmTree", x, z: 12, params: { h: 7 } },
-    { kind: "palmTree", x, z: -12, params: { h: 7 } },
-  ]),
-  { kind: "lamp", x: 110, z: 9 },
-  { kind: "lamp", x: 110, z: -9 },
-  { kind: "bench", x: 100, z: 6 },
-  { kind: "bench", x: 100, z: -6 },
-  // A couple of ground vehicles parked at the terminal forecourt.
-  { kind: "apronVehicle", x: 96, z: 22, rot: 0, params: { variant: "stairs" } },
-  { kind: "apronVehicle", x: 108, z: 22, rot: 0, params: { variant: "catering" } },
+  // ── The merged airport, offset to the north (its landside faces the city) ────
+  ...airportPlacements(0, 260),
 
   // ── Every other cell: packed streetwall blocks ──────────────────────────────
   ...filledBlocks,
