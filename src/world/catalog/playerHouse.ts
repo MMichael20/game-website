@@ -333,65 +333,53 @@ defineObject("playerHouse", {
     // ════════════════════════════════════════════════════════════════════════
     function makeRoof(): Piece {
       const parts: THREE.BufferGeometry[] = [];
-      const eave = 0.3;
-      const apex = 1.8;             // ridge height above totalH
-      const fascia = 0xece7da;
+      const eave = 0.45;            // deep modern overhang
+      const slabThick = 0.24;
 
-      // Fascia / gutter band around the eaves.
-      parts.push(tintedBox(W + eave * 2, 0.18, D + eave * 2, 0, totalH + 0.09, 0, fascia));
-
-      // Gable ridge runs ALONG x. Two sloped slabs front/back meeting at ridge.
-      const halfSpan = D / 2 + eave;                  // eave-to-ridge horizontal run
-      const angle = Math.atan2(apex, halfSpan);
-      const slantLen = Math.sqrt(halfSpan * halfSpan + apex * apex);
-      const slabThick = 0.22;
-      const slabW = W + eave * 2;
-      const ridgeY = totalH + apex;
-      const cyMid = totalH + apex / 2;
-      // Back slope (-z).
+      // PRIMARY low-slope SHED roof over the whole main block, HIGH at the FRONT
+      // (+z) so the deep eave overhangs the entry / glass bay (concept silhouette).
+      // Positive rotateX drops the +z end (per the garage slab below), so a
+      // FRONT-HIGH plane uses -ang.
+      const rise = 1.5;                                 // front-to-back rise
+      const run = D + eave * 2;
+      const ang = Math.atan2(rise, run);
+      const slabLen = Math.sqrt(run * run + rise * rise);
+      const roofCY = totalH + 0.1 + rise / 2;
       {
-        const g = new THREE.BoxGeometry(slabW, slabThick, slantLen);
-        g.rotateX(-angle);
-        g.translate(0, cyMid, -halfSpan / 2);
+        const g = new THREE.BoxGeometry(W + eave * 2, slabThick, slabLen);
+        g.rotateX(-ang);
+        g.translate(0, roofCY, 0);
+        parts.push(tintGeo(g, roofColor));
+        // Lighter soffit underside, just below the slab.
+        const s = new THREE.BoxGeometry(W + eave * 2, 0.06, slabLen);
+        s.rotateX(-ang);
+        s.translate(0, roofCY - 0.12, 0);
+        parts.push(tintGeo(s, PALETTE.villaSoffit));
+      }
+      // SECONDARY lower shed slab over the RIGHT wing, stepped a notch below the
+      // primary front edge — gives the asymmetric stacked-roof read. Front-high too.
+      const rise2 = 0.9;
+      const run2 = D + eave * 2;
+      const ang2 = Math.atan2(rise2, run2);
+      const slab2Len = Math.sqrt(run2 * run2 + rise2 * rise2);
+      const roof2CY = totalH - 0.45 + rise2 / 2;        // a step below the primary
+      {
+        const g = new THREE.BoxGeometry(W * 0.5 + eave * 2, slabThick, slab2Len);
+        g.rotateX(-ang2);
+        g.translate(W * 0.28, roof2CY, 0.2);
         parts.push(tintGeo(g, roofColor));
       }
-      // Front slope (+z).
-      {
-        const g = new THREE.BoxGeometry(slabW, slabThick, slantLen);
-        g.rotateX(angle);
-        g.translate(0, cyMid, halfSpan / 2);
-        parts.push(tintGeo(g, roofColor));
-      }
-      // Ridge cap.
-      parts.push(tintedBox(slabW, 0.14, 0.18, 0, ridgeY + 0.05, 0, roofColor));
+      // Front fascia band along the deep front eave (charcoal, for a crisp edge).
+      parts.push(tintedBox(W + eave * 2, 0.16, 0.2, 0, totalH + 0.1 + rise, D / 2 + eave - 0.1, roofColor));
 
-      // Gable-end triangles (front +z / back -z) filled with a thin wedge.
-      const gableH = apex + slabThick / 2;
-      parts.push(tintedBox(W, gableH, 0.15, 0, totalH + gableH / 2, D / 2 + 0.075, bodyColor));
-      parts.push(tintedBox(W, gableH, 0.15, 0, totalH + gableH / 2, -D / 2 - 0.075, bodyColor));
-
-      // Chimney emerges THROUGH the back slope (derive from ridge height).
-      const chX = W * 0.3;
-      const chZ = -D * 0.22;
+      // Stacked-stone CHIMNEY on the RIGHT (+x, toward the back), rising above roof.
+      const chX = W * 0.32;
+      const chZ = -D * 0.2;
       const chBottom = totalH - 0.3;
-      const chTop = ridgeY + 0.5;
+      const chTop = totalH + rise + 1.0;
       const chH = chTop - chBottom;
-      parts.push(tintedBox(0.7, chH, 0.7, chX, chBottom + chH / 2, chZ, 0x8a5230));
-      parts.push(tintedBox(0.82, 0.14, 0.82, chX, chTop + 0.07, chZ, PALETTE.stoneBase));
-
-      // Two DORMERS on the +z slope (small box + tiny gable + glass window).
-      // Place them on the front slope at ~mid-slope height.
-      const dormY = totalH + apex * 0.45;        // vertical center of dormer body
-      const dormZ = D * 0.22;                     // out on the front slope
-      const dormW = 1.4, dormBodyH = 1.0, dormDepth = 1.0;
-      for (const dx of [-W * 0.25, W * 0.25]) {
-        parts.push(tintedBox(dormW, dormBodyH, dormDepth, dx, dormY, dormZ, bodyColor));
-        // Tiny gable roof on the dormer.
-        parts.push(tintedBox(dormW + 0.15, 0.12, dormDepth + 0.15, dx, dormY + dormBodyH / 2 + 0.06, dormZ, roofColor));
-        // Glass window on the dormer front (+z).
-        parts.push(tintedBox(dormW * 0.6, dormBodyH * 0.55, 0.05, dx, dormY, dormZ + dormDepth / 2 + 0.04, PALETTE.glass));
-        parts.push(tintedBox(dormW * 0.6 + 0.1, dormBodyH * 0.55 + 0.1, 0.04, dx, dormY, dormZ + dormDepth / 2 + 0.02, PALETTE.winFrame));
-      }
+      parts.push(tintedBox(0.8, chH, 0.8, chX, chBottom + chH / 2, chZ, PALETTE.villaStone));
+      parts.push(tintedBox(0.94, 0.16, 0.94, chX, chTop + 0.08, chZ, PALETTE.villaSoffit));
 
       // GARAGE shed roof: a single mono-pitch slab over GAR_W × GAR_D.
       const garEave = 0.25;
@@ -406,7 +394,7 @@ defineObject("playerHouse", {
         parts.push(tintGeo(g, roofColor));
       }
       // Garage fascia band.
-      parts.push(tintedBox(GAR_W + garEave * 2, 0.12, GAR_D + garEave * 2, garCX, GAR_H + 0.06, garCZ, fascia));
+      parts.push(tintedBox(GAR_W + garEave * 2, 0.12, GAR_D + garEave * 2, garCX, GAR_H + 0.06, garCZ, PALETTE.villaSoffit));
 
       return { parts };
     }
