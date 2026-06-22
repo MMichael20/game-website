@@ -173,7 +173,7 @@ export function suburbPlacements(ox: number, oz: number): Placement[] {
   //     Can place south-side houses in x∈[-220,-200] freely (no hero conflict in z).
   //     Must clear road bands: west x∈[-228,-222] and east x∈[-188,-182].
   //     x=-210 (i=4, w=9): ±4.5 → [-214.5,-205.5] — clear of both road bands ✓
-  //     x=-194 (i=5, w=10): ±5   → [-199,-189] — east edge -189 vs road west edge -188: gap 1 m ✓
+  //     x=-196 (i=5, w=10): ±5   → [-201,-191] — east edge -191 vs road west edge -188: gap 3 m ✓
   //     x=-232 would give x∈[-236.5,-227.5] → overlaps west road band [-228,-222]. SKIP.
 
   // House variation helper (all deterministic from index i).
@@ -187,25 +187,25 @@ export function suburbPlacements(ox: number, oz: number): Placement[] {
     // skip ox-20±range (west-road band, and hero lot gap has no valid slot)
     // East group
     { x: ox + 40, z: oz + 14, rot: 180, i: 1  },  // x=-165
-    { x: ox + 56, z: oz + 14, rot: 180, i: 2  },  // x=-149
+    { x: ox + 56, z: oz + 18, rot: 180, i: 2  },  // x=-149, z=18 (south face 12.5, 4.5m clear of connector +8)
 
     // ── South side (rot 0, face north) ────────────────────────────────
     // West of west cross (only one slot — no room for a second without road overlap)
     { x: ox - 39, z: oz - 14, rot: 0, i: 3  },  // x=-244  x∈[-248,-240]: clear ✓
     // Between crosses (middle) — clear of hero lot in z (south side z<-9)
     { x: ox - 5,  z: oz - 14, rot: 0, i: 4  },  // x=-210  x∈[-214,-206]: clear ✓
-    { x: ox + 11, z: oz - 14, rot: 0, i: 5  },  // x=-194  x∈[-198.5,-189.5]: clear ✓
+    { x: ox + 9,  z: oz - 14, rot: 0, i: 5  },  // x=-196 (east edge -191, 3m clear of east cross west edge -188)
     // East of east cross
     { x: ox + 40, z: oz - 14, rot: 0, i: 6  },  // x=-165  x∈[-170,-160]: clear ✓
-    { x: ox + 56, z: oz - 14, rot: 0, i: 7  },  // x=-149  x∈[-153,-145]: clear ✓
+    { x: ox + 56, z: oz - 18, rot: 0, i: 7  },  // x=-149, z=-18 (north face -13, 5m clear of connector -8)
 
     // ── Along west cross-street (x=-225), side lots ───────────────────
     // Lots on the NORTH arm of west cross, set back 13 m west of cross (x=-225-13=-238).
     // These houses face EAST (rot 270 → front faces local -x which is world +x after rot 270 → east).
     // Actually: rot 270 means local +z → world +x. So front faces +x (east). But
     // cross-street is at x=-225 (world), houses are west of it, should face east (rot 270).
-    { x: ox - 30, z: oz + 25, rot: 270, i: 8  },  // x=-235, z=25
-    { x: ox - 30, z: oz - 25, rot: 270, i: 9  },  // x=-235, z=-25
+    { x: ox - 33, z: oz + 25, rot: 270, i: 8  },  // x=-238, z=25 (east edge -232.5, 4.5m clear of cross west edge -228)
+    { x: ox - 33, z: oz - 25, rot: 270, i: 9  },  // x=-238, z=-25 (east edge -232.5, 4.5m clear of cross west edge -228)
 
     // Lot on EAST arm of east cross, faces west (rot 90 → front faces -x, west).
     { x: ox + 30, z: oz + 25, rot: 90, i: 10 },   // x=-175, z=25
