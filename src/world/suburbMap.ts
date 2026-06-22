@@ -17,9 +17,10 @@
 //   Houses line BOTH sides of every avenue, set back 16 m, placed per street-segment
 //   (between consecutive crosses) so their footprints never enter a road band.
 //   Every house gets a `driveway` from its avenue up to its front.
-//   Hero playerHouse sits on the NORTH frontage of the north avenue, by the connector
-//   mouth — the first home you see arriving from the city.
-//   A pocket-park `plaza` occupies the central back-block.
+//   Hero playerHouse sits in the MIDDLE of the neighbourhood — on the north frontage
+//   of the CENTRAL avenue (z = oz), surrounded by neighbour homes on all sides. You
+//   enter from the north connector and drive south through the streets to reach it.
+//   A pocket-park `plaza` occupies a southern back-block.
 
 import type { Placement, Vec2 } from "./system/types";
 import { row } from "./layout/helpers";
@@ -43,20 +44,22 @@ const CROSS_LEN = 210;                               // z∈[oz-105, oz+105]
 // All hero-lot geometry derived from the origin + footprint constants. Pure, so both
 // suburbPlacements() and map.ts compute identical values for the same origin.
 function heroLot(ox: number, oz: number) {
-  const avNorth = avenuesOf(oz)[0];          // oz + 96
-  const HERO_X = ox - 66;
-  const HERO_Z = avNorth + 22;               // north of the north avenue
-  const heroMainL = HERO_X - HW / 2;         // main-block west edge
-  const heroGarR = HERO_X + HW / 2 + HGARW;  // garage east edge (garage flips to +x at rot 180)
-  const heroFrontZ = HERO_Z - HD / 2;        // south face (toward avenue)
-  const heroBackZ = HERO_Z + HD / 2;         // north face
+  const avHero = avenuesOf(oz)[2];           // CENTRAL avenue (z = oz) — house sits mid-neighbourhood
+  const POOL_REACH = 34;                      // how far the pool courtyard extends to world -x of the house
+  const HERO_X = ox + 4;                      // shift so the asymmetric (pool-side) footprint stays centred in the block
+  const HERO_Z = avHero + 18;                 // NORTH frontage of the central avenue (front faces south, rot 180)
+  const heroMainL = HERO_X - HW / 2;          // main-block west edge
+  const heroGarR = HERO_X + HW / 2 + HGARW;   // garage east edge (garage flips to +x at rot 180)
+  const heroFrontZ = HERO_Z - HD / 2;         // south face (toward the avenue)
+  const heroBackZ = HERO_Z + HD / 2;          // north face
   const garCenterX = HERO_X + HW / 2 + HGARW / 2;
+  const heroPoolL = HERO_X - POOL_REACH;      // west edge of the pool courtyard (world -x)
   const FX_LEFT = heroMainL - 1.5;
   const FX_RIGHT = heroGarR + 1.5;
-  const FZ_FRONT = heroFrontZ - 1.5;         // south fence line
-  const FZ_BACK = heroBackZ + 1.5;           // north fence line
-  return { avNorth, HERO_X, HERO_Z, heroMainL, heroGarR, heroFrontZ, heroBackZ,
-    garCenterX, FX_LEFT, FX_RIGHT, FZ_FRONT, FZ_BACK };
+  const FZ_FRONT = heroFrontZ - 1.5;          // south fence line
+  const FZ_BACK = heroBackZ + 1.5;            // north fence line
+  return { avHero, HERO_X, HERO_Z, heroMainL, heroGarR, heroFrontZ, heroBackZ,
+    garCenterX, heroPoolL, FX_LEFT, FX_RIGHT, FZ_FRONT, FZ_BACK };
 }
 
 /** World-space spawn + drivable-car anchors for the hero mansion at this origin. */
@@ -105,8 +108,8 @@ export function suburbPlacements(ox: number, oz: number): Placement[] {
   out.push({ kind: "fence", x: h.FX_RIGHT, z: fenceMidZ, rot: 90,
     params: { length: fenceNSLen, gate: false, color: 0xece7da } });
 
-  // Hero driveway: from the avenue north kerb up to the garage front (south face).
-  const heroDriveZ0 = h.avNorth + HALF;               // street end
+  // Hero driveway: from the central-avenue north kerb up to the garage front (south face).
+  const heroDriveZ0 = h.avHero + HALF;                 // street end
   const heroDriveZ1 = h.heroFrontZ;                   // garage/front end
   out.push({ kind: "driveway", x: h.garCenterX, z: (heroDriveZ0 + heroDriveZ1) / 2,
     rot: 0, params: { length: heroDriveZ1 - heroDriveZ0 + 1.0, width: 4 } });
@@ -134,10 +137,13 @@ export function suburbPlacements(ox: number, oz: number): Placement[] {
     return xs;
   }
 
+  // Clear placeholder houses across the WHOLE hero footprint — including the pool
+  // courtyard that reaches west (heroPoolL) — so nothing spawns inside the lot.
   const heroSkip = (x: number, z: number) =>
-    x > h.heroMainL - 10 && x < h.heroGarR + 10 && z > h.heroFrontZ - 8 && z < h.heroBackZ + 8;
+    x > h.heroPoolL - 6 && x < h.heroGarR + 10 && z > h.heroFrontZ - 8 && z < h.heroBackZ + 8;
 
-  const PARK_X = ox, PARK_Z = oz + 24, PARK_W = 24, PARK_D = 16;
+  // Pocket park moved to a southern block — the central block now holds the hero lot.
+  const PARK_X = ox, PARK_Z = oz - 60, PARK_W = 24, PARK_D = 16;
   const parkSkip = (x: number, z: number) =>
     Math.abs(x - PARK_X) < PARK_W / 2 + 6 && Math.abs(z - PARK_Z) < PARK_D / 2 + 8;
 
