@@ -241,6 +241,7 @@ export class Game implements Tickable {
     this.character.update(dt);
     this.car.update(dt);
     this.entities.update(dt);
+    this.world.cullDetails(this.camera.position.x, this.camera.position.z);
     this.minimap.update(pPos, cPos, this.mode);
     this.hud.setSpeed(this.mode === "driving" ? formatSpeed(this.car.speed) : null);
     this.updateDebug();

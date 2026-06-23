@@ -8,6 +8,7 @@
 
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { getMaterial } from "../assets";
 
 // Minimum safe gap for a decal / accent slab sitting proud of its parent face.
 // 0.01 m was too close → z-fighting. 0.04 m keeps surfaces visually flush yet
@@ -87,14 +88,33 @@ export function mergeTinted(parts: THREE.BufferGeometry[]): THREE.BufferGeometry
 }
 
 // The shared material every object mesh uses (reads the baked vertex colors).
+// ONE cached instance for the whole world: color lives in the vertices, so every
+// voxel object can render with the same material — hundreds of identical
+// allocations collapse to one. Routed through the assets cache so World.unload()
+// (which disposes only non-cached resources) never frees it out from under the
+// next map. Nothing mutates this material per-mesh, so sharing is safe.
 export function voxelMaterial(): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.0 });
+  return getMaterial(
+    "voxel",
+    () => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.0 }),
+  ) as THREE.MeshStandardMaterial;
 }
 
+// Props whose largest dimension is under this add a shadow-map draw for near-zero
+// visible shadow, so tintedMesh leaves them out of the shadow pass by default.
+// Hero props (trees, lamps, benches…) re-assert mesh.castShadow = true themselves.
+const SHADOW_MIN_SIZE = 1.0;
+
 // Wrap a merged object geometry in a ready-to-add mesh with the shared material.
+// castShadow is derived from the merged geometry's footprint (PITFALL 3 spirit):
+// sub-1m props stay out of the shadow pass; callers that want a small prop to cast
+// can still set mesh.castShadow = true afterwards.
 export function tintedMesh(geo: THREE.BufferGeometry): THREE.Mesh {
   const m = new THREE.Mesh(geo, voxelMaterial());
-  m.castShadow = true;
+  geo.computeBoundingBox();
+  const bb = geo.boundingBox;
+  m.castShadow = !!bb &&
+    Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z) >= SHADOW_MIN_SIZE;
   m.receiveShadow = true;
   return m;
 }

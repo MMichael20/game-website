@@ -5,6 +5,7 @@ import { registerCatalog } from "./catalog";
 import { buildWorld, type ResolvedPoi } from "./system/engine";
 import { MAPS } from "./maps";
 import { cachedAssetSets } from "./assets";
+import { mergeStaticChunks, type DetailChunk } from "./chunkMerge";
 import type { MapDescriptor, Portal, Vec2 } from "./system/types";
 
 // The world is now RELOADABLE: load() builds a manifest and tracks every mesh +
@@ -20,7 +21,14 @@ export class World {
   currentId = "";
 
   private group: THREE.Group | null = null;
-  private bodies: RAPIER.RigidBody[] = [];
+  // The whole static world shares ONE fixed rigid body; each collider is attached
+  // to it with its own translation. Static bodies aren't simulated, so collapsing
+  // N bodies to 1 (+ N colliders) cuts body bookkeeping/memory with no behaviour
+  // change. Removing the body on unload() drops all its colliders with it.
+  private staticBody: RAPIER.RigidBody | null = null;
+  // Merged small-prop chunks, distance-culled each frame via cullDetails().
+  private detailChunks: DetailChunk[] = [];
+  private static readonly DETAIL_CULL_DIST = 160;
   private _carSpawn: Vec2 = { x: 0, z: 0 };
   private _carSpawnYaw = 0;
 
@@ -33,6 +41,11 @@ export class World {
   load(desc: MapDescriptor): void {
     const built = buildWorld(desc.map);
 
+    // Collapse all shared-voxel-material meshes into a few per-cell chunk meshes
+    // (one draw call per cell instead of per object). Returns the small-prop
+    // "detail" chunks so we can distance-cull them in cullDetails().
+    this.detailChunks = mergeStaticChunks(built.group);
+
     // The world is fully static after build: compute world matrices once, then
     // stop per-frame matrix recomputation across every static mesh.
     built.group.updateMatrixWorld(true);
@@ -43,12 +56,15 @@ export class World {
     this.scene.add(built.group);
     this.group = built.group;
 
-    for (const c of built.colliders) {
-      const body = this.physics.world.createRigidBody(
-        RAPIER.RigidBodyDesc.fixed().setTranslation(c.x, c.y, c.z),
-      );
-      this.physics.world.createCollider(RAPIER.ColliderDesc.cuboid(c.hx, c.hy, c.hz), body);
-      this.bodies.push(body);
+    if (built.colliders.length) {
+      const body = this.physics.world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
+      for (const c of built.colliders) {
+        this.physics.world.createCollider(
+          RAPIER.ColliderDesc.cuboid(c.hx, c.hy, c.hz).setTranslation(c.x, c.y, c.z),
+          body,
+        );
+      }
+      this.staticBody = body;
     }
 
     this.pois = built.pois;
@@ -77,8 +93,23 @@ export class World {
       });
       this.group = null;
     }
-    for (const b of this.bodies) this.physics.world.removeRigidBody(b);
-    this.bodies = [];
+    if (this.staticBody) {
+      this.physics.world.removeRigidBody(this.staticBody); // drops its colliders too
+      this.staticBody = null;
+    }
+    this.detailChunks = []; // meshes are inside `group`, disposed above
+  }
+
+  // Hide merged small-prop chunks beyond DETAIL_CULL_DIST of the camera (squared
+  // compare, padded by the chunk radius so a cell only vanishes once fully past the
+  // limit). Frustum culling already handles off-screen chunks; this drops far ones.
+  cullDetails(camX: number, camZ: number): void {
+    const d = World.DETAIL_CULL_DIST;
+    for (const c of this.detailChunks) {
+      const lim = d + c.r;
+      const dx = c.cx - camX, dz = c.cz - camZ;
+      c.mesh.visible = dx * dx + dz * dz <= lim * lim;
+    }
   }
 
   get playerSpawn() { return this.spawn; }
