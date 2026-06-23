@@ -18,6 +18,7 @@
 import * as THREE from "three";
 import { defineObject } from "../system/registry";
 import { tintedBox, tintGeo, cylinderY, mergeTinted, tintedMesh } from "../objects/voxel";
+import { waterSurfaceMaterial } from "../objects/water";
 import type { Box, Rect, Vec2, Seat, PoiSpec } from "../system/types";
 import { PALETTE } from "../palette";
 import { mulberry32 } from "../rng";
@@ -1056,12 +1057,13 @@ defineObject("playerHouse", {
       group.add(glassMesh);
     }
     if (waterParts.length) {
-      const waterMat = new THREE.MeshStandardMaterial({
-        vertexColors: true, transparent: true, opacity: 0.6, roughness: 0.12, metalness: 0.0,
-      });
-      const waterMesh = new THREE.Mesh(mergeTinted(waterParts), waterMat);
+      // Animated shimmer: shared translucent water-surface material (moving specular +
+      // Fresnel sheen, driven by World.tick → tickWaterSurfaces). Distinct material →
+      // chunk-merge skips it; flagged so World.load keeps it out of the freeze.
+      const waterMesh = new THREE.Mesh(mergeTinted(waterParts), waterSurfaceMaterial("translucent"));
       waterMesh.castShadow = false;
       waterMesh.receiveShadow = true;
+      waterMesh.userData.animated = true;
       group.add(waterMesh);
     }
 

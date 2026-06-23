@@ -10,8 +10,21 @@
 import * as THREE from "three";
 import { tintedBox, cylinderY, disc, cone, lowPolyBall, ringAngles, mergeTinted, tintedMesh } from "../objects/voxel";
 import { defineObject } from "../system/registry";
+import { getMaterial } from "../assets";
 import { WATER } from "../objects/objectPalette";
+import { waterSurfaceMaterial } from "../objects/water";
 import { mulberry32 } from "../rng";
+
+// Dedicated water material: vertex-colored like the voxel material but a DISTINCT
+// instance, so chunkMerge (which only merges meshes using the shared voxel
+// material) leaves the water mesh alone and it can be animated each frame. A touch
+// shinier than stone. Cached so World.unload never disposes it.
+function waterMaterial(): THREE.MeshStandardMaterial {
+  return getMaterial(
+    "fountainWater",
+    () => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.1 }),
+  ) as THREE.MeshStandardMaterial;
+}
 
 interface GrandFountainParams { r: number; seed: number }
 
@@ -27,7 +40,9 @@ defineObject("grandFountain", {
   build(p: GrandFountainParams) {
     const r = p.r;
     const rng = mulberry32(p.seed >>> 0);
-    const parts: THREE.BufferGeometry[] = [];
+    const parts: THREE.BufferGeometry[] = [];   // static stone/pool geometry (merged)
+    const water: THREE.BufferGeometry[] = [];   // moving water: jets, streams, curtains
+    const surface: THREE.BufferGeometry[] = []; // still water surfaces (pool + bowls): shimmer
 
     // ── Base steps (three stacked rings you can walk/sit up) ────────────────
     parts.push(cylinderY(r + 1.6, 0.22, 0, 0.11, 0, STONE_DARK, 32));
@@ -45,8 +60,8 @@ defineObject("grandFountain", {
 
     // ── Pool water (big surface + a brighter inner pool) ────────────────────
     const waterY = baseTop + 0.62;
-    parts.push(disc(r - 0.5, 0.12, 0, waterY, 0, WATER, 36));
-    parts.push(disc(r - 1.6, 0.13, 0, waterY + 0.01, 0, WATER_LIGHT, 32));
+    surface.push(disc(r - 0.5, 0.12, 0, waterY, 0, WATER, 36));
+    surface.push(disc(r - 1.6, 0.13, 0, waterY + 0.01, 0, WATER_LIGHT, 32));
 
     // ── Mosaic tile band around the outside of the wall ─────────────────────
     for (const a of ringAngles(40)) {
@@ -69,7 +84,7 @@ defineObject("grandFountain", {
       const sx = Math.cos(a) * (r - 0.5);
       const sz = Math.sin(a) * (r - 0.5);
       parts.push(tintedBox(0.4, 0.4, 0.4, sx, wallTopY - 0.2, sz, STONE_DARK));
-      parts.push(tintedBox(0.14, 0.7, 0.14, sx * 0.9, waterY + 0.4, sz * 0.9, WATER_LIGHT)); // stream
+      water.push(tintedBox(0.14, 0.7, 0.14, sx * 0.9, waterY + 0.4, sz * 0.9, WATER_LIGHT)); // stream
     }
 
     // ── Central pedestal + two stacked bowls (wedding cake) ─────────────────
@@ -77,19 +92,19 @@ defineObject("grandFountain", {
     parts.push(cone(0.5, 2.3, 0.6, 0, baseTop + 1.4, 0, STONE, 24));            // lower bowl underside
     const lowBowlY = baseTop + 1.85;
     parts.push(disc(2.3, 0.26, 0, lowBowlY, 0, STONE, 28));                     // lower bowl
-    parts.push(disc(2.0, 0.1, 0, lowBowlY + 0.12, 0, WATER, 28));               // lower bowl water
+    surface.push(disc(2.0, 0.1, 0, lowBowlY + 0.12, 0, WATER, 28));             // lower bowl water
     parts.push(cylinderY(0.45, 1.0, 0, lowBowlY + 0.6, 0, STONE, 16));          // mid column
     parts.push(cone(0.3, 1.35, 0.45, 0, lowBowlY + 1.15, 0, STONE, 20));        // upper bowl underside
     const upBowlY = lowBowlY + 1.5;
     parts.push(disc(1.35, 0.22, 0, upBowlY, 0, STONE, 24));                     // upper bowl
-    parts.push(disc(1.1, 0.08, 0, upBowlY + 0.1, 0, WATER, 24));                // upper bowl water
+    surface.push(disc(1.1, 0.08, 0, upBowlY + 0.1, 0, WATER, 24));              // upper bowl water
 
     // falling-water curtains from each bowl edge down toward the pool
     for (const a of ringAngles(8)) {
-      parts.push(tintedBox(0.12, 0.7, 0.12, Math.cos(a) * 2.0, lowBowlY - 0.3, Math.sin(a) * 2.0, WATER_LIGHT));
+      water.push(tintedBox(0.12, 0.7, 0.12, Math.cos(a) * 2.0, lowBowlY - 0.3, Math.sin(a) * 2.0, WATER_LIGHT));
     }
     for (const a of ringAngles(6, 0.3)) {
-      parts.push(tintedBox(0.1, 0.6, 0.1, Math.cos(a) * 1.15, upBowlY - 0.25, Math.sin(a) * 1.15, WATER_LIGHT));
+      water.push(tintedBox(0.1, 0.6, 0.1, Math.cos(a) * 1.15, upBowlY - 0.25, Math.sin(a) * 1.15, WATER_LIGHT));
     }
 
     // ── Finial spire + gilded top + a tall central jet ──────────────────────
@@ -98,17 +113,49 @@ defineObject("grandFountain", {
     parts.push(lowPolyBall(0.34, 0, spireBase + 1.0, 0, GOLD, 0));
     parts.push(cone(0.16, 0.0, 0.5, 0, spireBase + 1.45, 0, GOLD, 10));
     // central jet shooting up from the top
-    parts.push(cone(0.18, 0.03, 1.7, 0, spireBase + 2.4, 0, WATER_LIGHT, 10));
+    water.push(cone(0.18, 0.03, 1.7, 0, spireBase + 2.4, 0, WATER_LIGHT, 10));
     // a ring of arcing jets springing from the upper bowl
     for (const a of ringAngles(6)) {
-      parts.push(cone(0.1, 0.02, 1.0, Math.cos(a) * 0.9, upBowlY + 0.6, Math.sin(a) * 0.9, WATER_LIGHT, 8));
+      water.push(cone(0.1, 0.02, 1.0, Math.cos(a) * 0.9, upBowlY + 0.6, Math.sin(a) * 0.9, WATER_LIGHT, 8));
     }
 
-    const mesh = tintedMesh(mergeTinted(parts));
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    const stone = tintedMesh(mergeTinted(parts));
+    stone.castShadow = true;
+    stone.receiveShadow = true;
+
+    // Moving water: a separate mesh (own material → skipped by chunk-merge) that the
+    // world ticks each frame. Jets/streams spring from y≈0, so a y-scale pulse makes
+    // them surge up and down; a small bob adds shimmer. Flagged so World keeps its
+    // matrix live. Built from local y=0 so the scale pivot sits at the fountain base.
+    const waterMesh = new THREE.Mesh(mergeTinted(water), waterMaterial());
+    waterMesh.castShadow = false;
+    waterMesh.receiveShadow = true;
+    waterMesh.userData.animated = true;
+
+    // Still pool/bowl surfaces: their own shader material shimmers in place (moving
+    // specular + Fresnel sheen). Distinct material → chunk-merge skips it; flagged so
+    // World.load keeps it out of the freeze. No per-frame matrix work — the shader's
+    // uTime is driven by World.tick → tickWaterSurfaces.
+    const surfaceMesh = new THREE.Mesh(mergeTinted(surface), waterSurfaceMaterial("opaque"));
+    surfaceMesh.castShadow = false;
+    surfaceMesh.receiveShadow = true;
+    surfaceMesh.userData.animated = true;
+
+    const group = new THREE.Group();
+    group.add(stone);
+    group.add(waterMesh);
+    group.add(surfaceMesh);
+
+    let t = 0;
+    const animate = (dt: number) => {
+      t += dt;
+      waterMesh.scale.y = 1 + Math.sin(t * 3.0) * 0.12;     // jets surge up/down
+      waterMesh.position.y = Math.sin(t * 2.1) * 0.06;       // gentle shimmer bob
+    };
+
     return {
-      mesh,
+      mesh: group,
+      animate,
       colliders: [{ x: 0, y: wallTopY / 2, z: 0, hx: r, hy: wallTopY / 2, hz: r }],
       obstacles: [{ x: 0, z: 0, w: (r + 1.6) * 2, d: (r + 1.6) * 2 }],
     };

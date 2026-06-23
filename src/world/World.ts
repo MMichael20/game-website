@@ -6,6 +6,7 @@ import { buildWorld, type ResolvedPoi } from "./system/engine";
 import { MAPS } from "./maps";
 import { cachedAssetSets } from "./assets";
 import { mergeStaticChunks, type DetailChunk } from "./chunkMerge";
+import { tickWaterSurfaces } from "./objects/water";
 import type { MapDescriptor, Portal, Vec2 } from "./system/types";
 
 // The world is now RELOADABLE: load() builds a manifest and tracks every mesh +
@@ -29,6 +30,8 @@ export class World {
   // Merged small-prop chunks, distance-culled each frame via cullDetails().
   private detailChunks: DetailChunk[] = [];
   private static readonly DETAIL_CULL_DIST = 160;
+  // Per-frame tick callbacks from animated objects (e.g. fountain water).
+  private animated: Array<(dt: number) => void> = [];
   private _carSpawn: Vec2 = { x: 0, z: 0 };
   private _carSpawnYaw = 0;
 
@@ -47,9 +50,14 @@ export class World {
     this.detailChunks = mergeStaticChunks(built.group);
 
     // The world is fully static after build: compute world matrices once, then
-    // stop per-frame matrix recomputation across every static mesh.
+    // stop per-frame matrix recomputation across every static mesh. EXCEPTION:
+    // meshes flagged userData.animated stay live so their per-frame tick (e.g.
+    // fountain water) can move them; their frozen ancestors keep a valid
+    // matrixWorld, so the live child still resolves to the right place.
+    this.animated = built.animated;
     built.group.updateMatrixWorld(true);
     built.group.traverse((obj) => {
+      if (obj.userData.animated) return;
       obj.matrixAutoUpdate = false;
       obj.matrixWorldAutoUpdate = false;
     });
@@ -98,6 +106,14 @@ export class World {
       this.staticBody = null;
     }
     this.detailChunks = []; // meshes are inside `group`, disposed above
+    this.animated = [];
+  }
+
+  // Drive every animated object's per-frame tick (fountain water, etc.). Called
+  // from Game.update on the normal (non-frozen) path.
+  tick(dt: number): void {
+    tickWaterSurfaces(dt);
+    for (const fn of this.animated) fn(dt);
   }
 
   // Hide merged small-prop chunks beyond DETAIL_CULL_DIST of the camera (squared
